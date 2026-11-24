@@ -14,6 +14,15 @@ Kural örnekleri (alarmlar.txt):
   OTOMATIK               takip listelerindeki tüm varlıklar için formasyon ve KAP alarmları"""
 import os, re, sys, json, datetime as dt
 
+
+def _s(x):
+    import tasarim as TS
+    return TS._sayi(x)
+
+
+def _p(x):
+    return ("+" if x > 0 else "-" if x < 0 else "") + "%" + f"{abs(x) * 100:.1f}".replace(".", ",")
+
 TSI = dt.timezone(dt.timedelta(hours=3))
 DOSYA = "alarmlar.txt"
 DURUM = os.path.join("alarm_cikti", "durum.json")
@@ -91,12 +100,12 @@ def tara(K, durum):
                 if k["tip"] == "fiyat":
                     kosul = p > k["deger"] if k["op"] == ">" else p < k["deger"]
                     if kosul and not durum.get(anahtar):
-                        bildir.append(f"🔔 {k['kod']} fiyatı {k['deger']:g} seviyesinin {'üzerine çıktı' if k['op'] == '>' else 'altına indi'}: {p:,.6g}")
+                        bildir.append(f"🔔 {k['kod']} fiyatı {_s(k['deger'])} seviyesinin {'üzerine çıktı' if k['op'] == '>' else 'altına indi'}: {_s(p)}")
                     yeni[anahtar] = bool(kosul)
                 else:
                     gun_anahtar = f"{anahtar}|{bugun}"
                     if abs(d) >= k["deger"] and not durum.get(gun_anahtar):
-                        bildir.append(f"⚡ {k['kod']} bugün {'+' if d > 0 else ''}%{d * 100:.1f} hareket etti (fiyat {p:,.6g})")
+                        bildir.append(f"⚡ {k['kod']} bugün {_p(d)} hareket etti (fiyat {_s(p)})")
                         yeni[gun_anahtar] = True
             elif k["tip"] in ("rsi", "puan"):
                 s = teknik(k["kod"]); g = s["tf"]["G"]

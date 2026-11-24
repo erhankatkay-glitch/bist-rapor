@@ -372,11 +372,30 @@ def tvl_ozet():
     return {"toplam": float(s.iloc[-1]), "d30": float(s.iloc[-1] / s.iloc[-31] - 1)}
 
 
+_ZINCIR = []
+
+
 def protokol(baz, cg_id=None):
-    """Coine ait DeFi protokolü/zinciri: TVL, piyasa değeri/TVL, ücretler (yıllıklandırılmış) ve F/Ü oranı."""
-    global _PROT
+    """Coine ait zincir veya DeFi protokolü: TVL, piyasa değeri/TVL, ücretler ve fiyat/ücret oranı.
+    Önce zincir listesi (ETH → Ethereum ağı), sonra TVL'si olan protokoller aranır."""
+    global _PROT, _ZINCIR
+    if not _ZINCIR:
+        try: _ZINCIR = _get(f"{LLAMA}/v2/chains")
+        except Exception: _ZINCIR = []
+    z = [c for c in _ZINCIR if (cg_id and c.get("gecko_id") == cg_id) or str(c.get("tokenSymbol") or "").upper() == baz.upper()]
+    z = [c for c in z if (c.get("tvl") or 0) > 0]
+    if z:
+        c = max(z, key=lambda x: x["tvl"])
+        o = {"ad": f"{c['name']} ağı", "tvl": c["tvl"], "d7": None, "mcap": None, "kategori": "Blokzincir", "slug": None}
+        try:
+            mc = cg_piyasa().get(baz.upper(), {}).get("market_cap")
+            if mc: o["mcap"] = mc; o["mcap_tvl"] = mc / c["tvl"]
+        except Exception:
+            pass
+        return o
     if not _PROT: _PROT = _get(f"{LLAMA}/protocols")
-    adaylar = [p for p in _PROT if (cg_id and p.get("gecko_id") == cg_id) or (str(p.get("symbol", "")).upper() == baz.upper())]
+    adaylar = [p for p in _PROT if ((cg_id and p.get("gecko_id") == cg_id) or (str(p.get("symbol", "")).upper() == baz.upper()))
+               and (p.get("tvl") or 0) > 0 and p.get("category") not in ("CEX", "Foundation")]
     if not adaylar: return None
     p = max(adaylar, key=lambda x: x.get("tvl") or 0)
     o = {"ad": p.get("name"), "tvl": p.get("tvl"), "d7": (p.get("change_7d") or 0) / 100 if p.get("change_7d") is not None else None,
@@ -397,8 +416,8 @@ def defi_yorum(st_, tv, pr):
         C.append(f"Stablecoin arzı {st_['toplam'] / 1e9:,.0f} milyar $; son 30 günde {'+' if st_['d30'] > 0 else ''}%{st_['d30'] * 100:.1f}".replace(",", "X").replace(".", ",").replace("X", ".")
                  + (" — kripto piyasasına taze likidite girişi sürüyor." if st_["d30"] > 0.01 else " — likidite girişi yavaşladı." if st_["d30"] < 0 else "."))
     if tv: C.append(f"DeFi'de kilitli toplam değer (TVL) son 30 günde {'+' if tv['d30'] > 0 else ''}%{tv['d30'] * 100:.1f}".replace(".", ",") + " değişti.")
-    if pr:
-        t = f"{pr['ad']} protokolünde {pr['tvl'] / 1e6:,.0f} milyon $ kilitli varlık bulunuyor".replace(",", ".")
+    if pr and pr.get("tvl"):
+        t = f"{pr['ad']} {'üzerinde' if 'ağı' in str(pr['ad']) else 'protokolünde'} {pr['tvl'] / 1e6:,.0f} milyon $ kilitli varlık bulunuyor".replace(",", ".")
         if pr.get("mcap_tvl"): t += f"; piyasa değeri/TVL oranı {pr['mcap_tvl']:.2f}".replace(".", ",")
         if pr.get("fiyat_ucret"): t += f", yıllıklandırılmış ücretlere göre fiyat/ücret oranı {pr['fiyat_ucret']:.1f}x".replace(".", ",")
         C.append(t + ".")

@@ -131,11 +131,12 @@ def mikro_blogu(mk, vd, df_, W, para="$"):
         E += [Spacer(1, 6), Paragraph("Likidite ve DeFi verileri (DefiLlama)", ST["h2"]),
               bilgi_kutusu("Analist yorumu:", KR.defi_yorum(df_.get("stable"), df_.get("tvl"), df_.get("protokol")), W)]
         pr = df_.get("protokol")
-        if pr:
+        if pr and pr.get("tvl"):
             v = [["Gösterge", "Değer"], ["Protokol / zincir", f"{pr['ad']} ({pr.get('kategori') or '–'})"], ["TVL", f"{TS._sayi(pr['tvl'], 0)} $"],
                  ["TVL değişimi (7g)", IL._y(pr.get("d7"))], ["Piyasa değeri / TVL", f"{pr['mcap_tvl']:.2f}".replace(".", ",") if pr.get("mcap_tvl") else "–"],
                  ["Ücretler (30 gün)", f"{TS._sayi(pr['ucret_30g'], 0)} $" if pr.get("ucret_30g") else "–"],
                  ["Fiyat / ücret (yıllık)", f"{pr['fiyat_ucret']:.1f}x".replace(".", ",") if pr.get("fiyat_ucret") else "–"]]
+            v = [x for x in v if x[1] != "–" or x[0] == "Gösterge"]
             E += [Spacer(1, 3), TS.tablo(v, [W * .4, W * .4], font=7.2)]
     return ([CondPageBreak(9 * cm)] + E) if E else []
 
