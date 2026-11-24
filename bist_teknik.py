@@ -3,6 +3,7 @@
 Göstergeler, oylama özeti, mum formasyonları, grafik formasyonları, price action,
 Fibonacci, pivot noktaları, destek/direnç ve uyumsuzluklar. Yalnızca pandas/numpy kullanır."""
 import math
+import datetime as dt
 import numpy as np
 import pandas as pd
 
@@ -18,6 +19,9 @@ def tr(x, d=1):
     return f"{x:.{d}f}".replace(".", ",")
 
 
+KRIPTO_TAM_MUM = False   # True: kriptoda henüz kapanmamış (bugünkü UTC) mumu at — kapanış bültenleri için
+
+
 TF_AD = {"G": "Günlük", "H": "Haftalık", "A": "Aylık"}
 ETIKETLER = ["GÜÇLÜ SAT", "SAT", "NÖTR", "AL", "GÜÇLÜ AL"]
 
@@ -27,8 +31,10 @@ ETIKETLER = ["GÜÇLÜ SAT", "SAT", "NÖTR", "AL", "GÜÇLÜ AL"]
 # =====================================================================
 def yahoo_sembol(kod):
     """BIST kodu / emtia / kripto için Yahoo sembolü ve türü."""
-    import bist_varlik as V
+    import bist_varlik as V, bist_kripto as KR
     k = kod.upper().strip()
+    if KR.kripto_mu(k):
+        return f"{KR.coz(k)[0]}-USD", "kripto"
     if k in V.VARLIKLAR:
         y, _, tur, *_ = V.VARLIKLAR[k]
         return (y or "GC=F"), tur
@@ -37,10 +43,34 @@ def yahoo_sembol(kod):
     return k.replace(".IS", "") + ".IS", "hisse"
 
 
+def _kripto(kod):
+    import bist_varlik as V, bist_kripto as KR
+    k = kod.upper().strip()
+    return KR.kripto_mu(k) or (k in V.VARLIKLAR and V.VARLIKLAR[k][2] == "kripto")
+
+
 def gunluk_veri(kod, fiyat_fn=None):
-    """Uzun günlük OHLCV (gün içi güncellemeli). GRAMALTIN: ons altın × USD/TRY / 31,1035."""
+    """Uzun günlük OHLCV (gün içi güncellemeli). GRAMALTIN: ons altın × USD/TRY / 31,1035.
+    Kripto: Binance / OKX günlük mumları (USDT veya TL paritesi)."""
     import bist_rapor as br
     k = kod.upper().strip()
+    if _kripto(k) and not fiyat_fn:
+        import bist_kripto as KR
+        baz, par, borsa = KR.coz(k)
+        h, kul = KR.mumlar(baz, par, borsa)
+        if KRIPTO_TAM_MUM:
+            h = h[h.index.date < dt.datetime.now(dt.timezone.utc).date()]
+        h.attrs["borsa"] = kul
+        return h, "kripto"
+    if _kripto(k) and fiyat_fn:
+        import bist_kripto as KR
+        baz, par, borsa = KR.coz(k)
+        h = fiyat_fn(f"{baz}-USD")
+        if par == "TRY":
+            fx = fiyat_fn("TRY=X")["Close"].reindex(h.index, method="ffill")
+            h = h.copy()
+            for c in ("Open", "High", "Low", "Close"): h[c] = h[c] * fx
+        return h.dropna(subset=["Close"]), "kripto"
     y, tur = yahoo_sembol(k)
     if fiyat_fn:
         h = fiyat_fn(y)
@@ -679,8 +709,16 @@ def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A")):
     import bist_varlik as V, bist_veri as bv
     kod = kod.upper().strip().replace(".IS", "")
     h, tur = gunluk_veri(kod, fiyat_fn)
-    ad = V.VARLIKLAR[kod][1] if kod in V.VARLIKLAR else {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka"}.get(kod, bv.sirket_adi(kod))
-    sonuc = {"kod": kod, "ad": ad, "tur": tur, "para": "₺" if tur == "hisse" or kod == "GRAMALTIN" else "" if tur == "endeks" else "$",
+    para_k = None
+    if tur == "kripto":
+        import bist_kripto as KR
+        baz, par, borsa = KR.coz(kod)
+        kod = KR.kod_yap(baz, par, borsa); para_k = "₺" if par == "TRY" else "$"
+        ad = V.VARLIKLAR[baz][1] if baz in V.VARLIKLAR else KR.ESKI.get(baz, baz)
+        ad = f"{ad} ({baz}/{par}{', ' + h.attrs['borsa'] if h.attrs.get('borsa') else ''})"
+    else:
+        ad = V.VARLIKLAR[kod][1] if kod in V.VARLIKLAR else {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka"}.get(kod, bv.sirket_adi(kod))
+    sonuc = {"kod": kod, "ad": ad, "tur": tur, "para": para_k or ("₺" if tur == "hisse" or kod == "GRAMALTIN" else "" if tur == "endeks" else "$"),
              "tf": {}, "fiyat_zamani": h.index[-1]}
     for tf in tfler:
         sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(h, tf, tur), tf)

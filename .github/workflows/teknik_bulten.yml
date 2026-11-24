@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       piyasa:
-        description: "bist / kripto / emtia"
+        description: "bist / kripto / kripto_tl / emtia (boşlukla birden fazla)"
         required: true
         default: "bist"
       zorla:
@@ -38,27 +38,29 @@ jobs:
         run: |
           case "${{ github.event.schedule }}" in
             "7 16 * * 1-5") P=bist ;;
-            "7 1 * * *") P=kripto ;;
+            "7 1 * * *") P="kripto kripto_tl" ;;
             "7 23 * * 1-5") P=emtia ;;
             *) P="${{ github.event.inputs.piyasa }}" ;;
           esac
           Z=""; [ "${{ github.event.inputs.zorla }}" = "evet" ] && Z="--zorla"
           echo "piyasa=$P" >> $GITHUB_OUTPUT; echo "zorla=$Z" >> $GITHUB_OUTPUT
       - name: Bülteni üret ve gönder
-        run: python teknik_bulten.py ${{ steps.p.outputs.piyasa }} ${{ steps.p.outputs.zorla }}
+        run: |
+          for P in ${{ steps.p.outputs.piyasa }}; do python teknik_bulten.py $P ${{ steps.p.outputs.zorla }} || echo "$P başarısız"; done
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       - name: Bülten dalına yayınla
         if: hashFiles('cikti/**') != ''
         run: |
-          P=${{ steps.p.outputs.piyasa }}
           git config --global user.name "bulten-bot"
           git config --global user.email "actions@users.noreply.github.com"
           URL="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           git clone --depth 1 --branch bulten "$URL" yayin || (mkdir yayin && cd yayin && git init -q && git remote add origin "$URL")
-          rm -rf "yayin/$P" && cp -r "cikti/$P" "yayin/$P"
+          for P in ${{ steps.p.outputs.piyasa }}; do
+            if [ -d "cikti/$P" ]; then rm -rf "yayin/$P" && cp -r "cikti/$P" "yayin/$P"; fi
+          done
           cd yayin
           rm -rf .git && git init -q && git checkout -q -b bulten && git remote add origin "$URL"
-          git add -A && git commit -q -m "Bülten $P $(date -u +%F)"
+          git add -A && git commit -q -m "Bülten ${{ steps.p.outputs.piyasa }} $(date -u +%F)"
           git push -f origin bulten

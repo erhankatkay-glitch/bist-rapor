@@ -4,10 +4,12 @@ THYAO
 ASELS
 KCHOL
 AKBNK
-# Kripto
-BTC
-ETH
-SOL
+# Kripto (USDT pariteleri; TL için BTC/TRY gibi yazın, OKX için sonuna @OKX ekleyin)
+BTC/USDT
+ETH/USDT
+SOL/USDT
+BTC/TRY
+ETH/TRY
 # Emtia
 ALTIN
 GRAMALTIN

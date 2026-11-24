@@ -1,39 +1,27 @@
-name: Borsa API testi
+name: Kripto canlı test
 on:
   workflow_dispatch: {}
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
       - run: |
-          python3 - <<'PY'
-          import json, urllib.request
-          U = {
-           "binance_main_info": "https://api.binance.com/api/v3/exchangeInfo?symbol=BTCTRY",
-           "binance_vision_info": "https://data-api.binance.vision/api/v3/exchangeInfo?permissions=SPOT",
-           "binance_vision_klines_try": "https://data-api.binance.vision/api/v3/klines?symbol=BTCTRY&interval=1d&limit=3",
-           "binance_vision_24h": "https://data-api.binance.vision/api/v3/ticker/24hr?symbol=PEPETRY",
-           "okx_instruments": "https://www.okx.com/api/v5/public/instruments?instType=SPOT",
-           "okx_candles": "https://www.okx.com/api/v5/market/history-candles?instId=BTC-USDT&bar=1Dutc&limit=3",
-           "okx_tickers": "https://www.okx.com/api/v5/market/tickers?instType=SPOT",
-           "coingecko_search": "https://api.coingecko.com/api/v3/search?query=pepe",
-          }
-          for k, u in U.items():
+          python - <<'PY'
+          import time, bist_kripto as KR, bist_varlik as V, bist_teknik as T
+          t=time.time(); ev = KR.evren(); print("EVREN", len(ev), ev.attrs.get("not"), "TRY Binance:", int(ev["Binance TRY"].sum()), "TRY OKX:", int(ev["OKX TRY"].sum()), round(time.time()-t,1),"sn")
+          print(ev.head(8).to_string())
+          for k in ("BTC/TRY", "PEPE/USDT", "SOL/TRY@OKX"):
+              t=time.time()
               try:
-                  r = urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"}), timeout=20)
-                  b = r.read()
-                  try:
-                      j = json.loads(b)
-                      if k == "binance_vision_info":
-                          s = j["symbols"]; t = [x for x in s if x["status"] == "TRADING"]
-                          print(k, "OK", len(t), "USDT:", sum(x["quoteAsset"] == "USDT" for x in t), "TRY:", sum(x["quoteAsset"] == "TRY" for x in t))
-                      elif k in ("okx_instruments", "okx_tickers"):
-                          d = j.get("data", []); print(k, "OK", j.get("code"), len(d), "USDT:", sum(x["instId"].endswith("-USDT") for x in d), "TRY:", sum(x["instId"].endswith("-TRY") for x in d))
-                      else:
-                          print(k, "OK", str(j)[:200])
-                  except Exception:
-                      print(k, "OK(non-json)", b[:120])
+                  f, m = V.rapor(k, "/tmp")
+                  print("RAPOR", k, m["kod"], m["ad"], m["para"], round(m["fiyat"], 6), m["gorunum"], "borsa:", m.get("borsa"), "cg:", bool(m.get("cg")), "mta:", (m.get("mta") or {}).get("etiket"), round(time.time()-t,1), "sn")
               except Exception as e:
-                  print(k, "HATA", repr(e)[:150])
+                  import traceback; print("RAPOR HATA", k, repr(e)); traceback.print_exc()
+          s = T.analiz("PEPE/TRY"); print("TEKNIK", s["kod"], s["ad"], s["etiket"], len(s["tf"]["G"]["h"]), "gün")
           PY

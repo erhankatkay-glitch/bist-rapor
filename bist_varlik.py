@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 import tasarim as TS
 import analist as AN
+import bist_kripto as KR
 from tasarim import ST, Bolum, kart_izgarasi, bilgi_kutusu, trafik_listesi, kapak, sayfa_cizici
 import bist_rapor as br
 from bist_rapor import tl, yz, kat, ond, puan, ort, kucuk, reel, _png, _img, PARAM
@@ -189,7 +190,7 @@ def degerleme_bantlari(k, kripto, kod):
     else:
         o["ma200w"] = None
     if kripto and len(k) >= 3 * 365:
-        t0 = pd.Timestamp("2009-01-03") if kod == "BTC" else k.index[0] - pd.Timedelta(days=60)
+        t0 = pd.Timestamp("2009-01-03") if kod.split("/")[0] == "BTC" else k.index[0] - pd.Timedelta(days=60)
         gun = np.array((k.index - t0).days, dtype=float); y = np.log10(k.values)
         b, a = np.polyfit(np.log10(gun), y, 1)
         uyum = a + b * np.log10(gun); art = y - uyum; sd = float(art.std())
@@ -212,10 +213,23 @@ def degerleme_bantlari(k, kripto, kod):
 
 def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=None, kiyas_fn=None,
            global_fn=None, turev_fn=None, hash_fn=None, detay=True):
-    kod = kod.upper()
-    yahoo, ad, tur, cg_id, sorgu = VARLIKLAR[kod]
-    fiyat_fn = fiyat_fn or fiyat_cek
+    kod = kod.upper().strip()
+    borsa_kul = None; parite = None; seri_tl_gercek = None; seri_usd_gercek = None
     fx = (fx_fn or br.kur_cek)()
+    if kod in VARLIKLAR:
+        yahoo, ad, tur, cg_id, sorgu = VARLIKLAR[kod]
+    else:
+        yahoo, ad, tur, cg_id, sorgu = None, None, "kripto", None, None
+    baz = kod
+    if tur == "kripto":
+        baz, parite, borsa = KR.coz(kod)
+        yahoo = yahoo or f"{baz}-USD"
+        if not cg_id or not ad:
+            try: cg_id, ad = KR.cg_id(baz)
+            except Exception: cg_id, ad = None, baz
+        ad = ad or baz; sorgu = sorgu or f"{ad} kripto"
+        kod = KR.kod_yap(baz, parite, borsa)
+    fiyat_fn = fiyat_fn or fiyat_cek
     if kod == "GRAMALTIN":
         try: o = fiyat_fn("GC=F", "10y")
         except Exception: o = fiyat_fn("GC=F")
@@ -223,20 +237,43 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
         f = fx.reindex(o.index, method="ffill")
         h = o[["Open", "High", "Low", "Close"]].mul(f, axis=0) / 31.1035
         h["Volume"] = o.get("Volume", 0); h = h.dropna(subset=["Close"]); para = "TL"
+        zaman = h.index[-1]
+    elif tur == "kripto" and fiyat_fn is fiyat_cek:
+        # Borsa verisi (Binance / OKX): günlük mumlar canlıdır, son mum o anki fiyatı içerir
+        h_usd, borsa_kul = KR.mumlar(baz, "USDT", borsa)
+        seri_usd_gercek = h_usd["Close"]
+        if parite == "TRY":
+            try:
+                h, borsa_kul = KR.mumlar(baz, "TRY", borsa); para = "TL"
+            except Exception:
+                f = fx.reindex(h_usd.index, method="ffill")
+                h = h_usd[["Open", "High", "Low", "Close"]].mul(f, axis=0); h["Volume"] = h_usd["Volume"]; para = "TL"
+                borsa_kul += " (USDT × USD/TRY)"
+        else:
+            h = h_usd; para = "USD"
+            try: seri_tl_gercek = KR.mumlar(baz, "TRY", borsa)[0]["Close"]
+            except Exception: seri_tl_gercek = None
+        zaman = dt.datetime.now(dt.timezone(dt.timedelta(hours=3))).replace(tzinfo=None)
     else:
         try: h = fiyat_fn(yahoo, "max" if tur == "kripto" else "10y")
         except Exception: h = fiyat_fn(yahoo)
-        para = "USD"
-    zaman = h.index[-1]
-    if fiyat_fn is fiyat_cek:
-        h, zaman = br.canli_guncelle(h, yahoo or "GC=F") if kod != "GRAMALTIN" else (h, zaman)
+        para = "TL" if parite == "TRY" else "USD"
+        if parite == "TRY":
+            f = fx.reindex(h.index, method="ffill"); h = h.copy()
+            for c in ("Open", "High", "Low", "Close"): h[c] = h[c] * f
+            h = h.dropna(subset=["Close"])
+        zaman = h.index[-1]
+        if fiyat_fn is fiyat_cek and parite != "TRY":
+            h, zaman = br.canli_guncelle(h, yahoo)
     k = h["Close"].dropna()
-    m = {"kod": kod, "ad": ad, "fiyat_zamani": zaman, "tur": tur, "para": para, "fiyat": float(k.iloc[-1]), "tarih": k.index[-1], "hist": h}
+    m = {"kod": kod, "baz": baz, "parite": parite, "borsa": borsa_kul, "ad": ad, "fiyat_zamani": zaman, "tur": tur, "para": para, "fiyat": float(k.iloc[-1]), "tarih": k.index[-1], "hist": h}
     f_al = fx.reindex(k.index, method="ffill")
     if para == "USD":
-        m["seri_tl"] = (k * f_al).dropna(); m["fiyat_tl"] = float(m["seri_tl"].iloc[-1]); m["seri_usd"] = k
+        m["seri_tl"] = seri_tl_gercek.dropna() if seri_tl_gercek is not None and len(seri_tl_gercek) > 30 else (k * f_al).dropna()
+        m["fiyat_tl"] = float(m["seri_tl"].iloc[-1]); m["seri_usd"] = k
     else:
-        m["seri_tl"] = k; m["fiyat_tl"] = float(k.iloc[-1]); m["seri_usd"] = (k / f_al).dropna()
+        m["seri_tl"] = k; m["fiyat_tl"] = float(k.iloc[-1])
+        m["seri_usd"] = seri_usd_gercek.dropna() if seri_usd_gercek is not None and len(seri_usd_gercek) > 30 else (k / f_al).dropna()
     m["kur"] = float(fx.iloc[-1])
     def getiri(s):
         son = s.index[-1]; out = {"1G": float(s.iloc[-1] / s.iloc[-2] - 1) if len(s) > 1 else None}
@@ -281,16 +318,17 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
     # korelasyonlar ve göreli güç
     kiyas = {"S&P 500": "^GSPC", "Altın": "GC=F", "Dolar endeksi": "DX-Y.NYB", "Bitcoin": "BTC-USD"}
     if tur == "kripto": kiyas["Ethereum"] = "ETH-USD"
-    ref = "Bitcoin" if tur == "kripto" and kod != "BTC" else "S&P 500"
+    ref = "Bitcoin" if tur == "kripto" and baz != "BTC" else "S&P 500"
+    ku = m["seri_usd"]  # korelasyonlar dolar bazında
     m["beta"] = None; m["ethbtc"] = None; seriler = {}
     kiyas_fn = kiyas_fn or (lambda y: fiyat_fn(y, "2y")["Close"] if fiyat_fn is fiyat_cek else fiyat_fn(y)["Close"])
     kor, gor = {}, {}
     for ad_, y in kiyas.items():
-        if y == yahoo or (kod == "GRAMALTIN" and y == "GC=F"):
+        if y == yahoo or (kod == "GRAMALTIN" and y == "GC=F") or (tur == "kripto" and y == f"{baz}-USD"):
             continue
         try:
             b = kiyas_fn(y).dropna()
-            j = pd.concat([k.pct_change(), b.pct_change()], axis=1, join="inner").dropna().iloc[-252:]
+            j = pd.concat([ku.pct_change(), b.pct_change()], axis=1, join="inner").dropna().iloc[-252:]
             if len(j) > 60:
                 kor[ad_] = float(j.corr().iloc[0, 1])
                 if ad_ == ref: m["beta"] = float(j.cov().iloc[0, 1] / j.iloc[:, 1].var())
@@ -302,7 +340,7 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
     m["korelasyon"], m["goreli"] = kor, gor
     if tur == "kripto":
         try:
-            e_ = k if kod == "ETH" else seriler.get("Ethereum"); b_ = k if kod == "BTC" else seriler.get("Bitcoin")
+            e_ = ku if baz == "ETH" else seriler.get("Ethereum"); b_ = ku if baz == "BTC" else seriler.get("Bitcoin")
             if e_ is not None and b_ is not None:
                 eb = (e_ / b_.reindex(e_.index, method="ffill")).dropna()
                 x = eb[eb.index <= eb.index[-1] - pd.Timedelta(days=90)]
@@ -313,16 +351,18 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
     # kripto / emtia özel
     m["cg"] = m["korku"] = m["global"] = m["turev"] = m["hash"] = None
     if tur == "kripto":
-        try: m["cg"] = (cg_fn or coingecko)(cg_id)
-        except Exception: m["cg"] = None
+        try: m["cg"] = (cg_fn or coingecko)(cg_id) if cg_id else None
+        except Exception:
+            try: m["cg"] = KR.cg_kayit(cg_id) if cg_id else None
+            except Exception: m["cg"] = None
         try: m["korku"] = (korku_fn or korku_endeksi)()
         except Exception: m["korku"] = None
         try: m["global"] = (global_fn or kripto_global)()
         except Exception: m["global"] = None
         if detay:
-            try: m["turev"] = (turev_fn or turev_verisi)(kod)
+            try: m["turev"] = (turev_fn or turev_verisi)(baz)
             except Exception: m["turev"] = None
-            if kod == "BTC":
+            if baz == "BTC":
                 try: m["hash"] = (hash_fn or hash_orani)()
                 except Exception: m["hash"] = None
     m["oran"] = None
@@ -620,8 +660,8 @@ def pdf_olustur(m, dosya):
     gl = m.get("global") or {}; tv = m.get("turev") or {}; kk = m.get("korku") or {}
 
     # ---------- SAYFA 1
-    alt = f"{tur_ad}  ·  {m['kod']}" + (f"  ·  Piyasa değeri sırası #{cg['sira']}" if cg.get("sira") else "") + \
-          f"  ·  {m['tarih']:%d.%m.%Y}  ·  Fiyatlar: {'ABD doları' if m['para'] == 'USD' else 'Türk lirası'}"
+    alt = f"{tur_ad}  ·  {m['kod']}" + (f"  ·  Veri: {m['borsa']}" if m.get("borsa") else "") + (f"  ·  Piyasa değeri sırası #{cg['sira']}" if cg.get("sira") else "") + \
+          f"  ·  {m['tarih']:%d.%m.%Y}  ·  Fiyatlar: {'ABD doları (USDT)' if m['para'] == 'USD' else 'Türk lirası'}"
     E += TS.pro_kapak(m["ad"], alt, f"{tl(m['fiyat'])} {sym}", m["r_usd"].get("1G") if m["para"] == "USD" else m["r_tl"].get("1G"), W,
                       rozet=f"GENEL GÖRÜNÜM: {m['gorunum']}",
                       guncel=f"Fiyat: {TS.zaman_metni(m.get('fiyat_zamani'))} (TSİ)"
@@ -843,12 +883,22 @@ def pdf_olustur(m, dosya):
 
 def rapor(kod, klasor=".", **kw):
     m = analiz(kod, **kw)
-    dosya = os.path.join(klasor, f"{kod.upper()}_Rapor_{dt.date.today():%Y%m%d}.pdf")
+    dosya = os.path.join(klasor, f"{m['kod'].replace('/', '-').replace('@', '_')}_Rapor_{dt.date.today():%Y%m%d}.pdf")
     pdf_olustur(m, dosya)
     return dosya, m
 
+def varsayilan_liste(kripto_adet=50):
+    em = [k for k, v in VARLIKLAR.items() if v[2] == "emtia"]
+    try:
+        kr = KR.bulten_kodlari("USDT")[:kripto_adet]
+    except Exception:
+        kr = [k for k, v in VARLIKLAR.items() if v[2] == "kripto"]
+    return em + kr
+
+
 def tara(kodlar=None, **kw):
-    """Tüm emtia ve kriptoları skorlar; özet satırlar döndürür."""
+    """Emtia ve kriptoları skorlar; özet satırlar döndürür."""
+    if kw.get("fiyat_fn") is None: kw.setdefault("cg_fn", KR.cg_kayit)
     satir, hata = [], {}
     fiyat_fn = kw.pop("fiyat_fn", None) or fiyat_cek
     on_bellek = {}
@@ -869,10 +919,10 @@ def tara(kodlar=None, **kw):
     except Exception:
         kw["global_fn"] = lambda: None
     kw["detay"] = False
-    for k in (kodlar or list(VARLIKLAR)):
+    for k in (kodlar or varsayilan_liste()):
         try:
             m = analiz(k, fiyat_fn=fiyat_fn, haber_fn=lambda *a: {"liste": [], "ton": 0, "ozet": "–"}, **kw)
-            satir.append({"Kod": k, "Ad": m["ad"], "Tür": m["tur"], "Fiyat": m["fiyat"], "Para": m["para"],
+            satir.append({"Kod": m["kod"], "Ad": m["ad"], "Tür": m["tur"], "Fiyat": m["fiyat"], "Para": m["para"],
                           "Skor": m["genel_skor"], "Görünüm": m["gorunum"], "1A $": m["r_usd"].get("1A"),
                           "YBB $": m["r_usd"].get("YBB"), "1Y $": m["r_usd"].get("1Y"), "1Y TL reel": m["r_reel"],
                           "Volatilite": m["vol"], "Mayer": m["mayer"], "RSI": m["rsi"],

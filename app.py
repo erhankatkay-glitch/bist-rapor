@@ -11,6 +11,7 @@ import tasarim as ts
 import bist_rapor as br
 import bist_varlik as V
 import bist_evren as EV
+import bist_kripto as KR
 import analist as AN
 import bist_teknik as TK
 import bist_teknik_rapor as TKR
@@ -22,6 +23,7 @@ mk = importlib.reload(mk)
 br = importlib.reload(br)
 V = importlib.reload(V)
 EV = importlib.reload(EV)
+KR = importlib.reload(KR)
 AN = importlib.reload(AN)
 TK = importlib.reload(TK)
 TKR = importlib.reload(TKR)
@@ -102,6 +104,40 @@ try:
     bv.guncelle({r["Kod"]: r.get("Ad") for _, r in EVREN.iterrows()})
 except Exception:
     pass
+
+
+@st.cache_data(ttl=6 * 3600, show_spinner=False)
+def kripto_evren_cek(gun, surum):
+    """Binance + OKX'teki tüm coinler (USDT ve TL pariteleri), hacme göre sıralı."""
+    try:
+        ev = KR.evren(); return ev, ev.attrs.get("not", "")
+    except Exception as e:
+        kr = [k for k, v in V.VARLIKLAR.items() if v[2] == "kripto"]
+        return pd.DataFrame({"Kod": kr, "Binance USDT": True, "Binance TRY": True, "OKX USDT": True, "OKX TRY": False, "Hacim $": 0.0}), f"Borsa listesi alınamadı: {e}"
+
+
+def kripto_sec(key):
+    """Coin + parite (USDT / TL) + borsa (Binance / OKX) seçimi → 'PEPE/TRY' gibi kod."""
+    ev, not_ = kripto_evren_cek(GUN, br.SURUM)
+    def etiket(r):
+        b = [x for x, c in (("Binance", "Binance USDT"), ("OKX", "OKX USDT")) if r.get(c)]
+        tl = [x for x, c in (("Binance", "Binance TRY"), ("OKX", "OKX TRY")) if r.get(c)]
+        return f"{r['Kod']} — {' · '.join(b) or '–'}" + (f" · TL: {'/'.join(tl)}" if tl else "")
+    sec = {etiket(r): r for _, r in ev.iterrows()}
+    s = st.selectbox(f"Coin ({len(ev)} coin, hacme göre sıralı)", list(sec), index=None, key=f"{key}_c",
+                     placeholder="Örn. BTC, PEPE, SOL")
+    c1, c2 = st.columns(2)
+    par = c1.radio("Parite", ["USDT", "TL (TRY)"], horizontal=True, key=f"{key}_p")
+    borsa = c2.radio("Borsa", ["Binance", "OKX"], horizontal=True, key=f"{key}_b")
+    if not s: return ""
+    r = sec[s]; p = "TRY" if par.startswith("TL") else "USDT"
+    if not r.get(f"{borsa} {p}"):
+        diger = "OKX" if borsa == "Binance" else "Binance"
+        if r.get(f"{diger} {p}"):
+            st.caption(f"ⓘ {r['Kod']}/{p} {borsa}'ta yok; {diger} verisi kullanılacak."); borsa = diger
+        elif p == "TRY":
+            st.caption(f"ⓘ {r['Kod']} için TL paritesi yok; fiyatlar USDT × USD/TRY ile TL'ye çevrilecek.")
+    return KR.kod_yap(r["Kod"], p, borsa)
 
 
 def hisse_sec(etiket, key):
@@ -346,9 +382,10 @@ with tab_x:
     tk_tur = st.radio("Varlık türü", ["Hisse", "Emtia", "Kripto"], horizontal=True, key="tk_tur")
     if tk_tur == "Hisse":
         tk_kod = hisse_sec("Hisse (endeks için XU100 yazabilirsiniz)", "tk_kod")
+    elif tk_tur == "Kripto":
+        tk_kod = kripto_sec("tk_k")
     else:
-        tt = "emtia" if tk_tur == "Emtia" else "kripto"
-        tk_s = st.selectbox("Varlık", [f"{k} — {v[1]}" for k, v in V.VARLIKLAR.items() if v[2] == tt], index=None, key="tk_v",
+        tk_s = st.selectbox("Emtia", [f"{k} — {v[1]}" for k, v in V.VARLIKLAR.items() if v[2] == "emtia"], index=None, key="tk_v",
                             placeholder="Seçin")
         tk_kod = tk_s.split(" — ")[0] if tk_s else ""
     if st.button("📐 Teknik analiz yap", type="primary", disabled=not tk_kod, key="tk_btn"):
@@ -388,10 +425,10 @@ with tab_x:
 
     st.divider()
     st.markdown("#### 📬 Kapanış bültenleri")
-    st.caption("Otomatik üretilir: BIST 19:07, emtia 02:07, kripto 04:07 (TSİ) — kapanıştan yaklaşık 1 saat sonra. Tüm varlıklar taranır.")
-    b_p = st.radio("Bülten", ["BIST", "Kripto", "Emtia"], horizontal=True, key="bul_p")
+    st.caption("Otomatik üretilir: BIST 19:07, emtia 02:07, kripto (USDT ve TL pariteleri) 04:07 TSİ — kapanıştan yaklaşık 1 saat sonra. Tüm BIST hisseleri ile Binance ve OKX'teki tüm coinler taranır.")
+    b_p = st.radio("Bülten", ["BIST", "Kripto USDT", "Kripto TL", "Emtia"], horizontal=True, key="bul_p")
     try:
-        B = bulten_oku({"BIST": "bist", "Kripto": "kripto", "Emtia": "emtia"}[b_p], ZAMAN)
+        B = bulten_oku({"BIST": "bist", "Kripto USDT": "kripto", "Kripto TL": "kripto_tl", "Emtia": "emtia"}[b_p], ZAMAN)
     except Exception as e:
         B = None; st.caption(f"Bülten okunamadı: {e}")
     if not B:
@@ -445,15 +482,19 @@ def varlik_analiz(kod, prm, saat, surum):
             "uretim": dt.datetime.now(dt.timezone(dt.timedelta(hours=3))).strftime("%d.%m.%Y %H:%M")}
 
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
-def varlik_tarama(gun, surum):
-    return V.tara()
+def varlik_tarama(gun, surum, n_kripto=50):
+    return V.tara(V.varsayilan_liste(n_kripto))
 
 with tab_v:
     st.caption("Altın, gümüş, petrol, tarım ürünleri ve önde gelen kripto paralar. Bilançosu olmayan bu varlıklar için analiz "
                "trend, momentum, risk, para akışı, mevsimsellik ve piyasa verilerine dayanır.")
-    v_secenek = [f"{k} — {v[1]}" for k, v in V.VARLIKLAR.items()]
-    v_sec = st.selectbox("Varlık", v_secenek, index=None, placeholder="Örn. Altın, Bitcoin, Brent", key="v_sec")
-    v_kod = v_sec.split(" — ")[0] if v_sec else ""
+    v_tur = st.radio("Tür", ["Kripto", "Emtia"], horizontal=True, key="v_tur")
+    if v_tur == "Kripto":
+        v_kod = kripto_sec("v_k"); v_sec = v_kod
+    else:
+        v_sec = st.selectbox("Emtia", [f"{k} — {v[1]}" for k, v in V.VARLIKLAR.items() if v[2] == "emtia"], index=None,
+                             placeholder="Örn. Altın, Brent, Gümüş", key="v_sec")
+        v_kod = v_sec.split(" — ")[0] if v_sec else ""
     if st.button("📄 Analiz Et", type="primary", disabled=not v_kod, key="v_btn"):
         try:
             with st.status(f"{v_sec} analiz ediliyor…") as s:
@@ -487,9 +528,10 @@ with tab_v:
             for bas, metin in r["genel"]:
                 st.markdown(f"**{bas}.** {metin}")
     with st.expander("📊 Tüm emtia ve kriptoları karşılaştır"):
-        if st.button("Karşılaştırmayı oluştur (1–2 dk)", key="v_tara"):
-            with st.spinner("Varlıklar taranıyor…"):
-                st.session_state.v_tablo = varlik_tarama(SAAT2, br.SURUM)
+        n_k = st.select_slider("Kripto sayısı (hacme göre)", options=[25, 50, 100, 200, 400], value=50, key="v_n")
+        if st.button("Karşılaştırmayı oluştur", key="v_tara"):
+            with st.spinner(f"16 emtia + {n_k} kripto taranıyor… (birkaç dakika)"):
+                st.session_state.v_tablo = varlik_tarama(SAAT2, br.SURUM, n_k)
         if "v_tablo" in st.session_state:
             sat, hat = st.session_state.v_tablo
             if sat:
