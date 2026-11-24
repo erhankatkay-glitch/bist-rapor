@@ -1,3 +1,5 @@
+**Uygulama adresi:** https://cuz9rz7rlsx7bfwolrb8xq.streamlit.app
+
 # 📊 BIST Hisse Araştırma Raporu
 
 BIST hisseleri için profesyonel PDF araştırma raporu üreten mobil uyumlu web uygulaması.
