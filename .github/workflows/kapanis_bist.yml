@@ -3,7 +3,7 @@ name: BIST kapanış turları (fırsat + bülten)
 on:
   schedule:
     - cron: "20 11 * * 1-5"   # 14:20 TSİ: 10–14 dilimi kapandı → 4 saatlik
-    - cron: "27 15 * * 1-5"   # 18:27 TSİ: kapanış → 4 saatlik + günlük (+H/A) + bülten
+    - cron: "35 15 * * 1-5"   # 18:35 TSİ: kapanış → 4 saatlik + günlük (+H/A) + bülten
   workflow_dispatch:
     inputs:
       slot:

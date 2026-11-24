@@ -134,6 +134,13 @@ def kap_haberleri(kod, ad=None, gun=45, adet=12):
                 if k: sonuc.append({**x, "konu": k, "yon": y})
         except Exception:
             continue
+    # Haber gerçekten bu şirketle ilgili mi? Başlıkta kod ya da unvanın ilk kelimesi geçmeli
+    def _k(t): return str(t).replace("İ", "i").replace("I", "ı").lower()
+    anahtarlar = {_k(kod)}
+    if ad:
+        ilk = _k(str(ad).split()[0]).strip(".,")
+        if len(ilk) >= 3: anahtarlar.add(ilk)
+    sonuc = [x for x in sonuc if any(a in _k(x["baslik"]) for a in anahtarlar)]
     gor, tekil = set(), []
     for x in sorted(sonuc, key=lambda x: x["tarih"] or dt.datetime.min.replace(tzinfo=dt.timezone.utc), reverse=True):
         anahtar = x["baslik"][:60]

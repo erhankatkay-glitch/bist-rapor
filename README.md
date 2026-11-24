@@ -20,8 +20,8 @@ Kriptoda AL ve SAT (vadeli), BIST ve emtiada yalnızca AL. Her piyasa ve zaman d
 
 | Tur | Zaman (TSİ) | İş akışı |
 |---|---|---|
-| BIST 4 saatlik | 14:20 · 18:27 | kapanis_bist.yml |
-| BIST günlük + bülten (+ cuma haftalık, ay sonu aylık) | 18:27 | kapanis_bist.yml |
+| BIST 4 saatlik | 14:20 · 18:35 | kapanis_bist.yml |
+| BIST günlük + bülten (+ cuma haftalık, ay sonu aylık) | 18:35 | kapanis_bist.yml |
 | Kripto 4 saatlik | 03:22 · 07:22 · 11:22 · 15:22 · 19:22 · 23:22 | kapanis_kripto.yml |
 | Kripto günlük + bültenler (+ pazartesi haftalık ve karne, ayın 1'i aylık) | 03:22 | kapanis_kripto.yml |
 | Emtia 4 saatlik (hafta içi) | 03:25 · 07:25 · 11:25 · 15:25 · 19:25 · 23:25 | kapanis_emtia.yml |

@@ -169,6 +169,16 @@ def main():
     durum = json.load(open(DURUM, encoding="utf-8")) if os.path.exists(DURUM) else {}
     bildir, yeni = tara(K, durum)
     son = json.load(open(SON, encoding="utf-8")) if os.path.exists(SON) else []
+    # geçmiş temizliği: emtia/kripto için yanlış eşleşmiş KAP haberleri ve aynı dakikadaki tekrarlar
+    import bist_varlik as V
+    gor, temiz = set(), []
+    for x in son:
+        kod = x["mesaj"].split(" ", 2)[1] if x["mesaj"].startswith("📰") and len(x["mesaj"].split(" ")) > 1 else None
+        if kod and (kod in V.VARLIKLAR or _kripto(kod)): continue
+        a = (x["zaman"], x["mesaj"])
+        if a in gor: continue
+        gor.add(a); temiz.append(x)
+    son = temiz
     zaman = dt.datetime.now(TSI).strftime("%d.%m.%Y %H:%M")
     son = [{"zaman": zaman, "mesaj": m} for m in bildir] + son
     json.dump(yeni, open(DURUM, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
