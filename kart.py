@@ -24,6 +24,24 @@ def _t(ax, x, y, s, size=20, color=None, weight="regular", ha="left", va="baseli
     return ax.text(x, y, s, fontsize=size, color=color or C["yazi"], fontweight=weight, ha=ha, va=va, family=FONT, **kw)
 
 
+_LOGO_IMG = None
+
+
+def _marka(ax, H, x=48, boy=42):
+    """Sol üst köşeye KATKAY logosu (bütün Telegram kartlarında ortak)."""
+    global _LOGO_IMG
+    try:
+        if _LOGO_IMG is None:
+            import matplotlib.image as mpimg, os
+            _LOGO_IMG = mpimg.imread(os.path.join(os.path.dirname(os.path.abspath(__file__)), "varlik", "logo_96.png"))
+        xl, yl = ax.get_xlim(), ax.get_ylim()
+        ax.imshow(_LOGO_IMG, extent=[x, x + boy, H - 50 - boy, H - 50], aspect="auto", zorder=5, interpolation="lanczos")
+        ax.set_xlim(*xl); ax.set_ylim(*yl)
+        return x + boy + 14
+    except Exception:
+        return x
+
+
 def _kutu(ax, x, y, w, h, renk, r=14, alpha=1.0, kenar=None):
     ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}", fc=renk, ec=kenar or "none", lw=1.5 if kenar else 0,
                                 alpha=alpha))
@@ -84,7 +102,7 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     # ---- başlık
     ax.add_patch(Rectangle((0, H - 8), W, 8, color=C["altin"]))
     import tg
-    _t(ax, 48, H - 70, f"{tg.buyuk(piyasa_ad)}  ·  {tg.buyuk(tf_ad)}  ·  FIRSAT", 15, C["altin"], "semibold")
+    _t(ax, _marka(ax, H), H - 77, f"{tg.buyuk(piyasa_ad)}  ·  {tg.buyuk(tf_ad)}  ·  FIRSAT", 15, C["altin"], "semibold")
     _t(ax, 48, H - 140, F.gorunen(f["kod"], None), 54, weight="bold")
     ad = f.get("ad") or ""
     if ad and ad not in f["kod"]: _t(ax, 48, H - 180, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
@@ -213,11 +231,11 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
     fig = plt.figure(figsize=(W / 100, H / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
     ax.add_patch(Rectangle((0, H - 8), W, 8, color=C["altin"]))
-    _t(ax, 48, H - 70, f"{tg.buyuk(piyasa_ad)}  ·  KAPANIŞ ÖZETİ", 15, C["altin"], "semibold")
+    _t(ax, _marka(ax, H), H - 77, f"{tg.buyuk(piyasa_ad)}  ·  KAPANIŞ ÖZETİ", 15, C["altin"], "semibold")
     import datetime as _dt
     try: tarih = _dt.date.fromisoformat(str(meta["kapanis"])[:10]).strftime("%d.%m.%Y")
     except Exception: tarih = str(meta["kapanis"])
-    _t(ax, W - 48, H - 70, tarih, 15, C["soluk"], ha="right")
+    _t(ax, W - 48, H - 77, tarih, 15, C["soluk"], ha="right")
     E = meta.get("endeks") or {}
     # --- endeks paneli
     _kutu(ax, 40, H - 330, W - 80, 230, C["panel"])
@@ -322,7 +340,7 @@ def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
     fig = plt.figure(figsize=(W / 100, H_ / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H_); ax.axis("off")
     ax.add_patch(Rectangle((0, H_ - 8), W, 8, color=vurgu))
-    _t(ax, 48, H_ - 70, ust, 15, vurgu, "semibold")
+    _t(ax, _marka(ax, H_), H_ - 77, ust, 15, vurgu, "semibold")
     _t(ax, 48, H_ - 140, baslik, 40, weight="bold")
     if alt: _t(ax, 48, H_ - 185, alt, 18, C["soluk"])
     y = H_ - ust_y
