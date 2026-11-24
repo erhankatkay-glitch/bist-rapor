@@ -16,6 +16,7 @@ import bist_teknik_rapor as TR
 TSI = dt.timezone(dt.timedelta(hours=3))
 BASLIK = {"bist": "Kapanış Teknik Bülteni – BIST", "kripto": "Kapanış Teknik Bülteni – Kripto (USDT)",
           "kripto_tl": "Kapanış Teknik Bülteni – Kripto TL Pariteleri", "emtia": "Kapanış Teknik Bülteni – Emtia"}
+SON = {}   # piyasa → {"analizler", "endeks", "satir"}: fırsat motoru aynı analizleri yeniden kullanır
 REFERANS = {"bist": "XU100", "kripto": "BTC/USDT", "kripto_tl": "BTC/TRY", "emtia": "ALTIN"}
 
 
@@ -165,6 +166,7 @@ def _yaz(piyasa, analizler, endeks, ref, klasor, hata=None):
     satir = [T.ozet_satir(s) for s in analizler]
     try: ekler = _ekler(piyasa, analizler, endeks, satir)
     except Exception as ex: ekler = {}; print("Bülten ekleri:", ex, file=sys.stderr)
+    SON[piyasa] = {"analizler": analizler, "endeks": endeks, "satir": satir}
     hedef = os.path.join(klasor, piyasa)
     shutil.rmtree(hedef, ignore_errors=True); os.makedirs(os.path.join(hedef, "grafik"), exist_ok=True); os.makedirs(os.path.join(hedef, "rapor"), exist_ok=True)
     one = sorted(analizler, key=lambda s: -(s["puan"] or 0))
@@ -221,14 +223,12 @@ def _kripto_calistir(piyasa, kodlar, ref, klasor):
 
 
 # --------------------------------------------------------------------- Telegram
-def telegram_gonder(piyasa, meta, satir, klasor="cikti"):
-    tok, chat = os.environ.get("TELEGRAM_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
-    if not tok or not chat:
-        print("Telegram ayarlı değil; gönderim atlandı."); return
-    import requests
-    api = f"https://api.telegram.org/bot{tok}"
+def telegram_gonder(piyasa, meta, satir, klasor="cikti", bot=None):
+    """Kısa bülten özeti + bülten PDF'i; sessiz gönderilir, bir sonraki bülten gelince silinir (en fazla 30 saat)."""
+    import tg
+    bot = bot or tg.Bot(piyasa)
     df = pd.DataFrame(satir)
-    satirlar = [f"📊 {meta['baslik']}", f"Kapanış: {meta['kapanis']} · {meta['adet']} varlık"]
+    satirlar = [f"📊 <b>{meta['baslik']}</b>", f"Kapanış: {meta['kapanis']} · {meta['adet']} varlık"]
     if meta.get("endeks"): satirlar.append(f"{meta['endeks']['ad']}: {meta['endeks']['etiket']} ({meta['endeks']['puan']:.0f}/100)")
     if len(df):
         satirlar.append("\n🟢 En güçlü: " + ", ".join(f"{r.Kod} ({r['Teknik puan']:.0f})" for _, r in df.nlargest(6, "Teknik puan").iterrows()))
@@ -236,29 +236,24 @@ def telegram_gonder(piyasa, meta, satir, klasor="cikti"):
         if len(k): satirlar.append("🚀 Yukarı kırılım: " + ", ".join(k.nlargest(8, "Teknik puan")["Kod"]))
         k = df[df["Kırılım −"]]
         if len(k): satirlar.append("⚠️ Aşağı kırılım: " + ", ".join(k.nsmallest(8, "Teknik puan")["Kod"]))
+        if "Balina" in df:
+            b = df["Balina"].fillna("").astype(str)
+            k = df[b.str.contains("alımı|birikim|Alım emilimi")]
+            if len(k): satirlar.append("🐋 Balina alımı/birikim: " + ", ".join(k.nlargest(8, "Teknik puan")["Kod"]))
+            k = df[b.str.contains("satışı|dağıtım|Satış emilimi")]
+            if len(k): satirlar.append("🐋 Balina satışı/dağıtım: " + ", ".join(k.nsmallest(8, "Teknik puan")["Kod"]))
         k = df[df["RSI"] < 30]
         if len(k): satirlar.append("🔻 Aşırı satım: " + ", ".join(k.nsmallest(8, "RSI")["Kod"]))
-    satirlar.append("\nModel çıktısıdır, yatırım tavsiyesi değildir.")
+    satirlar.append("\nTüm liste, grafikler ve raporlar uygulamanın Teknik sekmesinde.\nModel çıktısıdır, yatırım tavsiyesi değildir.")
+    anahtar = f"bulten:{piyasa}"
+    ids = bot.mesaj("\n".join(satirlar), anahtar, 30, yerine=True)
     try:
-        requests.post(f"{api}/sendMessage", data={"chat_id": chat, "text": "\n".join(satirlar)}, timeout=30)
-        hedef = os.path.join(klasor, piyasa)
-        with open(os.path.join(hedef, "bulten.pdf"), "rb") as f:
-            requests.post(f"{api}/sendDocument", data={"chat_id": chat, "caption": meta["baslik"]},
-                          files={"document": (f"{piyasa}_bulten_{meta['kapanis']}.pdf", f)}, timeout=120)
-        g = meta["grafikler"][:10]
-        if g:
-            files, medya = {}, []
-            for i, x in enumerate(g):
-                files[f"f{i}"] = open(os.path.join(hedef, x["dosya"]), "rb")
-                medya.append({"type": "photo", "media": f"attach://f{i}", "caption": f"{x['kod']} · {x['etiket']} ({x['puan']:.0f})"})
-            requests.post(f"{api}/sendMediaGroup", data={"chat_id": chat, "media": json.dumps(medya, ensure_ascii=False)}, files=files, timeout=180)
-            for f in files.values(): f.close()
-        for r_ in meta.get("raporlar", [])[:6]:
-            with open(os.path.join(hedef, r_), "rb") as f:
-                requests.post(f"{api}/sendDocument", data={"chat_id": chat}, files={"document": (os.path.basename(r_), f)}, timeout=120)
-        print("Telegram'a gönderildi.")
+        yol = os.path.join(klasor, piyasa, "bulten.pdf")
+        if ids and os.path.exists(yol):
+            bot.belge(yol, f"{piyasa}_bulten_{meta['kapanis']}.pdf", meta["baslik"], anahtar, 30)
     except Exception as ex:
-        print("Telegram gönderimi başarısız:", ex, file=sys.stderr)
+        print("Bülten PDF'i gönderilemedi:", ex, file=sys.stderr)
+    return bot
 
 
 if __name__ == "__main__":
@@ -266,4 +261,4 @@ if __name__ == "__main__":
     zorla = "--zorla" in sys.argv
     s = calistir(piyasa, zorla=zorla)
     if s:
-        telegram_gonder(piyasa, *s)
+        b = telegram_gonder(piyasa, *s); b.kaydet()

@@ -96,11 +96,14 @@ def gunluk_veri(kod, fiyat_fn=None):
 def yeniden_ornekle(h, tf, tur="hisse"):
     if tf in ("G", "1S"):
         return h
+    agg = {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
+    if "TakerBuy" in h: agg["TakerBuy"] = "sum"
     if tf == "4S":
-        g = h.resample("4h").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
+        # BIST seansı 10:00–18:00: 10–14 ve 14–18 dilimleri; diğerleri UTC hizalı 4 saat
+        g = h.resample("4h", offset="2h").agg(agg) if tur == "hisse" else h.resample("4h").agg(agg)
         return g.dropna(subset=["Close"])
     kural = ("W-SUN" if tur == "kripto" else "W-FRI") if tf == "H" else "ME"
-    g = h.resample(kural).agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
+    g = h.resample(kural).agg(agg)
     return g.dropna(subset=["Close"])
 
 
@@ -606,6 +609,65 @@ def kesisimler(G, son_n=10):
 
 
 # =====================================================================
+# BALİNA İZLERİ (büyük oyuncu hacmi)
+# =====================================================================
+def balina_serisi(h):
+    """Her mum için balina göstergeleri (nedensel). Döner: DataFrame[k (hacim/medyan), tk (agresif alış oranı veya NaN),
+    al, sat, emilim_al, emilim_sat]. Kripto (Binance) mumlarında gerçek agresif alış hacmi (taker) kullanılır;
+    diğerlerinde mumun kapanış konumu yaklaşık olarak kullanılır."""
+    o, hi, lo, c, v = (h[x].astype(float) for x in ("Open", "High", "Low", "Close", "Volume"))
+    med = v.rolling(20, min_periods=10).median().shift()
+    k = (v / med.replace(0, np.nan))
+    rng = (hi - lo).replace(0, np.nan)
+    clv = (c - lo) / rng; govde = (c - o).abs() / rng
+    alt_f = (np.minimum(o, c) - lo) / rng; ust_f = (hi - np.maximum(o, c)) / rng
+    tk = (h["TakerBuy"] / v.replace(0, np.nan)) if "TakerBuy" in h else pd.Series(np.nan, index=h.index)
+    var_tk = tk.notna()
+    buyuk = k >= 3
+    al = buyuk & ((var_tk & (tk >= 0.58)) | (~var_tk & (clv >= 0.65) & (c > o)))
+    sat = buyuk & ((var_tk & (tk <= 0.42)) | (~var_tk & (clv <= 0.35) & (c < o)))
+    em_al = (k >= 2.5) & ~al & ~sat & (alt_f >= 0.5) & (govde <= 0.35)
+    em_sat = (k >= 2.5) & ~al & ~sat & (ust_f >= 0.5) & (govde <= 0.35)
+    return pd.DataFrame({"k": k, "tk": tk, "al": al.fillna(False), "sat": sat.fillna(False),
+                         "emilim_al": em_al.fillna(False), "emilim_sat": em_sat.fillna(False)}, index=h.index)
+
+
+def balina_izleri(h, G=None, son_n=5):
+    """Son mumlardaki balina izleri: [(ad, yön, açıklama, güç)] ve özet sözlüğü."""
+    if "Volume" not in h or h["Volume"].iloc[-60:].sum() <= 0 or len(h) < 30:
+        return [], {"var": False}
+    B = balina_serisi(h); bul = []
+    gun_ici = len(h) > 10 and pd.Series(h.index[-11:]).diff().median() < pd.Timedelta(hours=20)
+    fmt = "%d.%m %H:%M" if gun_ici else "%d.%m.%Y"
+    for i in range(max(0, len(h) - son_n), len(h)):
+        r = B.iloc[i]; t = h.index[i].strftime(fmt)
+        if not (r["k"] == r["k"]): continue
+        akis = f", işlemlerin %{r['tk'] * 100:.0f}'i agresif alış" if r["tk"] == r["tk"] else ""
+        if r["al"]: bul.append(("Balina alımı", 1, f"{t}: hacim 20 dönem medyanının {tr(r['k'])} katı{akis}; büyük alıcı girişi.", 2))
+        elif r["sat"]: bul.append(("Balina satışı", -1, f"{t}: hacim 20 dönem medyanının {tr(r['k'])} katı{akis}; büyük satıcı çıkışı.", 2))
+        elif r["emilim_al"]: bul.append(("Alım emilimi (absorption)", 1, f"{t}: {tr(r['k'])} kat hacimle gelen satışlar karşılandı, uzun alt fitil.", 1))
+        elif r["emilim_sat"]: bul.append(("Satış emilimi (dağıtım)", -1, f"{t}: {tr(r['k'])} kat hacimle gelen alışlar karşılandı, uzun üst fitil.", 1))
+    # Sessiz birikim / dağıtım: fiyat yatayken hacim dengesi tek yöne akıyor
+    c = h["Close"]; v = h["Volume"]
+    if len(h) > 25:
+        dp = float(c.iloc[-1] / c.iloc[-21] - 1)
+        at = float(atr(h).iloc[-1]) / float(c.iloc[-1]) if G is None else float(G["ATR"].iloc[-1]) / float(c.iloc[-1])
+        if "TakerBuy" in h and v.iloc[-20:].sum() > 0:
+            denge = float((2 * h["TakerBuy"].iloc[-20:] - v.iloc[-20:]).sum() / v.iloc[-20:].sum()); kaynak = "agresif alış-satış farkı"
+        else:
+            ob = (np.sign(c.diff()).fillna(0) * v)
+            denge = float(ob.iloc[-20:].sum() / v.iloc[-20:].sum()) if v.iloc[-20:].sum() > 0 else 0; kaynak = "OBV"
+        esik = 0.12 if kaynak != "OBV" else 0.25
+        if abs(dp) < 2.5 * at:
+            if denge > esik: bul.append(("Sessiz birikim", 1, f"Son 20 mumda fiyat yatay (%{tr(dp * 100)}) ama {kaynak} alıcılardan yana (+{tr(denge, 2)}).", 1))
+            elif denge < -esik: bul.append(("Sessiz dağıtım", -1, f"Son 20 mumda fiyat yatay (%{tr(dp * 100)}) ama {kaynak} satıcılardan yana ({tr(denge, 2)}).", 1))
+    ozet = {"var": bool(bul), "k_son": float(B["k"].iloc[-1]) if B["k"].iloc[-1] == B["k"].iloc[-1] else None,
+            "tk_son": float(B["tk"].iloc[-1]) if B["tk"].iloc[-1] == B["tk"].iloc[-1] else None,
+            "net": sum(x[1] for x in bul)}
+    return bul, ozet
+
+
+# =====================================================================
 # DURUM ÖZETİ (trend, momentum, volatilite, hacim)
 # =====================================================================
 def durumlar(h, G):
@@ -675,12 +737,15 @@ def tf_analiz(h, tf):
     for ad, y, ac in pa["olaylar"]: sinyal.append(("Price action: " + ad, y, ac, 2))
     for ad, y, ac in uy: sinyal.append((ad, y, ac, 2))
     for ad, y, ac, g in kes: sinyal.append((ad, y, ac, g))
+    try: bal, bal_oz = balina_izleri(h, G)
+    except Exception: bal, bal_oz = [], {"var": False}
+    for ad, y, ac, g in bal: sinyal.append(("Balina: " + ad, y, ac, g))
     net = sum(s[1] * s[3] for s in sinyal); toplam = sum(s[3] for s in sinyal if s[1] != 0) or 1
     pa_y = pa.get("yapi_yon", 0)
     puan = 50 + 50 * (0.55 * oy["skor"] + 0.30 * (net / toplam if sinyal else 0) + 0.15 * pa_y)
     puan = float(min(max(puan, 0), 100))
     return {"tf": tf, "h": h, "G": G, "piv": piv, "oy": oy, "mum": mum, "form": form, "cizim": cizim, "pa": pa, "uy": uy,
-            "kes": kes, "sr": sr, "fib": fib, "pivot": pv, "durum": dr, "sinyal": sinyal, "puan": puan,
+            "kes": kes, "balina": bal, "balina_ozet": bal_oz, "sr": sr, "fib": fib, "pivot": pv, "durum": dr, "sinyal": sinyal, "puan": puan,
             "etiket": puan_etiket(puan), "fiyat": float(h["Close"].iloc[-1]), "tarih": h.index[-1],
             "degisim": float(h["Close"].iloc[-1] / h["Close"].iloc[-2] - 1) if len(h) > 1 else None}
 
@@ -792,6 +857,7 @@ def ozet_satir(s):
            "Kesişim/Uyumsuzluk": ", ".join(x[0] for x in (g["sinyal"] if g else []) if not x[0].startswith(("Mum", "Formasyon", "Price")))[:120],
            "Sinyal +": ", ".join(x[0] for x in (g["sinyal"] if g else []) if x[1] > 0 and not x[0].startswith(("Mum", "Formasyon", "Price")))[:120],
            "Sinyal −": ", ".join(x[0] for x in (g["sinyal"] if g else []) if x[1] < 0 and not x[0].startswith(("Mum", "Formasyon", "Price")))[:120],
+           "Balina": ", ".join(x[0] for x in (g["balina"] if g else []))[:80],
            "Yapı": g["pa"]["yapi"] if g else "–",
            "Destek": g["sr"]["destek"][0][0] if g and g["sr"]["destek"] else None,
            "Direnç": g["sr"]["direnc"][0][0] if g and g["sr"]["direnc"] else None}

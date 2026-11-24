@@ -331,6 +331,10 @@ def kategoriler(satirlar, n=12):
     K["Yukarı kırılımlar ve formasyon teyitleri"] = df[df["Kırılım"]].head(n)
     K["Boğa mum formasyonları (son kapanış)"] = df[df["Mum +"].astype(str).str.len() > 0].head(n)
     K["Altın kesişim / pozitif uyumsuzluk"] = df[df.get("Sinyal +", df["Kesişim/Uyumsuzluk"]).astype(str).str.contains("Altın kesişim|Pozitif uyumsuzluk|al kesişimi|yukarı kesti|al sinyaline")].head(n)
+    if "Balina" in df:
+        b = df["Balina"].fillna("").astype(str)
+        K["Balina alımı / birikim izleri"] = df[b.str.contains("alımı|Alım emilimi|birikim")].head(n)
+        K["Balina satışı / dağıtım izleri"] = df[b.str.contains("satışı|Satış emilimi|dağıtım")].sort_values("Teknik puan").head(n)
     K["Aşırı satım (RSI < 30)"] = df[df["RSI"] < 30].sort_values("RSI").head(n)
     K["Aşırı alım (RSI > 70)"] = df[df["RSI"] > 70].sort_values("RSI", ascending=False).head(n)
     K["Aşağı kırılımlar"] = df[df["Kırılım −"]].sort_values("Teknik puan").head(n)

@@ -1,21 +1,27 @@
-name: Alarm kontrolü
+name: Alarm kontrolü ve Telegram temizliği
 
 on:
   schedule:
-    - cron: "*/30 * * * *"   # 30 dakikada bir
+    - cron: "*/30 * * * *"   # 30 dakikada bir: alarmlar + zamanı gelen Telegram mesajlarını sil
   workflow_dispatch: {}
 
 permissions:
   contents: write
 
 concurrency:
-  group: teknik-bulten
+  group: alarm
   cancel-in-progress: false
 
 jobs:
   alarm:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      DURUM_KLON: onceki
+      DURUM_CIKTI: cikti
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -25,19 +31,15 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Önceki durumu al
         run: |
-          URL="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
-          git clone --depth 1 --branch bulten "$URL" yayin || (mkdir yayin && cd yayin && git init -q && git remote add origin "$URL")
-          mkdir -p alarm_cikti && cp yayin/alarm/*.json alarm_cikti/ 2>/dev/null || true
+          git clone -q --depth 1 --branch bulten "$GH_URL" onceki || mkdir -p onceki
+          mkdir -p alarm_cikti && cp onceki/alarm/*.json alarm_cikti/ 2>/dev/null || true
       - name: Alarmları kontrol et
         run: python alarm.py
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Telegram'da zamanı gelen mesajları sil
+        if: always()
+        run: python tg.py temizle
       - name: Durumu kaydet
+        if: always()
         run: |
-          git config --global user.name "alarm-bot"
-          git config --global user.email "actions@users.noreply.github.com"
-          URL="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
-          rm -rf yayin/alarm && mkdir -p yayin/alarm && cp alarm_cikti/*.json yayin/alarm/
-          cd yayin && rm -rf .git && git init -q && git checkout -q -b bulten && git remote add origin "$URL"
-          git add -A && git commit -q -m "Alarm durumu $(date -u +%FT%H%M)" && git push -f origin bulten
+          mkdir -p cikti/alarm && cp alarm_cikti/*.json cikti/alarm/ 2>/dev/null || true
+          python yayinla.py cikti "Alarm $(date -u +%FT%H%M)"

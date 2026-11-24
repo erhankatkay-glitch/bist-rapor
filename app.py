@@ -17,6 +17,7 @@ import bist_ileri as IL
 import analist as AN
 import bist_teknik as TK
 import bist_teknik_rapor as TKR
+import firsat as FR
 import io
 ts = importlib.reload(ts)
 bv = importlib.reload(bv)
@@ -31,6 +32,7 @@ IL = importlib.reload(IL)
 AN = importlib.reload(AN)
 TK = importlib.reload(TK)
 TKR = importlib.reload(TKR)
+FR = importlib.reload(FR)
 DURUM_EMOJI = {"iyi": "🟢", "orta": "🟡", "zayif": "🔴", "yok": "⚪"}
 ETK_RENK = {"GÜÇLÜ AL": "#16A34A", "AL": "#22C55E", "NÖTR": "#D97706", "SAT": "#EF4444", "GÜÇLÜ SAT": "#DC2626"}
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
@@ -301,8 +303,8 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                  })
 
 
-tab_r, tab_x, tab_v, tab_p, tab_t, tab_b, tab_pf, tab_al, tab_k, tab_w = st.tabs(
-    ["📄 Hisse", "📐 Teknik", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "👶 Bebek", "💼 Portföy", "🔔 Alarm", "⚖️ Karşılaştır", "⭐ Takip"])
+tab_r, tab_x, tab_f, tab_v, tab_p, tab_t, tab_b, tab_pf, tab_al, tab_k, tab_w = st.tabs(
+    ["📄 Hisse", "📐 Teknik", "🎯 Fırsatlar", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "👶 Bebek", "💼 Portföy", "🔔 Alarm", "⚖️ Karşılaştır", "⭐ Takip"])
 
 # ================= RAPOR =================
 with tab_r:
@@ -548,6 +550,131 @@ def varlik_analiz(kod, prm, saat, surum):
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
 def varlik_tarama(gun, surum, n_kripto=50):
     return V.tara(V.varsayilan_liste(n_kripto))
+
+# ================= FIRSATLAR =================
+@st.cache_data(ttl=900, show_spinner=False)
+def firsat_oku(piyasa, zaman):
+    import requests
+    taban = f"https://raw.githubusercontent.com/{REPO}/bulten/firsat/{piyasa}/"; q = f"?t={zaman}"
+    out = {}
+    for d in ("son", "acik", "gecmis", "olaylar", "istatistik"):
+        try:
+            r = requests.get(taban + d + ".json" + q, timeout=20)
+            out[d] = r.json() if r.status_code == 200 else None
+        except Exception:
+            out[d] = None
+    out["graf"] = {}
+    for tf, x in (out.get("son") or {}).items():
+        for kod, yol in x.get("grafik", {}).items():
+            try:
+                r = requests.get(taban + yol + q, timeout=30)
+                if r.status_code == 200: out["graf"][(tf, kod)] = r.content
+            except Exception:
+                pass
+    return out
+
+
+def _md(html):
+    import re
+    return re.sub("<[^>]+>", "", html.replace("<b>", "**").replace("</b>", "**")).replace("\n", "  \n")
+
+
+with tab_f:
+    st.caption("Kapanan her mumda (4 saatlik, günlük, haftalık, aylık) taze oluşan işlem kurulumları; giriş, stop, 3 hedef, "
+               "geçmiş başarı ve balina izleriyle. Aynı içerik Telegram'a sessiz gönderilir ve süresi dolunca oradan silinir; burada kalır.")
+    fp = st.radio("Piyasa", ["BIST", "Kripto", "Emtia"], horizontal=True, key="fr_p")
+    fk = {"BIST": "bist", "Kripto": "kripto", "Emtia": "emtia"}[fp]
+    with st.spinner("Fırsatlar yükleniyor…"):
+        FD = firsat_oku(fk, ZAMAN)
+    son = FD.get("son") or {}
+    if not son:
+        st.info("Bu piyasa için henüz fırsat taraması yayınlanmadı. Tarama kapanışlardan ~30 dk sonra otomatik çalışır.")
+    f1, f2, f3, f4 = st.tabs(["Son fırsatlar", "Açık kurulumlar", "Performans karnesi", "Kurulum istatistikleri"])
+    with f1:
+        for tf in ("4S", "G", "H", "A"):
+            x = son.get(tf)
+            if not x: continue
+            z = pd.Timestamp(x["zaman"]).tz_convert("Europe/Istanbul") if pd.Timestamp(x["zaman"]).tzinfo else pd.Timestamp(x["zaman"])
+            st.markdown(f"#### {TK.TF_AD[tf]} · {len(x['firsatlar'])} fırsat")
+            st.caption(f"Tarama: {z:%d.%m.%Y %H:%M} TSİ · {x.get('taranan', 0)} likit varlık")
+            if not x["firsatlar"]:
+                st.write("Bu turda eşiği (puan ≥ 55, risk/ödül ≥ 2R) geçen yeni kurulum çıkmadı.")
+            for f in x["firsatlar"]:
+                with st.container(border=True):
+                    try: st.markdown(_md(FR.firsat_metni(f)))
+                    except Exception as ex: st.write(f.get("kod"), ex)
+                    if (tf, f["kod"]) in FD["graf"]: st.image(FD["graf"][(tf, f["kod"])], use_container_width=True)
+                    with st.expander("Kurulum açıklaması"):
+                        st.write(f.get("aciklama", ""))
+                        for b in f.get("balina", []): st.markdown(f"🐋 **{b[0]}** — {b[2]}")
+            if x.get("adaylar"):
+                with st.expander(f"Eşik altında kalan adaylar ({len(x['adaylar'])})"):
+                    st.dataframe(pd.DataFrame(x["adaylar"]).rename(columns={"kod": "Kod", "yon": "Yön", "kurulum": "Kurulum", "puan": "Puan"}),
+                                 hide_index=True, use_container_width=True)
+        ol = FD.get("olaylar") or []
+        if ol:
+            st.markdown("#### Son takip olayları")
+            for o in reversed(ol[-15:]):
+                z = pd.Timestamp(o["zaman"]).tz_convert("Europe/Istanbul")
+                st.markdown(f"`{z:%d.%m %H:%M}` " + _md(o["metin"]))
+    with f2:
+        ac = FD.get("acik") or []
+        if not ac: st.info("Açık kurulum yok.")
+        else:
+            st.dataframe(pd.DataFrame([{"Kod": k["kod"], "Dilim": TK.TF_AD[k["tf"]], "Yön": "AL" if k["yon"] == 1 else "SAT", "Kurulum": k["kurulum"],
+                                        "Giriş": FR.fy(k["giris"]), "Stop": FR.fy(k["stop"]) + (" (girişte)" if k["asama"] else ""),
+                                        "H1": FR.fy(k["hedef"][0]), "H2": FR.fy(k["hedef"][1]), "H3": FR.fy(k["hedef"][2]),
+                                        "Görülen hedef": k["asama"], "Son fiyat": FR.fy(k.get("son_fiyat")),
+                                        "Getiri": FR.yz((k.get("son_fiyat", k["giris"]) - k["giris"]) / k["giris"] * k["yon"]),
+                                        "Bitiş": str(k["bitis"])[:16].replace("T", " ")} for k in ac]), hide_index=True, use_container_width=True)
+    with f3:
+        gc = FD.get("gecmis") or []
+        pf = FR.performans(gc)
+        if not pf: st.info("Henüz kapanmış kurulum yok. Karne, kurulumlar kapandıkça burada oluşur.")
+        else:
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Kapanan", pf["n"]); c2.metric("H1 başarı", f"%{pf['h1'] * 100:.0f}")
+            c3.metric("Kazanan", f"%{pf['kazanc'] * 100:.0f}"); c4.metric("Ort. sonuç", FR.rrs(pf["ort_R"]))
+            st.caption(f"Toplam {FR.rrs(pf['top_R'])} · işlem başına ortalama getiri {FR.yz(pf['ort_getiri'])}. "
+                       "R = stop mesafesi kadar risk; +1R, riske edilen tutar kadar kazanç demektir.")
+            df = pd.DataFrame(gc)
+            grp = []
+            for (tf, ku), g in df.groupby(["tf", "kurulum"]):
+                p_ = FR.performans(g.to_dict("records"))
+                grp.append({"Dilim": TK.TF_AD.get(tf, tf), "Kurulum": ku, "Adet": p_["n"], "H1 %": round(p_["h1"] * 100), "Kazanan %": round(p_["kazanc"] * 100),
+                            "Ort. R": round(p_["ort_R"], 2)})
+            st.dataframe(pd.DataFrame(grp).sort_values("Adet", ascending=False), hide_index=True, use_container_width=True)
+            st.markdown("**Son kapananlar**")
+            for k in reversed(gc[-15:]): st.markdown("- " + _md(FR.kapanis_satiri(k)))
+    with f4:
+        ist = FD.get("istatistik") or {}
+        sat = []
+        for tf, d in ist.items():
+            for anahtar, v in d.items():
+                ku, yon, _ = anahtar.split("|")
+                if v.get("n", 0) < 20: continue
+                ad_ = FR.KURULUM.get(ku, (ku, ku))[0 if yon == "1" else 1]
+                sat.append({"Dilim": TK.TF_AD.get(tf, tf), "Kurulum": ad_, "Örnek": v["n"], "1R'ye ulaşma %": round(v["p1"] * 100),
+                            "2R'ye ulaşma %": round(v["p2"] * 100), "Ort. R": round(v["ort_R"], 2)})
+        if sat:
+            st.caption("Son taramadaki tüm likit varlıkların geçmişinde aynı kuralların sonucu (stoptan önce 1R/2R hedefe ulaşma, "
+                       "H1'de yarısı kapatılıp stop girişe çekilerek ortalama sonuç). Puanlamada bu oranlar kullanılır.")
+            st.dataframe(pd.DataFrame(sat).sort_values(["Dilim", "Ort. R"], ascending=[True, False]), hide_index=True, use_container_width=True)
+        else:
+            st.info("İstatistik ilk taramadan sonra oluşur.")
+    with st.expander("ℹ️ Fırsatlar nasıl seçiliyor?"):
+        st.markdown(
+            "- **Taze sinyal:** Yalnızca az önce kapanan mumda oluşan kurulumlar: hacimli kırılım, trend içi geri çekilme, sıkışma kırılımı, "
+            "uyumsuzluklu dönüş, likidite avı dönüşü, SuperTrend dönüşü, formasyon (ikili dip/tepe, OBO/TOBO, üçgen, kama, bayrak, trend çizgisi) kırılımı.\n"
+            "- **Stop:** Kurulumu bozan yapı seviyesi + ATR payı (en az 1, en fazla 3,5 ATR).\n"
+            "- **Hedefler:** Direnç/destek, aşılmamış önceki tepeler, Fibonacci seviye ve uzantıları, pivotlar ve formasyonun ölçtüğü hedef; "
+            "her biri R (risk katı) ile. H1'de yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 sonrası stop girişe çekilir.\n"
+            "- **Geçmiş testi:** Aynı kural ve aynı stop/hedef mesafeleriyle o varlığın geçmişinde ve tüm piyasada stoptan önce hedefe ulaşma oranı.\n"
+            "- **Puan (0–100):** geçmiş başarı, üst zaman dilimi teyidi, hacim ve balina izleri, trend gücü, kurulum kalitesi; "
+            "aşırı alım, yakın direnç, yaklaşan bilanço gibi riskler puanı düşürür. 55 altı gönderilmez, her piyasa ve dilimde en fazla 5 fırsat.\n"
+            "- **Balina:** Hacmin 20 mumluk medyanın 3 katını aşıp yönün net olduğu mumlar (kriptoda gerçek agresif alış/satış oranıyla), "
+            "yüksek hacimli emilim fitilleri, fiyat yatayken tek yönlü hacim akışı (sessiz birikim/dağıtım); kriptoda ayrıca canlı büyük işlemler.\n"
+            "- **Kripto SAT:** Vadeli/kaldıraçlı işlem içindir; spot piyasada açığa satış yapılamaz.")
 
 with tab_v:
     st.caption("Altın, gümüş, petrol, tarım ürünleri ve önde gelen kripto paralar. Bilançosu olmayan bu varlıklar için analiz "

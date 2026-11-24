@@ -144,13 +144,21 @@ def tara(K, durum):
 
 
 def gonder(mesajlar):
-    tok, chat = os.environ.get("TELEGRAM_TOKEN"), os.environ.get("TELEGRAM_CHAT_ID")
-    if not tok or not chat or not mesajlar: return False
-    import requests
+    """Alarmlar sessiz gönderilir ve 12 saat sonra otomatik silinir."""
+    if not mesajlar: return False
+    import tg
+    b = tg.Bot("alarm")
+    if not b.aktif: return False
+    z = dt.datetime.now(TSI).strftime("%Y%m%d%H%M")
     for i in range(0, len(mesajlar), 20):
-        requests.post(f"https://api.telegram.org/bot{tok}/sendMessage",
-                      data={"chat_id": chat, "text": "\n".join(mesajlar[i:i + 20]) + "\n\nModel çıktısıdır, yatırım tavsiyesi değildir."}, timeout=30)
+        b.mesaj("🔔 <b>Alarm</b>\n" + "\n".join(tg_kac(m) for m in mesajlar[i:i + 20]) + "\n\n<i>Model çıktısıdır, yatırım tavsiyesi değildir.</i>",
+                f"alarm:{z}:{i}", 12, yerine=False)
+    b.kaydet()
     return True
+
+
+def tg_kac(s):
+    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def main():
