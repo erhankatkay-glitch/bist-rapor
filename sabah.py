@@ -84,7 +84,7 @@ def izlenecekler(PV, tk, acik, firs, hab):
     if risk: m.append(f"{_kod(risk[0]['kod'])} açık kurulumu stop seviyesine yakın; zarar kesme planını gözden geçirin.")
     if firs: m.append(f"Son kapanışların en güçlü fırsatı: {_kod(firs[0]['kod'])} ({'AL' if firs[0]['yon'] == 1 else 'SAT'}, puan {firs[0]['puan']:.0f}).")
     if hab:
-        a = hab[0]; m.append(f"Öne çıkan haber: {a['tur']} ({'olumlu' if a['yon'] > 0 else 'olumsuz'}).")
+        import haber as H; a = hab[0]; m.append(f"Öne çıkan haber: {a['tur']} ({H.etki_ad(a)}).")
     return m[:5]
 
 

@@ -146,7 +146,9 @@ KURALLAR = [
       ("PGSUS", -1, ("yakıt maliyeti kârlılığı baskılar", "yakıt maliyeti kârlılığı destekler")),
       ("USDTRY", 1, ("enerji ithalatçısı Türkiye'nin cari açığı büyür", "enerji faturası ve cari açık hafifler"))], 2),
     ("Jeopolitik gelişme", lambda b: var(b, "savaş", "saldırı", "füze", "çatışma", "işgal", "bombal", "gerilim tırman", "ateşkes", "barış anlaşması") and not var(b, "kripto", "borsası saldır", "siber"),
-     lambda b: 1 if var(b, "ateşkes", "barış", "anlaşma sağlandı", "gerilim azal") else -1,
+     # Can kaybı / ihlal haberleri "olumlu" sayılamaz; yeni bir tırmanma yoksa piyasa etkisi zayıf kabul edilip gönderilmez.
+     lambda b: (0 if var(b, "ihlal", "öldür", "hayatını kaybet", "can kaybı", "yaralan", "katliam", "sivil") and not var(b, "savaş ilan", "füze", "işgal", "tırman", "hava saldırısı başlat", "kapsamlı saldırı")
+                else 1 if var(b, "ateşkes", "barış", "anlaşma sağlandı", "gerilim azal") else -1),
      [("ALTIN", -1, ("güvenli liman talebi azalır", "güvenli liman talebi artar")),
       ("BRENT", -1, ("arz kesintisi risk primi azalır", "arz kesintisi risk primi artar")),
       ("XU100", 1, ("risk iştahı geri döner", "riskten kaçış, yabancı satışı")),
@@ -566,7 +568,9 @@ def kart_bolumu(a):
             alt.append(e)
         sat.append({"sol": ("Portföy · " if _pfk(v["kod"]) in pf else "") + vad(v["kod"]), "sag": "↑ yükseliş" if yuk else "↓ düşüş",
                     "sag_renk": C["yesil"] if yuk else C["kirmizi"], "nokta": C["yesil"] if yuk else C["kirmizi"], "alt": "  ".join(alt)})
-    return {"baslik": f"{a['tur']} · {'olumlu' if a['yon'] > 0 else 'olumsuz'} · {t:%H:%M}", "renk": C["yesil"] if a["yon"] > 0 else C["kirmizi"],
+    jeo = a["tur"].startswith("Jeopolitik")
+    return {"baslik": f"{a['tur']} · {etki_ad(a)} · {t:%H:%M}",
+            "renk": (C["mavi"] if a["yon"] > 0 else C["altin"]) if jeo else (C["yesil"] if a["yon"] > 0 else C["kirmizi"]),
             "aciklama": f"“{a['baslik'][:160]}”" + (f" — {a['kaynak']}" if a.get("kaynak") else ""), "satirlar": sat}
 
 
@@ -598,10 +602,17 @@ def _pf():
         return set()
 
 
+def etki_ad(a):
+    """Haberin piyasa açısından yönü. İnsani/jeopolitik haberlerde 'olumlu/olumsuz' yerine tarafsız dil kullanılır."""
+    if a["tur"].startswith("Jeopolitik"):
+        return "gerilim azalıyor · piyasa etkisi" if a["yon"] > 0 else "gerilim artıyor · piyasa etkisi"
+    return "piyasaya olumlu" if a["yon"] > 0 else "piyasaya olumsuz"
+
+
 def mesaj(a):
-    ikon = "🟢" if a["yon"] > 0 else "🔴"
+    ikon = ("🕊" if a["yon"] > 0 else "⚠️") if a["tur"].startswith("Jeopolitik") else ("🟢" if a["yon"] > 0 else "🔴")
     t = dt.datetime.fromisoformat(a["zaman"]).astimezone(TSI)
-    s = [f"{ikon} <b>{esc(a['tur'])}</b> · {'olumlu' if a['yon'] > 0 else 'olumsuz'} · {t:%H:%M}",
+    s = [f"{ikon} <b>{esc(a['tur'])}</b> · {etki_ad(a)} · {t:%H:%M}",
          f"<i>“{esc(a['baslik'][:200])}”</i>" + (f"\n— {esc(a['kaynak'])}" if a.get("kaynak") else "") +
          (f" (+{a['kaynak_sayi'] - 1} kaynak)" if a["kaynak_sayi"] > 1 else "")]
     vl = []; pf = _pf()

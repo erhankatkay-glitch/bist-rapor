@@ -66,34 +66,7 @@ EVDS, EVDS_HATA = evds_verisi(EVDS_KEY, dt.date.today().isoformat()) if EVDS_KEY
 OTO = mk.oto_varsayim(EVDS) if EVDS else {}
 
 # ---------------- Ortak ayarlar ----------------
-with st.expander(":material/tune: Ayarlar ve varsayımlar"):
-    if st.button(":material/refresh: Verileri yenile (önbelleği temizle)", key="yenile"):
-        st.cache_data.clear()
-        for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin", "tk_sonuc", "pf"):
-            st.session_state.pop(k_, None)
-        st.rerun()
-    c1, c2 = st.columns(2)
-    rf = c1.number_input("Risksiz faiz (TR 10Y)", value=0.366, step=0.01, format="%.4f")
-    enf = c2.number_input("Yıllık enflasyon" + (" (EVDS)" if "enflasyon" in OTO else ""), value=float(OTO.get("enflasyon", 0.2977)),
-                          step=0.01, format="%.4f")
-    erp = c1.number_input("Hisse risk primi", value=0.07, step=0.005, format="%.3f")
-    g = c2.number_input("DCF uç büyüme", value=0.15, step=0.01, format="%.3f")
-    st.caption("Enflasyon, EVDS anahtarı girildiyse TCMB verisinden otomatik alınır; diğerleri Kasım 2026 piyasa verilerine göre ayarlıdır.")
-    yeni_k = st.text_input("TCMB EVDS API anahtarı (isteğe bağlı)", value="", type="password",
-                           help="evds3.tcmb.gov.tr → Benim Sayfam → API anahtarı. Kalıcı olması için Streamlit Secrets'a EVDS_KEY olarak ekleyin.")
-    if yeni_k:
-        st.session_state["evds_key"] = yeni_k
-PRM = dict(rf=rf, enflasyon=enf, erp=erp, terminal_g=g)
-GUN = dt.date.today().isoformat()
-_s = dt.datetime.now()
-ZAMAN = _s.strftime("%Y%m%d%H") + str(_s.minute // 15)   # fiyatlı analizler en fazla 15 dk önbellekte kalır
-SAAT2 = _s.strftime("%Y%m%d") + str(_s.hour // 2)        # taramalar en fazla 2 saat
-try:
-    _ust_yer.markdown(TS.ust_bant(piyasa_verisi(ZAMAN)), unsafe_allow_html=True)
-except Exception:
-    _ust_yer.markdown(TS.ust_bant(None), unsafe_allow_html=True)
-
-
+# ---- (taşındı) sekmelerde kullanılan yardımcılar: sekmelerden ÖNCE tanımlanmalı ----
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
 def evren_cek(gun, surum):
     """Güncel tüm BIST hisseleri (Borsa İstanbul + İş Yatırım), XHARZ kodları ve kaynak notu."""
@@ -102,13 +75,6 @@ def evren_cek(gun, surum):
         return df, sorted(harz), not_
     except Exception as e:
         return pd.DataFrame({"Kod": list(bv.tum_sirketler()), "Ad": list(bv.tum_sirketler().values())}), [], f"Liste alınamadı: {e}"
-
-
-EVREN, HARZ, EVREN_NOT = evren_cek(GUN, br.SURUM)
-try:
-    bv.guncelle({r["Kod"]: r.get("Ad") for _, r in EVREN.iterrows()})
-except Exception:
-    pass
 
 
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
@@ -326,13 +292,6 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                  })
 
 
-tab_p, tab_r, tab_x, tab_f, tab_h, tab_tk, tab_pr, tab_v, tab_t, tab_b, tab_pf, tab_al, tab_k, tab_w = st.tabs(
-    [":material/dashboard: Piyasalar", ":material/description: Hisse", ":material/candlestick_chart: Teknik", ":material/my_location: Fırsatlar",
-     ":material/newspaper: Haberler", ":material/event: Takvim", ":material/insights: Performans", ":material/currency_bitcoin: Emtia & Kripto",
-     ":material/manage_search: Tarayıcı", ":material/school: Bebek", ":material/account_balance_wallet: Portföy",
-     ":material/notifications_active: Alarm", ":material/balance: Karşılaştır", ":material/star: Takip"])
-
-# ================= RAPOR =================
 def varlik_goster(r, on="v"):
     sym = "$" if r["para"] == "USD" else "₺"
     st.markdown(f"### {r['ad']}")
@@ -359,6 +318,294 @@ def varlik_goster(r, on="v"):
     with b3:
         for bas, metin in r["genel"]:
             st.markdown(f"**{bas}.** {metin}")
+
+
+@st.cache_data(ttl=15 * 60, show_spinner=False, max_entries=40)
+def teknik_analiz(kod, zaman, surum, kisa=False):
+    s = TK.analiz(kod, kisa_vade=kisa)
+    klasor = tempfile.mkdtemp(); yol = os.path.join(klasor, f"{s['kod']}_Teknik_{dt.date.today():%Y%m%d}.pdf")
+    TKR.teknik_pdf(s, yol)
+    with open(yol, "rb") as f: pdf = f.read()
+    graf = {tf: TKR.g_teknik(a, f"{s['kod']} · {TK.TF_AD[tf]} · {a['etiket']}", dpi=130).getvalue() for tf, a in s["tf"].items() if a}
+    tfo = {tf: {"etiket": a["etiket"], "puan": a["puan"], "sayim": a["oy"]["sayim"], "sinyal": [(x[0], x[1], x[2]) for x in a["sinyal"]],
+                "destek": a["sr"]["destek"], "direnc": a["sr"]["direnc"], "yapi": a["pa"]["yapi"], "ma": a["oy"]["ma_etiket"],
+                "osc": a["oy"]["osc_etiket"], "pivot": a["pivot"]["Klasik"]} for tf, a in s["tf"].items() if a}
+    g = s["tf"].get("G") or {}
+    return {"kod": s["kod"], "ad": s["ad"], "etiket": s["etiket"], "puan": s["puan"], "yorum": AN.teknik_ozet(s), "baslik": AN.teknik_baslik(s),
+            "senaryo": AN.teknik_senaryo(s), "pdf": pdf,
+            "dosya": os.path.basename(yol), "graf": graf, "tf": tfo, "para": s["para"], "fiyat": g.get("fiyat"), "degisim": g.get("degisim"),
+            "fiyat_zamani": ts.zaman_metni(s.get("fiyat_zamani")), "ileri": ileri_ozet(None, {"₺": "TL", "$": "$"}.get(s["para"], ""), s)}
+
+
+@st.cache_data(ttl=10 * 60, show_spinner=False)
+def bulten_oku(piyasa, zaman):
+    import requests
+    taban = f"https://raw.githubusercontent.com/{REPO}/bulten/{piyasa}/"; q = f"?t={zaman}"
+    m = requests.get(taban + "meta.json" + q, timeout=20)
+    if m.status_code != 200: return None
+    meta = m.json(); al = lambda yol: requests.get(taban + yol + q, timeout=60).content
+    ozet = pd.read_csv(io.BytesIO(al("ozet.csv")))
+    kr_ = requests.get(taban + "kapanis_karti.png" + q, timeout=30)
+    return {"meta": meta, "pdf": al("bulten.pdf"), "ozet": ozet, "kart": kr_.content if kr_.status_code == 200 else None,
+            "graf": {g_["kod"]: al(g_["dosya"]) for g_ in meta.get("grafikler", [])[:10]},
+            "rapor": {os.path.basename(r_): al(r_) for r_ in meta.get("raporlar", [])}}
+
+
+@st.cache_data(ttl=3 * 3600, show_spinner=False, max_entries=60)
+def varlik_analiz(kod, prm, saat, surum):
+    br.PARAM.update({k.upper(): v for k, v in dict(prm).items()})
+    klasor = tempfile.mkdtemp()
+    dosya, m = V.rapor(kod, klasor=klasor)
+    with open(dosya, "rb") as f:
+        pdf = f.read()
+    graf = {}
+    for ad_, fn in (("fiyat", lambda: br.g_fiyat(m["hist"], None, m["kod"], m.get("seviye"))), ("tlusd", lambda: V.g_tl_usd(m)),
+                    ("mevsim", lambda: V.g_mevsim(m)), ("akis", lambda: br.g_akis(m["hist"], m)),
+                    ("logbant", lambda: V.g_logbant(m)), ("mayer", lambda: V.g_mayer(m)), ("korku", lambda: V.g_korku(m))):
+        try:
+            b_ = fn()
+            if b_: graf[ad_] = b_.getvalue()
+        except Exception:
+            pass
+    return {"pdf": pdf, "dosya": os.path.basename(dosya), "ad": m["ad"], "kod": m["kod"], "para": m["para"], "tur": m["tur"],
+            "fiyat": m["fiyat"], "fiyat_tl": m["fiyat_tl"], "skor": m["genel_skor"], "gorunum": m["gorunum"],
+            "r_usd": m["r_usd"], "r_tl": m["r_tl"], "r_reel": m["r_reel"], "vol": m["vol"], "mayer": m["mayer"],
+            "zirveden": m["zirveden"], "tek": AN.karne_etiketle(V.tek_bakista(m), m.get("mta")), "sade": V.sade_ozet(m),
+            "baslik": AN.varlik_baslik(m), "gorus_v": AN.varlik_gorus(m)[0], "ozet_kisa": AN.varlik_ozeti(m, kisa=True), "ozet_tam": AN.varlik_ozeti(m),
+            "tez": AN.varlik_tezi(m), "kr": AN.varlik_katalizor_risk(m), "guclu": m["guclu"], "zayif": m["zayif"],
+            "genel": V.genel_degerlendirme(m), "ileri": ileri_ozet(m, "$" if m["para"] == "USD" else "TL"), "graf": graf, "korku": {k: v for k, v in (m.get("korku") or {}).items() if k != "seri"} or None,
+            "cg": m.get("cg"), "global": m.get("global"), "turev": m.get("turev"), "sharpe": m.get("sharpe"),
+            "adil": m.get("adil"), "pot": m.get("potansiyel"), "etiket": (m.get("deger") or {}).get("etiket"),
+            "saglik": m.get("saglik"), "fiyat_zamani": ts.zaman_metni(m.get("fiyat_zamani")),
+            "uretim": dt.datetime.now(dt.timezone(dt.timedelta(hours=3))).strftime("%d.%m.%Y %H:%M")}
+
+
+@st.cache_data(ttl=6 * 3600, show_spinner=False)
+def varlik_tarama(gun, surum, n_kripto=50):
+    return V.tara(V.varsayilan_liste(n_kripto))
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def firsat_oku(piyasa, zaman):
+    import requests
+    taban = f"https://raw.githubusercontent.com/{REPO}/bulten/firsat/{piyasa}/"; q = f"?t={zaman}"
+    out = {}
+    for d in ("son", "acik", "gecmis", "olaylar", "istatistik"):
+        try:
+            r = requests.get(taban + d + ".json" + q, timeout=20)
+            out[d] = r.json() if r.status_code == 200 else None
+        except Exception:
+            out[d] = None
+    out["graf"] = {}
+    for tf, x in (out.get("son") or {}).items():
+        for kod, yol in x.get("grafik", {}).items():
+            try:
+                r = requests.get(taban + yol + q, timeout=30)
+                if r.status_code == 200: out["graf"][(tf, kod)] = r.content
+            except Exception:
+                pass
+    return out
+
+
+def _md(html):
+    import re
+    return re.sub("<[^>]+>", "", html.replace("<b>", "**").replace("</b>", "**")).replace("\n", "  \n")
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def haber_oku(zaman):
+    import requests
+    taban = f"https://raw.githubusercontent.com/{REPO}/bulten/haber/"; q = f"?t={zaman}"
+    out = {}
+    for d in ("son", "takvim"):
+        try:
+            r = requests.get(taban + d + ".json" + q, timeout=20); out[d] = r.json() if r.status_code == 200 else None
+        except Exception:
+            out[d] = None
+    return out
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def json_oku(yol, zaman):
+    import requests
+    try:
+        r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/{yol}?t={zaman}", timeout=20)
+        return r.json() if r.status_code == 200 else None
+    except Exception:
+        return None
+
+
+def _degisim_metni(v):
+    parca = []
+    for et, k in (("1G", "d1G"), ("1A", "d1A"), ("YBB", "YBB")):
+        if v.get(k) is not None: parca.append(f"{et} {br.yz(v[k])}")
+    return " · ".join(parca)
+
+
+def spark_svg(seri, renk, w=120, h=34):
+    """Son 60 günün mini fiyat çizgisi (satır içi SVG)."""
+    v = [float(x) for x in seri.dropna().iloc[-60:]]
+    if len(v) < 2: return ""
+    lo, hi = min(v), max(v); hi = hi if hi > lo else lo + 1
+    pts = " ".join(f"{i * (w - 2) / (len(v) - 1) + 1:.1f},{h - 2 - (x - lo) / (hi - lo) * (h - 4):.1f}" for i, x in enumerate(v))
+    alan = f"1,{h} " + pts + f" {w - 1},{h}"
+    return (f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}"><polygon points="{alan}" fill="{renk}" fill-opacity="0.10"/>'
+            f'<polyline points="{pts}" fill="none" stroke="{renk}" stroke-width="1.8" stroke-linejoin="round"/></svg>')
+
+
+def piyasa_karti(ad_, v):
+    d = v.get("d1G") or 0; renk = "#22C55E" if d > 0 else "#EF4444" if d < 0 else "#94A3B8"
+    ok = "▲" if d > 0 else "▼" if d < 0 else "■"
+    deger = br.ond(v["deger"], 2 if v["deger"] < 10000 else 0)
+    birim = {"puan": "", "TL": " ₺", "$": " $", "%": "%"}.get(v["birim"], "")
+    alt = " · ".join(x for x in (f"1A {br.yz(v['d1A'])}" if v.get("d1A") is not None else "", f"YBB {br.yz(v['YBB'])}" if v.get("YBB") is not None else "") if x)
+    return (f'<div class="pk">'
+            f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+            f'<div><div style="font-size:.66rem;color:#94A3B8;font-weight:700;letter-spacing:.06em">{ad_.upper()}</div>'
+            f'<div style="font-size:1.18rem;font-weight:800;color:#F1F5F9;margin-top:2px">{deger}{birim}</div>'
+            f'<div style="font-size:.8rem;font-weight:700;color:{renk}">{ok} {br.yz(d)}</div></div>'
+            f'<div style="margin-top:6px">{spark_svg(v["seri"], renk)}</div></div>'
+            f'<div style="font-size:.68rem;color:#94A3B8;margin-top:2px">{alt}</div></div>')
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def gorsel_oku(yol, zaman):
+    import requests
+    try:
+        r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/{yol}?t={zaman}", timeout=20)
+        return r.content if r.status_code == 200 else None
+    except Exception:
+        return None
+
+
+@st.cache_data(ttl=24 * 3600, show_spinner=False)
+def ilk_cek(kodlar, gun, surum):
+    return EV.ilk_islemler(list(kodlar))
+
+
+@st.cache_data(ttl=24 * 3600, show_spinner=False)
+def resmi_ilk_cek(gun, surum):
+    try: return BB.ilk_islem()
+    except Exception: return {}
+
+
+@st.cache_data(ttl=15 * 60, show_spinner=False, max_entries=20)
+def portfoy_analiz(metin, zaman, surum):
+    p = PF.analiz(PF.ayristir(metin))
+    yol = os.path.join(tempfile.mkdtemp(), f"Portfoy_Analizi_{dt.date.today():%Y%m%d}.pdf"); PF.pdf(p, yol)
+    with open(yol, "rb") as f: pdf = f.read()
+    t = p["tablo"].copy()
+    return {"pdf": pdf, "dosya": os.path.basename(yol), "tablo": t.to_dict("records"), "ozet": PF.ozet(p), "baslik": PF.baslik(p),
+            "toplam": p["toplam"], "vol": p["vol"], "getiri": p["getiri"], "getiri_usd": p["getiri_usd"], "var95_tl": p["var95_tl"], "beta": p["beta"],
+            "max_dd": p["max_dd"], "hata": p["hata"], "g_deger": PF.g_deger(p).getvalue(), "g_agirlik": PF.g_agirlik(p).getvalue(),
+            "g_kor": PF.g_korelasyon(p).getvalue()}
+
+
+@st.cache_data(ttl=5 * 60, show_spinner=False)
+def alarm_son(zaman):
+    import requests
+    try:
+        s = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/alarm/son.json?t={zaman}", timeout=15).json()
+        k = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/alarm/son_kontrol.json?t={zaman}", timeout=15).json()
+        return s, k
+    except Exception:
+        return [], {}
+
+
+def radar_png(S):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt, numpy as np, io as _io
+    kat = list(next(iter(S.values()))["saglik"].keys())
+    if not kat: return None
+    ac = np.linspace(0, 2 * np.pi, len(kat), endpoint=False).tolist(); ac += ac[:1]
+    fig = plt.figure(figsize=(5.2, 4.6), dpi=130, facecolor="#0B1220"); ax = fig.add_subplot(111, polar=True, facecolor="#111A2E")
+    ax.tick_params(colors="#CBD5E1"); ax.spines["polar"].set_color("#334155"); ax.grid(color="#334155", lw=.6)
+    renk = ["#38BDF8", "#F59E0B", "#22C55E"]
+    for (k, r), c in zip(S.items(), renk):
+        v = [float(r["saglik"].get(x) or 0) for x in kat]; v += v[:1]
+        ax.plot(ac, v, color=c, lw=2, label=k); ax.fill(ac, v, color=c, alpha=0.12)
+    ax.set_xticks(ac[:-1]); ax.set_xticklabels(kat, fontsize=8); ax.set_ylim(0, 5); ax.set_yticks([1, 2, 3, 4, 5]); ax.tick_params(axis="y", labelsize=6)
+    ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.12), fontsize=8, frameon=False, labelcolor="#E2E8F0")
+    b = _io.BytesIO(); fig.tight_layout(); fig.savefig(b, format="png", facecolor=fig.get_facecolor()); plt.close(fig)
+    return b.getvalue()
+
+
+with st.expander(":material/tune: Ayarlar ve varsayımlar"):
+    if st.button(":material/refresh: Verileri yenile (önbelleği temizle)", key="yenile"):
+        st.cache_data.clear()
+        for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin", "tk_sonuc", "pf"):
+            st.session_state.pop(k_, None)
+        st.rerun()
+    c1, c2 = st.columns(2)
+    rf = c1.number_input("Risksiz faiz (TR 10Y)", value=0.366, step=0.01, format="%.4f")
+    enf = c2.number_input("Yıllık enflasyon" + (" (EVDS)" if "enflasyon" in OTO else ""), value=float(OTO.get("enflasyon", 0.2977)),
+                          step=0.01, format="%.4f")
+    erp = c1.number_input("Hisse risk primi", value=0.07, step=0.005, format="%.3f")
+    g = c2.number_input("DCF uç büyüme", value=0.15, step=0.01, format="%.3f")
+    st.caption("Enflasyon, EVDS anahtarı girildiyse TCMB verisinden otomatik alınır; diğerleri Kasım 2026 piyasa verilerine göre ayarlıdır.")
+    yeni_k = st.text_input("TCMB EVDS API anahtarı (isteğe bağlı)", value="", type="password",
+                           help="evds3.tcmb.gov.tr → Benim Sayfam → API anahtarı. Kalıcı olması için Streamlit Secrets'a EVDS_KEY olarak ekleyin.")
+    if yeni_k:
+        st.session_state["evds_key"] = yeni_k
+PRM = dict(rf=rf, enflasyon=enf, erp=erp, terminal_g=g)
+GUN = dt.date.today().isoformat()
+_s = dt.datetime.now()
+ZAMAN = _s.strftime("%Y%m%d%H") + str(_s.minute // 15)   # fiyatlı analizler en fazla 15 dk önbellekte kalır
+SAAT2 = _s.strftime("%Y%m%d") + str(_s.hour // 2)        # taramalar en fazla 2 saat
+import streamlit.components.v1 as _bil
+try:
+    _pv_ust = piyasa_verisi(ZAMAN)
+except Exception:
+    _pv_ust = None
+with _ust_yer.container():
+    _bil.html(TS.ust_bant_sayfa(_pv_ust), height=150)
+
+
+
+
+EVREN, HARZ, EVREN_NOT = evren_cek(GUN, br.SURUM)
+try:
+    bv.guncelle({r["Kod"]: r.get("Ad") for _, r in EVREN.iterrows()})
+except Exception:
+    pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+tab_p, tab_r, tab_x, tab_f, tab_h, tab_tk, tab_pr, tab_v, tab_t, tab_b, tab_pf, tab_al, tab_k, tab_w = st.tabs(
+    [":material/dashboard: Piyasalar", ":material/description: Hisse", ":material/candlestick_chart: Teknik", ":material/my_location: Fırsatlar",
+     ":material/newspaper: Haberler", ":material/event: Takvim", ":material/insights: Performans", ":material/currency_bitcoin: Emtia & Kripto",
+     ":material/manage_search: Tarayıcı", ":material/school: Bebek", ":material/account_balance_wallet: Portföy",
+     ":material/notifications_active: Alarm", ":material/balance: Karşılaştır", ":material/star: Takip"])
+
+# ================= RAPOR =================
 
 
 with tab_r:
@@ -477,34 +724,7 @@ with tab_r:
 # ================= TEKNİK ANALİZ =================
 REPO = "erhankatkay-glitch/bist-rapor"
 
-@st.cache_data(ttl=15 * 60, show_spinner=False, max_entries=40)
-def teknik_analiz(kod, zaman, surum, kisa=False):
-    s = TK.analiz(kod, kisa_vade=kisa)
-    klasor = tempfile.mkdtemp(); yol = os.path.join(klasor, f"{s['kod']}_Teknik_{dt.date.today():%Y%m%d}.pdf")
-    TKR.teknik_pdf(s, yol)
-    with open(yol, "rb") as f: pdf = f.read()
-    graf = {tf: TKR.g_teknik(a, f"{s['kod']} · {TK.TF_AD[tf]} · {a['etiket']}", dpi=130).getvalue() for tf, a in s["tf"].items() if a}
-    tfo = {tf: {"etiket": a["etiket"], "puan": a["puan"], "sayim": a["oy"]["sayim"], "sinyal": [(x[0], x[1], x[2]) for x in a["sinyal"]],
-                "destek": a["sr"]["destek"], "direnc": a["sr"]["direnc"], "yapi": a["pa"]["yapi"], "ma": a["oy"]["ma_etiket"],
-                "osc": a["oy"]["osc_etiket"], "pivot": a["pivot"]["Klasik"]} for tf, a in s["tf"].items() if a}
-    g = s["tf"].get("G") or {}
-    return {"kod": s["kod"], "ad": s["ad"], "etiket": s["etiket"], "puan": s["puan"], "yorum": AN.teknik_ozet(s), "baslik": AN.teknik_baslik(s),
-            "senaryo": AN.teknik_senaryo(s), "pdf": pdf,
-            "dosya": os.path.basename(yol), "graf": graf, "tf": tfo, "para": s["para"], "fiyat": g.get("fiyat"), "degisim": g.get("degisim"),
-            "fiyat_zamani": ts.zaman_metni(s.get("fiyat_zamani")), "ileri": ileri_ozet(None, {"₺": "TL", "$": "$"}.get(s["para"], ""), s)}
 
-@st.cache_data(ttl=10 * 60, show_spinner=False)
-def bulten_oku(piyasa, zaman):
-    import requests
-    taban = f"https://raw.githubusercontent.com/{REPO}/bulten/{piyasa}/"; q = f"?t={zaman}"
-    m = requests.get(taban + "meta.json" + q, timeout=20)
-    if m.status_code != 200: return None
-    meta = m.json(); al = lambda yol: requests.get(taban + yol + q, timeout=60).content
-    ozet = pd.read_csv(io.BytesIO(al("ozet.csv")))
-    kr_ = requests.get(taban + "kapanis_karti.png" + q, timeout=30)
-    return {"meta": meta, "pdf": al("bulten.pdf"), "ozet": ozet, "kart": kr_.content if kr_.status_code == 200 else None,
-            "graf": {g_["kod"]: al(g_["dosya"]) for g_ in meta.get("grafikler", [])[:10]},
-            "rapor": {os.path.basename(r_): al(r_) for r_ in meta.get("raporlar", [])}}
 
 with tab_x:
     st.caption("Günlük, haftalık ve aylık kapanışlara göre 30'a yakın gösterge, mum formasyonları, grafik formasyonları "
@@ -594,64 +814,11 @@ with tab_x:
                     st.download_button(f":material/download: {ad_}", data=b_, file_name=ad_, mime="application/pdf", key=f"bul_{ad_}")
 
 # ================= EMTİA & KRİPTO =================
-@st.cache_data(ttl=3 * 3600, show_spinner=False, max_entries=60)
-def varlik_analiz(kod, prm, saat, surum):
-    br.PARAM.update({k.upper(): v for k, v in dict(prm).items()})
-    klasor = tempfile.mkdtemp()
-    dosya, m = V.rapor(kod, klasor=klasor)
-    with open(dosya, "rb") as f:
-        pdf = f.read()
-    graf = {}
-    for ad_, fn in (("fiyat", lambda: br.g_fiyat(m["hist"], None, m["kod"], m.get("seviye"))), ("tlusd", lambda: V.g_tl_usd(m)),
-                    ("mevsim", lambda: V.g_mevsim(m)), ("akis", lambda: br.g_akis(m["hist"], m)),
-                    ("logbant", lambda: V.g_logbant(m)), ("mayer", lambda: V.g_mayer(m)), ("korku", lambda: V.g_korku(m))):
-        try:
-            b_ = fn()
-            if b_: graf[ad_] = b_.getvalue()
-        except Exception:
-            pass
-    return {"pdf": pdf, "dosya": os.path.basename(dosya), "ad": m["ad"], "kod": m["kod"], "para": m["para"], "tur": m["tur"],
-            "fiyat": m["fiyat"], "fiyat_tl": m["fiyat_tl"], "skor": m["genel_skor"], "gorunum": m["gorunum"],
-            "r_usd": m["r_usd"], "r_tl": m["r_tl"], "r_reel": m["r_reel"], "vol": m["vol"], "mayer": m["mayer"],
-            "zirveden": m["zirveden"], "tek": AN.karne_etiketle(V.tek_bakista(m), m.get("mta")), "sade": V.sade_ozet(m),
-            "baslik": AN.varlik_baslik(m), "gorus_v": AN.varlik_gorus(m)[0], "ozet_kisa": AN.varlik_ozeti(m, kisa=True), "ozet_tam": AN.varlik_ozeti(m),
-            "tez": AN.varlik_tezi(m), "kr": AN.varlik_katalizor_risk(m), "guclu": m["guclu"], "zayif": m["zayif"],
-            "genel": V.genel_degerlendirme(m), "ileri": ileri_ozet(m, "$" if m["para"] == "USD" else "TL"), "graf": graf, "korku": {k: v for k, v in (m.get("korku") or {}).items() if k != "seri"} or None,
-            "cg": m.get("cg"), "global": m.get("global"), "turev": m.get("turev"), "sharpe": m.get("sharpe"),
-            "adil": m.get("adil"), "pot": m.get("potansiyel"), "etiket": (m.get("deger") or {}).get("etiket"),
-            "saglik": m.get("saglik"), "fiyat_zamani": ts.zaman_metni(m.get("fiyat_zamani")),
-            "uretim": dt.datetime.now(dt.timezone(dt.timedelta(hours=3))).strftime("%d.%m.%Y %H:%M")}
 
-@st.cache_data(ttl=6 * 3600, show_spinner=False)
-def varlik_tarama(gun, surum, n_kripto=50):
-    return V.tara(V.varsayilan_liste(n_kripto))
 
 # ================= FIRSATLAR =================
-@st.cache_data(ttl=900, show_spinner=False)
-def firsat_oku(piyasa, zaman):
-    import requests
-    taban = f"https://raw.githubusercontent.com/{REPO}/bulten/firsat/{piyasa}/"; q = f"?t={zaman}"
-    out = {}
-    for d in ("son", "acik", "gecmis", "olaylar", "istatistik"):
-        try:
-            r = requests.get(taban + d + ".json" + q, timeout=20)
-            out[d] = r.json() if r.status_code == 200 else None
-        except Exception:
-            out[d] = None
-    out["graf"] = {}
-    for tf, x in (out.get("son") or {}).items():
-        for kod, yol in x.get("grafik", {}).items():
-            try:
-                r = requests.get(taban + yol + q, timeout=30)
-                if r.status_code == 200: out["graf"][(tf, kod)] = r.content
-            except Exception:
-                pass
-    return out
 
 
-def _md(html):
-    import re
-    return re.sub("<[^>]+>", "", html.replace("<b>", "**").replace("</b>", "**")).replace("\n", "  \n")
 
 
 with tab_f:
@@ -756,17 +923,6 @@ with tab_f:
             "- **Kripto SAT:** Vadeli/kaldıraçlı işlem içindir; spot piyasada açığa satış yapılamaz.")
 
 # ================= HABERLER =================
-@st.cache_data(ttl=600, show_spinner=False)
-def haber_oku(zaman):
-    import requests
-    taban = f"https://raw.githubusercontent.com/{REPO}/bulten/haber/"; q = f"?t={zaman}"
-    out = {}
-    for d in ("son", "takvim"):
-        try:
-            r = requests.get(taban + d + ".json" + q, timeout=20); out[d] = r.json() if r.status_code == 200 else None
-        except Exception:
-            out[d] = None
-    return out
 
 
 with tab_h:
@@ -793,14 +949,6 @@ with tab_h:
             if a.get("link"): st.markdown(f"[Habere git]({a['link']})")
 
 # ================= TAKVİM =================
-@st.cache_data(ttl=900, show_spinner=False)
-def json_oku(yol, zaman):
-    import requests
-    try:
-        r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/{yol}?t={zaman}", timeout=20)
-        return r.json() if r.status_code == 200 else None
-    except Exception:
-        return None
 
 
 with tab_tk:
@@ -937,46 +1085,11 @@ with tab_v:
             if hat: st.caption("Alınamayanlar: " + ", ".join(hat))
 
 # ================= PİYASA =================
-def _degisim_metni(v):
-    parca = []
-    for et, k in (("1G", "d1G"), ("1A", "d1A"), ("YBB", "YBB")):
-        if v.get(k) is not None: parca.append(f"{et} {br.yz(v[k])}")
-    return " · ".join(parca)
-
-def spark_svg(seri, renk, w=120, h=34):
-    """Son 60 günün mini fiyat çizgisi (satır içi SVG)."""
-    v = [float(x) for x in seri.dropna().iloc[-60:]]
-    if len(v) < 2: return ""
-    lo, hi = min(v), max(v); hi = hi if hi > lo else lo + 1
-    pts = " ".join(f"{i * (w - 2) / (len(v) - 1) + 1:.1f},{h - 2 - (x - lo) / (hi - lo) * (h - 4):.1f}" for i, x in enumerate(v))
-    alan = f"1,{h} " + pts + f" {w - 1},{h}"
-    return (f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}"><polygon points="{alan}" fill="{renk}" fill-opacity="0.10"/>'
-            f'<polyline points="{pts}" fill="none" stroke="{renk}" stroke-width="1.8" stroke-linejoin="round"/></svg>')
 
 
-def piyasa_karti(ad_, v):
-    d = v.get("d1G") or 0; renk = "#22C55E" if d > 0 else "#EF4444" if d < 0 else "#94A3B8"
-    ok = "▲" if d > 0 else "▼" if d < 0 else "■"
-    deger = br.ond(v["deger"], 2 if v["deger"] < 10000 else 0)
-    birim = {"puan": "", "TL": " ₺", "$": " $", "%": "%"}.get(v["birim"], "")
-    alt = " · ".join(x for x in (f"1A {br.yz(v['d1A'])}" if v.get("d1A") is not None else "", f"YBB {br.yz(v['YBB'])}" if v.get("YBB") is not None else "") if x)
-    return (f'<div class="pk">'
-            f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-            f'<div><div style="font-size:.66rem;color:#94A3B8;font-weight:700;letter-spacing:.06em">{ad_.upper()}</div>'
-            f'<div style="font-size:1.18rem;font-weight:800;color:#F1F5F9;margin-top:2px">{deger}{birim}</div>'
-            f'<div style="font-size:.8rem;font-weight:700;color:{renk}">{ok} {br.yz(d)}</div></div>'
-            f'<div style="margin-top:6px">{spark_svg(v["seri"], renk)}</div></div>'
-            f'<div style="font-size:.68rem;color:#94A3B8;margin-top:2px">{alt}</div></div>')
 
 
-@st.cache_data(ttl=600, show_spinner=False)
-def gorsel_oku(yol, zaman):
-    import requests
-    try:
-        r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/{yol}?t={zaman}", timeout=20)
-        return r.content if r.status_code == 200 else None
-    except Exception:
-        return None
+
 
 
 with tab_p:
@@ -1105,15 +1218,8 @@ with tab_t:
             st.caption("Veri alınamayanlar: " + ", ".join(hatalar))
 
 # ================= BEBEK ŞİRKETLER =================
-@st.cache_data(ttl=24 * 3600, show_spinner=False)
-def ilk_cek(kodlar, gun, surum):
-    return EV.ilk_islemler(list(kodlar))
 
 
-@st.cache_data(ttl=24 * 3600, show_spinner=False)
-def resmi_ilk_cek(gun, surum):
-    try: return BB.ilk_islem()
-    except Exception: return {}
 
 with tab_b:
     st.caption("Bebek şirketler, Borsa İstanbul'un resmi tanımıyla belirlenir: halka arz edilip işlem görmeye başladığı ilk günden itibaren "
@@ -1174,16 +1280,6 @@ import portfoy as PF
 PF = importlib.reload(PF)
 
 
-@st.cache_data(ttl=15 * 60, show_spinner=False, max_entries=20)
-def portfoy_analiz(metin, zaman, surum):
-    p = PF.analiz(PF.ayristir(metin))
-    yol = os.path.join(tempfile.mkdtemp(), f"Portfoy_Analizi_{dt.date.today():%Y%m%d}.pdf"); PF.pdf(p, yol)
-    with open(yol, "rb") as f: pdf = f.read()
-    t = p["tablo"].copy()
-    return {"pdf": pdf, "dosya": os.path.basename(yol), "tablo": t.to_dict("records"), "ozet": PF.ozet(p), "baslik": PF.baslik(p),
-            "toplam": p["toplam"], "vol": p["vol"], "getiri": p["getiri"], "getiri_usd": p["getiri_usd"], "var95_tl": p["var95_tl"], "beta": p["beta"],
-            "max_dd": p["max_dd"], "hata": p["hata"], "g_deger": PF.g_deger(p).getvalue(), "g_agirlik": PF.g_agirlik(p).getvalue(),
-            "g_kor": PF.g_korelasyon(p).getvalue()}
 
 with tab_pf:
     st.caption("Elinizdeki hisse, kripto ve emtiaları yazın; portföyün TL değeri, dağılımı, riski (oynaklık, VaR), korelasyonları, "
@@ -1244,15 +1340,6 @@ with tab_pf:
         if r["hata"]: st.caption("Verisi alınamayanlar: " + ", ".join(r["hata"]))
 
 # ================= ALARM =================
-@st.cache_data(ttl=5 * 60, show_spinner=False)
-def alarm_son(zaman):
-    import requests
-    try:
-        s = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/alarm/son.json?t={zaman}", timeout=15).json()
-        k = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/alarm/son_kontrol.json?t={zaman}", timeout=15).json()
-        return s, k
-    except Exception:
-        return [], {}
 
 with tab_al:
     st.caption("Alarmlar 30 dakikada bir otomatik kontrol edilir; tetiklenince Telegram'a bildirim gider (Telegram kuruluysa). "
@@ -1294,23 +1381,6 @@ with tab_al:
                     "alarmlar.txt dosyasına ekleyebilirsiniz.")
 
 # ================= KARŞILAŞTIR =================
-def radar_png(S):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt, numpy as np, io as _io
-    kat = list(next(iter(S.values()))["saglik"].keys())
-    if not kat: return None
-    ac = np.linspace(0, 2 * np.pi, len(kat), endpoint=False).tolist(); ac += ac[:1]
-    fig = plt.figure(figsize=(5.2, 4.6), dpi=130, facecolor="#0B1220"); ax = fig.add_subplot(111, polar=True, facecolor="#111A2E")
-    ax.tick_params(colors="#CBD5E1"); ax.spines["polar"].set_color("#334155"); ax.grid(color="#334155", lw=.6)
-    renk = ["#38BDF8", "#F59E0B", "#22C55E"]
-    for (k, r), c in zip(S.items(), renk):
-        v = [float(r["saglik"].get(x) or 0) for x in kat]; v += v[:1]
-        ax.plot(ac, v, color=c, lw=2, label=k); ax.fill(ac, v, color=c, alpha=0.12)
-    ax.set_xticks(ac[:-1]); ax.set_xticklabels(kat, fontsize=8); ax.set_ylim(0, 5); ax.set_yticks([1, 2, 3, 4, 5]); ax.tick_params(axis="y", labelsize=6)
-    ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.12), fontsize=8, frameon=False, labelcolor="#E2E8F0")
-    b = _io.BytesIO(); fig.tight_layout(); fig.savefig(b, format="png", facecolor=fig.get_facecolor()); plt.close(fig)
-    return b.getvalue()
 
 
 with tab_k:

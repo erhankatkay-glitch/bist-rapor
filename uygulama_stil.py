@@ -183,3 +183,45 @@ def ust_bant(pv=None):
 
 def bolum(baslik):
     return f'<div class="bolum">{baslik}</div>'
+
+
+SAAT_JS = """
+<script>
+(function(){
+  const gunler=["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"], aylar=["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+  function parca(tz){
+    const f=new Intl.DateTimeFormat("en-GB",{timeZone:tz,year:"numeric",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false,weekday:"short"});
+    const o={}; f.formatToParts(new Date()).forEach(p=>o[p.type]=p.value);
+    const wd={"Sun":0,"Mon":1,"Tue":2,"Wed":3,"Thu":4,"Fri":5,"Sat":6}[o.weekday];
+    return {g:+o.day,a:+o.month,s:+o.hour%24,d:+o.minute,wd:wd};
+  }
+  function durum(id,acik){
+    const e=document.getElementById(id); if(!e) return;
+    e.className="ub-p"+(acik?" acik":""); e.querySelector("span").textContent=acik?"Açık":"Kapalı";
+  }
+  function guncelle(){
+    const t=parca("Europe/Istanbul"), n=parca("America/New_York");
+    const dk=t.s*60+t.d, ndk=n.s*60+n.d;
+    document.getElementById("saat").firstChild.nodeValue=String(t.s).padStart(2,"0")+":"+String(t.d).padStart(2,"0");
+    document.getElementById("tarih").textContent=t.g+" "+aylar[t.a-1]+" "+gunler[t.wd]+" · TSİ";
+    durum("d_bist", t.wd>=1&&t.wd<=5 && dk>=600 && dk<1090);
+    durum("d_abd", n.wd>=1&&n.wd<=5 && ndk>=570 && ndk<960);
+  }
+  guncelle(); setInterval(guncelle,10000);
+})();
+</script>"""
+
+
+def ust_bant_sayfa(pv=None):
+    """Canlı saatli üst bant (iframe içinde çalışır; saat ve piyasa durumu telefonun saatine göre her 10 sn güncellenir)."""
+    h = ust_bant(pv)
+    h = h.replace('<div class="ub-saat">', '<div class="ub-saat" id="saat">', 1)
+    h = h.replace("<small>", '<small id="tarih">', 1)
+    # piyasa durum hapları: kimlikli ve güncellenebilir
+    import re
+    for ad, kim in (("BIST", "d_bist"), ("ABD", "d_abd")):
+        h = re.sub(rf'<span class="ub-p( acik)?"><i></i>{ad} · (Açık|Kapalı)</span>',
+                   lambda m: f'<span class="ub-p{m.group(1) or ""}" id="{kim}"><i></i>{ad} · <span>{m.group(2)}</span></span>', h)
+    return ("<!DOCTYPE html><html><head><meta charset='utf-8'>" + STIL +
+            "<style>html,body{margin:0;padding:0;background:transparent!important;overflow:hidden}.ub{margin:2px 2px 6px}.ub-p span{margin-left:-3px}</style>"
+            "</head><body>" + h + SAAT_JS + "</body></html>")
