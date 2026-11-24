@@ -4,8 +4,10 @@ import os, glob, tempfile, datetime as dt, importlib
 import pandas as pd
 import streamlit as st
 import bist_veri as bv
+import bist_isyatirim as isy
 import bist_rapor as br
 bv = importlib.reload(bv)
+isy = importlib.reload(isy)  # alt modüller de güncellensin
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
 
 st.set_page_config(page_title="BIST Rapor", page_icon="📊", layout="centered", initial_sidebar_state="collapsed")
