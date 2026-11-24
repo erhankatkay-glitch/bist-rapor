@@ -138,7 +138,7 @@ def ilk_islemler(kodlar, parca=80):
         grup = kodlar[i:i + parca]
         try:
             df = yf.download([k + ".IS" for k in grup], period="max", interval="1mo", auto_adjust=True,
-                             progress=False, group_by="ticker", threads=True)
+                             progress=False, group_by="ticker", threads=4)
         except Exception:
             continue
         for k in grup:
