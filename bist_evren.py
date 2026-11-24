@@ -2,11 +2,92 @@
 """Tüm BIST evreni ve 'bebek şirketler' (yeni halka arzlar / küçük ölçekli şirketler) taraması.
 Kaynaklar (ücretsiz): İş Yatırım 'Temel Değerler ve Oranlar' sayfası (tüm hisseler, sektör, piyasa değeri,
 halka açıklık) ve Yahoo Finance aylık fiyat geçmişi (ilk işlem tarihi)."""
-import io, re, datetime as dt
+import io, os, re, datetime as dt
 import numpy as np
 import pandas as pd
 
 URL = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/Temel-Degerler-Ve-Oranlar.aspx"
+BIST_ENDEKS_URL = "https://borsaistanbul.com/datum/hisse_endeks_ds.csv"   # tüm BIST endekslerinin bileşenleri
+UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"}
+KOD_RE = re.compile(r"^[A-Z0-9]{3,6}(\.E)?$")
+
+
+def _endeks_cozumle(ham):
+    """Borsa İstanbul bileşen dosyasını biçimden bağımsız çözer → DataFrame[Kod, Ad, Endeks]."""
+    import gzip
+    if ham[:2] == b"\x1f\x8b": ham = gzip.decompress(ham)
+    if ham[:2] == b"PK":
+        df = pd.read_excel(io.BytesIO(ham), dtype=str)
+    else:
+        for enc in ("utf-8-sig", "cp1254", "iso-8859-9", "latin-1"):
+            try: metin = ham.decode(enc); break
+            except UnicodeDecodeError: continue
+        satirlar = [s for s in metin.splitlines() if s.strip()]
+        sep = max([";", ",", "\t", "|"], key=lambda c: satirlar[0].count(c))
+        df = pd.read_csv(io.StringIO("\n".join(satirlar)), sep=sep, dtype=str, engine="python")
+    df.columns = [_sade(c).upper() for c in df.columns]
+    df = df.apply(lambda s: s.astype(str).str.strip())
+    def oran(c, desen): return df[c].str.match(desen).mean()
+    kod_c = next((c for c in df.columns if "BILE" in c and "KOD" in c), None)
+    end_c = next((c for c in df.columns if "ENDEKS" in c and "KOD" in c), None)
+    if end_c is None:
+        end_c = max(df.columns, key=lambda c: oran(c, r"^X[A-Z0-9]{2,6}$"))
+    if kod_c is None:
+        aday = [c for c in df.columns if c != end_c]
+        kod_c = max(aday, key=lambda c: oran(c, KOD_RE.pattern) - oran(c, r"^X[A-Z0-9]{2,6}$"))
+    ad_c = next((c for c in df.columns if ("BULTEN" in c or "UNVAN" in c or c == "AD" or ("ADI" in c and "ENDEKS" not in c))
+                 and c not in (kod_c, end_c)), None)
+    out = pd.DataFrame({"Kod": df[kod_c].str.replace(r"\.E$|\.IS$", "", regex=True).str.upper(),
+                        "Ad": df[ad_c] if ad_c else df[kod_c], "Endeks": df[end_c].str.upper()})
+    return out[out["Kod"].str.match(r"^[A-Z0-9]{3,6}$")]
+
+
+def bist_endeks_bilesenleri(oturum=None):
+    import requests
+    r = (oturum or requests).get(BIST_ENDEKS_URL, headers=UA, timeout=30)
+    r.raise_for_status()
+    return _endeks_cozumle(r.content)
+
+
+def bist_listesi(oturum=None):
+    """Güncel tüm BIST hisseleri. (DataFrame[Kod, Ad, Sektör, PD mn, ...], XHARZ kodları kümesi, kaynak notu)."""
+    notlar, harz = [], set()
+    bilesen = None
+    try:
+        bilesen = bist_endeks_bilesenleri(oturum)
+        harz = set(bilesen.loc[bilesen["Endeks"] == "XHARZ", "Kod"])
+        tum = bilesen[bilesen["Endeks"] == "XUTUM"]
+        tum = tum if len(tum) > 300 else bilesen
+        bdf = tum.drop_duplicates("Kod")[["Kod", "Ad"]]
+        notlar.append(f"Borsa İstanbul endeks bileşenleri ({len(bdf)} hisse)")
+    except Exception as ex:
+        bdf = None; notlar.append(f"Borsa İstanbul listesi alınamadı ({str(ex)[:60]})")
+    try:
+        idf = tum_hisseler(oturum); notlar.append(f"İş Yatırım ({len(idf)} hisse)")
+    except Exception as ex:
+        idf = None; notlar.append(f"İş Yatırım listesi alınamadı ({str(ex)[:60]})")
+    if bdf is not None and idf is not None:
+        df = idf.merge(bdf.rename(columns={"Ad": "Ad_bist"}), on="Kod", how="outer")
+        df["Ad"] = df["Ad"].fillna(df["Ad_bist"]); df = df.drop(columns=["Ad_bist"])
+    else:
+        df = idf if idf is not None else bdf
+    if df is None or len(df) < 200:
+        import bist_veri as bv
+        yedek = pd.read_csv(bv.LISTE_DOSYA, dtype=str) if os.path.exists(bv.LISTE_DOSYA) else \
+            pd.DataFrame({"Kod": list(bv.SIRKETLER), "Ad": list(bv.SIRKETLER.values())})
+        df = yedek if df is None else pd.concat([df, yedek[~yedek["Kod"].isin(df["Kod"])]])
+        notlar.append(f"yedek liste ({len(yedek)} hisse)")
+    df = df.dropna(subset=["Kod"]).drop_duplicates("Kod").sort_values("Kod").reset_index(drop=True)
+    for c in ("PD mn", "PD $ mn", "Halka açıklık %", "Kapanış"):
+        if c in df: df[c] = pd.to_numeric(df[c], errors="coerce")
+    df["XHARZ"] = df["Kod"].isin(harz)
+    return df, harz, " · ".join(notlar)
+
+
+def liste_kaydet(df, yol=None):
+    import bist_veri as bv
+    kol = [c for c in ("Kod", "Ad", "Sektör", "PD mn", "Halka açıklık %", "XHARZ") if c in df]
+    df[kol].to_csv(yol or bv.LISTE_DOSYA, index=False)
 
 
 def _sade(s):
@@ -74,26 +155,33 @@ def ilk_islemler(kodlar, parca=80):
     return out
 
 
-def bebekler(evren, ilk, maks_yil=3.0, maks_pd_mr=None, bugun=None):
-    """Filtre: borsada en fazla `maks_yil` yıldır işlem gören (yeni halka arz) ve/veya
-    piyasa değeri en fazla `maks_pd_mr` milyar TL olan şirketler. Yahoo verisi 2000 öncesine gitmediği
-    için çok eski şirketler zaten elenir."""
+HARZ_YIL = 2  # BIST Halka Arz Endeksi: şirket işlem görmeye başladığı ilk gün endekse alınır ve 2 yıl kalır
+
+
+def bebekler(evren, ilk, harz=None, bugun=None):
+    """Bebek şirketler = Borsa İstanbul'un resmi tanımıyla son 2 yılda halka arz edilip işlem görmeye başlayan
+    şirketler (BIST Halka Arz Endeksi / XHARZ kapsamı). Resmi bileşen listesi alınabildiyse o kullanılır;
+    alınamadıysa Yahoo'daki ilk işlem tarihi 2 yıldan yeni olan hisseler seçilir."""
     bugun = pd.Timestamp(bugun or dt.date.today())
+    resmi = bool(harz)
     sat = []
     for _, r in evren.iterrows():
         k = r["Kod"]; b = ilk.get(k)
         yas = (bugun - b["ilk"]).days / 365.25 if b else None
+        if resmi:
+            if k not in harz: continue
+        elif yas is None or yas > HARZ_YIL:
+            continue
         pd_mr = r.get("PD mn") / 1000 if pd.notna(r.get("PD mn")) else None
-        if maks_yil and (yas is None or yas > maks_yil): continue
-        if maks_pd_mr and (pd_mr is None or pd_mr > maks_pd_mr): continue
-        if not maks_yil and not maks_pd_mr: continue
+        ay = round(yas * 12) if yas is not None else None
         sat.append({"Kod": k, "Şirket": r.get("Ad"), "Sektör": r.get("Sektör"),
-                    "İlk işlem": b["ilk"].date() if b else None, "Borsadaki süre (ay)": round(yas * 12) if yas is not None else None,
+                    "İlk işlem": b["ilk"].date() if b else None, "Borsadaki süre (ay)": ay,
+                    "Endekste kalan (ay)": max(24 - ay, 0) if ay is not None else None,
                     "Piyasa değeri (mr TL)": round(pd_mr, 2) if pd_mr is not None else None,
                     "Halka açıklık %": r.get("Halka açıklık %"),
                     "İlk işlemden getiri": (b["son"] / b["ilk_fiyat"] - 1) if b and b["ilk_fiyat"] else None,
                     "Zirveden uzaklık": (b["son"] / b["zirve"] - 1) if b and b["zirve"] else None})
-    return sorted(sat, key=lambda x: (x["İlk işlem"] or dt.date(1900, 1, 1)), reverse=True)
+    return sorted(sat, key=lambda x: (x["İlk işlem"] or dt.date(2100, 1, 1)), reverse=True), resmi
 
 
 BEBEK_AGIRLIK = {"Reel büyüme": 0.30, "Sağlık skoru": 0.30, "Potansiyel": 0.15, "Çeyrek büyüme (reel)": 0.15, "Akış puanı": 0.10}

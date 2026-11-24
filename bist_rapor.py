@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-16"
+SURUM = "2026.11.24-17"
 
 import bist_veri as BV
 
@@ -1701,6 +1701,15 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         _baz = [("Baz senaryo", f"{tl(m['adil'])} TL" if m.get("adil") else "–", yz(pt) if pt is not None else "",
                  "Birleşik adil değer: değerleme yöntemlerinin ağırlıklı sonucu.")]
         E.append(KeepTogether([Paragraph("Senaryo analizi", ST["h2"]), TS.senaryo_kartlari([_sc[1], _baz[0], _sc[0]], W)]))
+    _t = m.get("mta")
+    if _t and _t.get("puan") is not None:
+        import bist_teknik_rapor as TKR
+        _tb = [Paragraph("Teknik görünüm (günlük · haftalık · aylık)", ST["h2"]), TKR.gosterge_satiri(_t, W), Spacer(1, 5),
+               Paragraph(TS.esc(AN.teknik_ozet(_t)), ST["p"])]
+        _ts = AN.teknik_senaryo(_t)
+        if _ts:
+            _tb += [Spacer(1, 5), TS.senaryo_kartlari([(b_, f"Hedef {h_}", "", f"Tetikleyici: {t_}. {i_}.") for b_, t_, h_, i_ in _ts], W)]
+        E.append(KeepTogether(_tb))
     E.append(KeepTogether([Paragraph("Katalizörler ve riskler", ST["h2"]),
                            TS.iki_liste("İzlenecek katalizörler", AN.katalizorler(m), "Başlıca riskler", AN.riskler(m), W)]))
     E.append(KeepTogether([Paragraph("Temel göstergeler karnesi", ST["h2"]), trafik_listesi(AN.karne(m), W)]))
@@ -1935,6 +1944,14 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
                       f"TL bazlı getirinin enflasyondan arındırılmış karşılığı {yz(reel(m['r'].get('1Y')))}.", ST["p"]),
             Spacer(1, 3), _img(gd, W, 2.3 / 7.5)]))
 
+    if m.get("mta") and (m["mta"].get("tf") or {}).get("G"):
+        import bist_teknik_rapor as TKR
+        _g = m["mta"]["tf"]["G"]
+        E.append(CondPageBreak(14 * cm))
+        E.append(Paragraph("Teknik grafik (günlük): formasyonlar, Fibonacci, destek ve direnç", ST["h2"]))
+        E.append(_img(TKR.g_teknik(_g, f"{m['kod']} · Günlük · {_g['etiket']} (puan {_g['puan']:.0f}/100)"), W, 6.4 / 7.5 * 0.97))
+        E.append(Paragraph("Ayrıntılı gösterge tabloları, haftalık ve aylık grafikler için uygulamanın 📐 Teknik sekmesinden teknik raporu alabilirsiniz.", ST["kucuk"]))
+
     # ---------------- SAYFA 7: TEMETTÜ + METODOLOJİ ----------------
     E.append(CondPageBreak(10 * cm)); E.append(Bolum(6, "Para akışı ve yabancı yatırımcı", W))
     E.append(bilgi_kutusu("Analist yorumu:", AN.bolum_girisi(m, "akis"), W))
@@ -2086,6 +2103,11 @@ def analiz_et(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, pd_fn=None, lo
         m["haber"] = (haber_fn or haber_cek)(kod, BV.ad(kod))
     except Exception as ex:
         m["haber"] = {"liste": [], "ton": 0, "ozet": "–", "hata": str(ex)[:100]}
+    try:
+        import bist_teknik as TK
+        m["mta"] = TK.analiz_h(kod, m["ad"], d["hist"], "hisse", "₺")
+    except Exception as ex:
+        m["mta"] = None; m["mta_hata"] = str(ex)[:100]
     degerleme(m, emsaller, nav); saglik(m); ipuclari(m)
     return d, m, emsaller, endeks
 

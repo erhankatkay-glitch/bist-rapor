@@ -655,11 +655,31 @@ def puan_etiket(p):
     return "GÜÇLÜ AL" if p >= 75 else "AL" if p >= 58 else "GÜÇLÜ SAT" if p <= 25 else "SAT" if p <= 42 else "NÖTR"
 
 
+def analiz_h(kod, ad, h, tur="hisse", para="₺", tfler=("G", "H", "A")):
+    """Zaten indirilmiş günlük OHLCV üzerinden çok zaman dilimli analiz (ek veri çekmez)."""
+    h = h[[c for c in ("Open", "High", "Low", "Close", "Volume") if c in h]].dropna(subset=["Close"]).copy()
+    if "Volume" not in h: h["Volume"] = 0.0
+    for c in ("Open", "High", "Low"):
+        if c not in h: h[c] = h["Close"]
+        h[c] = h[c].fillna(h["Close"])
+    h["Volume"] = h["Volume"].fillna(0)
+    s = {"kod": kod, "ad": ad, "tur": tur, "para": para, "tf": {}, "fiyat_zamani": h.index[-1]}
+    for tf in tfler:
+        try: s["tf"][tf] = tf_analiz(yeniden_ornekle(h, tf, tur), tf)
+        except Exception: s["tf"][tf] = None
+    ag = {"G": 0.3, "H": 0.4, "A": 0.3}
+    v = [(ag[t], a["puan"]) for t, a in s["tf"].items() if a]
+    s["puan"] = sum(w * p for w, p in v) / sum(w for w, _ in v) if v else None
+    s["etiket"] = puan_etiket(s["puan"]) if s["puan"] is not None else "–"
+    s["yorum"] = sade_yorum(s) if v else ""
+    return s
+
+
 def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A")):
     import bist_varlik as V, bist_veri as bv
     kod = kod.upper().strip().replace(".IS", "")
     h, tur = gunluk_veri(kod, fiyat_fn)
-    ad = V.VARLIKLAR[kod][1] if kod in V.VARLIKLAR else {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka"}.get(kod, bv.SIRKETLER.get(kod, kod))
+    ad = V.VARLIKLAR[kod][1] if kod in V.VARLIKLAR else {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka"}.get(kod, bv.sirket_adi(kod))
     sonuc = {"kod": kod, "ad": ad, "tur": tur, "para": "₺" if tur == "hisse" or kod == "GRAMALTIN" else "" if tur == "endeks" else "$",
              "tf": {}, "fiyat_zamani": h.index[-1]}
     for tf in tfler:

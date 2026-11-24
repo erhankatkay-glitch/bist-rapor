@@ -54,12 +54,43 @@ HOLDING_PAYLARI = {
 HOLDING_ISKONTO = {"KCHOL": 0.30, "SAHOL": 0.40, "AGHOL": 0.40}
 
 
+import os as _os
+
+LISTE_DOSYA = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "hisse_listesi.csv")
+_TUM = {}
+
+
+def tum_sirketler():
+    """Tüm BIST hisseleri {kod: ad}. Kaynak: depodaki hisse_listesi.csv (her sabah güncellenir) + canlı liste
+    (guncelle() ile eklenir) + elle seçilmiş adlar."""
+    if not _TUM:
+        try:
+            import pandas as pd
+            df = pd.read_csv(LISTE_DOSYA, dtype=str)
+            _TUM.update({r["Kod"]: (r.get("Ad") or r["Kod"]) for _, r in df.iterrows() if isinstance(r.get("Kod"), str)})
+        except Exception:
+            pass
+        _TUM.update(SIRKETLER)
+    return _TUM
+
+
+def guncelle(sozluk):
+    """Canlı alınan tam listeyi ekler (elle seçilmiş adlar korunur)."""
+    tum_sirketler()
+    for k, v in sozluk.items():
+        if k and k not in SIRKETLER: _TUM[k] = v or k
+
+
+def sirket_adi(kod):
+    return tum_sirketler().get(kod.upper(), kod.upper())
+
+
 def ad(kod):
-    return SIRKETLER.get(kod.upper())
+    return tum_sirketler().get(kod.upper())
 
 
 def arama_secenekleri():
-    return [f"{k} — {v}" for k, v in sorted(SIRKETLER.items())]
+    return [f"{k} — {v}" for k, v in sorted(tum_sirketler().items())]
 
 
 def secimden_kod(metin):
@@ -70,10 +101,12 @@ def secimden_kod(metin):
     if "—" in t:
         return t.split("—")[0].strip().upper()
     u = t.upper().replace(".IS", "")
-    if u in SIRKETLER:
+    T_ = tum_sirketler()
+    if u in T_:
         return u
-    low = t.lower().replace("ı", "i").replace("İ", "i")
-    for k, v in SIRKETLER.items():
-        if low and low in v.lower().replace("ı", "i").replace("İ".lower(), "i"):
+    norm = lambda s: str(s).replace("I", "ı").replace("İ", "i").lower().replace("ı", "i")
+    low = norm(t)
+    for k, v in sorted(T_.items(), key=lambda x: (x[0] not in SIRKETLER, x[0])):
+        if low and low in norm(v):
             return k
     return u.split()[0] if u else ""

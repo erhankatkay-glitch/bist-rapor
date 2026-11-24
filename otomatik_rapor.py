@@ -12,12 +12,12 @@ def yabanci_kaydet(gun):
     yol = os.path.join("raporlar", "yabanci_oran.csv")
     eski = pd.read_csv(yol) if os.path.exists(yol) else pd.DataFrame(columns=["tarih", "kod", "oran"])
     yeni = []
-    for k in sorted(bv.SIRKETLER):
+    for k in sorted(bv.tum_sirketler()):
         try:
             yeni.append({"tarih": gun, "kod": k, "oran": isy.yabanci_orani(k)})
         except Exception as ex:
             print(f"yabancı {k}: {ex}", file=sys.stderr)
-        time.sleep(0.5)
+        time.sleep(0.3)
     df = pd.concat([eski, pd.DataFrame(yeni)]).drop_duplicates(["tarih", "kod"], keep="last")
     df["tarih"] = pd.to_datetime(df["tarih"])
     df = df[df["tarih"] >= pd.Timestamp(gun) - pd.Timedelta(days=400)].sort_values(["kod", "tarih"])
@@ -25,10 +25,22 @@ def yabanci_kaydet(gun):
     df.to_csv(yol, index=False)
     print(f"Yabancı oranı kaydedildi: {len(yeni)} hisse")
 
-def piyasa_taramasi(gun):
-    """Tüm listedeki hisseleri tarar; fırsat skoru ve sektör özetiyle raporlar/tarama.csv'ye yazar."""
+def tum_liste():
+    """Güncel tüm BIST hisseleri; depodaki hisse_listesi.csv'yi de günceller."""
+    import bist_veri as bv, bist_evren as EV
+    try:
+        df, harz, not_ = EV.bist_listesi()
+        if len(df) > 300: EV.liste_kaydet(df)
+        print("Hisse listesi:", len(df), "·", not_, "· XHARZ:", len(harz))
+        return sorted(df["Kod"])
+    except Exception as ex:
+        print("Tam liste alınamadı:", ex, file=sys.stderr)
+        return sorted(bv.tum_sirketler())
+
+def piyasa_taramasi(gun, kodlar=None):
+    """Tüm BIST hisselerini tarar; fırsat skoru ve sektör özetiyle raporlar/tarama.csv'ye yazar."""
     import bist_veri as bv
-    satirlar, hatalar = br.tara(sorted(bv.SIRKETLER), isci=4)
+    satirlar, hatalar = br.tara(kodlar or sorted(bv.tum_sirketler()), isci=6)
     df = pd.DataFrame(satirlar)
     df.insert(0, "tarih", gun)
     df.to_csv(os.path.join("raporlar", "tarama.csv"), index=False)
@@ -50,6 +62,7 @@ def main():
         except Exception as ex:
             print(f"EVDS okunamadı: {ex}", file=sys.stderr)
     try:
+        tum_liste()                  # tüm BIST listesini güncelle (hisse_listesi.csv)
         yabanci_kaydet(gun)          # önce yabancı oranları (rapor ve tarama bunları kullanır)
     except Exception as ex:
         print(f"Yabancı oranı kaydı başarısız: {ex}", file=sys.stderr)

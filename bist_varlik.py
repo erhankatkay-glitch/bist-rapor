@@ -339,6 +339,11 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
         m["haber"] = (haber_fn or br.haber_cek)(kod, sorgu)
     except Exception as ex:
         m["haber"] = {"liste": [], "ton": 0, "ozet": "–", "hata": str(ex)[:80]}
+    try:
+        import bist_teknik as TK
+        m["mta"] = TK.analiz_h(kod, ad, h, tur if tur == "kripto" else "emtia", "$" if para == "USD" else "₺")
+    except Exception:
+        m["mta"] = None
     skorla(m)
     return m
 
@@ -660,9 +665,18 @@ def pdf_olustur(m, dosya):
     E.append(TS.ozet_paneli("Yönetici özeti", AN.varlik_baslik(m), _gor, AN.varlik_ozeti(m), W,
                             alt_bilgi="Genel görünüm; skor kartı (%70) ve uzun vadeli değer bandına göre konumun (%30) birleşimidir."))
     E.append(Paragraph("Yatırım tezi", ST["h2"])); _p, _n = AN.varlik_tezi(m); E.append(TS.tez_tablosu(_p, _n, W))
+    _t = m.get("mta")
+    if _t and _t.get("puan") is not None:
+        import bist_teknik_rapor as TKR
+        _tb = [Paragraph("Teknik görünüm (günlük · haftalık · aylık)", ST["h2"]), TKR.gosterge_satiri(_t, W), Spacer(1, 5),
+               Paragraph(TS.esc(AN.teknik_ozet(_t)), ST["p"])]
+        _ts = AN.teknik_senaryo(_t)
+        if _ts:
+            _tb += [Spacer(1, 5), TS.senaryo_kartlari([(b_, f"Hedef {h_}", "", f"Tetikleyici: {t_}. {i_}.") for b_, t_, h_, i_ in _ts], W)]
+        E.append(KeepTogether(_tb))
     _k, _r = AN.varlik_katalizor_risk(m)
     E.append(KeepTogether([Paragraph("Katalizörler ve riskler", ST["h2"]), TS.iki_liste("İzlenecek katalizörler", _k, "Başlıca riskler", _r, W)]))
-    E.append(KeepTogether([Paragraph("Temel göstergeler karnesi", ST["h2"]), trafik_listesi(AN.karne_etiketle(tek_bakista(m)), W)]))
+    E.append(KeepTogether([Paragraph("Temel göstergeler karnesi", ST["h2"]), trafik_listesi(AN.karne_etiketle(tek_bakista(m), m.get("mta")), W)]))
     E.append(KeepTogether([Paragraph("Analist notları", ST["h2"]), TS.sinyal_listesi(m["guclu"], m["zayif"], W, n=6)]))
     n = 0
     def bolum(baslik, gerek=8):

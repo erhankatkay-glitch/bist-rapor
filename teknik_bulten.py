@@ -25,11 +25,13 @@ def evren(piyasa):
         return [k for k, v in V.VARLIKLAR.items() if v[2] == "emtia"]
     try:
         import bist_evren as EV
-        kod = list(EV.tum_hisseler()["Kod"])
-        if len(kod) > 200: return kod
+        df, harz, not_ = EV.bist_listesi()
+        print("Hisse evreni:", len(df), "·", not_)
+        bv.guncelle({r["Kod"]: r.get("Ad") for _, r in df.iterrows()})
+        if len(df) > 200: return sorted(df["Kod"])
     except Exception as ex:
         print("Tam hisse listesi alınamadı, yedek liste:", ex, file=sys.stderr)
-    return sorted(bv.SIRKETLER)
+    return sorted(bv.tum_sirketler())
 
 
 def toplu_veri(semboller, sure="10y", parca=100):

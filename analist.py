@@ -168,9 +168,11 @@ def _surucular(m):
         p = 1 if d > 0.05 else -1 if d < -0.05 else 0
         S.append((p, "tarihsel ortalamanın üzerinde NAV iskontosu", "dar NAV iskontosu",
                   f"Holding, halka açık iştiraklerinin değerine göre {yuzde(nav['iskonto'], 0)} iskontolu (varsayımımız {yuzde(nav['hedef_iskonto'], 0)}).", "NAV"))
+    ts_ = teknik_surucu(m.get("mta"))
+    if ts_: S.append(ts_)
     tk = m.get("teknik_ozet") or ""
     p = 1 if "POZİTİF" in tk else -1 if "NEGATİF" in tk else 0
-    S.append((p, "olumlu fiyat momentumu", "zayıf fiyat momentumu",
+    if not ts_: S.append((p, "olumlu fiyat momentumu", "zayıf fiyat momentumu",
               f"Teknik göstergeler {TEKNIK_IFADE.get(tk, kk(tk))} sinyal veriyor; fiyat 200 günlük ortalamanın {'üzerinde' if m.get('ma200') and m['fiyat'] > m['ma200'] else 'altında'}.", "Momentum"))
     a = m.get("akis") or {}
     if a:
@@ -185,6 +187,8 @@ def gorus(m):
     """Genel görüş: değerleme (%45), finansal sağlık (%35), momentum/akış (%20)."""
     pt = m.get("potansiyel") or 0; gs = m.get("genel_skor") or 2.75
     tk = {"GÜÇLÜ POZİTİF": 1, "POZİTİF": 0.5, "NÖTR": 0, "NEGATİF": -0.5, "GÜÇLÜ NEGATİF": -1}.get(m.get("teknik_ozet"), 0)
+    if (m.get("mta") or {}).get("puan") is not None:
+        tk = max(min((m["mta"]["puan"] - 50) / 35, 1), -1)
     ak = max(min((m.get("akis") or {}).get("puan", 0) / 2, 1), -1)
     s = 0.45 * max(min(pt / 0.3, 1), -1) + 0.35 * max(min((gs - 2.75) / 1.25, 1), -1) + 0.20 * (0.6 * tk + 0.4 * ak)
     et = "OLUMLU" if s > 0.35 else "ILIMLI OLUMLU" if s > 0.12 else "OLUMSUZ" if s < -0.35 else "TEMKİNLİ" if s < -0.12 else "NÖTR"
@@ -229,6 +233,7 @@ def yonetici_ozeti(m, kisa=False):
             C.append(f"Görünümü destekleyen başlıca unsur {pos[0][1]}.")
         elif neg:
             C.append(f"Görünüm üzerindeki başlıca baskı unsuru {neg[0][2]}.")
+        if teknik_cumle(m.get("mta"), kisa=True): C.append(teknik_cumle(m.get("mta"), kisa=True))
         C.append(f"Genel görünümümüz <b>{kk(et)}</b>.")
         return " ".join(C)
     if m.get("roe") is not None:
@@ -256,9 +261,13 @@ def yonetici_ozeti(m, kisa=False):
     r1, e1 = m["r"].get("1Y"), m["r_endeks"].get("1Y")
     if r1 is not None:
         t = f"Hisse son 12 ayda {yuzde(r1, 1, True)} getiri sağladı" + (f" ve BIST 100 endeksinin ({yuzde(e1, 1, True)}) {'üzerinde' if r1 > e1 else 'gerisinde'} kaldı" if e1 is not None else "")
-        t += f"; teknik göstergeler {TEKNIK_IFADE.get(m['teknik_ozet'], kk(m['teknik_ozet']))} sinyal veriyor" + (
-            f", hacim bazlı göstergeler ise {AKIS_IFADE.get((m.get('akis') or {}).get('ozet'), 'karışık bir görünüme')} işaret ediyor" if m.get("akis") else "") + "."
+        if (m.get("mta") or {}).get("puan") is None:
+            t += f"; teknik göstergeler {TEKNIK_IFADE.get(m['teknik_ozet'], kk(m['teknik_ozet']))} sinyal veriyor" + (
+                f", hacim bazlı göstergeler ise {AKIS_IFADE.get((m.get('akis') or {}).get('ozet'), 'karışık bir görünüme')} işaret ediyor" if m.get("akis") else "") + "."
+        else:
+            t += (f"; hacim bazlı göstergeler {AKIS_IFADE.get((m.get('akis') or {}).get('ozet'), 'karışık bir görünüme')} işaret ediyor." if m.get("akis") else ".")
         C.append(t)
+    if teknik_cumle(m.get("mta")): C.append(teknik_cumle(m.get("mta")))
     S = _surucular(m); pos = [x for x in sorted(S, key=lambda x: -x[0]) if x[0] > 0]; neg = [x for x in sorted(S, key=lambda x: x[0]) if x[0] < 0]
     son = f"Sonuç olarak genel görünümümüz <b>{kk(et)}</b>."
     if pos and neg: son += f" {bas_buyuk(pos[0][1])} görünümü desteklerken, {neg[0][2]} önümüzdeki dönemde izlenmesi gereken başlıca unsur olarak öne çıkıyor."
@@ -359,6 +368,8 @@ def karne(m):
         ust = m["fiyat"] > m["ma200"]
         K.append(("Trend", f"Fiyat 200 günlük ortalamanın {'üzerinde' if ust else 'altında'}; teknik göstergeler {TEKNIK_IFADE.get(m['teknik_ozet'], kk(m['teknik_ozet']))}, RSI {_n(m['rsi'], 0)}.",
                   "iyi" if ust and "NEGATİF" not in m["teknik_ozet"] else "zayif" if not ust and "POZİTİF" not in m["teknik_ozet"] else "orta"))
+    tkr = teknik_karne(m.get("mta"))
+    if tkr: K.append(tkr)
     a = m.get("akis")
     if a:
         K.append(("Para akışı", f"Hacim göstergeleri {AKIS_IFADE.get(a['ozet'], 'karışık bir görünüme')} işaret ediyor" + (f"; yabancı payı {yuzde(m['yabanci']['oran'] / 100)}." if m.get("yabanci") else "."),
@@ -472,6 +483,8 @@ def varlik_surucular(m):
     if a:
         v = 1 if a.get("puan", 0) > 0 else -1 if a.get("puan", 0) < 0 else 0
         S.append((v, "hacimle desteklenen alım", "hacim bazlı satış baskısı", f"Hacim göstergeleri {AKIS_IFADE.get(a.get('ozet'), 'karışık bir görünüme')} işaret ediyor.", "Para akışı"))
+    ts_ = teknik_surucu(m.get("mta"))
+    if ts_: S.append(ts_)
     if m.get("r_reel") is not None:
         v = 1 if m["r_reel"] > 0.05 else -1 if m["r_reel"] < -0.05 else 0
         S.append((v, "TL bazında enflasyon üzerinde getiri", "TL bazında reel kayıp", f"TL bazında 1 yıllık reel getiri {yuzde(m['r_reel'], 1, True)}.", "Reel getiri"))
@@ -481,6 +494,8 @@ def varlik_surucular(m):
 def varlik_gorus(m):
     s_ = m.get("genel_skor") or 2.75; dg = (m.get("deger") or {}).get("pot") or 0
     s = 0.7 * max(min((s_ - 2.75) / 1.25, 1), -1) + 0.3 * max(min(dg / 0.5, 1), -1)
+    if (m.get("mta") or {}).get("puan") is not None:
+        s = 0.8 * s + 0.2 * max(min((m["mta"]["puan"] - 50) / 35, 1), -1)
     return ("OLUMLU" if s > 0.35 else "ILIMLI OLUMLU" if s > 0.12 else "OLUMSUZ" if s < -0.35 else "TEMKİNLİ" if s < -0.12 else "NÖTR"), s
 
 
@@ -505,6 +520,7 @@ def varlik_ozeti(m, kisa=False):
         C.append(f"Uzun vadeli değer bantlarının ({len(dg['yontemler'])} model) birleşik orta noktası <b>{fiyat(dg['adil'], sym)}</b>; fiyat bu seviyeye göre "
                  f"<b>{yuzde(dg['pot'], 1, True)}</b> farkla {kk(dg['etiket'])}.")
     if kisa:
+        if teknik_cumle(m.get("mta"), kisa=True): C.append(teknik_cumle(m.get("mta"), kisa=True))
         C.append(f"Genel görünümümüz <b>{kk(et)}</b>."); return " ".join(C)
     tr = []
     if m.get("ma200"): tr.append(f"fiyat 200 günlük ortalamanın {'üzerinde' if m['fiyat'] > m['ma200'] else 'altında'}")
@@ -516,6 +532,7 @@ def varlik_ozeti(m, kisa=False):
     if ko.get("deger") is not None: ek.append(f"Korku & Açgözlülük Endeksi {ko['deger']}")
     if gl.get("btc_dom"): ek.append(f"Bitcoin dominansı {yuzde(gl['btc_dom'])}")
     if ek: C.append("Piyasa yapısında " + ", ".join(ek) + ".")
+    if teknik_cumle(m.get("mta")): C.append(teknik_cumle(m.get("mta")))
     S = varlik_surucular(m); pos = [x for x in sorted(S, key=lambda x: -x[0]) if x[0] > 0]; neg = [x for x in sorted(S, key=lambda x: x[0]) if x[0] < 0]
     son = f"Sonuç olarak genel görünümümüz <b>{kk(et)}</b>."
     if pos and neg: son += f" {bas_buyuk(pos[0][1])} destekleyici olurken, {neg[0][2]} temel risk unsuru olarak izlenmeli."
@@ -620,5 +637,48 @@ KARNE_ETIKET = {"Fiyat bantlara göre ucuz mu, pahalı mı?": "Değerleme bandı
                 "Kripto piyasasının havası nasıl?": "Piyasa duyarlılığı"}
 
 
-def karne_etiketle(liste):
-    return [(KARNE_ETIKET.get(q, q), c, d) for q, c, d in liste]
+def karne_etiketle(liste, t=None):
+    out = [(KARNE_ETIKET.get(q, q), c, d) for q, c, d in liste]
+    tk = teknik_karne(t)
+    if tk: out.insert(2, tk)
+    return out
+
+
+# ================================================================ TEKNİK ENTEGRASYON
+def _tf_et(t, k):
+    x = (t.get("tf") or {}).get(k)
+    return x["etiket"] if x else None
+
+
+def teknik_cumle(t, kisa=False):
+    """Özetlere eklenen çok zaman dilimli teknik analiz cümlesi."""
+    if not t or t.get("puan") is None: return ""
+    g, h, a_ = _tf_et(t, "G"), _tf_et(t, "H"), _tf_et(t, "A")
+    parca = [f"{ad_} {kk(e)}" for ad_, e in (("günlükte", g), ("haftalıkta", h), ("aylıkta", a_)) if e]
+    if kisa:
+        return f"Teknik görünüm {', '.join(parca)} (teknik puan {t['puan']:.0f}/100)."
+    s = f"Çok zaman dilimli teknik analizimiz {', '.join(parca)} görünüme işaret ediyor; birleşik teknik puan {t['puan']:.0f}/100."
+    gg = (t.get("tf") or {}).get("G") or (t.get("tf") or {}).get("H")
+    if gg:
+        oz = sorted([x for x in gg["sinyal"] if x[1] != 0 and x[3] >= 2], key=lambda x: -x[3])[:2]
+        if oz: s += " Öne çıkan teknik sinyaller: " + "; ".join(ilk_kucuk(x[0].split(": ", 1)[-1]) for x in oz) + "."
+        para = {"₺": "TL", "$": "$"}.get(t.get("para"), "")
+        sr = gg["sr"]
+        if sr["destek"] and sr["direnc"]:
+            s += f" Günlük grafikte {fiyat(sr['destek'][0][0], para)} destek, {fiyat(sr['direnc'][0][0], para)} direnç seviyesi izlenmeli."
+    return s
+
+
+def teknik_karne(t):
+    if not t or t.get("puan") is None: return None
+    g, h, a_ = _tf_et(t, "G"), _tf_et(t, "H"), _tf_et(t, "A")
+    p = t["puan"]
+    return ("Teknik görünüm", f"Günlük {kk(g or '–')}, haftalık {kk(h or '–')}, aylık {kk(a_ or '–')}; teknik puan {p:.0f}/100.",
+            "iyi" if p >= 58 else "zayif" if p <= 42 else "orta")
+
+
+def teknik_surucu(t):
+    if not t or t.get("puan") is None: return None
+    p = t["puan"]; v = 2 if p >= 75 else 1 if p >= 58 else -2 if p <= 25 else -1 if p <= 42 else 0
+    return (v, "güçlü teknik görünüm" if v == 2 else "olumlu teknik görünüm", "belirgin teknik zayıflık" if v == -2 else "zayıf teknik görünüm",
+            teknik_cumle(t, kisa=True), "Teknik analiz")
