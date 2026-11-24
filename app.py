@@ -39,7 +39,7 @@ DURUM_EMOJI = {"iyi": "🟢", "orta": "🟡", "zayif": "🔴", "yok": "⚪"}
 ETK_RENK = {"GÜÇLÜ AL": "#22C55E", "AL": "#22C55E", "NÖTR": "#F59E0B", "SAT": "#EF4444", "GÜÇLÜ SAT": "#EF4444"}
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
 
-st.set_page_config(page_title="BIST Rapor", page_icon="📊", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="KATKAY YATIRIM A.Ş.", page_icon="📈", layout="centered", initial_sidebar_state="collapsed")
 import uygulama_stil as TS
 TS = importlib.reload(TS)
 st.markdown(TS.STIL, unsafe_allow_html=True)
@@ -442,30 +442,29 @@ def _degisim_metni(v):
     return " · ".join(parca)
 
 
-def spark_svg(seri, renk, w=120, h=34):
-    """Son 60 günün mini fiyat çizgisi (satır içi SVG)."""
+def spark_svg(seri, renk, w=150, h=58):
+    """Son 60 günün mini fiyat grafiği: parlak çizgi + aşağı doğru solan alan."""
     v = [float(x) for x in seri.dropna().iloc[-60:]]
     if len(v) < 2: return ""
     lo, hi = min(v), max(v); hi = hi if hi > lo else lo + 1
-    pts = " ".join(f"{i * (w - 2) / (len(v) - 1) + 1:.1f},{h - 2 - (x - lo) / (hi - lo) * (h - 4):.1f}" for i, x in enumerate(v))
+    pts = " ".join(f"{i * (w - 2) / (len(v) - 1) + 1:.1f},{h - 3 - (x - lo) / (hi - lo) * (h - 8):.1f}" for i, x in enumerate(v))
     alan = f"1,{h} " + pts + f" {w - 1},{h}"
-    return (f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}"><polygon points="{alan}" fill="{renk}" fill-opacity="0.10"/>'
-            f'<polyline points="{pts}" fill="none" stroke="{renk}" stroke-width="1.8" stroke-linejoin="round"/></svg>')
+    gid = "g" + format(abs(hash((renk, round(v[-1], 6), len(v)))) % 10**8, "x")
+    return (f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}"><defs><linearGradient id="{gid}" x1="0" y1="0" x2="0" y2="1">'
+            f'<stop offset="0" stop-color="{renk}" stop-opacity=".45"/><stop offset="1" stop-color="{renk}" stop-opacity="0"/></linearGradient></defs>'
+            f'<polygon points="{alan}" fill="url(#{gid})"/>'
+            f'<polyline points="{pts}" fill="none" stroke="{renk}" stroke-width="2" stroke-linejoin="round" style="filter:drop-shadow(0 0 3px {renk})"/></svg>')
 
 
 def piyasa_karti(ad_, v):
-    d = v.get("d1G") or 0; renk = "#22C55E" if d > 0 else "#EF4444" if d < 0 else "#94A3B8"
-    ok = "▲" if d > 0 else "▼" if d < 0 else "■"
+    d = v.get("d1G") or 0; renk = "#22C55E" if d > 0 else "#EF4444" if d < 0 else "#A1A1AA"
+    sinif = "y" if d > 0 else "k" if d < 0 else "n"; ok = "▲" if d > 0 else "▼" if d < 0 else "■"
     deger = br.ond(v["deger"], 2 if v["deger"] < 10000 else 0)
     birim = {"puan": "", "TL": " ₺", "$": " $", "%": "%"}.get(v["birim"], "")
     alt = " · ".join(x for x in (f"1A {br.yz(v['d1A'])}" if v.get("d1A") is not None else "", f"YBB {br.yz(v['YBB'])}" if v.get("YBB") is not None else "") if x)
-    return (f'<div class="pk">'
-            f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-            f'<div><div style="font-size:.66rem;color:#94A3B8;font-weight:700;letter-spacing:.06em">{ad_.upper()}</div>'
-            f'<div style="font-size:1.18rem;font-weight:800;color:#F1F5F9;margin-top:2px">{deger}{birim}</div>'
-            f'<div style="font-size:.8rem;font-weight:700;color:{renk}">{ok} {br.yz(d)}</div></div>'
-            f'<div style="margin-top:6px">{spark_svg(v["seri"], renk)}</div></div>'
-            f'<div style="font-size:.68rem;color:#94A3B8;margin-top:2px">{alt}</div></div>')
+    return (f'<div class="pk"><div><div class="pk-ad">{ad_}</div><div class="pk-d">{deger}{birim}</div>'
+            f'<span class="rozet {sinif}">{ok} {br.yz(d)}</span><div class="pk-alt">{alt}</div></div>'
+            f'<div>{spark_svg(v["seri"], renk)}</div></div>')
 
 
 @st.cache_data(ttl=600, show_spinner=False)
@@ -559,7 +558,7 @@ try:
 except Exception:
     _pv_ust = None
 with _ust_yer.container():
-    _bil.html(TS.ust_bant_sayfa(_pv_ust), height=150)
+    _bil.html(TS.ust_bant_sayfa(_pv_ust), height=236)
 
 
 
@@ -1099,7 +1098,7 @@ with tab_p:
             st.image(sabah_k, use_container_width=True)
             ses = gorsel_oku("sabah/ozet.mp3", ZAMAN)
             if ses: st.audio(ses, format="audio/mp3")
-    st.markdown("#### 🌐 Piyasalar")
+    st.markdown(TS.bolum("Piyasalar"), unsafe_allow_html=True)
     try:
         PV = piyasa_verisi(ZAMAN)
     except Exception as e:

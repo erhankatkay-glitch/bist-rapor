@@ -149,7 +149,7 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     for i_, sat_ in enumerate(textwrap.wrap(basitce(f), 82)[:4]):
         _t(ax, 68, 150 - i_ * 28, sat_, 17, C["yazi"])
     # ---- alt bilgi
-    _t(ax, W / 2, 16, "Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    _t(ax, W / 2, 16, "KATKAY YATIRIM A.Ş. · Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
     return dosya
 
@@ -295,7 +295,7 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
         if k and y3 > 140: y3 = satir_("AŞAĞI KIRILIMLAR", k, C["kirmizi"], y3)
         k = df[df["RSI"] < 30].nsmallest(8, "RSI")["Kod"].tolist() if "RSI" in df else []
         if k and y3 > 140: y3 = satir_("AŞIRI SATIM (TEPKİ ADAYI)", k, C["altin"], y3)
-    _t(ax, W / 2, 22, "Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    _t(ax, W / 2, 22, "KATKAY YATIRIM A.Ş. · Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
     return dosya
 
@@ -354,6 +354,6 @@ def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
         yy = y - 4
         for sat in nl:
             _t(ax, 62, yy, sat, 15.5, C["soluk"]); yy -= 30
-    _t(ax, W / 2, 20, "Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    _t(ax, W / 2, 20, "KATKAY YATIRIM A.Ş. · Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
     return dosya

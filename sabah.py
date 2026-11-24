@@ -167,7 +167,7 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
             from matplotlib.patches import Circle
             ax.add_patch(Circle((58, y + 7), 7, color=renk))
             K._t(ax, 76, y, textwrap.shorten(a["baslik"], 70, placeholder="…"), 16, C["yazi"]); y -= 32
-    K._t(ax, W / 2, 18, "Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    K._t(ax, W / 2, 18, "KATKAY YATIRIM A.Ş. · Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
     return dosya
 
