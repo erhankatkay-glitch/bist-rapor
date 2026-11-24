@@ -86,7 +86,7 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     _t(ax, 48, H - 70, f"{tg.buyuk(piyasa_ad)}  ·  {tg.buyuk(tf_ad)}  ·  FIRSAT", 15, C["altin"], "semibold")
     _t(ax, 48, H - 140, F.gorunen(f["kod"], None), 54, weight="bold")
     ad = f.get("ad") or ""
-    if ad and ad not in (f["kod"], f["kod"][:-3]): _t(ax, 48, H - 180, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
+    if ad and ad not in f["kod"]: _t(ax, 48, H - 180, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
     _kutu(ax, 48, H - 250, 150, 48, ana, r=24)
     _t(ax, 123, H - 234, "AL" if yon == 1 else "SAT", 22, "#FFFFFF", "bold", ha="center")
     _t(ax, 214, H - 234, textwrap.shorten(f["kurulum_ad"], 40, placeholder="…"), 18, C["yazi"], "medium")
@@ -131,9 +131,11 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     # ---- balina ve riskler
     y = y - 40
     bal = f.get("balina") or []
-    if bal or f["ekstra"].get("balina_canli"):
+    canli = (f["ekstra"].get("balina_canli") or "").split("→")[-1].strip()
+    canli = canli if canli in ("net alış", "net satış") else ""
+    if bal or canli:
         b = ", ".join(dict.fromkeys(x_[0] for x_ in bal[-3:]))
-        if f["ekstra"].get("balina_canli"): b = (b + " · " if b else "") + "canlı akış: " + f["ekstra"]["balina_canli"].split("→")[-1].strip()
+        if canli: b = (b + " · " if b else "") + "canlı büyük işlemler: " + canli
         ax.add_patch(Circle((58, y + 7), 7, color=C["turkuaz"])); _t(ax, 76, y, textwrap.shorten("Balina: " + b, 92, placeholder="…"), 16, C["turkuaz"])
         y -= 34
     for r_ in (f.get("risk") or [])[:2]:
