@@ -195,25 +195,51 @@ def tablo(veri, gen, baslik=True, hizala_sol=(0,), kalin_son=False, renkli_kolon
     t.setStyle(TableStyle(s)); return t
 
 
+MARKA = "KATKAY YATIRIM A.Ş."
+_VARLIK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "varlik")
+
+
+def _resim(ad):
+    yol = os.path.join(_VARLIK, ad)
+    return yol if os.path.exists(yol) else None
+
+
 def sayfa_cizici(kod, baslik, tarih, kapak_yuk=0):
-    """Üst bilgi / alt bilgi. Kapak sayfasında koyu başlık bandını da çizer."""
+    """Üst bilgi / alt bilgi. Kapak sayfasında koyu başlık bandını (boğa–ayı görseli + KATKAY logosu) da çizer."""
+    logo, hero = _resim("logo.png"), _resim("hero_pdf.png")
+
     def ciz(c, doc):
         c.saveState(); W_, H_ = A4
         if doc.page == 1 and kapak_yuk:
-            c.setFillColor(R["gece"]); c.rect(0, H_ - kapak_yuk, W_, kapak_yuk, fill=1, stroke=0)
-            c.setFillColor(R["gece2"]); c.rect(W_ * 0.62, H_ - kapak_yuk, W_ * 0.38, kapak_yuk, fill=1, stroke=0)
-            c.setFillColor(R["altin"]); c.rect(0, H_ - kapak_yuk, W_, 2.5, fill=1, stroke=0)
-            c.setFillColor(R["altin"]); c.setFont("DVB", 7); c.drawString(1.5 * cm, H_ - 0.75 * cm, baslik.upper())
-            c.setFillColor(colors.HexColor("#94A3B8")); c.setFont("DV", 7); c.drawRightString(W_ - 1.5 * cm, H_ - 0.75 * cm, tarih)
+            y0 = H_ - kapak_yuk
+            c.setFillColor(R["gece"]); c.rect(0, y0, W_, kapak_yuk, fill=1, stroke=0)
+            if hero:
+                try: c.drawImage(hero, 0, y0, W_, kapak_yuk, mask="auto", preserveAspectRatio=False)
+                except Exception: pass
+            c.setFillColor(R["altin"]); c.rect(0, y0, W_, 2.5, fill=1, stroke=0)
+            x = 1.5 * cm
+            if logo:
+                try:
+                    c.drawImage(logo, x, H_ - 1.12 * cm, 0.78 * cm, 0.78 * cm, mask="auto"); x += 0.78 * cm + 6
+                except Exception: pass
+            c.setFillColor(colors.white); c.setFont("DVB", 8); c.drawString(x, H_ - 0.62 * cm, "KATKAY")
+            c.setFillColor(R["altin"]); c.drawString(x + pdfmetrics.stringWidth("KATKAY ", "DVB", 8), H_ - 0.62 * cm, "YATIRIM A.Ş.")
+            c.setFillColor(colors.HexColor("#A1A1AA")); c.setFont("DV", 6.8); c.drawString(x, H_ - 0.98 * cm, baslik.upper())
+            c.setFillColor(colors.HexColor("#A1A1AA")); c.setFont("DV", 7); c.drawRightString(W_ - 1.5 * cm, H_ - 0.75 * cm, tarih)
         else:
-            c.setFillColor(R["altin"]); c.roundRect(1.5 * cm, H_ - 1.02 * cm, 4, 10, 1.5, fill=1, stroke=0)
-            c.setFillColor(R["murekkep"]); c.setFont("DVB", 8.5); c.drawString(1.5 * cm + 9, H_ - 1.0 * cm, kod)
+            x = 1.5 * cm
+            if logo:
+                try:
+                    c.drawImage(logo, x, H_ - 1.08 * cm, 0.42 * cm, 0.42 * cm, mask="auto"); x += 0.42 * cm + 5
+                except Exception: pass
+            c.setFillColor(R["altin"]); c.roundRect(x, H_ - 1.02 * cm, 4, 10, 1.5, fill=1, stroke=0)
+            c.setFillColor(R["murekkep"]); c.setFont("DVB", 8.5); c.drawString(x + 9, H_ - 1.0 * cm, kod)
             c.setFillColor(R["soluk"]); c.setFont("DV", 8)
-            c.drawString(1.5 * cm + 9 + pdfmetrics.stringWidth(kod, "DVB", 8.5) + 8, H_ - 1.0 * cm, baslik)
-            c.drawRightString(W_ - 1.5 * cm, H_ - 1.0 * cm, tarih)
+            c.drawString(x + 9 + pdfmetrics.stringWidth(kod, "DVB", 8.5) + 8, H_ - 1.0 * cm, baslik)
+            c.drawRightString(W_ - 1.5 * cm, H_ - 1.0 * cm, f"{MARKA} · {tarih}")
             c.setStrokeColor(R["cizgi"]); c.setLineWidth(0.6); c.line(1.5 * cm, H_ - 1.2 * cm, W_ - 1.5 * cm, H_ - 1.2 * cm)
         c.setFillColor(R["soluk"]); c.setFont("DV", 6.8)
-        c.drawString(1.5 * cm, 0.8 * cm, "Otomatik model çıktısıdır; yatırım tavsiyesi değildir.")
+        c.drawString(1.5 * cm, 0.8 * cm, f"{MARKA} · Otomatik model çıktısıdır; yatırım tavsiyesi değildir.")
         c.setFillColor(R["zemin2"]); c.roundRect(W_ - 1.5 * cm - 34, 0.62 * cm, 34, 13, 6, fill=1, stroke=0)
         c.setFillColor(R["murekkep"]); c.setFont("DVB", 7); c.drawCentredString(W_ - 1.5 * cm - 17, 0.62 * cm + 4, str(doc.page))
         c.restoreState()
@@ -255,7 +281,7 @@ SOZLUK_HISSE = [
 # =====================================================================
 # PRO TARZI BİLEŞENLER
 # =====================================================================
-HEX.update({"altin": "#F59E0B", "altin_acik": "#FEF3C7", "gece": "#0B1220", "gece2": "#111A2E"})
+HEX.update({"altin": "#E8B84A", "altin_acik": "#FBF1D6", "gece": "#0B0B0C", "gece2": "#17181B"})
 R.update({k: colors.HexColor(HEX[k]) for k in ("altin", "altin_acik", "gece", "gece2")})
 
 import re as _re
