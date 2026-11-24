@@ -7,10 +7,16 @@ import json
 import bist_veri as bv
 import bist_isyatirim as isy
 import bist_makro as mk
+import tasarim as ts
 import bist_rapor as br
+import bist_varlik as V
+ts = importlib.reload(ts)
 bv = importlib.reload(bv)
 isy = importlib.reload(isy)  # alt modüller de güncellensin
 mk = importlib.reload(mk)
+br = importlib.reload(br)
+V = importlib.reload(V)
+DURUM_EMOJI = {"iyi": "🟢", "orta": "🟡", "zayif": "🔴", "yok": "⚪"}
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
 
 st.set_page_config(page_title="BIST Rapor", page_icon="📊", layout="centered", initial_sidebar_state="collapsed")
@@ -108,6 +114,7 @@ def analiz(kod, emsal, prm, gun, surum):
         "saglik": m["saglik"],
         "akis_ozet": (m.get("akis") or {}).get("ozet"), "akis_yorum": br.akis_yorumlari(m),
         "genel": br.genel_degerlendirme(m), "haber": m.get("haber"), "seviye": m.get("seviye"),
+        "tek": br.tek_bakista(m), "sade": br.sade_ozet(m),
         "usd": {k: v for k, v in (m.get("usd") or {}).items() if k != "seri"} if m.get("usd") else None,
         "yabanci": (m.get("yabanci") or {}).get("oran"),
     }
@@ -143,7 +150,7 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                  })
 
 
-tab_r, tab_p, tab_t, tab_k, tab_w = st.tabs(["📄 Rapor", "🌍 Piyasa", "🔎 Tarayıcı", "⚖️ Karşılaştır", "⭐ Takip"])
+tab_r, tab_v, tab_p, tab_t, tab_k, tab_w = st.tabs(["📄 Hisse", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "⚖️ Karşılaştır", "⭐ Takip"])
 
 # ================= RAPOR =================
 with tab_r:
@@ -210,7 +217,13 @@ with tab_r:
                 kart(c1, "DOLAR FİYAT", f"${br.ond(u['fiyat_usd'], 2)}", f"Kur {br.ond(u['kur'], 2)}", "#2F6DB5")
                 kart(c2, "1Y GETİRİ ($)", br.yz(u["r"].get("1Y")), f"TL reel: {br.yz(br.reel(o['1Y getiri']))}",
                      "#1E8E5A" if (u["r"].get("1Y") or 0) > 0 else "#C0392B")
-            with st.expander("🧾 Genel değerlendirme (tüm raporun özeti)", expanded=True):
+            if r.get("sade"):
+                st.info("**Kısaca:** " + r["sade"].replace("<b>", "**").replace("</b>", "**"))
+            if r.get("tek"):
+                st.markdown("**Tek bakışta**")
+                for soru, cevap, durum in r["tek"]:
+                    st.markdown(f"{DURUM_EMOJI.get(durum, '⚪')} **{soru}**  \n{cevap}")
+            with st.expander("🧾 Genel değerlendirme (tüm raporun özeti)", expanded=False):
                 for bas, metin in r.get("genel") or []:
                     st.markdown(f"**{bas}.** {metin}")
             if r["guclu"]: st.markdown("**Güçlü yönler**\n" + "\n".join(f"- 🟢 {x}" for x in r["guclu"]))
@@ -226,6 +239,86 @@ with tab_r:
                 st.dataframe(dfv, hide_index=True, use_container_width=True,
                              column_config={"Değer (TL)": st.column_config.NumberColumn(format="%.2f"),
                                             "Ağırlık": st.column_config.NumberColumn(format="%.2f")})
+
+# ================= EMTİA & KRİPTO =================
+@st.cache_data(ttl=3 * 3600, show_spinner=False, max_entries=60)
+def varlik_analiz(kod, prm, saat, surum):
+    br.PARAM.update({k.upper(): v for k, v in dict(prm).items()})
+    klasor = tempfile.mkdtemp()
+    dosya, m = V.rapor(kod, klasor=klasor)
+    with open(dosya, "rb") as f:
+        pdf = f.read()
+    graf = {}
+    for ad_, fn in (("fiyat", lambda: br.g_fiyat(m["hist"], None, m["kod"], m.get("seviye"))), ("tlusd", lambda: V.g_tl_usd(m)),
+                    ("mevsim", lambda: V.g_mevsim(m)), ("akis", lambda: br.g_akis(m["hist"], m))):
+        try:
+            b_ = fn()
+            if b_: graf[ad_] = b_.getvalue()
+        except Exception:
+            pass
+    return {"pdf": pdf, "dosya": os.path.basename(dosya), "ad": m["ad"], "kod": m["kod"], "para": m["para"], "tur": m["tur"],
+            "fiyat": m["fiyat"], "fiyat_tl": m["fiyat_tl"], "skor": m["genel_skor"], "gorunum": m["gorunum"],
+            "r_usd": m["r_usd"], "r_tl": m["r_tl"], "r_reel": m["r_reel"], "vol": m["vol"], "mayer": m["mayer"],
+            "zirveden": m["zirveden"], "tek": V.tek_bakista(m), "sade": V.sade_ozet(m), "guclu": m["guclu"], "zayif": m["zayif"],
+            "genel": V.genel_degerlendirme(m), "graf": graf, "korku": m.get("korku"), "cg": m.get("cg")}
+
+@st.cache_data(ttl=6 * 3600, show_spinner=False)
+def varlik_tarama(gun, surum):
+    return V.tara()
+
+with tab_v:
+    st.caption("Altın, gümüş, petrol, tarım ürünleri ve önde gelen kripto paralar. Bilançosu olmayan bu varlıklar için analiz "
+               "trend, momentum, risk, para akışı, mevsimsellik ve piyasa verilerine dayanır.")
+    v_secenek = [f"{k} — {v[1]}" for k, v in V.VARLIKLAR.items()]
+    v_sec = st.selectbox("Varlık", v_secenek, index=None, placeholder="Örn. Altın, Bitcoin, Brent", key="v_sec")
+    v_kod = v_sec.split(" — ")[0] if v_sec else ""
+    if st.button("📄 Analiz Et", type="primary", disabled=not v_kod, key="v_btn"):
+        try:
+            with st.status(f"{v_sec} analiz ediliyor…") as s:
+                st.session_state.v_sonuc = varlik_analiz(v_kod, tuple(PRM.items()), dt.datetime.now().strftime("%Y%m%d%H"), br.SURUM)
+                s.update(label="Hazır ✓", state="complete", expanded=False)
+        except Exception as e:
+            st.error(f"Analiz yapılamadı: {e}")
+    if "v_sonuc" in st.session_state:
+        r = st.session_state.v_sonuc; sym = "$" if r["para"] == "USD" else "₺"
+        st.markdown(f"### {r['ad']}")
+        renk = {"iyi": "#16A34A", "orta": "#D97706", "zayif": "#DC2626"}[V.durum_gorunum(r["gorunum"])]
+        c1, c2 = st.columns(2)
+        kart(c1, "SON FİYAT", f"{br.tl(r['fiyat'])} {sym}", f"≈ {br.tl(r['fiyat_tl'])} ₺" if r["para"] == "USD" else "")
+        kart(c2, "GENEL GÖRÜNÜM", r["gorunum"], f"Skor {br.ond(r['skor'], 1)}/5", renk)
+        c1, c2 = st.columns(2)
+        kart(c1, "1 YIL ($)", br.yz(r["r_usd"].get("1Y")), f"TL reel: {br.yz(r['r_reel'])}", "#16A34A" if (r["r_usd"].get("1Y") or 0) > 0 else "#DC2626")
+        kart(c2, "VOLATİLİTE", br.yz(r["vol"]), f"Zirveden: {br.yz(r['zirveden'])}")
+        st.download_button("⬇️ PDF Raporu İndir", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="v_dl")
+        st.info("**Kısaca:** " + r["sade"].replace("<b>", "**").replace("</b>", "**"))
+        b1, b2, b3 = st.tabs(["Tek bakışta", "Grafikler", "Değerlendirme"])
+        with b1:
+            for soru, cevap, durum in r["tek"]:
+                st.markdown(f"{DURUM_EMOJI.get(durum, '⚪')} **{soru}**  \n{cevap}")
+            if r["guclu"]: st.markdown("**Olumlu**\n" + "\n".join(f"- 🟢 {x}" for x in r["guclu"]))
+            if r["zayif"]: st.markdown("**Dikkat**\n" + "\n".join(f"- 🔴 {x}" for x in r["zayif"]))
+        with b2:
+            for ad_ in ("fiyat", "tlusd", "mevsim", "akis"):
+                if ad_ in r["graf"]: st.image(r["graf"][ad_], use_container_width=True)
+        with b3:
+            for bas, metin in r["genel"]:
+                st.markdown(f"**{bas}.** {metin}")
+    with st.expander("📊 Tüm emtia ve kriptoları karşılaştır"):
+        if st.button("Karşılaştırmayı oluştur (1–2 dk)", key="v_tara"):
+            with st.spinner("Varlıklar taranıyor…"):
+                st.session_state.v_tablo = varlik_tarama(GUN, br.SURUM)
+        if "v_tablo" in st.session_state:
+            sat, hat = st.session_state.v_tablo
+            if sat:
+                dfv = pd.DataFrame(sat).sort_values("Skor", ascending=False)
+                for c in ("1A $", "YBB $", "1Y $", "1Y TL reel", "Volatilite"):
+                    dfv[c] = dfv[c].apply(lambda x: None if x is None or pd.isna(x) else round(x * 100, 1))
+                st.dataframe(dfv[["Kod", "Ad", "Skor", "Görünüm", "1A $", "YBB $", "1Y $", "1Y TL reel", "Volatilite", "RSI", "Para akışı"]],
+                             hide_index=True, use_container_width=True,
+                             column_config={"Skor": st.column_config.ProgressColumn(min_value=0, max_value=5, format="%.1f"),
+                                            "RSI": st.column_config.NumberColumn(format="%.0f")})
+                st.caption("Getiri ve volatilite sütunları yüzde olarak gösterilir. Sıralama teknik model çıktısıdır, tavsiye değildir.")
+            if hat: st.caption("Alınamayanlar: " + ", ".join(hat))
 
 # ================= PİYASA =================
 def _degisim_metni(v):
