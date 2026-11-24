@@ -35,3 +35,4 @@ jobs:
       - name: Silme defterini kaydet
         if: always()
         run: python yayinla.py cikti "Telegram testi $(date -u +%FT%H%M)"
+# tekrar 1795527299
