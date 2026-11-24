@@ -451,16 +451,31 @@ def calistir():
     print(f"Haber: {len(aday)} sınıflanan başlık, {len(analizler)} analiz gönderildi.")
 
 
+def _pfk(kod):
+    k = str(kod).upper()
+    return ("K", k.split("/")[0]) if "/" in k else ("H", k)
+
+
+def _pf():
+    try:
+        import portfoy as P
+        return {_pfk(k) for k, _, _ in P.takip()}
+    except Exception:
+        return set()
+
+
 def mesaj(a):
     ikon = "🟢" if a["yon"] > 0 else "🔴"
     t = dt.datetime.fromisoformat(a["zaman"]).astimezone(TSI)
     s = [f"{ikon} <b>{esc(a['tur'])}</b> · {'olumlu' if a['yon'] > 0 else 'olumsuz'} · {t:%H:%M}",
          f"<i>“{esc(a['baslik'][:200])}”</i>" + (f"\n— {esc(a['kaynak'])}" if a.get("kaynak") else "") +
          (f" (+{a['kaynak_sayi'] - 1} kaynak)" if a["kaynak_sayi"] > 1 else "")]
-    vl = []
+    vl = []; pf = _pf()
+    if any(_pfk(v["kod"]) in pf for v in a["varliklar"]):
+        s.insert(1, "💼 <b>Portföyünüzdeki bir varlığı etkiliyor</b>")
     for v in a["varliklar"]:
         ok = "⬆️" if v["isaret"] > 0 else "⬇️"
-        satir = f"{ok} <b>{esc(vad(v['kod']))}</b> — {esc(v['gerekce'])}"
+        satir = f"{ok} {'💼 ' if _pfk(v['kod']) in pf else ''}<b>{esc(vad(v['kod']))}</b> — {esc(v['gerekce'])}"
         r = v.get("tepki")
         if r and r["saat"] >= 1:
             yonlu = r["degisim"] * v["isaret"]

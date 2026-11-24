@@ -238,7 +238,7 @@ SOZLUK_HISSE = [
     ("F/K (Fiyat/Kazanç)", "Hissenin fiyatının, şirketin hisse başına yıllık kârına oranı. Düşükse kâra göre ucuz demektir."),
     ("PD/DD (Piyasa Değeri/Defter Değeri)", "Şirketin borsadaki değerinin, muhasebedeki özkaynağına oranı. 1'in altı, şirketin defter değerinden ucuza işlem gördüğünü gösterir."),
     ("FAVÖK", "Faiz, vergi ve amortisman öncesi kâr; şirketin ana faaliyetlerinden ne kadar nakit ürettiğinin yaklaşık ölçüsü."),
-    ("ROE (Özkaynak kârlılığı)", "Ortakların koyduğu her 100 TL sermayeye yılda ne kadar kâr üretildiği. Enflasyonun üzerinde olması istenir."),
+    ("ROE (Özkaynak kârlılığı)", "Ortakların koyduğu her 100 birim sermayeye yılda ne kadar kâr üretildiği. Enflasyonun üzerinde olması istenir."),
     ("Serbest nakit akışı", "Şirketin yatırımlarını yaptıktan sonra elinde kalan nakit. Temettü ve borç ödemesinin kaynağıdır."),
     ("Adil değer", "Farklı değerleme yöntemlerinin ortalamasıyla bulunan, modelin 'olması gereken' fiyat tahmini."),
     ("İNA / DCF", "Şirketin gelecekte üreteceği nakitlerin bugüne indirgenmesiyle yapılan değerleme."),

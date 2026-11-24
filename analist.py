@@ -17,7 +17,16 @@ def yuzde(x, d=1, isaret=False):
     s = ("+" if x > 0 else "-" if x < 0 else "") if isaret else ("-" if x < 0 else "")
     return s + "%" + _n(abs(x) * 100, d)
 
-def tutar(x, para="TL"):
+PARA = "TL"
+
+
+def EN():
+    import bist_rapor as br
+    return br.EN
+
+
+def tutar(x, para=None):
+    para = para or PARA
     """Büyük tutarlar için okunur biçim: 444,6 milyar TL."""
     if x is None: return "–"
     a = abs(x)
@@ -25,7 +34,8 @@ def tutar(x, para="TL"):
         if a >= e: return f"{_n(x / e, 1)} {ad} {para}".strip()
     return f"{_n(x, 0)} {para}".strip()
 
-def fiyat(x, para="TL"):
+def fiyat(x, para=None):
+    para = para or PARA
     if x is None: return "–"
     import tasarim as TS
     return f"{_n(x, TS.basamak(x))} {para}".strip()
@@ -92,7 +102,8 @@ SEKTOR_NOT = {
     "GYO": (["konut satışlarında yavaşlama", "yüksek faiz ortamı", "net aktif değere göre iskontonun sürmesi"],
             ["faiz indirimleri", "proje satış ve teslim takvimi", "kira gelirlerindeki artış"]),
 }
-GENEL_RISK = "yüksek enflasyon ve sıkı para politikası ortamı, TL'deki değer kaybı ve küresel risk iştahındaki dalgalanmalar"
+GENEL_RISK_ABD = "Fed faiz politikası ve tahvil faizlerindeki oynaklık, yüksek değerlemeli teknoloji hisselerinde düzeltme riski, dolar endeksi ve küresel büyüme beklentilerindeki değişimler"
+GENEL_RISK = GENEL_RISK_TR = "yüksek enflasyon ve sıkı para politikası ortamı, TL'deki değer kaybı ve küresel risk iştahındaki dalgalanmalar"
 
 
 def sektor_adi(m):
@@ -259,7 +270,7 @@ def yonetici_ozeti(m, kisa=False):
         if t: C.append(t + ".")
     r1, e1 = m["r"].get("1Y"), m["r_endeks"].get("1Y")
     if r1 is not None:
-        t = f"Hisse son 12 ayda {yuzde(r1, 1, True)} getiri sağladı" + (f" ve BIST 100 endeksinin ({yuzde(e1, 1, True)}) {'üzerinde' if r1 > e1 else 'gerisinde'} kaldı" if e1 is not None else "")
+        t = f"Hisse son 12 ayda {yuzde(r1, 1, True)} getiri sağladı" + (f" ve {EN()} endeksinin ({yuzde(e1, 1, True)}) {'üzerinde' if r1 > e1 else 'gerisinde'} kaldı" if e1 is not None else "")
         if (m.get("mta") or {}).get("puan") is None:
             t += f"; teknik göstergeler {TEKNIK_IFADE.get(m['teknik_ozet'], kk(m['teknik_ozet']))} sinyal veriyor" + (
                 f", hacim bazlı göstergeler ise {AKIS_IFADE.get((m.get('akis') or {}).get('ozet'), 'karışık bir görünüme')} işaret ediyor" if m.get("akis") else "") + "."
@@ -267,7 +278,7 @@ def yonetici_ozeti(m, kisa=False):
             t += (f"; hacim bazlı göstergeler {AKIS_IFADE.get((m.get('akis') or {}).get('ozet'), 'karışık bir görünüme')} işaret ediyor." if m.get("akis") else ".")
         C.append(t)
     if teknik_cumle(m.get("mta")): C.append(teknik_cumle(m.get("mta")))
-    C += ileri_cumleler(m, "TL")
+    C += ileri_cumleler(m, PARA)
     S = _surucular(m); pos = [x for x in sorted(S, key=lambda x: -x[0]) if x[0] > 0]; neg = [x for x in sorted(S, key=lambda x: x[0]) if x[0] < 0]
     son = f"Sonuç olarak genel görünümümüz <b>{kk(et)}</b>."
     if pos and neg: son += f" {bas_buyuk(pos[0][1])} görünümü desteklerken, {neg[0][2]} önümüzdeki dönemde izlenmesi gereken başlıca unsur olarak öne çıkıyor."
@@ -420,7 +431,7 @@ def bolum_girisi(m, bolum):
         return "Şirket benzer ölçek ve faaliyet alanındaki emsalleriyle temel çarpanlar üzerinden karşılaştırılmıştır."
     if bolum == "fiyat":
         sv = m.get("seviye") or {}; r1, e1 = m["r"].get("1Y"), m["r_endeks"].get("1Y")
-        t = (f"Hisse son 12 ayda {yuzde(r1, 1, True)} getiri sağladı" + (f"; aynı dönemde BIST 100 {yuzde(e1, 1, True)}" if e1 is not None else "") + ". ") if r1 is not None else ""
+        t = (f"Hisse son 12 ayda {yuzde(r1, 1, True)} getiri sağladı" + (f"; aynı dönemde {EN()} {yuzde(e1, 1, True)}" if e1 is not None else "") + ". ") if r1 is not None else ""
         if sv.get("destek") and sv.get("direnc"):
             t += f"Fiyat <b>{fiyat(sv['destek'][0][0])}</b> destek ve <b>{fiyat(sv['direnc'][0][0])}</b> direnç bandında hareket ediyor."
         return t

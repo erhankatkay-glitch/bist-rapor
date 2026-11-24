@@ -1,0 +1,5 @@
+# PORTFÖY — Telegram'daki kişisel uyarılar için. Uygulamanın Portföy sekmesinden "Telegram takibine al" ile güncellenir.
+# Her satıra: KOD MİKTAR (isteğe bağlı @ maliyet). Örnekler:
+# THYAO 1000 @ 285
+# NVDA.US 10 @ 120
+# BTC/USDT 0,05 @ 62000

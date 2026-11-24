@@ -106,3 +106,35 @@ def ad(kod):
             pass
     s = kod.upper()[:-3] if abd_mu(kod) else kod
     return _AD.get(kod.upper()) or DEV.get(s) or s
+
+
+SEKTOR_ETF_EN = {"Technology": "XLK", "Financial Services": "XLF", "Healthcare": "XLV", "Consumer Cyclical": "XLY",
+                 "Consumer Defensive": "XLP", "Energy": "XLE", "Industrials": "XLI", "Basic Materials": "XLB", "Utilities": "XLU",
+                 "Real Estate": "XLRE", "Communication Services": "XLC"}
+SEKTOR_YEDEK = {"XLK": ["AAPL", "MSFT", "NVDA", "AVGO", "ORCL", "CRM", "AMD", "ADBE", "CSCO", "QCOM"],
+                "XLF": ["JPM", "BAC", "WFC", "GS", "MS", "V", "MA", "AXP", "C", "SCHW"],
+                "XLV": ["LLY", "UNH", "JNJ", "ABBV", "MRK", "PFE", "TMO", "ABT", "AMGN", "ISRG"],
+                "XLY": ["AMZN", "TSLA", "HD", "MCD", "NKE", "LOW", "SBUX", "BKNG", "TJX", "CMG"],
+                "XLP": ["WMT", "PG", "COST", "KO", "PEP", "PM", "MO", "MDLZ", "CL", "KMB"],
+                "XLE": ["XOM", "CVX", "COP", "EOG", "SLB", "PSX", "MPC", "OXY", "VLO", "WMB"],
+                "XLI": ["GE", "CAT", "RTX", "HON", "UNP", "BA", "LMT", "DE", "UPS", "ETN"],
+                "XLB": ["LIN", "SHW", "APD", "ECL", "FCX", "NEM", "DOW", "NUE", "DD", "PPG"],
+                "XLU": ["NEE", "SO", "DUK", "CEG", "AEP", "SRE", "D", "EXC", "XEL", "PCG"],
+                "XLRE": ["PLD", "AMT", "EQIX", "WELL", "SPG", "PSA", "O", "CCI", "DLR", "VICI"],
+                "XLC": ["META", "GOOGL", "NFLX", "DIS", "TMUS", "VZ", "T", "CMCSA", "EA", "CHTR"]}
+
+
+def emsaller(kod, info, adet=6):
+    """Aynı sektördeki büyük şirketler (sektör ETF'inin en büyük payları; olmazsa sabit liste). (liste, grup adı)"""
+    etf = SEKTOR_ETF_EN.get((info or {}).get("sector") or "")
+    if not etf: return [], None
+    s = kod.upper()[:-3].replace(".", "-"); liste = []
+    try:
+        import yfinance as yf
+        th = yf.Ticker(etf).funds_data.top_holdings
+        liste = [str(x).upper() for x in th.index]
+    except Exception:
+        pass
+    if len(liste) < 4: liste = SEKTOR_YEDEK.get(etf, [])
+    liste = [kod_yap(x) for x in liste if x.replace(".", "-") != s][:adet]
+    return liste, f"{SEKTOR_ETF.get(etf, etf)} ({etf} büyükleri)"

@@ -47,6 +47,41 @@ def kurallar(metin):
     return K
 
 
+def portfoy_kontrol(yeni, durum, teknik, bugun):
+    """Kayıtlı portföy (portfoy.txt) için kişisel uyarılar; varlık başına tek satır, her uyarı türü günde bir kez."""
+    import portfoy as P
+    out = []
+    for kod, miktar, maliyet in P.takip():
+        try:
+            s = teknik(kod); g = s["tf"]["G"]; p = float(g["fiyat"]); d = g.get("degisim") or 0.0
+        except Exception as ex:
+            print(f"Portföy {kod}: {ex}", file=sys.stderr); continue
+        parca = []
+        def bir(tur, metin):
+            a = f"PF|{kod}|{tur}|{bugun}"
+            if not durum.get(a) and not yeni.get(a):
+                yeni[a] = True; parca.append(metin)
+        ters = [ad_.split(": ", 1)[-1].split(" – ")[0] for ad_, yon, ac, guc in g["sinyal"] if yon < 0 and any(
+            w in ad_ for w in ("TEYİT", "KIRILIM", "BOS", "CHoCH", "Ölüm kesişimi", "SuperTrend sat", "Balina satışı", "dağıtım"))]
+        yeni_ters = [x for x in dict.fromkeys(ters) if not durum.get(f"PF|{kod}|sin|{x[:40]}|{bugun}")]
+        for x in yeni_ters: yeni[f"PF|{kod}|sin|{x[:40]}|{bugun}"] = True
+        if yeni_ters: parca.append("ters sinyal: " + ", ".join(yeni_ters[:4]))
+        onceki = durum.get(f"PFET|{kod}"); yeni[f"PFET|{kod}"] = g["etiket"]
+        if g["etiket"] in ("SAT", "GÜÇLÜ SAT") and onceki not in (None, "SAT", "GÜÇLÜ SAT"):
+            bir("etiket", f"teknik görünüm {onceki} → {g['etiket']} ({g['puan']:.0f})")
+        ds = durum.get(f"PFDS|{kod}")
+        if ds and p < ds * 0.997: bir("destek", f"destek {_s(ds)} kırıldı")
+        if g["sr"]["destek"]: yeni[f"PFDS|{kod}"] = float(g["sr"]["destek"][0][0])
+        if d <= (-0.07 if _kripto(kod) else -0.04): bir("dusus", f"sert düşüş {_p(d)}")
+        if maliyet:
+            kz = p / maliyet - 1
+            if kz <= -0.08: bir("zarar", f"maliyete göre {_p(kz)} (maliyet {_s(maliyet)})")
+            elif kz >= 0.15: bir("kar", f"maliyete göre {_p(kz)} kârda, kâr koruma düşünülebilir")
+        if parca:
+            out.append(f"💼 {_ad(kod)}: ⚠️ " + " · ".join(parca) + f" · fiyat {_s(p)} ({_p(d)})")
+    return out
+
+
 def _ad(kod):
     import bist_teknik as T
     if kod.endswith(".US"):
@@ -91,10 +126,11 @@ def tara(K, durum):
     hedefler = []
     for k in K:
         if k["tip"] == "otomatik":
-            for yol in ("takip_listesi.txt", "teknik_takip.txt"):
+            for yol in ("takip_listesi.txt", "teknik_takip.txt", "portfoy.txt"):
                 if os.path.exists(yol):
                     for s in open(yol, encoding="utf-8"):
                         s = s.split("#")[0].strip().upper()
+                        s = s.split()[0] if s else ""   # portföy satırı: KOD MİKTAR @ MALİYET
                         if s:
                             import bist_varlik as V
                             hedefler.append({"tip": "formasyon", "kod": s, "metin": f"{s} FORMASYON (otomatik)"})
@@ -154,6 +190,10 @@ def tara(K, durum):
                     yeni[a2] = True   # gönderilmese de görüldü say (aynı haberin diğer başlıkları ertesi gün gelmesin)
         except Exception as ex:
             print(f"{anahtar}: {ex}", file=sys.stderr)
+    try:
+        bildir += portfoy_kontrol(yeni, durum, teknik, bugun)
+    except Exception as ex:
+        print("Portföy kontrolü:", ex, file=sys.stderr)
     bildir = list(dict.fromkeys(bildir))
     # eski günlük anahtarları temizle
     sinir = (dt.datetime.now(TSI) - dt.timedelta(days=30)).strftime("%Y-%m-%d")
@@ -161,7 +201,7 @@ def tara(K, durum):
     return bildir, yeni
 
 
-GRUP = [("⚡🔔", "⚡ <b>Sert hareket ve fiyat seviyeleri</b>"), ("🟢🔴", "🧭 <b>Formasyon ve kırılımlar</b>"),
+GRUP = [("💼", "💼 <b>PORTFÖYÜNÜZ</b>"), ("⚡🔔", "⚡ <b>Sert hareket ve fiyat seviyeleri</b>"), ("🟢🔴", "🧭 <b>Formasyon ve kırılımlar</b>"),
         ("📈", "📈 <b>RSI ve teknik puan</b>"), ("📰", "📰 <b>Şirket haberleri (KAP)</b>")]
 
 

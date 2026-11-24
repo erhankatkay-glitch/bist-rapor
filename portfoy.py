@@ -37,15 +37,31 @@ def ayristir(metin):
     return out
 
 
+TAKIP_DOSYA = "portfoy.txt"
+
+
+def takip():
+    """Telegram uyarıları için kayıtlı portföy: [(kod, miktar, maliyet)]."""
+    import os
+    if not os.path.exists(TAKIP_DOSYA): return []
+    return ayristir(open(TAKIP_DOSYA, encoding="utf-8").read())
+
+
+def takip_kodlari():
+    return {k for k, _, _ in takip()}
+
+
 def _seri_tl(kod, fx):
     """Varlığın TL bazında günlük kapanış serisi, türü ve adı."""
     import bist_teknik as T, bist_kripto as KR, bist_varlik as V, bist_veri as bv
     h, tur = T.gunluk_veri(kod)
     c = h["Close"].dropna()
-    usd = (tur == "kripto" and KR.coz(kod)[1] == "USDT") or (tur == "emtia" and kod.upper() != "GRAMALTIN")
+    usd = (tur == "kripto" and KR.coz(kod)[1] == "USDT") or (tur == "emtia" and kod.upper() != "GRAMALTIN") or tur in ("abd", "endeks") and kod.upper().endswith(".US")
     if usd: c = (c * fx.reindex(c.index, method="ffill")).dropna()
     if tur == "kripto": ad = KR.kod_yap(*KR.coz(kod))
     elif kod.upper() in V.VARLIKLAR: ad = V.VARLIKLAR[kod.upper()][1]
+    elif kod.upper().endswith(".US"):
+        import bist_abd as AB; ad = AB.ad(kod)
     else: ad = bv.sirket_adi(kod)
     return c, h, tur, ad
 

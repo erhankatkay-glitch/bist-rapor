@@ -254,6 +254,8 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
     D.islenen[f"{tf}_mum"] = son_mum
     t0 = time.time()
     secilen, adaylar, pist = F.tara(varliklar, tf, D.p, YONLER[D.p], adet=ADET + 4)
+    try: portfoy_uyari(bot, D, tf, varliklar, adaylar)
+    except Exception as ex: log("portföy uyarısı:", ex)
     acik_anahtar = {(k["kod"], k["tf"], k["yon"]) for k in D.acik}
     secilen = [f for f in secilen if (f["kod"], f["tf"], f["yon"]) not in acik_anahtar][:ADET]
     log(f"{D.p} {tf}: {len(varliklar)} varlık, {len(adaylar)} aday, {len(secilen)} fırsat ({time.time() - t0:.0f} sn)")
@@ -305,6 +307,38 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
                 else: bot.mesaj(F.firsat_metni(f, tl_fn(f) if tl_fn else None), anahtar, OMUR[tf], bag=bag, yerine=False, notlu=False)
     D.acik += yeni
     return secilen
+
+
+def _pf_anahtar(kod):
+    import bist_kripto as KR
+    return ("K", KR.coz(kod)[0]) if KR.kripto_mu(kod) else ("H", kod.upper())
+
+
+def portfoy_uyari(bot, D, tf, varliklar, adaylar):
+    """Portföydeki varlıklarda ters yönlü (SAT) kurulum oluştuysa kişisel uyarı gönderir."""
+    import portfoy as P
+    pf = {_pf_anahtar(k) for k, _, _ in P.takip()}
+    if not pf: return
+    sat = [a for a in adaylar if a["yon"] == -1 and _pf_anahtar(a["kod"]) in pf and a["puan"] >= 45]
+    if -1 not in YONLER[D.p]:   # yalnız AL taranan piyasalarda portföy varlıklarını SAT yönünde ayrıca tara
+        pist = F.PiyasaIstatistik()
+        for v in varliklar:
+            if _pf_anahtar(v["kod"]) not in pf: continue
+            b = F.varlik_tara(v, tf, (-1,), pist, olay_topla=False)
+            if not b: continue
+            if "sr" not in v["a"]: v["a"] = T.tf_analiz(v["a"]["h"], tf)
+            sat += [a for a in F.degerlendir(v, tf, b, pist, D.p) if a["puan"] >= 45]
+    if not sat: return
+    s = [f"💼 <b>PORTFÖY UYARISI · {tg.buyuk(T.TF_AD[tf])}</b>", tg.AYRAC,
+         "Portföyünüzdeki varlıklarda ters yönlü (satış) kurulum oluştu:"]
+    for a in sorted(sat, key=lambda x: -x["puan"])[:6]:
+        p_ = a["plan"]
+        s.append(f"\n🔴 <b>{F._e(F.gorunen(a['kod'], a.get('ad')))}</b> · {F._e(a['kurulum_ad'][:60])} · puan <b>{a['puan']:.0f}</b>")
+        s.append(f"<blockquote>Fiyat <code>{F.fy(p_['giris'])}</code> · aşağı hedefler {F.fy(p_['hedef'][0]['fiyat'])} / {F.fy(p_['hedef'][1]['fiyat'])}"
+                 f"\nGeçersizlik (yukarı stop): <code>{F.fy(p_['stop'])}</code> ({F.yz((p_['stop'] - p_['giris']) / p_['giris'])})"
+                 + (f"\n⚠️ " + F._e(" · ".join(a["risk"][:2])) if a.get("risk") else "") + "</blockquote>")
+    s.append("<i>Pozisyonu korumak için stop seviyenizi gözden geçirmeniz, kısmi kâr almanız ya da yükseliş teyidi beklemeniz düşünülebilir.</i>")
+    bot.mesaj("\n".join(s), f"portfoy:{D.p}:{tf}", 24, yerine=True)
 
 
 # ====================================================================== ortak yardımcılar

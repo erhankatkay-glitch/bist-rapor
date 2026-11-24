@@ -81,7 +81,9 @@ def bist_listesi(oturum=None):
     for c in ("PD mn", "PD $ mn", "Halka açıklık %", "Kapanış"):
         if c in df: df[c] = pd.to_numeric(df[c], errors="coerce")
     df["XHARZ"] = df["Kod"].isin(harz)
-    return df, harz, " · ".join(notlar)
+    endeks_ici = len(bdf) if bdf is not None else None
+    ozet = f"Toplam {len(df)} hisse" + (f" (BIST Tüm endeksinde {endeks_ici}, endeks dışı / yeni halka arz {len(df) - endeks_ici})" if endeks_ici else "")
+    return df, harz, ozet + " · kaynaklar: " + " · ".join(notlar)
 
 
 def liste_kaydet(df, yol=None):

@@ -238,7 +238,8 @@ def aralik_yorumu(fa, para=""):
 def bilanco_tarihleri(kod):
     """Yahoo'dan geçmiş ve beklenen bilanço açıklama tarihleri."""
     import yfinance as yf
-    e = yf.Ticker(kod.upper() + ".IS").get_earnings_dates(limit=24)
+    k = kod.upper()
+    e = yf.Ticker(k[:-3].replace(".", "-") if k.endswith(".US") else k + ".IS").get_earnings_dates(limit=24)
     if e is None or len(e) == 0: return [], None
     idx = pd.to_datetime(e.index)
     try: idx = idx.tz_convert("Europe/Istanbul").tz_localize(None)
@@ -328,7 +329,7 @@ def rrg_bolge(r, m):
     return "Lider" if r >= 100 and m >= 100 else "Zayıflayan" if r >= 100 else "Toparlanan" if m >= 100 else "Geride"
 
 
-def g_rrg(rr):
+def g_rrg(rr, endeks_ad="BIST 100"):
     import matplotlib.pyplot as plt
     import tasarim as TS
     C = TS.GRAFIK
@@ -347,7 +348,7 @@ def g_rrg(rr):
         ax.text(x, y, t, fontsize=7, color=C["gri"], ha="right" if x > 100 else "left", va="top" if y > 100 else "bottom", fontweight="bold")
     ax.set_xlim(100 - lx, 100 + lx); ax.set_ylim(100 - ly, 100 + ly)
     ax.set_xlabel("Göreli güç (endekse göre)"); ax.set_ylabel("Göreli güç ivmesi")
-    ax.set_title("Sektör rotasyon haritası (son 10 hafta, BIST 100'e göre)", loc="left")
+    ax.set_title(f"Sektör rotasyon haritası (son 10 hafta, {endeks_ad}'e göre)", loc="left")
     import io
     b = io.BytesIO(); fig.savefig(b, format="png", dpi=140, bbox_inches="tight"); plt.close(fig); b.seek(0); return b
 

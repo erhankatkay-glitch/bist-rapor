@@ -71,7 +71,8 @@ def aralik_blogu(h, fa, W, para=""):
 def bilanco_blogu(bt, sonraki, W):
     if not bt: return []
     E = [Paragraph("Bilanço tepki analizi", ST["h2"]), bilgi_kutusu("Analist yorumu:", IL.bilanco_yorumu(bt, sonraki), W), Spacer(1, 4)]
-    v = [["Açıklama", "1 gün", "5 gün", "20 gün", "1g BIST 100'e göre", "5g BIST 100'e göre"]]
+    import bist_rapor as br
+    v = [["Açıklama", "1 gün", "5 gün", "20 gün", f"1g {br.EN}'e göre", f"5g {br.EN}'e göre"]]
     for _, r in bt["tablo"].head(10).iterrows():
         v.append([f"{r['Tarih']:%d.%m.%Y}", IL._y(r.get("1g")), IL._y(r.get("5g")), IL._y(r.get("20g")), IL._y(r.get("1g fark")), IL._y(r.get("5g fark"))])
     E.append(TS.tablo(v, [W * .16, W * .14, W * .14, W * .14, W * .21, W * .21], font=7.2))

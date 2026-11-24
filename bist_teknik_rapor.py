@@ -401,7 +401,7 @@ def bulten_pdf(baslik, satirlar, analizler, dosya, endeks=None, sym="₺", ekler
         yorum = (f"Lider bölgede {', '.join(lider[:5]) or 'sektör yok'}; endekse göre güç kazanmaya başlayan (toparlanan) sektörler: {', '.join(topar[:5]) or 'yok'}. "
                  "Saat yönünde dönüş tipiktir: toparlanan → lider → zayıflayan → geride.")
         E.append(PageBreak()); E.append(Paragraph("Sektör rotasyonu", ST["h2"])); E.append(bilgi_kutusu("Analist yorumu:", yorum, W))
-        E.append(Spacer(1, 4)); E.append(_img(IL.g_rrg(rr), W * 0.9, 5.2 / 7.5 * 0.9))
+        E.append(Spacer(1, 4)); E.append(_img(IL.g_rrg(rr, "S&P 500" if sym == "$" and baslik.endswith("ABD Borsaları") else "BIST 100"), W * 0.9, 5.2 / 7.5 * 0.9))
         E.append(TS.tablo(v, [W * .4, W * .2, W * .2, W * .2], hizala_sol=(0, 1), font=7.0))
     ac = ekler.get("aciga")
     if ac is not None and len(ac):
