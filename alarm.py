@@ -88,10 +88,14 @@ def tara(K, durum):
                     for s in open(yol, encoding="utf-8"):
                         s = s.split("#")[0].strip().upper()
                         if s:
+                            import bist_varlik as V
                             hedefler.append({"tip": "formasyon", "kod": s, "metin": f"{s} FORMASYON (otomatik)"})
-                            if not _kripto(s): hedefler.append({"tip": "kap", "kod": s, "metin": f"{s} KAP (otomatik)"})
+                            if not _kripto(s) and s not in V.VARLIKLAR: hedefler.append({"tip": "kap", "kod": s, "metin": f"{s} KAP (otomatik)"})
         else:
             hedefler.append(k)
+    tekil = {}
+    for k in hedefler: tekil.setdefault((k["tip"], k.get("kod"), k.get("op"), k.get("deger")), k)
+    hedefler = list(tekil.values())
     for k in hedefler:
         anahtar = k["metin"]
         try:
@@ -123,7 +127,8 @@ def tara(K, durum):
                         bildir.append(f"{'🟢' if yon > 0 else '🔴'} {k['kod']}: {ad.split(': ', 1)[-1]} (günlük, {g['tarih']:%d.%m})")
                         yeni[a2] = True
             elif k["tip"] == "kap":
-                import bist_borsa as BB, bist_veri as bv
+                import bist_borsa as BB, bist_veri as bv, bist_varlik as V
+                if _kripto(k["kod"]) or k["kod"] in V.VARLIKLAR: continue
                 for x in BB.kap_haberleri(k["kod"], bv.sirket_adi(k["kod"]), gun=3, adet=6):
                     a2 = f"{k['kod']}|KAP|{x['baslik'][:80]}"
                     if not durum.get(a2):
@@ -131,6 +136,7 @@ def tara(K, durum):
                         yeni[a2] = True
         except Exception as ex:
             print(f"{anahtar}: {ex}", file=sys.stderr)
+    bildir = list(dict.fromkeys(bildir))
     # eski günlük anahtarları temizle
     sinir = (dt.datetime.now(TSI) - dt.timedelta(days=30)).strftime("%Y-%m-%d")
     yeni = {k: v for k, v in yeni.items() if not re.search(r"\d{4}-\d{2}-\d{2}", k) or max(re.findall(r"\d{4}-\d{2}-\d{2}", k)) >= sinir}
