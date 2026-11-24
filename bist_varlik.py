@@ -15,7 +15,15 @@ import analist as AN
 import bist_kripto as KR
 from tasarim import ST, Bolum, kart_izgarasi, bilgi_kutusu, trafik_listesi, kapak, sayfa_cizici
 import bist_rapor as br
-from bist_rapor import tl, yz, kat, ond, puan, ort, kucuk, reel, _png, _img, PARAM
+from bist_rapor import yz, kat, ond, puan, ort, kucuk, reel, _png, _img, PARAM
+
+
+def tl(x, d=2):
+    """Varlık raporları için sayı biçimi: milyar üstü kısaltılır, küçük coin fiyatlarında basamak korunur."""
+    x = br.sayi(x)
+    if x is None: return "–"
+    if abs(x) >= 1e9: return br.tl(x)
+    return TS._sayi(x, d) if abs(x) >= 1 or d != 0 else TS._sayi(x, 0)
 
 C = TS.GRAFIK
 

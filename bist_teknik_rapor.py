@@ -318,7 +318,7 @@ def kategoriler(satirlar, n=12):
     K["En güçlü teknik görünüm"] = df.head(n)
     K["Yukarı kırılımlar ve formasyon teyitleri"] = df[df["Kırılım"]].head(n)
     K["Boğa mum formasyonları (son kapanış)"] = df[df["Mum +"].astype(str).str.len() > 0].head(n)
-    K["Altın kesişim / pozitif uyumsuzluk"] = df[df["Kesişim/Uyumsuzluk"].astype(str).str.contains("Altın kesişim|Pozitif uyumsuzluk|al kesişimi|yukarı kesti|al sinyaline")].head(n)
+    K["Altın kesişim / pozitif uyumsuzluk"] = df[df.get("Sinyal +", df["Kesişim/Uyumsuzluk"]).astype(str).str.contains("Altın kesişim|Pozitif uyumsuzluk|al kesişimi|yukarı kesti|al sinyaline")].head(n)
     K["Aşırı satım (RSI < 30)"] = df[df["RSI"] < 30].sort_values("RSI").head(n)
     K["Aşırı alım (RSI > 70)"] = df[df["RSI"] > 70].sort_values("RSI", ascending=False).head(n)
     K["Aşağı kırılımlar"] = df[df["Kırılım −"]].sort_values("Teknik puan").head(n)
@@ -358,7 +358,8 @@ def bulten_pdf(baslik, satirlar, analizler, dosya, endeks=None, sym="₺"):
     for ad, d in K.items():
         v = [["Kod", "Puan", "G / H / A", "Fiyat", "Değ.", "Öne çıkan"]]
         for _, r in d.iterrows():
-            one = r["Formasyon +"] or r["Mum +"] or r["Kesişim/Uyumsuzluk"] if r["Teknik puan"] >= 50 else r["Formasyon −"] or r["Mum −"] or r["Kesişim/Uyumsuzluk"]
+            g_ = lambda c: r.get(c) if isinstance(r.get(c), str) else ""
+            one = (g_("Formasyon +") or g_("Mum +") or g_("Sinyal +")) if r["Teknik puan"] >= 50 else (g_("Formasyon −") or g_("Mum −") or g_("Sinyal −"))
             v.append([r["Kod"], f"{r['Teknik puan']:.0f}", f"{KISA.get(r['Günlük'], '–')} / {KISA.get(r['Haftalık'], '–')} / {KISA.get(r['Aylık'], '–')}", _f(r["Fiyat"]), _yz(r["Değişim"]),
                       Paragraph(TS.esc(str(one or "–"))[:110], ST["hucre"])])
         E.append(KeepTogether([Paragraph(ad, ST["h2"]), TS.tablo(v, [W * .1, W * .08, W * .24, W * .12, W * .1, W * .36], hizala_sol=(0, 5), font=7.0)]))

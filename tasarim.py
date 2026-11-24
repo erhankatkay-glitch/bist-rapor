@@ -266,10 +266,19 @@ def esc(x):
 def _hex(c):
     return c.hexval().replace("0x", "#")
 
+def basamak(x, d=2):
+    """Fiyata uygun ondalık: küçük coin fiyatlarında anlamlı basamaklar korunur (0,00000312)."""
+    import math as _m
+    a = abs(x)
+    if a == 0 or a >= 1: return d if a < 100000 else 0
+    return min(max(d, -int(_m.floor(_m.log10(a))) + 3), 10)
+
+
 def _sayi(x, d=2):
     if x is None: return "–"
-    for e, ek in ((1e12, " tr"), (1e9, " mr"), (1e6, " mn")):
+    for e, ek in ((1e12, " tr"), (1e9, " mr")):
         if abs(x) >= e: return f"{x / e:,.1f}".replace(",", "X").replace(".", ",").replace("X", ".") + ek
+    d = basamak(x, d)
     return f"{x:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def _yuzde(x, d=1):

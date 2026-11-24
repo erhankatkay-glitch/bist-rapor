@@ -10,8 +10,8 @@ import pandas as pd
 def sayi(x, d=None):
     """Fiyata uygun basamakla Türkçe biçim (1.234,56)."""
     if x is None or (isinstance(x, float) and math.isnan(x)): return "–"
-    a = abs(x); d = d if d is not None else (2 if a >= 1 else 4 if a >= 0.01 else 6)
-    if a >= 100000: d = 0
+    import tasarim as TS
+    d = d if d is not None else TS.basamak(x)
     return f"{x:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
@@ -761,6 +761,8 @@ def ozet_satir(s):
            "Formasyon +": adlar(g, 1, "Formasyon"), "Formasyon −": adlar(g, -1, "Formasyon"),
            "Mum +": adlar(g, 1, "Mum"), "Mum −": adlar(g, -1, "Mum"),
            "Kesişim/Uyumsuzluk": ", ".join(x[0] for x in (g["sinyal"] if g else []) if not x[0].startswith(("Mum", "Formasyon", "Price")))[:120],
+           "Sinyal +": ", ".join(x[0] for x in (g["sinyal"] if g else []) if x[1] > 0 and not x[0].startswith(("Mum", "Formasyon", "Price")))[:120],
+           "Sinyal −": ", ".join(x[0] for x in (g["sinyal"] if g else []) if x[1] < 0 and not x[0].startswith(("Mum", "Formasyon", "Price")))[:120],
            "Yapı": g["pa"]["yapi"] if g else "–",
            "Destek": g["sr"]["destek"][0][0] if g and g["sr"]["destek"] else None,
            "Direnç": g["sr"]["direnc"][0][0] if g and g["sr"]["direnc"] else None}

@@ -27,9 +27,8 @@ def tutar(x, para="TL"):
 
 def fiyat(x, para="TL"):
     if x is None: return "–"
-    d = 2 if abs(x) >= 1 else 4
-    if abs(x) >= 100000: d = 0
-    return f"{_n(x, d)} {para}".strip()
+    import tasarim as TS
+    return f"{_n(x, TS.basamak(x))} {para}".strip()
 
 def kat(x):
     return "–" if x is None else _n(x, 1) + "x"
