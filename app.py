@@ -694,7 +694,7 @@ def haber_oku(zaman):
 
 with tab_h:
     st.caption("Piyasayı etkileyebilecek haberler 30 dakikada bir taranır: türü ve yönü sınıflandırılır, etkilenecek varlıklar "
-               "gerekçesiyle gösterilir, haberden bu yana fiyat/hacim tepkisi ve teknik durum eklenir. Kural tabanlı ön değerlendirmedir.")
+               "gerekçesiyle gösterilir, haberden bu yana fiyat/hacim tepkisi ve teknik durum eklenir.")
     HD = haber_oku(ZAMAN)
     tkv = (HD.get("takvim") or {}).get("liste") or []
     simdi_ = pd.Timestamp.now(tz="Europe/Istanbul")

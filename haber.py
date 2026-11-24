@@ -379,7 +379,7 @@ def calistir():
     import tg
     b = tg.Bot("alarm")
     if analizler:
-        b.mesaj("\n\n".join(mesaj(a) for a in analizler) + "\n\n<i>Kural tabanlı ön değerlendirmedir; yatırım tavsiyesi değildir.</i>",
+        b.mesaj("\n\n".join(mesaj(a) for a in analizler),
                 f"haber:{simdi:%Y%m%d%H%M}", 12, yerine=False)
     # takvim (günde bir, 07:00 TSİ sonrası ilk turda)
     bugun = simdi.astimezone(TSI).date()
