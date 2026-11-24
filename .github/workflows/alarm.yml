@@ -1,0 +1,43 @@
+name: Alarm kontrolü
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # 30 dakikada bir
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: teknik-bulten
+  cancel-in-progress: false
+
+jobs:
+  alarm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Önceki durumu al
+        run: |
+          URL="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git clone --depth 1 --branch bulten "$URL" yayin || (mkdir yayin && cd yayin && git init -q && git remote add origin "$URL")
+          mkdir -p alarm_cikti && cp yayin/alarm/*.json alarm_cikti/ 2>/dev/null || true
+      - name: Alarmları kontrol et
+        run: python alarm.py
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Durumu kaydet
+        run: |
+          git config --global user.name "alarm-bot"
+          git config --global user.email "actions@users.noreply.github.com"
+          URL="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          rm -rf yayin/alarm && mkdir -p yayin/alarm && cp alarm_cikti/*.json yayin/alarm/
+          cd yayin && rm -rf .git && git init -q && git checkout -q -b bulten && git remote add origin "$URL"
+          git add -A && git commit -q -m "Alarm durumu $(date -u +%FT%H%M)" && git push -f origin bulten

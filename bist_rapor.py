@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-18"
+SURUM = "2026.11.24-19"
 
 import bist_veri as BV
 
@@ -234,10 +234,10 @@ POZ_KELIME = ["rekor", "artış", "arttı", "yükseldi", "yükseliş", "büyüd�
 NEG_KELIME = ["düştü", "düşüş", "zarar", "geriledi", "ceza", "soruşturma", "dava", "iflas", "konkordato", "satış baskısı",
               "düşürdü", "kayıp", "grev", "iptal", "olumsuz", "uyarı", "endişe", "zayıf", "sert düşüş", "tedbir"]
 
-def haber_cek(kod, ad=None, adet=8, gun=30):
+def haber_cek(kod, ad=None, adet=8, gun=30, sorgu=None):
     """Google News RSS (Türkçe) üzerinden son haber başlıkları + basit kelime bazlı ton."""
     import requests, xml.etree.ElementTree as ET, email.utils as eu
-    sorgu = f'"{ad}" OR {kod} hisse' if ad else f"{kod} hisse"
+    sorgu = sorgu or (f'"{ad}" OR {kod} hisse' if ad else f"{kod} hisse")
     r = requests.get("https://news.google.com/rss/search", params={"q": sorgu, "hl": "tr", "gl": "TR", "ceid": "TR:tr"},
                      headers={"User-Agent": "Mozilla/5.0"}, timeout=12)
     r.raise_for_status()
@@ -2007,15 +2007,23 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         E += [Spacer(1, 6), _img(gt, W, 2.2 / 7.5)]
     else:
         E.append(Paragraph("Şirketin kayıtlı nakit temettü geçmişi bulunamadı.", ST["p"]))
-    E.append(PageBreak()); E.append(Bolum(8, "Sonuç ve analist değerlendirmesi", W))
+    import ileri_rapor as IR
+    if m.get("ileri"):
+        E += IR.ileri_bolum(d["hist"], m["ileri"], W, "TL", 8)
+    if m.get("bilanco") or m.get("aciga") or m.get("kap") is not None:
+        E.append(CondPageBreak(10 * cm)); E.append(Bolum(9, "Şirket gündemi: bilanço tepkisi, açığa satış ve KAP", W))
+        E += IR.bilanco_blogu(m.get("bilanco"), m.get("bilanco_sonraki"), W)
+        E += IR.aciga_blogu(m["kod"], m.get("aciga"), W)
+        E += IR.kap_blogu(m.get("kap"), W)
+    E.append(PageBreak()); E.append(Bolum(10, "Sonuç ve analist değerlendirmesi", W))
     E.append(TS.ozet_paneli("Sonuç", AN.baslik_tezi(m), _gor, AN.yonetici_ozeti(m), W))
     E.append(Paragraph("Başlıklar itibarıyla değerlendirme", ST["h2"]))
     for bas, metin in genel_degerlendirme(m):
         E.append(KeepTogether([Paragraph(bas, ST["h2"]), Paragraph(TS.esc(metin), ST["p"])]))
-    E.append(PageBreak()); E.append(Bolum(9, "Terimler sözlüğü", W))
+    E.append(PageBreak()); E.append(Bolum(11, "Terimler sözlüğü", W))
     E.append(tablo([["Terim", "Sade anlatım"]] + [[a, Paragraph(b, ST["hucre"])] for a, b in SOZLUK_HISSE],
                    [W * .28, W * .72], hizala_sol=(0, 1), font=7.8))
-    E.append(Spacer(1, 10)); E.append(Bolum(10, "Metodoloji ve önemli uyarılar", W))
+    E.append(Spacer(1, 10)); E.append(Bolum(12, "Metodoloji ve önemli uyarılar", W))
     met = [
         f"<b>Veri:</b> Mali tablolar öncelikle İş Yatırım'ın KAP finansallarından derlediği tablolardan, alınamazsa Yahoo Finance'ten çekilir; fiyat, temettü ve analist verileri Yahoo Finance kaynaklıdır. Gecikme veya eksiklik olabilir. "
         "TMS 29 (enflasyon muhasebesi) kapsamında yeniden düzenlenen tablolar ile nominal tablolar arasında yıllar arası kıyaslama sapmaları olabilir.",
@@ -2069,6 +2077,41 @@ def piyasa_degeri(kod):
     info = t.info or {}
     return sayi(info.get("marketCap"))
 
+_ACIGA = {}
+
+
+def ileri_ekle(m, d, kod, endeks, canli=True):
+    """İleri analizler: sinyal karnesi, hacim profili, olası fiyat aralığı, bilanço tepkisi, açığa satış, KAP gündemi, göreli güç."""
+    import bist_ileri as IL, bist_borsa as BB
+    aktif = [x[0] for x in (((m.get("mta") or {}).get("tf") or {}).get("G") or {}).get("sinyal", [])]
+    m["ileri"] = IL.ileri_paket(d["hist"], aktif=aktif)
+    m["bilanco"] = m["bilanco_sonraki"] = m["aciga"] = m["kap"] = m["rs"] = None
+    if not canli:
+        return
+    try:
+        gecmis, sonraki = IL.bilanco_tarihleri(kod)
+        m["bilanco"] = IL.bilanco_tepkisi(d["hist"], gecmis, endeks); m["bilanco_sonraki"] = sonraki
+    except Exception as ex:
+        m["bilanco_hata"] = str(ex)[:80]
+    try:
+        gun = dt.date.today().isoformat()
+        if _ACIGA.get("gun") != gun: _ACIGA.update(gun=gun, df=BB.aciga_satis())
+        df = _ACIGA["df"]; sat = df[df["Kod"] == kod]
+        satir = sat.iloc[0].to_dict() if len(sat) else None
+        m["aciga"] = {"satir": satir, "donem": df.attrs.get("donem"),
+                      "oran": BB.aciga_satis_orani(satir, d["hist"], df.attrs.get("bas"), df.attrs.get("son")) if satir else None}
+    except Exception as ex:
+        m["aciga_hata"] = str(ex)[:80]
+    try: m["kap"] = BB.kap_haberleri(kod, m.get("ad"))
+    except Exception: m["kap"] = None
+    try:
+        oz = IL.bulten_ozeti("bist")
+        if oz is not None and "RS" in oz and kod in set(oz["Kod"]):
+            m["rs"] = int(oz.loc[oz["Kod"] == kod, "RS"].iloc[0])
+    except Exception:
+        pass
+
+
 def analiz_et(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, pd_fn=None, log=print, endeks=None,
               fx_fn=None, haber_fn=None, **param):
     """Veriyi çeker, tüm analizleri yapar; (d, m, emsaller, endeks) döndürür."""
@@ -2108,6 +2151,7 @@ def analiz_et(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, pd_fn=None, lo
         m["mta"] = TK.analiz_h(kod, m["ad"], d["hist"], "hisse", "₺")
     except Exception as ex:
         m["mta"] = None; m["mta_hata"] = str(ex)[:100]
+    ileri_ekle(m, d, kod, endeks, canli=veri_fn is veri_cek)
     degerleme(m, emsaller, nav); saglik(m); ipuclari(m)
     return d, m, emsaller, endeks
 

@@ -267,6 +267,7 @@ def yonetici_ozeti(m, kisa=False):
             t += (f"; hacim bazlı göstergeler {AKIS_IFADE.get((m.get('akis') or {}).get('ozet'), 'karışık bir görünüme')} işaret ediyor." if m.get("akis") else ".")
         C.append(t)
     if teknik_cumle(m.get("mta")): C.append(teknik_cumle(m.get("mta")))
+    C += ileri_cumleler(m, "TL")
     S = _surucular(m); pos = [x for x in sorted(S, key=lambda x: -x[0]) if x[0] > 0]; neg = [x for x in sorted(S, key=lambda x: x[0]) if x[0] < 0]
     son = f"Sonuç olarak genel görünümümüz <b>{kk(et)}</b>."
     if pos and neg: son += f" {bas_buyuk(pos[0][1])} görünümü desteklerken, {neg[0][2]} önümüzdeki dönemde izlenmesi gereken başlıca unsur olarak öne çıkıyor."
@@ -306,6 +307,9 @@ def katalizorler(m):
     import bist_rapor as br
     K = []; g_, _ = sektor_adi(m)
     sd = (m.get("veri") or {}).get("son_donem")
+    if m.get("bilanco_sonraki") is not None:
+        K.append(f"{m['bilanco_sonraki']:%d.%m.%Y} tarihinde beklenen finansal sonuç açıklaması")
+        sd = None
     if sd is not None:
         nd = (pd.Timestamp(sd) + pd.offsets.QuarterEnd(1))
         ek = 70 if nd.month in (6, 12) else 60
@@ -327,6 +331,8 @@ def riskler(m):
     if m.get("ort_islem_tl") is not None and m["ort_islem_tl"] < 20e6: R_.append("düşük işlem hacmi kaynaklı likidite riski")
     if m.get("beta") is not None and m["beta"] > 1.3: R_.append("piyasa ortalamasının üzerinde fiyat oynaklığı")
     if (m.get("veri") or {}).get("eski"): R_.append("mali tablo verilerinin güncelliği")
+    if ((m.get("aciga") or {}).get("oran") or 0) > 0.12: R_.append("yoğun açığa satış baskısı")
+    if any(x.get("yon", 0) < 0 for x in (m.get("kap") or [])[:5]): R_.append("son KAP gündemindeki olumsuz başlıklar")
     R_.append(GENEL_RISK)
     return list(dict.fromkeys(R_))[:5]
 
@@ -532,6 +538,7 @@ def varlik_ozeti(m, kisa=False):
     if gl.get("btc_dom"): ek.append(f"Bitcoin dominansı {yuzde(gl['btc_dom'])}")
     if ek: C.append("Piyasa yapısında " + ", ".join(ek) + ".")
     if teknik_cumle(m.get("mta")): C.append(teknik_cumle(m.get("mta")))
+    C += ileri_cumleler(m, "$" if m.get("para") == "USD" else "TL")
     S = varlik_surucular(m); pos = [x for x in sorted(S, key=lambda x: -x[0]) if x[0] > 0]; neg = [x for x in sorted(S, key=lambda x: x[0]) if x[0] < 0]
     son = f"Sonuç olarak genel görünümümüz <b>{kk(et)}</b>."
     if pos and neg: son += f" {bas_buyuk(pos[0][1])} destekleyici olurken, {neg[0][2]} temel risk unsuru olarak izlenmeli."
@@ -586,6 +593,10 @@ def teknik_ozet(s):
         elif h: son = "; kısa ve orta vadeli sinyaller ayrışıyor, bu da trend dönüşü ya da düzeltme ihtimaline işaret ediyor."
         else: son = "."
         C.append(bas_buyuk("; ".join(t)) + son)
+    k1, k4 = s["tf"].get("1S"), s["tf"].get("4S")
+    if k1 or k4:
+        C.append("Gün içi zaman dilimlerinde " + ", ".join(f"{ad_} grafik {kk(x['etiket'])} (puan {x['puan']:.0f})" for ad_, x in (("1 saatlik", k1), ("4 saatlik", k4)) if x)
+                 + "; " + _kisa_uyum(s, k1, k4))
     ozel = sorted([x for x in g["sinyal"] if x[1] != 0], key=lambda x: -x[3])[:2]
     if ozel: C.append("Öne çıkan sinyaller: " + "; ".join(ilk_kucuk(x[0].split(": ", 1)[-1]) for x in ozel) + ".")
     sr = g["sr"]; d1 = sr["destek"][0][0] if sr["destek"] else None; r1 = sr["direnc"][0][0] if sr["direnc"] else None
@@ -595,6 +606,17 @@ def teknik_ozet(s):
     if d1:
         C.append(f"Aşağıda {fiyat(d1, para)} desteği kritik; bu seviyenin altında kalıcılık {fiyat(d2, para) if d2 else 'daha derin bir düzeltme'} seviyesini gündeme getirebilir.")
     return " ".join(C)
+
+
+def _kisa_uyum(s, k1, k4):
+    yon = lambda p: 1 if p >= 58 else -1 if p <= 42 else 0
+    if k1 and k4 and yon(k1["puan"]) * yon(k4["puan"]) < 0:
+        return "gün içi sinyaller karışık; işlem zamanlaması için netleşme beklenmeli."
+    kp, gp = s.get("kisa_puan"), s.get("puan")
+    if kp is None or gp is None: return "gün içi görünüm izlenmeli."
+    if yon(kp) == yon(gp) and yon(kp) != 0: return "kısa vadeli ivme ana görünümü destekliyor."
+    if yon(kp) == 0: return "gün içi ivme yön arayışında."
+    return "gün içi ivme ana görünümle ayrışıyor; giriş-çıkış zamanlaması için kısa vadeli teyit beklenmeli."
 
 
 def teknik_senaryo(s):
@@ -681,3 +703,44 @@ def teknik_surucu(t):
     p = t["puan"]; v = 2 if p >= 75 else 1 if p >= 58 else -2 if p <= 25 else -1 if p <= 42 else 0
     return (v, "güçlü teknik görünüm" if v == 2 else "olumlu teknik görünüm", "belirgin teknik zayıflık" if v == -2 else "zayıf teknik görünüm",
             teknik_cumle(t, kisa=True), "Teknik analiz")
+
+
+
+# ================================================================ İLERİ ANALİZ CÜMLELERİ
+def ileri_cumleler(m, para="TL", kisa=False):
+    """Yönetici özetine eklenen ileri analiz cümleleri (sinyal geçmişi, olasılık bandı, bilanço, açığa satış, KAP, göreli güç)."""
+    import bist_ileri as IL
+    C = []; il = m.get("ileri") or {}
+    kr = il.get("karne")
+    if kr is not None and not kr.empty:
+        ak = kr[kr["Aktif"] & (kr["Örnek"] >= 5)]
+        if len(ak):
+            r = ak.sort_values("Örnek", ascending=False).iloc[0]
+            C.append(f"Aktif '{r['Sinyal'].replace('Mum: ', '').replace('Formasyon: ', '')}' sinyali bu varlıkta geçmişte {r['Örnek']} kez görüldü ve "
+                     f"20 gün içinde %{r['İsabet (20g)'] * 100:.0f} isabetle ortalama {IL._y(r['20g ort'])} getiri sağladı.")
+    fa = il.get("aralik")
+    if fa and not kisa:
+        u = fa["ufuklar"][1]
+        C.append(f"Oynaklığa dayalı modelimize göre 1 aylık %68 olasılık bandı {IL._f(u['68_alt'])}–{IL._f(u['68_ust'])} {para}.")
+    if m.get("rs") is not None:
+        C.append(f"Göreli güç puanı {m['rs']}/99" + (" ile piyasanın en güçlü hisseleri arasında." if m["rs"] >= 80 else " ile piyasanın zayıf kalan hisseleri arasında." if m["rs"] <= 20 else "."))
+    if kisa: return C[:2]
+    bt = m.get("bilanco")
+    if bt:
+        o = bt["ozet"]
+        C.append(f"Hisse son {o['adet']} bilanço açıklamasında ilk gün ortalama {IL._y(o['1g_ort'])} tepki verdi"
+                 + (f"; bir sonraki açıklama {m['bilanco_sonraki']:%d.%m.%Y} tarihinde bekleniyor." if m.get("bilanco_sonraki") is not None else "."))
+    ac = m.get("aciga") or {}
+    if ac.get("oran") is not None and ac["oran"] > 0.1:
+        C.append(f"Son haftada açığa satışın toplam işlem hacmindeki payı yüzde {ac['oran'] * 100:.0f} ile dikkat çekici seviyede.")
+    kp = m.get("kap") or []
+    if kp:
+        C.append(f"KAP gündeminde son dönemde '{kp[0]['konu'].lower()}' başlığı öne çıkıyor.")
+    mk = m.get("mikro") or {}
+    if mk.get("defter"):
+        d_ = mk["defter"]["bant"][0.02]["denge"]
+        if abs(d_) > 0.2: C.append(f"Emir defterinde ±%2 bandında {'alıcı' if d_ > 0 else 'satıcı'} tarafı belirgin şekilde daha derin.")
+    vd = m.get("vadeli") or {}
+    if vd.get("oi_7g") is not None and abs(vd["oi_7g"]) > 0.08:
+        C.append(f"Vadeli açık pozisyon son 7 günde {IL._y(vd['oi_7g'])} değişti.")
+    return C

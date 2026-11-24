@@ -118,16 +118,60 @@ def calistir(piyasa, klasor="cikti", veri_fn=None, zorla=False):
     return _yaz(piyasa, analizler, endeks, ref, klasor, hata)
 
 
+def _ekler(piyasa, analizler, endeks, satir):
+    """Bülten ekleri: göreli güç puanı (RS), sektör rotasyonu (BIST), açığa satış (BIST), likidite (kripto)."""
+    import bist_ileri as IL
+    ek = {}
+    seriler = {s["kod"]: s["tf"]["G"]["h"]["Close"] for s in analizler if s["tf"].get("G")}
+    rs = IL.rs_puanlari(seriler)
+    for r in satir: r["RS"] = rs.get(r["Kod"])
+    if piyasa == "bist":
+        try:
+            sek = pd.read_csv(bv.LISTE_DOSYA, dtype=str).set_index("Kod")["Sektör"].to_dict() if os.path.exists(bv.LISTE_DOSYA) else {}
+            for r in satir: r["Sektör"] = sek.get(r["Kod"])
+            gruplar = {}
+            for k, c in seriler.items():
+                if sek.get(k) and isinstance(sek.get(k), str): gruplar.setdefault(sek[k], []).append(c)
+            gruplar = dict(sorted(((k, v) for k, v in gruplar.items() if len(v) >= 5), key=lambda x: -len(x[1]))[:14])
+            if endeks and endeks["tf"].get("G"):
+                ek["rrg"] = IL.rrg(gruplar, endeks["tf"]["G"]["h"]["Close"])
+        except Exception as ex:
+            print("RRG hesaplanamadı:", ex, file=sys.stderr)
+        try:
+            import bist_borsa as BB
+            ac = BB.aciga_satis(); sat_ = []
+            hs = {s["kod"]: s["tf"]["G"]["h"] for s in analizler if s["tf"].get("G")}
+            for _, r in ac.iterrows():
+                if r["Kod"] in hs:
+                    o = BB.aciga_satis_orani(r, hs[r["Kod"]], ac.attrs.get("bas"), ac.attrs.get("son"))
+                    sat_.append({"Kod": r["Kod"], "Açığa satış TL": r["Açığa satış TL"], "Oran": o})
+            ek["aciga"] = pd.DataFrame(sat_); ek["aciga_donem"] = ac.attrs.get("donem")
+            for r in satir:
+                x = ek["aciga"][ek["aciga"]["Kod"] == r["Kod"]]
+                r["Açığa satış oranı"] = float(x["Oran"].iloc[0]) if len(x) and pd.notna(x["Oran"].iloc[0]) else None
+        except Exception as ex:
+            print("Açığa satış verisi alınamadı:", ex, file=sys.stderr)
+    if piyasa in ("kripto", "kripto_tl"):
+        try:
+            import bist_kripto as KR
+            ek["likidite"] = KR.defi_yorum(KR.stablecoin_ozet(), KR.tvl_ozet(), None)
+        except Exception:
+            pass
+    return ek
+
+
 def _yaz(piyasa, analizler, endeks, ref, klasor, hata=None):
     hata = hata or {}
     satir = [T.ozet_satir(s) for s in analizler]
+    try: ekler = _ekler(piyasa, analizler, endeks, satir)
+    except Exception as ex: ekler = {}; print("Bülten ekleri:", ex, file=sys.stderr)
     hedef = os.path.join(klasor, piyasa)
     shutil.rmtree(hedef, ignore_errors=True); os.makedirs(os.path.join(hedef, "grafik"), exist_ok=True); os.makedirs(os.path.join(hedef, "rapor"), exist_ok=True)
     one = sorted(analizler, key=lambda s: -(s["puan"] or 0))
     kirilim = [s for s in one if T.ozet_satir(s)["Kırılım"]]
     secim = list(dict.fromkeys([s["kod"] for s in kirilim[:4]] + [s["kod"] for s in one[:4]]))
     bulten_secim = [s for s in analizler if s["kod"] in secim]
-    TR.bulten_pdf(BASLIK[piyasa], satir, bulten_secim, os.path.join(hedef, "bulten.pdf"), endeks=endeks)
+    TR.bulten_pdf(BASLIK[piyasa], satir, bulten_secim, os.path.join(hedef, "bulten.pdf"), endeks=endeks, ekler=ekler)
     pd.DataFrame(satir).to_csv(os.path.join(hedef, "ozet.csv"), index=False)
     gorsel = []
     by = {s["kod"]: s for s in analizler}

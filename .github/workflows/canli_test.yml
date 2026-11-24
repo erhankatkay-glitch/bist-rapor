@@ -1,0 +1,52 @@
+name: Canlı özellik testi
+on:
+  workflow_dispatch: {}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: |
+          python - <<'PY'
+          import time, traceback
+          def dene(ad, fn):
+              t = time.time()
+              try: r = fn(); print(f"OK {ad} ({time.time()-t:.1f} sn): {r}")
+              except Exception as e: print(f"HATA {ad}: {e!r}"); traceback.print_exc()
+          import bist_borsa as BB, bist_rapor as br, bist_varlik as V, bist_teknik as T, portfoy as PF, bist_ileri as IL
+          dene("açığa satış", lambda: (len(BB.aciga_satis()), BB.aciga_satis().attrs.get("donem"), BB.aciga_satis().head(3).to_dict("records")))
+          dene("ilk işlem", lambda: (len(BB.ilk_islem()), list(BB.ilk_islem().items())[:3]))
+          dene("KAP haberleri", lambda: [(x["konu"], x["baslik"][:60]) for x in BB.kap_haberleri("THYAO", "Türk Hava Yolları")][:5])
+          def hisse():
+              f, m = br.rapor("THYAO", "", log=lambda x: None, klasor="/tmp", detay=True)
+              il = m.get("ileri") or {}
+              return {"karne": None if il.get("karne") is None else len(il["karne"]), "aralik": bool(il.get("aralik")), "profil": bool(il.get("profil")),
+                      "bilanco": None if not m.get("bilanco") else m["bilanco"]["ozet"], "sonraki": m.get("bilanco_sonraki"),
+                      "aciga": m.get("aciga"), "kap": len(m.get("kap") or []), "rs": m.get("rs"), "sayfa": f}
+          dene("hisse raporu THYAO", hisse)
+          def kripto():
+              f, m = V.rapor("BTC/TRY", "/tmp")
+              return {"mikro": {k: (v if k == "taker" or k == "fiyat_7g" else bool(v)) for k, v in (m.get("mikro") or {}).items()},
+                      "vadeli": {k: v for k, v in (m.get("vadeli") or {}).items() if k in ("oi_7g", "taker_7g", "likidasyon")},
+                      "defi": {k: bool(v) for k, v in (m.get("defi") or {}).items()}, "ileri": bool(m.get("ileri"))}
+          dene("kripto raporu BTC/TRY", kripto)
+          dene("kripto raporu ETH/USDT defi", lambda: (V.analiz("ETH/USDT").get("defi") or {}).get("protokol"))
+          def kisa():
+              s = T.analiz("ASELS", kisa_vade=True); s2 = T.analiz("SOL/TRY", kisa_vade=True)
+              return {k: (a["etiket"] if a else None) for k, a in s["tf"].items()}, {k: (a["etiket"] if a else None) for k, a in s2["tf"].items()}, s.get("kisa_hata"), s2.get("kisa_hata")
+          dene("kısa vade", kisa)
+          def pf():
+              p = PF.analiz(PF.ayristir("THYAO 100\nASELS 50\nBTC/TRY 0,01\nETH/USDT 0,5\nGRAMALTIN 10"))
+              PF.pdf(p, "/tmp/pf.pdf"); return PF.baslik(p), round(p["toplam"]), p["hata"]
+          dene("portföy", pf)
+          def al():
+              import alarm as A
+              K = A.kurallar("THYAO > 1\nBTC/USDT %0,1\nASELS RSI > 1\nTHYAO FORMASYON\nASELS KAP\nETH/USDT PUAN > 1")
+              b, y = A.tara(K, {}); return b
+          dene("alarm", al)
+          PY

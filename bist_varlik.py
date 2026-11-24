@@ -387,11 +387,43 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
         m["haber"] = (haber_fn or br.haber_cek)(kod, sorgu)
     except Exception as ex:
         m["haber"] = {"liste": [], "ton": 0, "ozet": "–", "hata": str(ex)[:80]}
+    # İleri analizler
+    try:
+        import bist_ileri as IL
+        aktif = []
+        m["ileri"] = None
+    except Exception:
+        pass
+    m["mikro"] = m["vadeli"] = m["defi"] = None
+    if tur == "kripto" and detay and fiyat_fn is fiyat_cek:
+        b_ = (borsa_kul or "Binance").split(" ")[0]; p_ = parite or "USDT"
+        mk = {}
+        try: mk["defter"] = KR.emir_defteri(baz, p_, b_)
+        except Exception: pass
+        try: mk["islem"] = KR.buyuk_islemler(baz, p_, b_)
+        except Exception: pass
+        try: mk["taker"] = KR.taker_orani(h)
+        except Exception: pass
+        r7 = m["r_usd"].get("1H"); mk["fiyat_7g"] = r7
+        m["mikro"] = mk
+        try: m["vadeli"] = KR.vadeli(baz)
+        except Exception: pass
+        df_ = {}
+        for ad_, fn_ in (("stable", KR.stablecoin_ozet), ("tvl", KR.tvl_ozet), ("protokol", lambda: KR.protokol(baz, cg_id))):
+            try: df_[ad_] = fn_()
+            except Exception: df_[ad_] = None
+        m["defi"] = df_
     try:
         import bist_teknik as TK
         m["mta"] = TK.analiz_h(kod, ad, h, tur if tur == "kripto" else "emtia", "$" if para == "USD" else "₺")
     except Exception:
         m["mta"] = None
+    try:
+        import bist_ileri as IL
+        aktif = [x[0] for x in (((m.get("mta") or {}).get("tf") or {}).get("G") or {}).get("sinyal", [])]
+        m["ileri"] = IL.ileri_paket(h, kripto=(tur == "kripto"), aktif=aktif) if detay else None
+    except Exception:
+        m["ileri"] = None
     skorla(m)
     return m
 
@@ -865,6 +897,15 @@ def pdf_olustur(m, dosya):
         bolum("Emtia oranları", 5)
         E.append(TS.tablo([["Gösterge", "Değer"], [m["oran"]["ad"], ond(m["oran"]["deger"], 1)], ["5 yıllık ortalama", ond(m["oran"]["ort5y"], 1)]], [W * .45, W * .3], font=7.6))
         E.append(Spacer(1, 3)); E.append(bilgi_kutusu("Yorum:", m["oran"]["yorum"], W, "turkuaz"))
+
+    # ---------- Mikro yapı, vadeli, DeFi ve ileri teknik
+    import ileri_rapor as IR
+    if kr and (m.get("mikro") or m.get("vadeli") or m.get("defi")):
+        bolum("Piyasa mikro yapısı, vadeli piyasa ve likidite", 9)
+        E += IR.mikro_blogu(m.get("mikro"), m.get("vadeli"), m.get("defi"), W, "$" if m["para"] == "USD" else "TL")
+    if m.get("ileri"):
+        bolum("İleri teknik analiz: sinyal geçmişi, hacim profili ve olasılık bantları", 10)
+        E += IR.ileri_bolum(m["hist"], m["ileri"], W, sym)
 
     # ---------- Haberler
     hb = m.get("haber") or {}

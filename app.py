@@ -12,6 +12,8 @@ import bist_rapor as br
 import bist_varlik as V
 import bist_evren as EV
 import bist_kripto as KR
+import bist_borsa as BB
+import bist_ileri as IL
 import analist as AN
 import bist_teknik as TK
 import bist_teknik_rapor as TKR
@@ -24,6 +26,8 @@ br = importlib.reload(br)
 V = importlib.reload(V)
 EV = importlib.reload(EV)
 KR = importlib.reload(KR)
+BB = importlib.reload(BB)
+IL = importlib.reload(IL)
 AN = importlib.reload(AN)
 TK = importlib.reload(TK)
 TKR = importlib.reload(TKR)
@@ -45,7 +49,7 @@ div.stButton > button, div.stDownloadButton > button {width: 100%; height: 3rem;
 st.markdown("## 📊 BIST Hisse Araştırma")
 if st.button("🔄 Verileri yenile (önbelleği temizle)", key="yenile"):
     st.cache_data.clear()
-    for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin", "tk_sonuc"):
+    for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin", "tk_sonuc", "pf"):
         st.session_state.pop(k_, None)
     st.rerun()
 
@@ -177,6 +181,56 @@ def ozet_goster(baslik, gorus, kisa, tam, tez, katalizor, risk, senaryo=None):
         if risk: st.markdown("**Başlıca riskler**\n" + "\n".join(f"- {AN.bas_buyuk(x)}" for x in risk))
 
 
+def ileri_ozet(m, para="TL", s=None):
+    """İleri analizlerin ekranda gösterilecek özeti (önbelleğe alınabilir sade veri)."""
+    il = (m or {}).get("ileri") if m is not None else (s or {}).get("ileri")
+    il = il or {}
+    o = {}
+    k = il.get("karne")
+    if k is not None and not k.empty:
+        o["karne_yorum"] = IL.karne_yorumu(k)
+        g = pd.concat([k[k["Aktif"]], k[(~k["Aktif"]) & (k["Örnek"] >= 5)].sort_values("İsabet (20g)", ascending=False)]).head(10)
+        o["karne"] = [{"Sinyal": ("→ " if r["Aktif"] else "") + r["Sinyal"].replace("Mum: ", "").replace("Formasyon: ", ""), "Yön": "Al" if r["Yön"] > 0 else "Sat",
+                       "Örnek": int(r["Örnek"]), "İsabet %": round(r["İsabet (20g)"] * 100), "Ort. 20g %": round(r["20g ort"] * 100, 1)} for _, r in g.iterrows()]
+    if il.get("aralik"): o["aralik_yorum"] = IL.aralik_yorumu(il["aralik"], para)
+    pr = il.get("profil")
+    if pr: o["profil_yorum"] = (f"En çok işlem gören fiyat (POC) {IL._f(pr['poc'])} {para}; değer alanı {IL._f(pr['val'])}–{IL._f(pr['vah'])} {para}. "
+                                f"Fiyat {pr['konum']}.")
+    if il.get("avwap"): o["avwap"] = {k_: IL._f(v) for k_, v in il["avwap"].items()}
+    if m:
+        if m.get("bilanco"): o["bilanco_yorum"] = IL.bilanco_yorumu(m["bilanco"], m.get("bilanco_sonraki"))
+        if m.get("aciga"): o["aciga_yorum"] = BB.aciga_yorumu(m["kod"], m["aciga"].get("satir"), m["aciga"].get("oran"), m["aciga"].get("donem"))
+        if m.get("kap") is not None:
+            o["kap_yorum"] = BB.kap_yorumu(m["kap"])
+            o["kap"] = [{"Tarih": f"{x['tarih']:%d.%m}" if x.get("tarih") else "", "Konu": x["konu"], "Başlık": x["baslik"], "link": x.get("link")} for x in m["kap"][:8]]
+        if m.get("rs") is not None: o["rs"] = m["rs"]
+        if m.get("mikro"):
+            mk = m["mikro"]; o["mikro_yorum"] = KR.mikro_yorum(mk.get("defter"), mk.get("islem"), mk.get("taker"), "$" if m.get("para") == "USD" else "TL")
+        if m.get("vadeli"): o["vadeli_yorum"] = KR.vadeli_yorum(m["vadeli"], (m.get("mikro") or {}).get("fiyat_7g"))
+        if m.get("defi"): o["defi_yorum"] = KR.defi_yorum(m["defi"].get("stable"), m["defi"].get("tvl"), m["defi"].get("protokol"))
+    return o
+
+
+def ileri_goster(o, baslik="🔬 İleri analiz"):
+    if not o: return
+    with st.expander(baslik, expanded=False):
+        if o.get("rs") is not None: st.markdown(f"**Göreli güç puanı:** {o['rs']}/99 (piyasadaki tüm hisseler içinde)")
+        if o.get("karne_yorum"):
+            st.markdown("**Sinyal karnesi (geçmiş başarı)**  \n" + o["karne_yorum"])
+            st.dataframe(pd.DataFrame(o["karne"]), hide_index=True, use_container_width=True)
+        if o.get("aralik_yorum"): st.markdown("**Olası fiyat aralığı**  \n" + o["aralik_yorum"])
+        if o.get("profil_yorum"):
+            st.markdown("**Hacim profili**  \n" + o["profil_yorum"])
+            if o.get("avwap"): st.caption(" · ".join(f"{k}: {v}" for k, v in o["avwap"].items()))
+        for k_, b_ in (("bilanco_yorum", "Bilanço tepkisi"), ("aciga_yorum", "Açığa satış"), ("mikro_yorum", "Emir defteri ve işlem akışı"),
+                       ("vadeli_yorum", "Vadeli piyasa"), ("defi_yorum", "Likidite ve DeFi")):
+            if o.get(k_): st.markdown(f"**{b_}**  \n{o[k_]}")
+        if o.get("kap_yorum"):
+            st.markdown("**KAP gündemi**  \n" + o["kap_yorum"])
+            for x in o.get("kap") or []:
+                st.markdown(f"- {x['Tarih']} · *{x['Konu']}* · [{x['Başlık'][:100]}]({x['link']})")
+
+
 def renk_pot(p):
     return "#1E8E5A" if p is not None and p > 0.15 else "#C0392B" if p is not None and p < -0.15 else "#D9A21B"
 
@@ -205,7 +259,7 @@ def analiz(kod, emsal, prm, gun, surum):
                       for y in m["yontemler"]],
         "saglik": m["saglik"],
         "akis_ozet": (m.get("akis") or {}).get("ozet"), "akis_yorum": br.akis_yorumlari(m),
-        "genel": br.genel_degerlendirme(m), "haber": m.get("haber"), "seviye": m.get("seviye"),
+        "genel": br.genel_degerlendirme(m), "haber": m.get("haber"), "seviye": m.get("seviye"), "ileri": ileri_ozet(m, "TL"),
         "tek": AN.karne(m), "sade": br.sade_ozet(m),
         "baslik": AN.baslik_tezi(m), "gorus": AN.gorus(m)[0], "ozet_kisa": AN.yonetici_ozeti(m, kisa=True), "ozet_tam": AN.yonetici_ozeti(m),
         "tez": AN.yatirim_tezi(m), "katalizor": AN.katalizorler(m), "risk": AN.riskler(m), "senaryo": AN.senaryolar(m),
@@ -247,7 +301,8 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                  })
 
 
-tab_r, tab_x, tab_v, tab_p, tab_t, tab_b, tab_k, tab_w = st.tabs(["📄 Hisse", "📐 Teknik", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "👶 Bebek", "⚖️ Karşılaştır", "⭐ Takip"])
+tab_r, tab_x, tab_v, tab_p, tab_t, tab_b, tab_pf, tab_al, tab_k, tab_w = st.tabs(
+    ["📄 Hisse", "📐 Teknik", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "👶 Bebek", "💼 Portföy", "🔔 Alarm", "⚖️ Karşılaştır", "⭐ Takip"])
 
 # ================= RAPOR =================
 with tab_r:
@@ -328,6 +383,7 @@ with tab_r:
                 st.markdown("**Temel göstergeler karnesi**")
                 for soru, cevap, durum in r["tek"]:
                     st.markdown(f"{DURUM_EMOJI.get(durum, '⚪')} **{soru}**  \n{cevap}")
+            ileri_goster(r.get("ileri"))
             with st.expander("🧾 Başlıklar itibarıyla değerlendirme", expanded=False):
                 for bas, metin in r.get("genel") or []:
                     st.markdown(f"**{bas}.** {metin}")
@@ -349,8 +405,8 @@ with tab_r:
 REPO = "erhankatkay-glitch/bist-rapor"
 
 @st.cache_data(ttl=15 * 60, show_spinner=False, max_entries=40)
-def teknik_analiz(kod, zaman, surum):
-    s = TK.analiz(kod)
+def teknik_analiz(kod, zaman, surum, kisa=False):
+    s = TK.analiz(kod, kisa_vade=kisa)
     klasor = tempfile.mkdtemp(); yol = os.path.join(klasor, f"{s['kod']}_Teknik_{dt.date.today():%Y%m%d}.pdf")
     TKR.teknik_pdf(s, yol)
     with open(yol, "rb") as f: pdf = f.read()
@@ -362,7 +418,7 @@ def teknik_analiz(kod, zaman, surum):
     return {"kod": s["kod"], "ad": s["ad"], "etiket": s["etiket"], "puan": s["puan"], "yorum": AN.teknik_ozet(s), "baslik": AN.teknik_baslik(s),
             "senaryo": AN.teknik_senaryo(s), "pdf": pdf,
             "dosya": os.path.basename(yol), "graf": graf, "tf": tfo, "para": s["para"], "fiyat": g.get("fiyat"), "degisim": g.get("degisim"),
-            "fiyat_zamani": ts.zaman_metni(s.get("fiyat_zamani"))}
+            "fiyat_zamani": ts.zaman_metni(s.get("fiyat_zamani")), "ileri": ileri_ozet(None, {"₺": "TL", "$": "$"}.get(s["para"], ""), s)}
 
 @st.cache_data(ttl=10 * 60, show_spinner=False)
 def bulten_oku(piyasa, zaman):
@@ -388,10 +444,11 @@ with tab_x:
         tk_s = st.selectbox("Emtia", [f"{k} — {v[1]}" for k, v in V.VARLIKLAR.items() if v[2] == "emtia"], index=None, key="tk_v",
                             placeholder="Seçin")
         tk_kod = tk_s.split(" — ")[0] if tk_s else ""
+    st.checkbox("Kısa vade dahil (1 saatlik ve 4 saatlik grafikler)", key="tk_kisa")
     if st.button("📐 Teknik analiz yap", type="primary", disabled=not tk_kod, key="tk_btn"):
         try:
             with st.status(f"{tk_kod} teknik analizi yapılıyor… (15–40 sn)") as s_:
-                st.session_state.tk_sonuc = teknik_analiz(tk_kod, ZAMAN, br.SURUM)
+                st.session_state.tk_sonuc = teknik_analiz(tk_kod, ZAMAN, br.SURUM, st.session_state.get("tk_kisa", False))
                 s_.update(label="Hazır ✓", state="complete", expanded=False)
         except Exception as e:
             st.error(f"Teknik analiz yapılamadı: {e}")
@@ -404,6 +461,11 @@ with tab_x:
         for c_, tf in zip(cols, ("G", "H", "A")):
             x = r["tf"].get(tf)
             if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"], "#14294B"))
+        if r["tf"].get("1S") or r["tf"].get("4S"):
+            cols = st.columns(2)
+            for c_, tf in zip(cols, ("1S", "4S")):
+                x = r["tf"].get(tf)
+                if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"], "#14294B"))
         st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#F8FAFC;border-radius:10px;padding:10px 12px;margin:6px 0">'
                     f'<div style="font-size:0.7rem;color:#F59E0B;font-weight:700">TEKNİK GÖRÜNÜM ÖZETİ</div>'
                     f'<div style="font-size:1.0rem;font-weight:800;color:#0F172A;margin:4px 0 6px">{r["baslik"]}</div>'
@@ -411,8 +473,10 @@ with tab_x:
         for b_, t_, h_, i_ in r.get("senaryo") or []:
             st.markdown(f"{'🟢' if 'Yükseliş' in b_ else '🔴'} **{b_}:** {t_} → hedef **{h_}** · {i_}")
         st.download_button("⬇️ Teknik PDF raporu", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="tk_dl")
-        sek = st.tabs([TK.TF_AD[t] for t in ("G", "H", "A") if t in r["tf"]])
-        for sk, tf in zip(sek, [t for t in ("G", "H", "A") if t in r["tf"]]):
+        ileri_goster(r.get("ileri"))
+        sira = [t for t in ("1S", "4S", "G", "H", "A") if t in r["tf"]]
+        sek = st.tabs([TK.TF_AD[t] for t in sira])
+        for sk, tf in zip(sek, sira):
             with sk:
                 x = r["tf"][tf]
                 if tf in r["graf"]: st.image(r["graf"][tf], use_container_width=True)
@@ -475,7 +539,7 @@ def varlik_analiz(kod, prm, saat, surum):
             "zirveden": m["zirveden"], "tek": AN.karne_etiketle(V.tek_bakista(m), m.get("mta")), "sade": V.sade_ozet(m),
             "baslik": AN.varlik_baslik(m), "gorus_v": AN.varlik_gorus(m)[0], "ozet_kisa": AN.varlik_ozeti(m, kisa=True), "ozet_tam": AN.varlik_ozeti(m),
             "tez": AN.varlik_tezi(m), "kr": AN.varlik_katalizor_risk(m), "guclu": m["guclu"], "zayif": m["zayif"],
-            "genel": V.genel_degerlendirme(m), "graf": graf, "korku": {k: v for k, v in (m.get("korku") or {}).items() if k != "seri"} or None,
+            "genel": V.genel_degerlendirme(m), "ileri": ileri_ozet(m, "$" if m["para"] == "USD" else "TL"), "graf": graf, "korku": {k: v for k, v in (m.get("korku") or {}).items() if k != "seri"} or None,
             "cg": m.get("cg"), "global": m.get("global"), "turev": m.get("turev"), "sharpe": m.get("sharpe"),
             "adil": m.get("adil"), "pot": m.get("potansiyel"), "etiket": (m.get("deger") or {}).get("etiket"),
             "saglik": m.get("saglik"), "fiyat_zamani": ts.zaman_metni(m.get("fiyat_zamani")),
@@ -524,6 +588,7 @@ with tab_v:
         with b2:
             for ad_ in ("logbant", "mayer", "fiyat", "korku", "tlusd", "mevsim", "akis"):
                 if ad_ in r["graf"]: st.image(r["graf"][ad_], use_container_width=True)
+        ileri_goster(r.get("ileri"))
         with b3:
             for bas, metin in r["genel"]:
                 st.markdown(f"**{bas}.** {metin}")
@@ -673,6 +738,12 @@ with tab_t:
 def ilk_cek(kodlar, gun, surum):
     return EV.ilk_islemler(list(kodlar))
 
+
+@st.cache_data(ttl=24 * 3600, show_spinner=False)
+def resmi_ilk_cek(gun, surum):
+    try: return BB.ilk_islem()
+    except Exception: return {}
+
 with tab_b:
     st.caption("Bebek şirketler, Borsa İstanbul'un resmi tanımıyla belirlenir: halka arz edilip işlem görmeye başladığı ilk günden itibaren "
                "2 yıl boyunca BIST Halka Arz Endeksi'nde (XHARZ) yer alan şirketler. Liste otomatik güncellenir; ayar gerekmez.")
@@ -680,7 +751,7 @@ with tab_b:
         with st.spinner("Resmi halka arz endeksi ve ilk işlem tarihleri alınıyor…"):
             hedef = list(HARZ) if HARZ else list(EVREN["Kod"])
             ilk = ilk_cek(tuple(sorted(hedef)), GUN, br.SURUM)
-            liste, resmi = EV.bebekler(EVREN, ilk, set(HARZ))
+            liste, resmi = EV.bebekler(EVREN, ilk, set(HARZ), resmi_ilk=resmi_ilk_cek(GUN, br.SURUM))
             st.session_state.bebek = (liste, resmi, len(EVREN)); st.session_state.pop("bebek_derin", None)
     if "bebek" in st.session_state:
         liste, resmi, n_ev = st.session_state.bebek
@@ -695,7 +766,8 @@ with tab_b:
                          column_config={"Halka açıklık %": st.column_config.NumberColumn(format="%.1f"),
                                         "İlk işlemden getiri": st.column_config.NumberColumn("İlk işlemden getiri %", format="%.1f"),
                                         "Zirveden uzaklık": st.column_config.NumberColumn("Zirveden %", format="%.1f")})
-            st.caption("İlk işlem: Yahoo'daki ilk aylık fiyat (bedelsiz/bölünme düzeltilmiş). Halka arz fiyatı değil, ilk işlem ayının açılışıdır. "
+            st.caption("İlk işlem tarihi ve ilk gün kapanışı Borsa İstanbul'un resmi listesinden alınır (ilk gün kapanışı düzeltilmemiş fiyattır). "
+                       "'İlk işlemden getiri' bedelsiz/bölünme düzeltilmiş Yahoo verisinden hesaplanır. "
                        "'Endekste kalan' süre dolduğunda şirket bebek statüsünden çıkar.")
             n_derin = min(len(liste), 120)
             if st.button(f"🔬 Derin analiz: bilanço, büyüme ve bebek skoru ({n_derin} şirket, 2–6 dk)", key="b_derin"):
@@ -725,6 +797,102 @@ with tab_b:
                            "ve para akışının (%10) bebek şirketler içindeki yüzdelik sırasıdır. Detay için kodu 📄 Hisse sekmesine yazıp tam rapor alın. "
                            "Yatırım tavsiyesi değildir.")
             if hat: st.caption("Verisi alınamayanlar: " + ", ".join(hat))
+
+# ================= PORTFÖY =================
+import portfoy as PF
+PF = importlib.reload(PF)
+
+
+@st.cache_data(ttl=15 * 60, show_spinner=False, max_entries=20)
+def portfoy_analiz(metin, zaman, surum):
+    p = PF.analiz(PF.ayristir(metin))
+    yol = os.path.join(tempfile.mkdtemp(), f"Portfoy_Analizi_{dt.date.today():%Y%m%d}.pdf"); PF.pdf(p, yol)
+    with open(yol, "rb") as f: pdf = f.read()
+    t = p["tablo"].copy()
+    return {"pdf": pdf, "dosya": os.path.basename(yol), "tablo": t.to_dict("records"), "ozet": PF.ozet(p), "baslik": PF.baslik(p),
+            "toplam": p["toplam"], "vol": p["vol"], "getiri": p["getiri"], "getiri_usd": p["getiri_usd"], "var95_tl": p["var95_tl"], "beta": p["beta"],
+            "max_dd": p["max_dd"], "hata": p["hata"], "g_deger": PF.g_deger(p).getvalue(), "g_agirlik": PF.g_agirlik(p).getvalue(),
+            "g_kor": PF.g_korelasyon(p).getvalue()}
+
+with tab_pf:
+    st.caption("Elinizdeki hisse, kripto ve emtiaları yazın; portföyün TL değeri, dağılımı, riski (oynaklık, VaR), korelasyonları, "
+               "risk katkıları ve teknik görünümü hesaplanır. Her satıra: KOD MİKTAR (isteğe bağlı @ maliyet).")
+    varsayilan = st.query_params.get("p", "").replace(";", "\n") or "THYAO 100\nASELS 50\nBTC/TRY 0,01\nGRAMALTIN 10"
+    pf_metin = st.text_area("Portföy", varsayilan, height=160, key="pf_metin",
+                            help="Örnekler: THYAO 1000 @ 280 · BTC/TRY 0,05 · ETH/USDT 1,2 · GRAMALTIN 50 (gram) · ALTIN 2 (ons)")
+    if st.button("💼 Portföyü analiz et", type="primary", key="pf_btn"):
+        try:
+            with st.status("Portföy analiz ediliyor… (her varlık için veri çekilir)") as s_:
+                st.session_state.pf = portfoy_analiz(pf_metin.strip(), ZAMAN, br.SURUM)
+                st.query_params["p"] = ";".join(x.strip() for x in pf_metin.strip().splitlines() if x.strip())
+                s_.update(label="Hazır ✓", state="complete", expanded=False)
+        except Exception as e:
+            st.error(f"Portföy analiz edilemedi: {e}")
+    if "pf" in st.session_state:
+        r = st.session_state.pf
+        c1, c2 = st.columns(2)
+        kart(c1, "TOPLAM DEĞER", f"{br.tl(r['toplam'])} TL", f"Getiri: {br.yz(r['getiri'])} · $: {br.yz(r['getiri_usd'])}")
+        kart(c2, "YILLIK OYNAKLIK", br.yz(r["vol"]), f"Günlük VaR %95: {br.tl(r['var95_tl'])} TL",
+             "#16A34A" if r["vol"] < 0.2 else "#D97706" if r["vol"] < 0.35 else "#DC2626")
+        st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#F8FAFC;border-radius:10px;padding:10px 12px;margin:6px 0">'
+                    f'<div style="font-size:1.0rem;font-weight:800;color:#0F172A;margin-bottom:6px">{r["baslik"]}</div>'
+                    f'<div style="font-size:0.88rem;color:#334155">{r["ozet"]}</div></div>', unsafe_allow_html=True)
+        st.download_button("⬇️ Portföy PDF raporu", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="pf_dl")
+        t = pd.DataFrame(r["tablo"])
+        for c in ("Ağırlık", "Risk katkısı", "Volatilite", "K/Z"):
+            t[c] = t[c].apply(lambda x: None if x is None or pd.isna(x) else round(x * 100, 1))
+        st.dataframe(t[["Kod", "Tür", "Değer (TL)", "Ağırlık", "Risk katkısı", "Volatilite", "K/Z", "Teknik"]], hide_index=True, use_container_width=True,
+                     column_config={"Değer (TL)": st.column_config.NumberColumn(format="%.0f")})
+        st.caption("Ağırlık, risk katkısı, volatilite ve K/Z yüzde olarak gösterilir.")
+        for g_ in ("g_deger", "g_agirlik", "g_kor"): st.image(r[g_], use_container_width=True)
+        if r["hata"]: st.caption("Verisi alınamayanlar: " + ", ".join(r["hata"]))
+
+# ================= ALARM =================
+@st.cache_data(ttl=5 * 60, show_spinner=False)
+def alarm_son(zaman):
+    import requests
+    try:
+        s = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/alarm/son.json?t={zaman}", timeout=15).json()
+        k = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/alarm/son_kontrol.json?t={zaman}", timeout=15).json()
+        return s, k
+    except Exception:
+        return [], {}
+
+with tab_al:
+    st.caption("Alarmlar 30 dakikada bir otomatik kontrol edilir; tetiklenince Telegram'a bildirim gider (Telegram kuruluysa). "
+               "Son tetiklenen alarmlar aşağıda da görünür.")
+    son_al, kontrol = alarm_son(ZAMAN)
+    if kontrol: st.caption(f"Son kontrol: {kontrol.get('kontrol')} · {kontrol.get('kural')} kural")
+    st.markdown("**Son alarmlar**")
+    if son_al:
+        for x in son_al[:20]: st.markdown(f"- `{x['zaman']}` {x['mesaj']}")
+    else:
+        st.info("Henüz tetiklenen alarm yok.")
+    st.markdown("**Kurallar**")
+    mevcut = open("alarmlar.txt", encoding="utf-8").read() if os.path.exists("alarmlar.txt") else ""
+    st.code("\n".join(s for s in mevcut.splitlines() if s.strip() and not s.startswith("#")) or "(kural yok)")
+    with st.expander("➕ Yeni alarm ekle"):
+        tip = st.selectbox("Alarm türü", ["Fiyat üstüne çıkınca", "Fiyat altına inince", "Günlük % hareket", "RSI altına inince", "RSI üstüne çıkınca",
+                                          "Teknik puan üstüne çıkınca", "Yeni formasyon / kırılım", "KAP haberi"], key="al_tip")
+        kod_a = st.text_input("Kod (örn. THYAO, BTC/TRY, PEPE/USDT@OKX, ALTIN)", key="al_kod").strip().upper()
+        deger = st.text_input("Değer (fiyat, yüzde veya RSI/puan)", key="al_deger").strip().replace(",", ".") if tip not in ("Yeni formasyon / kırılım", "KAP haberi") else ""
+        kural = {"Fiyat üstüne çıkınca": f"{kod_a} > {deger}", "Fiyat altına inince": f"{kod_a} < {deger}", "Günlük % hareket": f"{kod_a} %{deger}",
+                 "RSI altına inince": f"{kod_a} RSI < {deger}", "RSI üstüne çıkınca": f"{kod_a} RSI > {deger}", "Teknik puan üstüne çıkınca": f"{kod_a} PUAN > {deger}",
+                 "Yeni formasyon / kırılım": f"{kod_a} FORMASYON", "KAP haberi": f"{kod_a} KAP"}.get(tip, "")
+        if kod_a: st.code(kural)
+        try: gh = st.secrets.get("GH_TOKEN", "")
+        except Exception: gh = ""
+        if gh:
+            if st.button("Kaydet", disabled=not kod_a, key="al_kaydet"):
+                import requests, base64
+                u = f"https://api.github.com/repos/{REPO}/contents/alarmlar.txt"; hd = {"Authorization": f"Bearer {gh}", "Accept": "application/vnd.github+json"}
+                j = requests.get(u, headers=hd, timeout=20).json()
+                yeni = base64.b64decode(j["content"]).decode("utf-8").rstrip("\n") + "\n" + kural + "\n"
+                r_ = requests.put(u, headers=hd, json={"message": f"Alarm eklendi: {kural}", "content": base64.b64encode(yeni.encode()).decode(), "sha": j["sha"]}, timeout=20)
+                st.success("Alarm eklendi; bir sonraki kontrolde (en geç 30 dk) devreye girer.") if r_.status_code in (200, 201) else st.error(f"Kaydedilemedi: {r_.text[:200]}")
+        else:
+            st.info("Uygulamadan doğrudan kaydetmek için Streamlit ayarlarına GH_TOKEN eklenmeli. Şimdilik yukarıdaki satırı kopyalayıp GitHub'da "
+                    "alarmlar.txt dosyasına ekleyebilirsiniz.")
 
 # ================= KARŞILAŞTIR =================
 with tab_k:

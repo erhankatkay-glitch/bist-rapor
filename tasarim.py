@@ -468,7 +468,7 @@ def zaman_metni(z):
     z = __import__("pandas").Timestamp(z)
     return f"{z:%d.%m.%Y}" if (z.hour, z.minute) == (0, 0) else f"{z:%d.%m.%Y %H:%M}"
 
-def pro_kapak(ad, alt_satir, fiyat_metni, degisim, W, rozet=None, guncel=None):
+def pro_kapak(ad, alt_satir, fiyat_metni, degisim, W, rozet=None, guncel=None, fiyat_etiket="son fiyat"):
     """Koyu bant içinde: solda ad ve alt bilgi, sağda büyük fiyat ve günlük değişim."""
     renk = HEX["yesil"] if (degisim or 0) > 0 else HEX["kirmizi"] if (degisim or 0) < 0 else "#CBD5E1"
     ok = "↑" if (degisim or 0) > 0 else "↓" if (degisim or 0) < 0 else ""
@@ -484,7 +484,7 @@ def pro_kapak(ad, alt_satir, fiyat_metni, degisim, W, rozet=None, guncel=None):
         rz.hAlign = "LEFT"; sol += [Spacer(1, 7), rz]
     sag = [Paragraph(f'<font name="DVX" size="20" color="#FFFFFF">{fiyat_metni}</font>', _st("pf", alignment=2, leading=24)),
            Paragraph((f'<font name="DVB" color="{renk}">{ok} {_yuzde(degisim, 2)}</font><font color="#94A3B8"> son gün</font>'
-                      if degisim is not None else '<font color="#94A3B8">son fiyat</font>'), _st("pd", alignment=2, fontSize=9, leading=12))]
+                      if degisim is not None else f'<font color="#94A3B8">{fiyat_etiket}</font>'), _st("pd", alignment=2, fontSize=9, leading=12))]
     t = Table([[sol, sag]], colWidths=[W * 0.64, W * 0.36])
     t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
     t.hAlign = "LEFT"

@@ -158,7 +158,7 @@ def ilk_islemler(kodlar, parca=80):
 HARZ_YIL = 2  # BIST Halka Arz Endeksi: şirket işlem görmeye başladığı ilk gün endekse alınır ve 2 yıl kalır
 
 
-def bebekler(evren, ilk, harz=None, bugun=None):
+def bebekler(evren, ilk, harz=None, bugun=None, resmi_ilk=None):
     """Bebek şirketler = Borsa İstanbul'un resmi tanımıyla son 2 yılda halka arz edilip işlem görmeye başlayan
     şirketler (BIST Halka Arz Endeksi / XHARZ kapsamı). Resmi bileşen listesi alınabildiyse o kullanılır;
     alınamadıysa Yahoo'daki ilk işlem tarihi 2 yıldan yeni olan hisseler seçilir."""
@@ -166,8 +166,9 @@ def bebekler(evren, ilk, harz=None, bugun=None):
     resmi = bool(harz)
     sat = []
     for _, r in evren.iterrows():
-        k = r["Kod"]; b = ilk.get(k)
-        yas = (bugun - b["ilk"]).days / 365.25 if b else None
+        k = r["Kod"]; b = ilk.get(k); rs = (resmi_ilk or {}).get(k) or {}
+        ilk_t = rs.get("tarih") if rs.get("tarih") is not None and not pd.isna(rs.get("tarih")) else (b["ilk"] if b else None)
+        yas = (bugun - pd.Timestamp(ilk_t)).days / 365.25 if ilk_t is not None else None
         if resmi:
             if k not in harz: continue
         elif yas is None or yas > HARZ_YIL:
@@ -175,7 +176,8 @@ def bebekler(evren, ilk, harz=None, bugun=None):
         pd_mr = r.get("PD mn") / 1000 if pd.notna(r.get("PD mn")) else None
         ay = round(yas * 12) if yas is not None else None
         sat.append({"Kod": k, "Şirket": r.get("Ad"), "Sektör": r.get("Sektör"),
-                    "İlk işlem": b["ilk"].date() if b else None, "Borsadaki süre (ay)": ay,
+                    "İlk işlem": pd.Timestamp(ilk_t).date() if ilk_t is not None else None, "Borsadaki süre (ay)": ay,
+                    "İlk gün kapanışı": rs.get("ilk_kapanis"),
                     "Endekste kalan (ay)": max(24 - ay, 0) if ay is not None else None,
                     "Piyasa değeri (mr TL)": round(pd_mr, 2) if pd_mr is not None else None,
                     "Halka açıklık %": r.get("Halka açıklık %"),

@@ -22,7 +22,7 @@ def tr(x, d=1):
 KRIPTO_TAM_MUM = False   # True: kriptoda henüz kapanmamış (bugünkü UTC) mumu at — kapanış bültenleri için
 
 
-TF_AD = {"G": "Günlük", "H": "Haftalık", "A": "Aylık"}
+TF_AD = {"1S": "1 saatlik", "4S": "4 saatlik", "G": "Günlük", "H": "Haftalık", "A": "Aylık"}
 ETIKETLER = ["GÜÇLÜ SAT", "SAT", "NÖTR", "AL", "GÜÇLÜ AL"]
 
 
@@ -94,8 +94,11 @@ def gunluk_veri(kod, fiyat_fn=None):
 
 
 def yeniden_ornekle(h, tf, tur="hisse"):
-    if tf == "G":
+    if tf in ("G", "1S"):
         return h
+    if tf == "4S":
+        g = h.resample("4h").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
+        return g.dropna(subset=["Close"])
     kural = ("W-SUN" if tur == "kripto" else "W-FRI") if tf == "H" else "ME"
     g = h.resample(kural).agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
     return g.dropna(subset=["Close"])
@@ -651,7 +654,8 @@ def durumlar(h, G):
 # =====================================================================
 # ANA ANALİZ
 # =====================================================================
-AYAR = {"G": {"pencere_fib": 120, "goster": 130, "atr_k": 1.5}, "H": {"pencere_fib": 104, "goster": 110, "atr_k": 1.3},
+AYAR = {"1S": {"pencere_fib": 120, "goster": 120, "atr_k": 2.0}, "4S": {"pencere_fib": 120, "goster": 120, "atr_k": 1.7},
+        "G": {"pencere_fib": 120, "goster": 130, "atr_k": 1.5}, "H": {"pencere_fib": 104, "goster": 110, "atr_k": 1.3},
         "A": {"pencere_fib": 96, "goster": 120, "atr_k": 1.0}}
 
 
@@ -705,7 +709,23 @@ def analiz_h(kod, ad, h, tur="hisse", para="₺", tfler=("G", "H", "A")):
     return s
 
 
-def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A")):
+def saatlik_veri(kod, tur):
+    """1 saatlik OHLCV: kripto Binance/OKX, diğerleri Yahoo (60 dk, ~2 yıl)."""
+    import bist_rapor as br
+    if tur == "kripto":
+        import bist_kripto as KR
+        baz, par, borsa = KR.coz(kod)
+        return KR.saatlik_mumlar(baz, par, borsa)[0]
+    import yfinance as yf
+    y, _ = yahoo_sembol(kod)
+    h = yf.Ticker(y).history(period="730d", interval="60m", auto_adjust=True)
+    if h is None or h.empty: raise ValueError("saatlik veri yok")
+    try: h.index = h.index.tz_convert("Europe/Istanbul").tz_localize(None)
+    except Exception: h = br._naive(h)
+    return h[["Open", "High", "Low", "Close", "Volume"]].dropna(subset=["Close"]).iloc[-2500:]
+
+
+def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A"), kisa_vade=False):
     import bist_varlik as V, bist_veri as bv
     kod = kod.upper().strip().replace(".IS", "")
     h, tur = gunluk_veri(kod, fiyat_fn)
@@ -722,8 +742,17 @@ def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A")):
              "tf": {}, "fiyat_zamani": h.index[-1]}
     for tf in tfler:
         sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(h, tf, tur), tf)
+    if kisa_vade and not fiyat_fn:
+        try:
+            hs = saatlik_veri(kod, tur)
+            for tf in ("1S", "4S"):
+                sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(hs, tf, tur), tf)
+        except Exception as ex:
+            sonuc["kisa_hata"] = str(ex)[:100]
     ag = {"G": 0.3, "H": 0.4, "A": 0.3}
-    v = [(ag[t], a["puan"]) for t, a in sonuc["tf"].items() if a]
+    v = [(ag[t], a["puan"]) for t, a in sonuc["tf"].items() if a and t in ag]
+    kv = [a["puan"] for t, a in sonuc["tf"].items() if a and t in ("1S", "4S")]
+    sonuc["kisa_puan"] = float(np.mean(kv)) if kv else None
     sonuc["puan"] = sum(w * p for w, p in v) / sum(w for w, _ in v) if v else None
     sonuc["etiket"] = puan_etiket(sonuc["puan"]) if sonuc["puan"] is not None else "–"
     sonuc["yorum"] = sade_yorum(sonuc)

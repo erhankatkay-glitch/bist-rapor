@@ -132,7 +132,7 @@ def g_teknik(a, baslik, kompakt=False, dpi=150):
         a4.set_ylabel("MACD", fontsize=6); a4.tick_params(labelsize=6); a4.yaxis.tick_right(); axs += [a3, a4]
     alt = axs[-1]
     adim = max(len(w) // 7, 1); tick = list(range(0, len(w), adim))
-    bic = "%d.%m.%y" if a["tf"] == "G" else "%m.%Y"
+    bic = {"G": "%d.%m.%y", "1S": "%d.%m %H:%M", "4S": "%d.%m %H:%M"}.get(a["tf"], "%m.%Y")
     alt.set_xticks(tick); alt.set_xticklabels([w.index[i].strftime(bic) for i in tick], fontsize=6)
     for a_ in axs:
         a_.grid(alpha=0.25, lw=0.5)
@@ -173,9 +173,9 @@ class TeknikGosterge(Flowable):
         c.setFont("DV", 5.8); c.drawString(cx - r - 2, cy - 7, "Sat"); c.drawRightString(cx + r + 2, cy - 7, "Al")
 
 
-def gosterge_satiri(s, W):
+def gosterge_satiri(s, W, tfler=("G", "H", "A")):
     hucre = []
-    for tf in ("G", "H", "A"):
+    for tf in tfler:
         a = s["tf"].get(tf)
         if a:
             sy = a["oy"]["sayim"]
@@ -183,6 +183,7 @@ def gosterge_satiri(s, W):
                                         gen=(W - 16) / 3))
         else:
             hucre.append(TeknikGosterge(T.TF_AD[tf], None, "", "", gen=(W - 16) / 3))
+    hucre = hucre + [""] * (3 - len(hucre))
     t = Table([hucre], colWidths=[(W - 16) / 3 + 8, (W - 16) / 3 + 8, (W - 16) / 3])
     t.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (1, 0), 8), ("RIGHTPADDING", (2, 0), (2, 0), 0)]))
     t.hAlign = "LEFT"; return t
@@ -229,6 +230,8 @@ def teknik_pdf(s, dosya):
                       f"{_f(g['fiyat'])} {sym}", g.get("degisim"), W, rozet=f"TEKNİK GÖRÜNÜM: {s['etiket']}",
                       guncel=f"Son kapanış verisi: {TS.zaman_metni(s.get('fiyat_zamani'))}  ·  Rapor: {dt.datetime.now(dt.timezone(dt.timedelta(hours=3))):%d.%m.%Y %H:%M} TSİ")
     E.append(gosterge_satiri(s, W)); E.append(Spacer(1, 8))
+    if s["tf"].get("1S") or s["tf"].get("4S"):
+        E.append(Paragraph("Kısa vade (gün içi)", ST["h2"])); E.append(gosterge_satiri(s, W, ("1S", "4S"))); E.append(Spacer(1, 6))
     E.append(TS.ozet_paneli("Teknik görünüm özeti", AN.teknik_baslik(s), s["etiket"], AN.teknik_ozet(s), W)); E.append(Spacer(1, 4))
     # Önemli seviyeler
     E.append(Paragraph("Önemli seviyeler", ST["h2"]))
@@ -261,7 +264,7 @@ def teknik_pdf(s, dosya):
     E.append(KeepTogether([_baslik_sinyal, TS.sinyal_listesi(pos, neg, W, n=5)]))
 
     # Her zaman dilimi
-    for n, tf in enumerate(("G", "H", "A"), 1):
+    for n, tf in enumerate([t for t in ("1S", "4S", "G", "H", "A") if s["tf"].get(t)], 1):
         a = s["tf"].get(tf)
         if not a: continue
         E.append(PageBreak()); E.append(Bolum(n, f"{T.TF_AD[tf]} grafik: {a['etiket'].lower()} (puan {a['puan']:.0f}/100)", W))
@@ -296,7 +299,16 @@ def teknik_pdf(s, dosya):
         for ad, alt_, ust_, t_ in pa["fvg"]: sat.append(f"{ad}: {_f(alt_)} – {_f(ust_)} ({t_:%d.%m.%Y}).")
         if pa.get("ob"): sat.append(f"{pa['ob'][0]}: {_f(pa['ob'][1])} – {_f(pa['ob'][2])} ({pa['ob'][3]:%d.%m.%Y}).")
         E.append(KeepTogether([Paragraph("Price action", ST["h2"])] + [Paragraph("• " + x, ST["madde"]) for x in sat]))
-    E.append(PageBreak()); E.append(Bolum(4, "Sözlük ve uyarılar", W))
+    gg = s["tf"].get("G")
+    if gg is not None:
+        try:
+            import ileri_rapor as IR, bist_ileri as IL
+            paket = IL.ileri_paket(gg["h"], kripto=s.get("tur") == "kripto", aktif=[x[0] for x in gg["sinyal"]], G=gg["G"])
+            s["ileri"] = paket; n += 1
+            E += IR.ileri_bolum(gg["h"], paket, W, {"₺": "TL", "$": "$"}.get(sym, ""), n)
+        except Exception as ex:
+            print("ileri analiz atlandı:", ex)
+    E.append(PageBreak()); E.append(Bolum(n + 1, "Sözlük ve uyarılar", W))
     E.append(TS.tablo([["Terim", "Sade anlatım"]] + [[a_, Paragraph(b_, ST["hucre"])] for a_, b_ in SOZLUK_TEKNIK], [W * .28, W * .72], hizala_sol=(0, 1), font=7.4))
     E.append(Spacer(1, 6))
     E.append(Paragraph("Teknik puan: hareketli ortalama ve osilatör oylaması (%55), formasyon/mum/kesişim/uyumsuzluk sinyalleri (%30) ve "
@@ -327,7 +339,8 @@ def kategoriler(satirlar, n=12):
     return {k: v for k, v in K.items() if len(v)}
 
 
-def bulten_pdf(baslik, satirlar, analizler, dosya, endeks=None, sym="₺"):
+def bulten_pdf(baslik, satirlar, analizler, dosya, endeks=None, sym="₺", ekler=None):
+    ekler = ekler or {}
     W = A4[0] - 3.0 * cm
     sayfa = sayfa_cizici("BÜLTEN", baslik, f"{dt.date.today():%d.%m.%Y}", kapak_yuk=4.7 * cm)
     doc = SimpleDocTemplate(dosya, pagesize=A4, leftMargin=1.5 * cm, rightMargin=1.5 * cm, topMargin=1.6 * cm,
@@ -363,6 +376,37 @@ def bulten_pdf(baslik, satirlar, analizler, dosya, endeks=None, sym="₺"):
             v.append([r["Kod"], f"{r['Teknik puan']:.0f}", f"{KISA.get(r['Günlük'], '–')} / {KISA.get(r['Haftalık'], '–')} / {KISA.get(r['Aylık'], '–')}", _f(r["Fiyat"]), _yz(r["Değişim"]),
                       Paragraph(TS.esc(str(one or "–"))[:110], ST["hucre"])])
         E.append(KeepTogether([Paragraph(ad, ST["h2"]), TS.tablo(v, [W * .1, W * .08, W * .24, W * .12, W * .1, W * .36], hizala_sol=(0, 5), font=7.0)]))
+    if ekler.get("likidite"):
+        E.append(KeepTogether([Paragraph("Kripto piyasası likiditesi", ST["h2"]), bilgi_kutusu("Analist yorumu:", ekler["likidite"], W)]))
+    if "RS" in df and df["RS"].notna().any():
+        g = df.dropna(subset=["RS"]).sort_values("RS", ascending=False).head(15)
+        v = [["Kod", "RS puanı", "Teknik puan", "G / H / A", "Değ."]] + [[r_["Kod"], f"{int(r_['RS'])}", f"{r_['Teknik puan']:.0f}",
+             f"{KISA.get(r_['Günlük'], '–')} / {KISA.get(r_['Haftalık'], '–')} / {KISA.get(r_['Aylık'], '–')}", _yz(r_["Değişim"])] for _, r_ in g.iterrows()]
+        E.append(KeepTogether([Paragraph("Göreli güç liderleri (RS puanı 1–99)", ST["h2"]),
+                               Paragraph("RS puanı; 3, 6, 9 ve 12 aylık getirilerin (son çeyrek %40 ağırlıklı) taranan tüm varlıklar içindeki yüzdelik sırasıdır. "
+                                         "80 üzeri, piyasanın en güçlü %20'lik dilimini gösterir.", ST["kucuk"]),
+                               TS.tablo(v, [W * .18, W * .14, W * .16, W * .34, W * .18], font=7.2)]))
+    rr = ekler.get("rrg")
+    if rr:
+        import bist_ileri as IL
+        v = [["Sektör", "Bölge", "Göreli güç", "İvme"]] + [[k_, IL.rrg_bolge(d_["ratio"].iloc[-1], d_["momentum"].iloc[-1]),
+             f"{d_['ratio'].iloc[-1]:.1f}".replace(".", ","), f"{d_['momentum'].iloc[-1]:.1f}".replace(".", ",")]
+             for k_, d_ in sorted(rr.items(), key=lambda x: -x[1]["ratio"].iloc[-1])]
+        lider = [k_ for k_, d_ in rr.items() if IL.rrg_bolge(d_["ratio"].iloc[-1], d_["momentum"].iloc[-1]) == "Lider"]
+        topar = [k_ for k_, d_ in rr.items() if IL.rrg_bolge(d_["ratio"].iloc[-1], d_["momentum"].iloc[-1]) == "Toparlanan"]
+        yorum = (f"Lider bölgede {', '.join(lider[:5]) or 'sektör yok'}; endekse göre güç kazanmaya başlayan (toparlanan) sektörler: {', '.join(topar[:5]) or 'yok'}. "
+                 "Saat yönünde dönüş tipiktir: toparlanan → lider → zayıflayan → geride.")
+        E.append(PageBreak()); E.append(Paragraph("Sektör rotasyonu", ST["h2"])); E.append(bilgi_kutusu("Analist yorumu:", yorum, W))
+        E.append(Spacer(1, 4)); E.append(_img(IL.g_rrg(rr), W * 0.9, 5.2 / 7.5 * 0.9))
+        E.append(TS.tablo(v, [W * .4, W * .2, W * .2, W * .2], hizala_sol=(0, 1), font=7.0))
+    ac = ekler.get("aciga")
+    if ac is not None and len(ac):
+        g = ac.dropna(subset=["Oran"]).sort_values("Oran", ascending=False).head(15)
+        v = [["Kod", "Açığa satış (mn TL)", "Toplam hacme oranı"]] + [[r_["Kod"], f"{r_['Açığa satış TL'] / 1e6:,.1f}".replace(",", "X").replace(".", ",").replace("X", "."),
+             _yz(r_["Oran"], 1)] for _, r_ in g.iterrows()]
+        E.append(KeepTogether([Paragraph(f"Açığa satış yoğunluğu ({ekler.get('aciga_donem') or 'son hafta'})", ST["h2"]),
+                               Paragraph("Kaynak: Borsa İstanbul haftalık açığa satış bülteni. Oran, açığa satış tutarının aynı haftadaki toplam işlem hacmine bölünmesiyle bulunur.", ST["kucuk"]),
+                               TS.tablo(v, [W * .2, W * .3, W * .3], font=7.2)]))
     if analizler:
         E.append(PageBreak()); E.append(Bolum(1, "Öne çıkanların günlük grafikleri", W))
         for s in analizler[:8]:
@@ -372,11 +416,11 @@ def bulten_pdf(baslik, satirlar, analizler, dosya, endeks=None, sym="₺"):
                                    Paragraph(TS.esc(AN.teknik_ozet(s)), ST["kucuk"]), Spacer(1, 6)]))
     if len(df):
         E.append(PageBreak()); E.append(Bolum(2, "Tüm liste", W))
-        v = [["Kod", "Puan", "Genel", "Günlük", "Haftalık", "Aylık", "RSI", "Yapı"]]
+        v = [["Kod", "Puan", "RS", "Genel", "Günlük", "Haftalık", "Aylık", "RSI", "Yapı"]]
         for _, r in df.sort_values("Teknik puan", ascending=False).iterrows():
-            v.append([r["Kod"], f"{r['Teknik puan']:.0f}", r["Genel"], r["Günlük"], r["Haftalık"], r["Aylık"],
+            v.append([r["Kod"], f"{r['Teknik puan']:.0f}", f"{int(r['RS'])}" if "RS" in r and pd.notna(r.get("RS")) else "–", r["Genel"], r["Günlük"], r["Haftalık"], r["Aylık"],
                       f"{r['RSI']:.0f}" if pd.notna(r["RSI"]) else "–", str(r["Yapı"]).split(" (")[0]])
-        E.append(TS.tablo(v, [W * .1, W * .07, W * .13, W * .13, W * .13, W * .13, W * .07, W * .24], font=6.6))
+        E.append(TS.tablo(v, [W * .14, W * .06, W * .06, W * .12, W * .12, W * .12, W * .12, W * .06, W * .2], font=6.4))
     E.append(Spacer(1, 6))
     E.append(Paragraph("Bu bülten kapanış fiyatlarıyla otomatik üretilmiştir; formasyonlar algoritmik tespit edilir ve hatalı olabilir. "
                        "Yatırım tavsiyesi değildir.", ST["kucuk"]))

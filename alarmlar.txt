@@ -1,0 +1,11 @@
+# ALARM KURALLARI — her satıra bir kural. # ile başlayan satırlar açıklamadır.
+# Fiyat:       THYAO > 350        |  BTC/TRY < 3000000
+# Günlük %:    PEPE/USDT %5       (gün içinde ±%5'ten fazla hareket)
+# RSI:         ASELS RSI < 30
+# Teknik puan: ETH/USDT PUAN > 70
+# Formasyon:   THYAO FORMASYON    (yeni teyit / kırılım / yapı kırılımı / altın-ölüm kesişimi)
+# KAP haberi:  ASELS KAP
+# OTOMATIK:    takip listelerindeki tüm varlıklar için formasyon + KAP alarmları
+OTOMATIK
+BTC/USDT %5
+ETH/USDT %6

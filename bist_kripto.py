@@ -123,7 +123,8 @@ def binance_mumlar(sembol, gun=3000):
     if not out: raise ValueError(f"Binance {sembol} için mum verisi yok")
     df = pd.DataFrame(out, columns=["t", "Open", "High", "Low", "Close", "Volume", "tk", "QuoteVol", "n", "a", "b", "c"])
     df.index = pd.to_datetime(df["t"], unit="ms").dt.normalize(); df.index.name = None
-    return df[["Open", "High", "Low", "Close", "Volume"]].astype(float).iloc[-gun:]
+    df["TakerBuy"] = df["a"]
+    return df[["Open", "High", "Low", "Close", "Volume", "TakerBuy"]].astype(float).iloc[-gun:]
 
 
 def okx_mumlar(inst, gun=1500):
@@ -204,3 +205,206 @@ def bulten_kodlari(parite="USDT", ev=None):
         if r.get(f"Binance {parite}"): out.append(kod_yap(r["Kod"], parite, "Binance"))
         elif r.get(f"OKX {parite}"): out.append(kod_yap(r["Kod"], parite, "OKX"))
     return out
+
+
+# ================================================================== SAATLİK MUMLAR
+def saatlik_mumlar(baz, parite="USDT", borsa="Binance", bar=1500):
+    """1 saatlik mumlar (UTC). Önce tercih edilen borsa, olmazsa diğeri."""
+    for b in [borsa] + [x for x in BORSALAR if x != borsa]:
+        try:
+            if b == "Binance":
+                out, son = [], None
+                while len(out) < bar:
+                    prm = {"symbol": f"{baz}{parite}", "interval": "1h", "limit": 1000}
+                    if son: prm["endTime"] = son - 1
+                    k_ = _get(f"{BINANCE}/klines", **prm)
+                    if not k_: break
+                    out = k_ + out; son = int(k_[0][0])
+                    if len(k_) < 1000: break
+                df = pd.DataFrame(out, columns=["t", "Open", "High", "Low", "Close", "Volume", "tk", "q", "n", "a", "b", "c"])
+                df.index = pd.to_datetime(df["t"], unit="ms"); df.index.name = None
+                return df[["Open", "High", "Low", "Close", "Volume"]].astype(float).iloc[-bar:], "Binance"
+            out, sonra = [], None
+            while len(out) < bar:
+                prm = {"instId": f"{baz}-{parite}", "bar": "1H", "limit": 100}
+                if sonra: prm["after"] = sonra
+                d = _get(f"{OKX}/market/history-candles", **prm).get("data", [])
+                if not d: break
+                out += d; sonra = d[-1][0]
+                if len(d) < 100: break
+                time.sleep(0.12)
+            if not out: raise ValueError("veri yok")
+            df = pd.DataFrame(out, columns=["t", "Open", "High", "Low", "Close", "Volume", "vq", "vqq", "ok"])
+            df.index = pd.to_datetime(df["t"].astype("int64"), unit="ms"); df.index.name = None
+            return df[["Open", "High", "Low", "Close", "Volume"]].astype(float).sort_index().iloc[-bar:], "OKX"
+        except Exception:
+            continue
+    raise ValueError(f"{baz}/{parite} için saatlik veri bulunamadı")
+
+
+# ================================================================== EMİR DEFTERİ ve BÜYÜK İŞLEMLER
+def emir_defteri(baz, parite="USDT", borsa="Binance"):
+    """Derinlik: ±%1/±%2/±%5 bantlarında alış-satış tutarı, dengesizlik ve en büyük emir duvarları."""
+    if borsa == "Binance":
+        j = _get(f"{BINANCE}/depth", symbol=f"{baz}{parite}", limit=1000)
+        bids = [(float(p), float(q)) for p, q in j["bids"]]; asks = [(float(p), float(q)) for p, q in j["asks"]]
+    else:
+        d = _get(f"{OKX}/market/books", instId=f"{baz}-{parite}", sz=400)["data"][0]
+        bids = [(float(x[0]), float(x[1])) for x in d["bids"]]; asks = [(float(x[0]), float(x[1])) for x in d["asks"]]
+    if not bids or not asks: raise ValueError("emir defteri boş")
+    orta = (bids[0][0] + asks[0][0]) / 2; o = {"orta": orta, "spread": (asks[0][0] - bids[0][0]) / orta, "bant": {}}
+    for b in (0.01, 0.02, 0.05):
+        al = sum(p * q for p, q in bids if p >= orta * (1 - b)); sat = sum(p * q for p, q in asks if p <= orta * (1 + b))
+        o["bant"][b] = {"alis": al, "satis": sat, "denge": (al - sat) / (al + sat) if al + sat else 0}
+    def duvar(liste, yon):
+        adim = orta * 0.0025; kova = {}
+        for p, q in liste:
+            if abs(p / orta - 1) > 0.05: continue
+            k_ = round(p / adim) * adim; kova[k_] = kova.get(k_, 0) + p * q
+        return sorted(kova.items(), key=lambda x: -x[1])[:3]
+    o["alis_duvarlari"] = duvar(bids, 1); o["satis_duvarlari"] = duvar(asks, -1)
+    return o
+
+
+def buyuk_islemler(baz, parite="USDT", borsa="Binance"):
+    """Son ~1000 işlemde agresif alış/satış dengesi ve büyük işlemler (balina hareketi)."""
+    if borsa == "Binance":
+        t = _get(f"{BINANCE}/aggTrades", symbol=f"{baz}{parite}", limit=1000)
+        islem = [(float(x["p"]) * float(x["q"]), -1 if x["m"] else 1, int(x["T"])) for x in t]
+    else:
+        t = _get(f"{OKX}/market/trades", instId=f"{baz}-{parite}", limit=500).get("data", [])
+        islem = [(float(x["px"]) * float(x["sz"]), 1 if x["side"] == "buy" else -1, int(x["ts"])) for x in t]
+    if not islem: raise ValueError("işlem yok")
+    tutar = np.array([x[0] for x in islem]); yon = np.array([x[1] for x in islem])
+    esik = max(float(np.percentile(tutar, 99)), 10000.0)
+    b = tutar >= esik
+    sure_dk = (max(x[2] for x in islem) - min(x[2] for x in islem)) / 60000
+    return {"adet": len(islem), "sure_dk": sure_dk, "alis": float(tutar[yon > 0].sum()), "satis": float(tutar[yon < 0].sum()),
+            "buyuk_esik": esik, "buyuk_alis": float(tutar[b & (yon > 0)].sum()), "buyuk_satis": float(tutar[b & (yon < 0)].sum()),
+            "buyuk_adet": int(b.sum())}
+
+
+def mikro_yorum(ed, bi, taker=None, para="$"):
+    C = []
+    if ed:
+        b = ed["bant"][0.02]
+        C.append(f"Emir defterinde fiyatın ±%2'lik bandında {b['alis'] / 1e3:,.0f} bin {para} alış, {b['satis'] / 1e3:,.0f} bin {para} satış emri bekliyor".replace(",", ".")
+                 + (" — alıcı tarafı belirgin şekilde daha derin." if b["denge"] > 0.2 else " — satıcı tarafı belirgin şekilde daha derin." if b["denge"] < -0.2 else " — denge görünümü var."))
+        if ed["alis_duvarlari"] and ed["satis_duvarlari"]:
+            import tasarim as TS
+            C.append(f"En güçlü alış duvarı ~{TS._sayi(ed['alis_duvarlari'][0][0])}, en güçlü satış duvarı ~{TS._sayi(ed['satis_duvarlari'][0][0])} seviyesinde.")
+    if bi:
+        top = bi["alis"] + bi["satis"]
+        if top: C.append(f"Son {bi['adet']} işlemin (~{bi['sure_dk']:.0f} dk) %{bi['alis'] / top * 100:.0f} kadarı agresif alış; "
+                         f"büyük işlemlerde ({bi['buyuk_adet']} adet) net {'alış' if bi['buyuk_alis'] >= bi['buyuk_satis'] else 'satış'} ağırlığı var.")
+    if taker is not None:
+        C.append(f"Son 7 günde agresif alım oranı ortalama %{taker * 100:.0f}" + (" (alıcılar baskın)." if taker > 0.53 else " (satıcılar baskın)." if taker < 0.47 else " (dengeli)."))
+    return " ".join(C)
+
+
+# ================================================================== VADELİ PİYASA (OKX)
+def vadeli(baz):
+    o = {}
+    try:
+        d = _get(f"{OKX}/rubik/stat/contracts/open-interest-volume", ccy=baz, period="1D").get("data", [])
+        s = pd.Series({pd.to_datetime(int(x[0]), unit="ms"): float(x[1]) for x in d}).sort_index()
+        if len(s) > 8:
+            o["oi"] = s; o["oi_son"] = float(s.iloc[-1]); o["oi_7g"] = float(s.iloc[-1] / s.iloc[-8] - 1)
+            o["oi_30g"] = float(s.iloc[-1] / s.iloc[-31] - 1) if len(s) > 31 else None
+    except Exception:
+        pass
+    try:
+        d = _get(f"{OKX}/rubik/stat/taker-volume", ccy=baz, instType="CONTRACTS", period="1D").get("data", [])
+        df = pd.DataFrame([(pd.to_datetime(int(x[0]), unit="ms"), float(x[1]), float(x[2])) for x in d], columns=["t", "sat", "al"]).set_index("t").sort_index()
+        if len(df) > 7:
+            o["taker"] = df; s7 = df.iloc[-7:]; o["taker_7g"] = float(s7["al"].sum() / (s7["al"].sum() + s7["sat"].sum()))
+    except Exception:
+        pass
+    try:
+        d = _get(f"{OKX}/public/liquidation-orders", instType="SWAP", uly=f"{baz}-USDT", state="filled", limit=100).get("data", [])
+        lng = sht = 0.0; ilk = None
+        for blok in d:
+            for x in blok.get("details", []):
+                v = float(x["sz"]) * float(x["bkPx"]); ts = int(x["ts"]); ilk = ts if ilk is None else min(ilk, ts)
+                if x.get("posSide") == "long": lng += v
+                else: sht += v
+        if lng + sht > 0: o["likidasyon"] = {"long": lng, "short": sht, "saat": (time.time() * 1000 - ilk) / 3.6e6 if ilk else None}
+    except Exception:
+        pass
+    return o
+
+
+def vadeli_yorum(v, fiyat_7g=None):
+    if not v: return ""
+    C = []
+    if v.get("oi_7g") is not None:
+        t = f"Vadeli açık pozisyon son 7 günde {'+' if v['oi_7g'] > 0 else ''}%{v['oi_7g'] * 100:.1f}".replace(".", ",")
+        if fiyat_7g is not None:
+            if v["oi_7g"] > 0.05 and fiyat_7g > 0: t += " arttı ve fiyat da yükseldi: yeni para girişiyle desteklenen bir yükseliş."
+            elif v["oi_7g"] > 0.05 and fiyat_7g < 0: t += " arttı ancak fiyat düştü: açığa (short) pozisyonlar artıyor."
+            elif v["oi_7g"] < -0.05 and fiyat_7g > 0: t += " azaldı ancak fiyat yükseldi: yükseliş kısa pozisyon kapanışlarından geliyor olabilir."
+            elif v["oi_7g"] < -0.05 and fiyat_7g < 0: t += " azaldı ve fiyat düştü: uzun pozisyonlar tasfiye ediliyor."
+            else: t += " değişti; belirgin bir kaldıraç değişimi yok."
+        C.append(t)
+    if v.get("taker_7g") is not None:
+        C.append(f"Vadeli piyasada son 7 günde agresif alım payı %{v['taker_7g'] * 100:.0f}" + (" (alıcılar baskın)." if v["taker_7g"] > 0.52 else " (satıcılar baskın)." if v["taker_7g"] < 0.48 else "."))
+    lq = v.get("likidasyon")
+    if lq:
+        C.append(f"Son likidasyonların {'uzun (long)' if lq['long'] > lq['short'] else 'kısa (short)'} pozisyonlarda yoğunlaştığı görülüyor "
+                 f"(long {lq['long'] / 1e3:,.0f} bin $, short {lq['short'] / 1e3:,.0f} bin $).".replace(",", "."))
+    return " ".join(C)
+
+
+# ================================================================== DeFi / STABLECOIN (DefiLlama)
+LLAMA = "https://api.llama.fi"
+_PROT = []
+
+
+def stablecoin_ozet():
+    d = _get("https://stablecoins.llama.fi/stablecoincharts/all")
+    s = pd.Series({pd.to_datetime(int(x["date"]), unit="s"): float(x["totalCirculatingUSD"].get("peggedUSD", 0)) for x in d}).sort_index()
+    return {"toplam": float(s.iloc[-1]), "d30": float(s.iloc[-1] / s.iloc[-31] - 1), "d90": float(s.iloc[-1] / s.iloc[-91] - 1), "seri": s.iloc[-365:]}
+
+
+def tvl_ozet():
+    d = _get(f"{LLAMA}/v2/historicalChainTvl")
+    s = pd.Series({pd.to_datetime(int(x["date"]), unit="s"): float(x["tvl"]) for x in d}).sort_index()
+    return {"toplam": float(s.iloc[-1]), "d30": float(s.iloc[-1] / s.iloc[-31] - 1)}
+
+
+def protokol(baz, cg_id=None):
+    """Coine ait DeFi protokolü/zinciri: TVL, piyasa değeri/TVL, ücretler (yıllıklandırılmış) ve F/Ü oranı."""
+    global _PROT
+    if not _PROT: _PROT = _get(f"{LLAMA}/protocols")
+    adaylar = [p for p in _PROT if (cg_id and p.get("gecko_id") == cg_id) or (str(p.get("symbol", "")).upper() == baz.upper())]
+    if not adaylar: return None
+    p = max(adaylar, key=lambda x: x.get("tvl") or 0)
+    o = {"ad": p.get("name"), "tvl": p.get("tvl"), "d7": (p.get("change_7d") or 0) / 100 if p.get("change_7d") is not None else None,
+         "mcap": p.get("mcap"), "kategori": p.get("category"), "slug": p.get("slug")}
+    if o["mcap"] and o["tvl"]: o["mcap_tvl"] = o["mcap"] / o["tvl"]
+    try:
+        f = _get(f"{LLAMA}/summary/fees/{p['slug']}", dataType="dailyFees")
+        o["ucret_30g"] = f.get("total30d"); o["ucret_24s"] = f.get("total24h")
+        if o["ucret_30g"] and o["mcap"]: o["fiyat_ucret"] = o["mcap"] / (o["ucret_30g"] * 12)
+    except Exception:
+        pass
+    return o
+
+
+def defi_yorum(st_, tv, pr):
+    C = []
+    if st_:
+        C.append(f"Stablecoin arzı {st_['toplam'] / 1e9:,.0f} milyar $; son 30 günde {'+' if st_['d30'] > 0 else ''}%{st_['d30'] * 100:.1f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                 + (" — kripto piyasasına taze likidite girişi sürüyor." if st_["d30"] > 0.01 else " — likidite girişi yavaşladı." if st_["d30"] < 0 else "."))
+    if tv: C.append(f"DeFi'de kilitli toplam değer (TVL) son 30 günde {'+' if tv['d30'] > 0 else ''}%{tv['d30'] * 100:.1f}".replace(".", ",") + " değişti.")
+    if pr:
+        t = f"{pr['ad']} protokolünde {pr['tvl'] / 1e6:,.0f} milyon $ kilitli varlık bulunuyor".replace(",", ".")
+        if pr.get("mcap_tvl"): t += f"; piyasa değeri/TVL oranı {pr['mcap_tvl']:.2f}".replace(".", ",")
+        if pr.get("fiyat_ucret"): t += f", yıllıklandırılmış ücretlere göre fiyat/ücret oranı {pr['fiyat_ucret']:.1f}x".replace(".", ",")
+        C.append(t + ".")
+    return " ".join(C)
+
+
+def taker_orani(h, gun=7):
+    if "TakerBuy" not in h or h["Volume"].iloc[-gun:].sum() <= 0: return None
+    return float(h["TakerBuy"].iloc[-gun:].sum() / h["Volume"].iloc[-gun:].sum())
