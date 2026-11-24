@@ -62,13 +62,18 @@ KALEMLER = {
                    "finansman gideri"], True, False),
     "amort": (["amortisman giderleri", "amortisman ve itfa giderleri", "depreciation and amortization",
                "amortisman"], True, False),
-    "nfg": (["net faiz geliri", "net faiz geliri gideri", "net interest income"], True, False),
+    "nfg": (["net faiz geliri", "net faiz geliri gideri", "net interest income", "net faiz gelirleri"], True, False),
+    "faiz_gel": (["faiz gelirleri", "toplam faiz gelirleri", "faiz gelirleri toplami", "interest income"], True, False),
+    "net_ucret": (["net ucret ve komisyon gelirleri giderleri", "net ucret ve komisyon gelirleri",
+                   "net fees and commissions income"], True, False),
     "karsilik": (["beklenen zarar karsiliklari", "kredi ve diger alacaklar deger dusus karsiligi",
                   "karsilik giderleri", "provisions"], True, False),
     # ---- Nakit akışı (akış, kümülatif) ----
     "isl_na": (["isletme faaliyetlerinden kaynaklanan net nakit", "isletme faaliyetlerinden nakit akislari",
                 "isletme faaliyetlerinden net nakit", "cash flows from operating activities",
-                "net cash from operating activities"], True, False),
+                "net cash from operating activities", "bankacilik faaliyetlerinden kaynaklanan net nakit akimi",
+                "bankacilik faaliyetlerinden kaynaklanan net nakit", "esas faaliyetlerden kaynaklanan net nakit akimi",
+                "esas faaliyetlerden kaynaklanan net nakit"], True, False),
     "capex": (["maddi ve maddi olmayan duran varliklarin alimindan kaynaklanan nakit cikislari",
                "maddi ve maddi olmayan duran varlik alimlari", "sabit sermaye yatirimlari",
                "maddi duran varlik alimlari", "capital expenditure", "purchase of property plant and equipment"], True, False),
@@ -180,6 +185,14 @@ def finansallar(kod, oturum=None, bugun=None):
         ozk_toplam = stok("ozk"); az = stok("azinlik")
         ham["ozk_ana"] = ({p: ozk_toplam.get(p, np.nan) - (az.get(p) if not np.isnan(az.get(p, np.nan)) else 0)
                            for p in donem_dolu}, False)
+    if "ciro" not in ham and grup == "UFRS":
+        # Banka gelirleri: net faiz geliri + net ücret/komisyon (yoksa brüt faiz gelirleri)
+        if "nfg" in ham:
+            nu = stok("net_ucret")
+            ham["ciro"] = ({p: stok("nfg").get(p, np.nan) + (nu.get(p) if not np.isnan(nu.get(p, np.nan)) else 0)
+                            for p in donem_dolu}, True)
+        elif "faiz_gel" in ham:
+            ham["ciro"] = ham["faiz_gel"]
     if "kvy" in ham and "uvy" in ham:
         ham["yukum"] = ({p: stok("kvy").get(p, np.nan) + stok("uvy").get(p, np.nan) for p in donem_dolu}, False)
     if "nakit" in ham:

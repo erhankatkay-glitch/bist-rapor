@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-6"
+SURUM = "2026.11.24-7"
 
 import bist_veri as BV
 
@@ -471,7 +471,9 @@ def metrikler(d, endeks=None):
             return None
     sb = son_tarih(qB) or son_tarih(B)
     anahtar = {"Hasılat": T["ciro"], "Net kâr": T["net"], "Özkaynak": K["ozk"], "Toplam varlık": K["varlik"],
-               "İşletme nakit akışı": T["isl_na"], "Hisse sayısı": hs}
+               "Hisse sayısı": hs}
+    if not m["finansal"]:
+        anahtar["İşletme nakit akışı"] = T["isl_na"]  # bankalarda nakit akış tablosu analizde kullanılmaz
     if not m["finansal"]:
         anahtar.update({"FAVÖK": T["favok"], "Serbest nakit akışı": T["sna"]})
     eksik = [k for k, v in anahtar.items() if v is None]
