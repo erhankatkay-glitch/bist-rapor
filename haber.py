@@ -360,13 +360,14 @@ ULKE_AD = {"USD": "ABD", "EUR": "Euro Bölgesi", "CNY": "Çin", "GBP": "İngilte
 def takvim_mesaji(liste, bugun):
     gun = [e for e in liste if dt.datetime.fromisoformat(e["zaman"]).date() == bugun]
     if not gun: return None
-    s = [f"🗓 <b>Bugünün önemli verileri</b> ({bugun:%d.%m.%Y}, TSİ)"]
+    import tg as _tg
+    s = [f"🗓 <b>BUGÜNÜN ÖNEMLİ VERİLERİ</b> · {bugun:%d.%m.%Y}", _tg.AYRAC]
     for e in gun:
         t = dt.datetime.fromisoformat(e["zaman"])
         ek = " · ".join(x for x in (f"beklenti {e['beklenti']}" if e["beklenti"] else "", f"önceki {e['onceki']}" if e["onceki"] else "") if x)
-        s.append(f"• {t:%H:%M} {ULKE_AD.get(e['ulke'], e['ulke'])} – {esc(e['baslik'])}" + (f" ({esc(ek)})" if ek else ""))
-    s.append("\nABD verileri özellikle altın, Bitcoin ve BIST'i etkiler: beklentiden güçlü veri → dolar ve faiz beklentisi yukarı, "
-             "altın/kripto üzerinde baskı; zayıf veri → tersi. Açıklama saatlerinde oynaklık artar, stoplar sık tetiklenebilir.")
+        s.append(f"🕐 <b>{t:%H:%M}</b> · {ULKE_AD.get(e['ulke'], e['ulke'])} – {esc(e['baslik'])}" + (f"\n      <i>{esc(ek)}</i>" if ek else ""))
+    s.append("\n<blockquote>ABD verileri özellikle altın, Bitcoin ve BIST'i etkiler: beklentiden güçlü veri → dolar ve faiz beklentisi yukarı, "
+             "altın/kripto üzerinde baskı; zayıf veri → tersi. Açıklama saatlerinde oynaklık artar, stoplar sık tetiklenebilir.</blockquote>")
     return "\n".join(s)
 
 
@@ -424,7 +425,8 @@ def calistir():
     import tg
     b = tg.Bot("alarm")
     if analizler:
-        b.mesaj("\n\n".join(mesaj(a) for a in analizler),
+        import tg as _tg
+        b.mesaj(f"📰 <b>HABER ETKİSİ</b> · {simdi.astimezone(TSI):%d.%m %H:%M}\n{_tg.AYRAC}\n" + "\n\n".join(mesaj(a) for a in analizler),
                 f"haber:{simdi:%Y%m%d%H%M}", 12, yerine=False)
     # takvim (günde bir, 07:00 TSİ sonrası ilk turda)
     bugun = simdi.astimezone(TSI).date()
@@ -452,30 +454,33 @@ def calistir():
 def mesaj(a):
     ikon = "🟢" if a["yon"] > 0 else "🔴"
     t = dt.datetime.fromisoformat(a["zaman"]).astimezone(TSI)
-    s = [f"📰 <b>{esc(a['tur'])}</b> {ikon} {'olumlu' if a['yon'] > 0 else 'olumsuz'} · {t:%H:%M}",
-         f"“{esc(a['baslik'][:200])}”" + (f" — {esc(a['kaynak'])}" if a.get("kaynak") else "") +
-         (f" (+{a['kaynak_sayi'] - 1} kaynak daha)" if a["kaynak_sayi"] > 1 else "")]
+    s = [f"{ikon} <b>{esc(a['tur'])}</b> · {'olumlu' if a['yon'] > 0 else 'olumsuz'} · {t:%H:%M}",
+         f"<i>“{esc(a['baslik'][:200])}”</i>" + (f"\n— {esc(a['kaynak'])}" if a.get("kaynak") else "") +
+         (f" (+{a['kaynak_sayi'] - 1} kaynak)" if a["kaynak_sayi"] > 1 else "")]
+    vl = []
     for v in a["varliklar"]:
-        ok = "↑" if v["isaret"] > 0 else "↓"
-        satir = f"{ok} <b>{esc(vad(v['kod']))}</b>: {esc(v['gerekce'])}."
+        ok = "⬆️" if v["isaret"] > 0 else "⬇️"
+        satir = f"{ok} <b>{esc(vad(v['kod']))}</b> — {esc(v['gerekce'])}"
         r = v.get("tepki")
         if r and r["saat"] >= 1:
             yonlu = r["degisim"] * v["isaret"]
             esik = max(r["oyn"] * 1.5, 0.002)
-            durum = ("beklenen yönde fiyatlandı" if yonlu > esik else "ters yönde hareket var" if yonlu < -esik else "henüz belirgin tepki yok")
-            satir += f" Haberden beri {yz(r['degisim'])}" + (f", hacim {r['hacim_k']:.1f}x".replace(".", ",") if r.get("hacim_k") else "") + f" → {durum}."
+            durum = ("✅ fiyatlandı" if yonlu > esik else "↩️ ters yönde" if yonlu < -esik else "⏳ henüz tepki yok")
+            satir += f"\n   Haberden beri {yz(r['degisim'])}" + (f", hacim {r['hacim_k']:.1f}x".replace(".", ",") if r.get("hacim_k") else "") + f" · {durum}"
         te = v.get("teknik")
         if te and te.get("fiyat"):
             import firsat as F
             p = te["fiyat"]
-            ek = f" Fiyat {F.fy(p)} · teknik {te['etiket']} ({float(te['puan']):.0f})"
-            if te.get("destek"): ek += f" · destek {F.fy(te['destek'])} ({yz(te['destek'] / p - 1)})"
-            if te.get("direnc"): ek += f" · direnç {F.fy(te['direnc'])} ({yz(te['direnc'] / p - 1)})"
-            satir += ek + "."
+            ek = f"\n   Fiyat <code>{F.fy(p)}</code> · {te['etiket']} ({float(te['puan']):.0f})"
+            if te.get("destek"): ek += f" · destek <code>{F.fy(te['destek'])}</code> ({yz(te['destek'] / p - 1)})"
+            if te.get("direnc"): ek += f" · direnç <code>{F.fy(te['direnc'])}</code> ({yz(te['direnc'] / p - 1)})"
+            satir += ek
         g = v.get("gecmis")
         if g:
-            satir += f" Geçmiş {g['n']} benzer haberde 1 günde ort. {yz(g['g1'])} (%{g['pozitif'] * 100:.0f} yükseldi)" + (f", 5 günde {yz(g['g5'])}" if g.get("g5") is not None else "") + "."
-        s.append(satir)
+            satir += f"\n   Geçmiş {g['n']} benzer haber: 1 günde ort. {yz(g['g1'])} (%{g['pozitif'] * 100:.0f} yükseldi)" + (f", 5 günde {yz(g['g5'])}" if g.get("g5") is not None else "")
+        vl.append(satir)
+    s.append("<blockquote>" + "\n".join(vl) + "</blockquote>")
+    if a.get("link"): s.append(f'<a href="{esc(a["link"])}">Habere git ›</a>')
     return "\n".join(s)
 
 

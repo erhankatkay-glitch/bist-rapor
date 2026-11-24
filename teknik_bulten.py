@@ -251,23 +251,29 @@ def telegram_gonder(piyasa, meta, satir, klasor="cikti", bot=None):
     import tg
     bot = bot or tg.Bot(piyasa)
     df = pd.DataFrame(satir)
-    satirlar = [f"📊 <b>{meta['baslik']}</b>", f"Kapanış: {meta['kapanis']} · {meta['adet']} varlık"]
-    if meta.get("endeks"): satirlar.append(f"{meta['endeks']['ad']}: {meta['endeks']['etiket']} ({meta['endeks']['puan']:.0f}/100)")
+    import tg
+    kod = lambda l: ", ".join(f"<b>{x}</b>" for x in l)
+    satirlar = [f"📊 <b>{tg.buyuk(meta['baslik'].replace('Kapanış Teknik Bülteni – ', ''))} · KAPANIŞ BÜLTENİ</b>", tg.AYRAC,
+                f"🗓 Kapanış: {meta['kapanis']} · {meta['adet']:,} varlık".replace(",", ".")]
+    if meta.get("endeks"):
+        e = meta["endeks"]; ik = "🟢" if e["puan"] >= 58 else "🔴" if e["puan"] <= 42 else "🟡"
+        satirlar.append(f"{ik} {e['ad']}: <b>{e['etiket']}</b> ({e['puan']:.0f}/100)")
     if len(df):
-        satirlar.append("\n🟢 En güçlü: " + ", ".join(f"{r.Kod} ({r['Teknik puan']:.0f})" for _, r in df.nlargest(6, "Teknik puan").iterrows()))
+        bl = [f"🏆 <b>En güçlü</b>\n" + ", ".join(f"<b>{r.Kod}</b> ({r['Teknik puan']:.0f})" for _, r in df.nlargest(6, "Teknik puan").iterrows())]
         k = df[df["Kırılım"]]
-        if len(k): satirlar.append("🚀 Yukarı kırılım: " + ", ".join(k.nlargest(8, "Teknik puan")["Kod"]))
+        if len(k): bl.append("🚀 <b>Yukarı kırılım</b>\n" + kod(k.nlargest(8, "Teknik puan")["Kod"]))
         k = df[df["Kırılım −"]]
-        if len(k): satirlar.append("⚠️ Aşağı kırılım: " + ", ".join(k.nsmallest(8, "Teknik puan")["Kod"]))
+        if len(k): bl.append("⚠️ <b>Aşağı kırılım</b>\n" + kod(k.nsmallest(8, "Teknik puan")["Kod"]))
         if "Balina" in df:
             b = df["Balina"].fillna("").astype(str)
             k = df[b.str.contains("alımı|birikim|Alım emilimi")]
-            if len(k): satirlar.append("🐋 Balina alımı/birikim: " + ", ".join(k.nlargest(8, "Teknik puan")["Kod"]))
+            if len(k): bl.append("🐋 <b>Balina alımı / birikim</b>\n" + kod(k.nlargest(8, "Teknik puan")["Kod"]))
             k = df[b.str.contains("satışı|dağıtım|Satış emilimi")]
-            if len(k): satirlar.append("🐋 Balina satışı/dağıtım: " + ", ".join(k.nsmallest(8, "Teknik puan")["Kod"]))
+            if len(k): bl.append("🐋 <b>Balina satışı / dağıtım</b>\n" + kod(k.nsmallest(8, "Teknik puan")["Kod"]))
         k = df[df["RSI"] < 30]
-        if len(k): satirlar.append("🔻 Aşırı satım: " + ", ".join(k.nsmallest(8, "RSI")["Kod"]))
-    satirlar.append("\nTüm liste, grafikler ve raporlar uygulamanın Teknik sekmesinde.")
+        if len(k): bl.append("🔻 <b>Aşırı satım (RSI &lt; 30)</b>\n" + kod(k.nsmallest(8, "RSI")["Kod"]))
+        satirlar.append("<blockquote>" + "\n\n".join(bl) + "</blockquote>")
+    satirlar.append("📎 Tam liste, grafikler ve raporlar ekteki PDF'te ve uygulamanın Teknik sekmesinde.")
     anahtar = f"bulten:{piyasa}"
     metin = "\n".join(satirlar)
     if piyasa == "abd": metin = metin.replace(".US,", ",").replace(".US (", " (").replace(".US\n", "\n")

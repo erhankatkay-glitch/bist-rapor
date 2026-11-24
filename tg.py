@@ -21,6 +21,14 @@ CIKTI = os.environ.get("DURUM_CIKTI", "cikti")
 UTC = dt.timezone.utc
 
 
+def buyuk(s):
+    """Türkçe büyük harf: i→İ, ı→I."""
+    return str(s).replace("i", "İ").replace("ı", "I").upper()
+
+
+AYRAC = "━━━━━━━━━━━━━━━━"
+
+
 def simdi():
     return dt.datetime.now(UTC)
 
@@ -117,9 +125,9 @@ class Bot:
             try:
                 for i, (yol, bas) in enumerate(grup):
                     files[f"f{i}"] = open(yol, "rb")
-                    medya.append({"type": "photo", "media": f"attach://f{i}", "caption": bas[:1000]})
+                    medya.append({"type": "photo", "media": f"attach://f{i}", "caption": bas[:1000], "parse_mode": "HTML"})
                 if len(medya) == 1:
-                    j = self._api("sendPhoto", {"chat_id": self.chat, "caption": medya[0]["caption"], "disable_notification": True},
+                    j = self._api("sendPhoto", {"chat_id": self.chat, "caption": medya[0]["caption"], "parse_mode": "HTML", "disable_notification": True},
                                   files={"photo": files["f0"]}, timeout=120)
                     if j.get("ok"): ids.append(j["result"]["message_id"])
                 else:
@@ -131,6 +139,10 @@ class Bot:
                 for f in files.values(): f.close()
         self._sonrasi(ids, anahtar, omur_saat, bag, yerine)
         return ids
+
+    def foto(self, yol, baslik, anahtar, omur_saat, bag=None):
+        """Tek görsel + HTML açıklama (her kart ayrı mesaj: açıklaması sohbette görünür)."""
+        return self.album([(yol, baslik)], anahtar, omur_saat, bag=bag, yerine=False)
 
     def belge(self, yol, ad, baslik, anahtar, omur_saat, yerine=False):
         if not self.aktif: return []

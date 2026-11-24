@@ -161,16 +161,26 @@ def tara(K, durum):
     return bildir, yeni
 
 
+GRUP = [("⚡🔔", "⚡ <b>Sert hareket ve fiyat seviyeleri</b>"), ("🟢🔴", "🧭 <b>Formasyon ve kırılımlar</b>"),
+        ("📈", "📈 <b>RSI ve teknik puan</b>"), ("📰", "📰 <b>Şirket haberleri (KAP)</b>")]
+
+
 def gonder(mesajlar):
-    """Alarmlar sessiz gönderilir ve 12 saat sonra otomatik silinir."""
+    """Alarmlar konu başlıklarına göre gruplanır, sessiz gönderilir ve 12 saat sonra otomatik silinir."""
     if not mesajlar: return False
     import tg
     b = tg.Bot("alarm")
     if not b.aktif: return False
-    z = dt.datetime.now(TSI).strftime("%Y%m%d%H%M")
-    for i in range(0, len(mesajlar), 20):
-        b.mesaj("🔔 <b>Alarm</b>\n" + "\n".join(tg_kac(m) for m in mesajlar[i:i + 20]),
-                f"alarm:{z}:{i}", 12, yerine=False)
+    z = dt.datetime.now(TSI)
+    for i in range(0, len(mesajlar), 25):
+        parca = mesajlar[i:i + 25]
+        s = [f"🔔 <b>ALARMLAR</b> · {z:%d.%m %H:%M}", tg.AYRAC]
+        for ikonlar, baslik in GRUP:
+            g = [m for m in parca if m[:1] in ikonlar or m[:2] in ikonlar]
+            if g: s += [baslik, "<blockquote>" + "\n".join(tg_kac(m) for m in g) + "</blockquote>"]
+        diger = [m for m in parca if not any(m[:1] in ik or m[:2] in ik for ik, _ in GRUP)]
+        if diger: s += ["<blockquote>" + "\n".join(tg_kac(m) for m in diger) + "</blockquote>"]
+        b.mesaj("\n".join(s), f"alarm:{z:%Y%m%d%H%M}:{i}", 12, yerine=False)
     b.kaydet()
     return True
 
@@ -181,6 +191,8 @@ def tg_kac(s):
     if "⟦" in s and s.endswith("⟧"):
         s, url = s[:-1].split("⟦", 1)
     t = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    # varlık adını kalın yaz: "<ikon> VARLIK: …", "⚡ VARLIK bugün …", "🔔 VARLIK fiyatı …", "📰 KOD · konu: …"
+    t = re.sub(r"^(\S+) (.+?)(?=: | bugün | fiyatı | RSI | teknik puan | · )", r"\1 <b>\2</b>", t, count=1)
     if url: t += f' · <a href="{url.replace(chr(34), "")}">habere git</a>'
     return t
 

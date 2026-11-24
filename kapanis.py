@@ -218,12 +218,15 @@ def takip_mesaji(bot, D):
     t = dt.datetime.now(UTC)
     son = [o for o in D.olaylar if t - dt.datetime.fromisoformat(o["zaman"]) < dt.timedelta(hours=TAKIP_OMUR)]
     if not son: return
-    satir = [f"📌 <b>{PIYASA_AD[D.p]} · kurulum takibi</b> (son {TAKIP_OMUR} saat)"]
+    satir = [f"📌 <b>{tg.buyuk(PIYASA_AD[D.p])} · KURULUM TAKİBİ</b>", tg.AYRAC, f"<i>Son {TAKIP_OMUR} saatteki gelişmeler</i>"]
+    gov = []
     for o in reversed(son[-25:]):
         z = dt.datetime.fromisoformat(o["zaman"]).astimezone(TSI)
-        satir.append(f"{z:%d.%m %H:%M} · {o['metin']}")
+        gov.append(f"<code>{z:%d.%m %H:%M}</code>  {o['metin']}")
+    satir.append("<blockquote>" + "\n".join(gov) + "</blockquote>")
     if D.acik:
-        satir.append(f"\nAçık kurulum: {len(D.acik)} · ayrıntılar uygulamanın Fırsatlar sekmesinde.")
+        satir.append(f"📂 Açık kurulum: <b>{len(D.acik)}</b>")
+        satir.append("<blockquote expandable>" + "\n".join(F.acik_satiri(k) for k in D.acik[:20]) + "</blockquote>")
     bot.mesaj("\n".join(satir), f"takip:{D.p}", TAKIP_OMUR, yerine=True)
 
 
@@ -262,12 +265,13 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
     simdi = dt.datetime.now(UTC)
     yeni = [F.kayit(f, simdi) for f in secilen]
     grafik = {}
+    import kart as KT
     for f in secilen:
         ad = f"{tf}_{f['kod'].replace('/', '-').replace('@', '_')}.png"
         try:
-            F.grafik(f, by[f["kod"]]["a"], os.path.join(D.kok, "grafik", ad)); grafik[f["kod"]] = f"grafik/{ad}"
+            KT.firsat_karti(f, by[f["kod"]]["a"], os.path.join(D.kok, "grafik", ad), PIYASA_AD[D.p], T.TF_AD[tf]); grafik[f["kod"]] = f"grafik/{ad}"
         except Exception as ex:
-            log("grafik çizilemedi:", f["kod"], ex)
+            log("kart çizilemedi:", f["kod"], ex)
     D.istatistik[tf] = pist.tablo()
     mum = secilen[0]["mum"] if secilen else (adaylar[0]["mum"] if adaylar else None)
     D.son[tf] = {"zaman": simdi.isoformat(), "mum": mum, "taranan": len(varliklar),
@@ -277,20 +281,28 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
     # Telegram
     acik_tf = [k for k in D.acik if k["tf"] == tf]
     if secilen:
-        bas = [f"🎯 <b>{PIYASA_AD[D.p]} · {T.TF_AD[tf]} fırsatlar</b>",
-               f"Mum: {mum_metni(D.p, tf, mum)} · {len(varliklar)} likit varlık tarandı · {len(secilen)} fırsat"]
+        bas = [f"🎯 <b>{tg.buyuk(PIYASA_AD[D.p])} · {tg.buyuk(T.TF_AD[tf])} FIRSATLAR</b>", tg.AYRAC,
+               f"🕯 Mum: {mum_metni(D.p, tf, mum)}",
+               f"🔎 {len(varliklar):,} likit varlık tarandı → <b>{len(secilen)} fırsat</b>".replace(",", ".")]
         if any(f["yon"] == -1 for f in secilen):
-            bas.append("SAT fırsatları vadeli (kaldıraçlı) işlem içindir; spot piyasada açığa satış yapılamaz.")
-        bloklar = ["\n".join(bas)] + [F.firsat_metni(f, tl_fn(f) if tl_fn else None) for f in secilen]
+            bas.append("🔴 SAT fırsatları vadeli (kaldıraçlı) işlem içindir; spotta açığa satış yapılamaz.")
+        bas.append("")
+        bas += [f"{'🟢' if f['yon'] == 1 else '🔴'} <b>{F._e(F.gorunen(f['kod'], f.get('ad')))}</b> · {F._e(f['kurulum_ad'][:48])} · puan <b>{f['puan']:.0f}</b>" for f in secilen]
         if acik_tf:
-            bloklar.append("📂 <b>Önceki mesajlardan açık kurulumlar</b>\n" + "\n".join(F.acik_satiri(k) for k in acik_tf[:12]))
-        bloklar.append("<i>Plan: H1'de pozisyonun yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 görülünce stop girişe çekilir.</i>")
+            bas.append("\n📂 <b>Önceki mesajlardan açık kurulumlar</b>")
+            bas.append("<blockquote expandable>" + "\n".join(F.acik_satiri(k) for k in acik_tf[:15]) + "</blockquote>")
+        bas.append("\n<i>Plan: H1'de yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 görülünce stop girişe çekilir.</i>")
         bag = [k["id"] for k in yeni] + [k["id"] for k in acik_tf]
         anahtar = f"firsat:{D.p}:{tf}"
-        ids = bot.mesaj("\n\n".join(bloklar), anahtar, OMUR[tf], bag=bag, yerine=True)
+        ids = bot.mesaj("\n".join(bas), anahtar, OMUR[tf], bag=bag, yerine=True)
         if ids:
-            bot.album([(os.path.join(D.kok, grafik[f["kod"]]), f"{F.gorunen(f['kod'], f.get('ad'))} · {'AL' if f['yon'] == 1 else 'SAT'} · puan {f['puan']:.0f}")
-                       for f in secilen if f["kod"] in grafik], anahtar, OMUR[tf], bag=bag)
+            for f in secilen:
+                ek = []
+                if tl_fn and tl_fn(f): ek.append("💱 " + F._e(tl_fn(f)))
+                if f["ekstra"].get("turev"): ek.append("📊 " + F._e(f["ekstra"]["turev"]))
+                alt = KT.baslik_metni(f) + ("\n" + "\n".join(ek) if ek else "")
+                if f["kod"] in grafik: bot.foto(os.path.join(D.kok, grafik[f["kod"]]), alt[:1000], anahtar, OMUR[tf], bag=bag)
+                else: bot.mesaj(F.firsat_metni(f, tl_fn(f) if tl_fn else None), anahtar, OMUR[tf], bag=bag, yerine=False, notlu=False)
     D.acik += yeni
     return secilen
 
@@ -575,7 +587,8 @@ def abd(slot, zorla):
 
 # ====================================================================== haftalık karne
 def karne_mesaji(bot, D_kripto):
-    t = dt.datetime.now(UTC); satir = ["📒 <b>Haftalık fırsat karnesi</b>"]
+    t = dt.datetime.now(UTC); satir = ["📒 <b>HAFTALIK FIRSAT KARNESİ</b>", tg.AYRAC]
+    tablo = [f"{'Piyasa':<7}{'Kapanan':>8}{'H1':>6}{'Kazanç':>8}{'Ort.R':>8}"]
     for p in ("bist", "abd", "kripto", "emtia"):
         if p == "kripto": gec = D_kripto.gecmis; acik = D_kripto.acik
         else:
@@ -585,15 +598,14 @@ def karne_mesaji(bot, D_kripto):
             except Exception:
                 gec, acik = [], []
         hafta = [k for k in gec if k.get("kapanis") and _utc(k) >= t - dt.timedelta(days=7)]
-        ph, pt = F.performans(hafta), F.performans(gec)
-        s = f"\n<b>{PIYASA_AD[p]}</b> · açık {len(acik)}"
-        if ph: s += (f"\nSon 7 gün: {ph['n']} kapanan · H1 %{ph['h1'] * 100:.0f} · kazanan %{ph['kazanc'] * 100:.0f} · "
-                     f"ort. {F.rrs(ph['ort_R'])} · toplam {F.rrs(ph['top_R'])}")
-        else: s += "\nSon 7 günde kapanan kurulum yok"
-        if pt and pt["n"] > (ph["n"] if ph else 0):
-            s += f"\nBaşlangıçtan beri: {pt['n']} kurulum · H1 %{pt['h1'] * 100:.0f} · kazanan %{pt['kazanc'] * 100:.0f} · ort. {F.rrs(pt['ort_R'])}"
-        satir.append(s)
-    satir.append("\nR: stop mesafesi kadar risk birimi.")
+        ph = F.performans(hafta)
+        if ph: tablo.append(f"{PIYASA_AD[p]:<7}{ph['n']:>8}{ph['h1'] * 100:>5.0f}%{ph['kazanc'] * 100:>7.0f}%{ph['ort_R']:>+8.2f}".replace(".", ","))
+        else: tablo.append(f"{PIYASA_AD[p]:<7}{0:>8}{'–':>6}{'–':>8}{'–':>8}")
+        pt = F.performans(gec)
+        if pt: satir.append(f"• <b>{PIYASA_AD[p]}</b>: açık {len(acik)} · başlangıçtan beri {pt['n']} kurulum, H1 %{pt['h1'] * 100:.0f}, ort. {F.rrs(pt['ort_R'])}")
+        else: satir.append(f"• <b>{PIYASA_AD[p]}</b>: açık {len(acik)}")
+    satir.insert(2, "<b>Son 7 gün</b>\n<pre>" + "\n".join(tablo) + "</pre>")
+    satir.append("\n<i>R: stop mesafesi kadar risk birimi. H1: ilk hedefe stoptan önce ulaşma oranı.</i>")
     bot.mesaj("\n".join(satir), "karne", 46.5, yerine=True)
 
 

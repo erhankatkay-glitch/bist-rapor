@@ -37,6 +37,7 @@ DURUM_AD = {"TEYİT": "teyit", "YUKARI KIRILIM": "yukarı kırılım", "AŞAĞI 
 KALITE = {"FORM": 15, "UYUMSUZ": 12, "KIRILIM": 12, "GERI": 12, "SIKISMA": 10, "AVI": 10, "ST": 8}
 DONUS = {"UYUMSUZ", "AVI"}                  # üst zaman dilimine ters de olabilir (karşı trend)
 MAKS_BAR = {"4S": 30, "G": 20, "H": 12, "A": 8}
+MAKS_RISK = {"4S": 0.08, "G": 0.12, "H": 0.20, "A": 0.30}   # girişten stopa en fazla uzaklık
 GIRIS_BAR = {"4S": 2, "G": 2, "H": 1, "A": 1}
 SURE_AD = {"4S": lambda n: f"{n} adet 4 saatlik mum", "G": lambda n: f"{n} günlük mum", "H": lambda n: f"{n} hafta",
            "A": lambda n: f"{n} ay"}
@@ -377,7 +378,7 @@ def degerlendir(v, tf, bulunan, pist, piyasa):
         ks.sort(key=lambda b: -KALITE[b["kod_k"]])
         ana = ks[0]; form = next((b["form"] for b in ks if b["kod_k"] == "FORM"), None)
         p = plan_kur(a, ana["kod_k"], yon, ana["stop"], form.get("hedef") if form else None)
-        if not p: continue
+        if not p or p["risk"] / p["giris"] > MAKS_RISK[tf]: continue   # stop çok uzak: bu zaman dilimi için makul değil
         rler = tuple(round(x["r"], 2) for x in p["hedef"])
         # geçmiş: bu varlıkta aynı kurulum, bu planın R hedefleriyle
         if ana["kod_k"] == "FORM":
@@ -624,12 +625,12 @@ def acik_satiri(k):
     ger = (c - k["giris"]) / k["giris"] * yon
     asama = " ".join("✅" if i < k["asama"] else "▫️" for i in range(3))
     stop_not = "stop girişte" if k["asama"] else f"stop {fy(k['stop'])}"
-    return (f"• {_e(gorunen(k['kod'], k.get('ad')))} {'AL' if yon == 1 else 'SAT'} ({k['tf']}) · giriş {fy(k['giris'])} · {stop_not} · {asama} · şu an {yz(ger)}")
+    return (f"• {_e(gorunen(k['kod'], k.get('ad')))} {'AL' if yon == 1 else 'SAT'} ({T.TF_AD[k['tf']].lower()}) · giriş {fy(k['giris'])} · {stop_not} · {asama} · şu an {yz(ger)}")
 
 
 def kapanis_satiri(k):
     ikon = {"stop": "⛔", "tüm hedefler": "🏁", "süre doldu": "⌛"}.get(k.get("sebep"), "↩️")
-    return (f"{ikon} {_e(gorunen(k['kod'], k.get('ad')))} {'AL' if k['yon'] == 1 else 'SAT'} ({k['tf']}) kapandı: {_e(k.get('sebep'))} · "
+    return (f"{ikon} {_e(gorunen(k['kod'], k.get('ad')))} {'AL' if k['yon'] == 1 else 'SAT'} ({T.TF_AD[k['tf']].lower()}) kapandı: {_e(k.get('sebep'))} · "
             f"sonuç {rrs(k['R'])} ({yz(getiri(k))})")
 
 
