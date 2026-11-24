@@ -160,7 +160,7 @@ def ilk_islemler(kodlar, parca=80):
 HARZ_YIL = 2  # BIST Halka Arz Endeksi: şirket işlem görmeye başladığı ilk gün endekse alınır ve 2 yıl kalır
 
 
-def bebekler(evren, ilk, harz=None, bugun=None, resmi_ilk=None, mod="resmi", yil=5, pd_esik=15.0):
+def bebekler(evren, ilk, harz=None, bugun=None, resmi_ilk=None, mod="resmi", yil=5, pd_esik=5.0):
     """mod: 'resmi' → BIST'in resmi bebek tanımı (XHARZ, son 2 yıl); 'genc' → son `yil` yılda halka arz olan tüm BIST
     şirketleri; 'kucuk' → tüm BIST'te piyasa değeri `pd_esik` milyar TL altındaki şirketler (yaşından bağımsız)."""
     if mod != "resmi":

@@ -275,7 +275,7 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
         df[c] = df[c].apply(lambda x: None if x is None else round(x * 100, 1))
     df = df.sort_values(sirala, ascending=sirala in ("F/K", "PD/DD"), na_position="last")
     st.dataframe(df[["Kod", "Şirket", "Sağlık skoru", "Potansiyel", "Fiyat", "Adil değer", "F/K", "PD/DD", "ROE",
-                     "Temettü verimi", "1Y getiri", "Teknik"] + [c for c in ("Para akışı", "Yabancı %", "Yabancı Δ1A", "Veri puanı", "Kaynak") if c in df]],
+                     "Temettü verimi", "1Y getiri", "Teknik"] + [c for c in ("Para akışı", "Yabancı %", "Yabancı Δ1H", "Yabancı Δ1A", "Yabancı Δ3A", "Veri puanı", "Kaynak") if c in df]],
                  hide_index=True, use_container_width=True,
                  column_config={
                      "Sağlık skoru": st.column_config.ProgressColumn("Skor", min_value=0, max_value=5, format="%.2f"),
@@ -288,7 +288,9 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                      "Temettü verimi": st.column_config.NumberColumn("Temettü %", format="%.1f"),
                      "1Y getiri": st.column_config.NumberColumn("1Y %", format="%.1f"),
                      "Yabancı %": st.column_config.NumberColumn(format="%.2f"),
-                     "Yabancı Δ1A": st.column_config.NumberColumn("Yabancı Δ1A (puan)", format="%+.2f"),
+                     "Yabancı Δ1H": st.column_config.NumberColumn("Yabancı 1 hafta (puan)", format="%+.2f"),
+                     "Yabancı Δ1A": st.column_config.NumberColumn("Yabancı 1 ay (puan)", format="%+.2f"),
+                     "Yabancı Δ3A": st.column_config.NumberColumn("Yabancı 3 ay (puan)", format="%+.2f"),
                  })
 
 
@@ -1247,12 +1249,12 @@ with tab_t:
 with tab_b:
     b_mod = st.radio("Kapsam", ["Resmi bebekler", "Genç şirketler", "Küçük şirketler"], horizontal=True, key="b_mod",
                      help="Resmi: son 2 yılda halka arz olup BIST Halka Arz Endeksi'nde (XHARZ) yer alanlar. "
-                          "Genç: tüm BIST'te son 5 yılda halka arz olanlar. Küçük: tüm BIST'te piyasa değeri 15 milyar TL altındakiler.")
+                          "Genç: tüm BIST'te son 5 yılda halka arz olanlar. Küçük: tüm BIST'te piyasa değeri 5 milyar TL altındakiler.")
     MOD = {"Resmi bebekler": "resmi", "Genç şirketler": "genc", "Küçük şirketler": "kucuk"}[b_mod]
     st.caption({"resmi": "Borsa İstanbul'un resmi tanımı: halka arz edilip işlem görmeye başladığı günden itibaren 2 yıl boyunca "
                          "BIST Halka Arz Endeksi'nde (XHARZ) yer alan şirketler.",
                 "genc": "Tüm BIST hisseleri içinden son 5 yılda halka arz olan şirketler (resmi bebekler dahil).",
-                "kucuk": "Tüm BIST hisseleri içinden piyasa değeri 15 milyar TL'nin altındaki şirketler; yaşına bakılmaz."}[MOD])
+                "kucuk": "Tüm BIST hisseleri içinden piyasa değeri 5 milyar TL'nin altındaki şirketler; yaşına bakılmaz."}[MOD])
     if st.button(":material/school: Şirketleri getir", type="primary", key="b_btn"):
         with st.spinner("Halka arz endeksi, ilk işlem tarihleri ve piyasa değerleri alınıyor…"):
             hedef = list(HARZ) if (HARZ and MOD == "resmi") else list(EVREN["Kod"])
@@ -1276,8 +1278,10 @@ with tab_b:
                                         "Zirveden uzaklık": st.column_config.NumberColumn("Zirveden %", format="%.1f")})
             st.caption("İlk işlem tarihi ve ilk gün kapanışı Borsa İstanbul'un resmi listesinden alınır (ilk gün kapanışı düzeltilmemiş fiyattır). "
                        "'İlk işlemden getiri' bedelsiz/bölünme düzeltilmiş Yahoo verisinden hesaplanır.")
-            n_derin = min(len(liste), 150)
-            if st.button(f":material/biotech: Derin analiz: büyüme modeli ve bebek skoru ({n_derin} şirket, 3–8 dk)", key="b_derin"):
+            n_derin = min(len(liste), 80)
+            if len(liste) > n_derin:
+                st.caption(f"Derin analiz süre sınırı nedeniyle listedeki ilk {n_derin} şirketi kapsar (resmi/genç: en yeni halka arzlar, küçük: en büyükleri).")
+            if st.button(f":material/biotech: Derin analiz: büyüme modeli ve bebek skoru ({n_derin} şirket, {max(2, n_derin // 10)}–{max(4, n_derin // 6)} dk)", key="b_derin"):
                 with st.spinner("Şirketlerin finansalları taranıyor ve büyüme modeli kuruluyor… Ekranı kapatmayın."):
                     kodlar = tuple(x["Kod"] for x in liste[:n_derin])
                     sat, hat = tarama(kodlar, tuple(PRM.items()), SAAT2, br.SURUM)
@@ -1294,7 +1298,7 @@ with tab_b:
                 for c in ("Reel büyüme", "Çeyrek büyüme (reel)", "Büyüme potansiyeli", "ROE"):
                     if c in dfd: dfd[c] = dfd[c].apply(lambda x: None if x is None or pd.isna(x) else round(x * 100, 1))
                 kol = [c for c in ["Kod", "Şirket", "Bebek skoru", "Neden", "Fiyat", "Büyüme adil değeri", "Büyüme potansiyeli",
-                                   "Reel büyüme", "Çeyrek büyüme (reel)", "PEG (reel)", "FD/Satış", "F/K", "Sağlık skoru", "ROE",
+                                   "Model güveni", "Reel büyüme", "Çeyrek büyüme (reel)", "PEG (reel)", "FD/Satış", "F/K", "Sağlık skoru", "ROE",
                                    "Para akışı", "Borsadaki süre (ay)", "Endekste kalan (ay)", "Risk notu", "Büyüme modeli"] if c in dfd]
                 st.markdown(TS.bolum("Bebek skoru sıralaması"), unsafe_allow_html=True)
                 st.dataframe(dfd[kol], hide_index=True, use_container_width=True,
@@ -1321,6 +1325,8 @@ with tab_b:
                         "büyüdüğüne göre yukarı ya da aşağı düzeltilir.\n"
                         "3. **PEG (%20):** 'Büyüme kadar F/K' kuralı. Kârı reel olarak %20 büyüyen bir şirket için 20x F/K makul sayılır. "
                         "**PEG 1'in altındaysa** şirket büyümesine göre ucuz demektir.\n\n"
+                        "**Model güveni:** üç yöntem birbirine yakın sonuç veriyorsa YÜKSEK, aralarında büyük fark varsa ya da sonuçlar uç olduğu için "
+                        "sınırlandıysa DÜŞÜK yazar. Düşük güvenli potansiyele temkinli yaklaşın.\n\n"
                         "**Bebek skoru:** reel hasılat büyümesi (%30), sağlık skoru (%25), büyüme potansiyeli (%20), son çeyrek büyümesi (%15) ve "
                         "para akışının (%10), listedeki şirketler içindeki sırasıdır.")
                 st.caption("Ayrıntılı rapor için kodu Hisse sekmesine yazın. Genç şirketlerin geçmiş verisi kısa olduğundan tahminler daha belirsizdir. "

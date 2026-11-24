@@ -843,7 +843,7 @@ def metrikler(d, endeks=None):
             g_ = gec.copy()
             if d.get("yabanci") is not None:
                 g_.loc[pd.Timestamp(dt.date.today())] = d["yabanci"]; g_ = g_[~g_.index.duplicated(keep="last")].sort_index()
-            for ad_, n in (("d1", 1), ("d5", 5), ("d20", 20)):
+            for ad_, n in (("d1", 1), ("d5", 5), ("d20", 20), ("d60", 60)):
                 if len(g_) > n:
                     yab[ad_] = float(g_.iloc[-1] - g_.iloc[-1 - n])
             yab["gecmis"] = g_
@@ -1101,18 +1101,23 @@ def buyume_degerleme(m, emsaller=None, piyasa=None):
     # 3) PEG (reel kâr büyümesi)
     net = T.get("net"); gE = rr(m.get("net_b")); peg = None
     if net and net > 0 and gE is not None and gE > 0.05:
-        fk_adil = float(min(max(gE * 100, 6), 30))
+        gEk = min(gE, 1.0)   # düşük bazdan gelen aşırı kâr artışları PEG'i anlamsızlaştırmasın (en çok %100)
+        fk_adil = float(min(max(gEk * 100, 6), 30))
         yontem.append(["PEG (büyüme kadar F/K)", net / hs * fk_adil, 0.20, f"reel kâr büyümesi %{gE * 100:.0f} → adil F/K {fk_adil:.0f}x"])
-        if m.get("fk") and m["fk"] > 0: peg = m["fk"] / (gE * 100)
+        if m.get("fk") and m["fk"] > 0: peg = m["fk"] / (gEk * 100)
     if not yontem: return None
-    top = ag = 0.0
+    top = ag = 0.0; kirp = 0
     for y in yontem:   # uç sonuçlar sınırlanır (ana modelle aynı kural)
         if not 0.4 * p <= y[1] <= 2.5 * p:
-            y[3] += f" · ham {tl(y[1])}, sınırlandı"; y[1] = min(max(y[1], 0.5 * p), 2.0 * p); y[2] /= 2
+            y[3] += f" · ham {tl(y[1])}, sınırlandı"; y[1] = min(max(y[1], 0.5 * p), 2.0 * p); y[2] /= 2; kirp += 1
         top += y[1] * y[2]; ag += y[2]
     adil = top / ag
+    vals = [y[1] for y in yontem]
+    yayil = (max(vals) / min(vals) - 1) if len(vals) > 1 and min(vals) > 0 else None
+    guven = ("DÜŞÜK" if kirp == len(yontem) or len(yontem) == 1 or (yayil is not None and yayil > 1.0)
+             else "ORTA" if kirp or (yayil is not None and yayil > 0.5) else "YÜKSEK")
     return {"adil": adil, "potansiyel": adil / p - 1, "yontemler": [tuple(y) for y in yontem], "peg": peg,
-            "g": g0, "marj_hedef": marT, "wacc_reel": wr}
+            "g": g0, "marj_hedef": marT, "wacc_reel": wr, "guven": guven}
 
 
 def degerleme(m, emsaller, nav=None):
@@ -2373,11 +2378,13 @@ def ozet_satir(m):
             "1Y $": ((m.get("usd") or {}).get("r") or {}).get("1Y"), "Güven": m.get("guven"),
             "Sektör": next((g_ for g_, l_ in SEKTOR_GRUPLARI.items() if m["kod"] in l_), m.get("sektor") or "Diğer"),
             "Yabancı %": (m.get("yabanci") or {}).get("oran"),
-            "Yabancı Δ1A": (m.get("yabanci") or {}).get("d20"),
+            "Yabancı Δ1H": (m.get("yabanci") or {}).get("d5"), "Yabancı Δ1A": (m.get("yabanci") or {}).get("d20"),
+            "Yabancı Δ3A": (m.get("yabanci") or {}).get("d60"),
             "Reel büyüme": reel(m.get("ciro_b")), "Çeyrek büyüme (reel)": reel(m.get("ceyrek_ciro_b")),
             "Piyasa değeri": m.get("piy_deg"),
             "Büyüme adil değeri": (m.get("buyume") or {}).get("adil"), "Büyüme potansiyeli": (m.get("buyume") or {}).get("potansiyel"),
             "PEG (reel)": (m.get("buyume") or {}).get("peg"), "FD/Satış": m.get("fd_satis"),
+            "Model güveni": (m.get("buyume") or {}).get("guven"),
             "Büyüme modeli": " | ".join(f"{y[0]}: {tl(y[1])}" for y in ((m.get("buyume") or {}).get("yontemler") or []))}
 
 def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None, fx_fn=None, **param):
