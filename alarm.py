@@ -140,7 +140,7 @@ def tara(K, durum):
                     if not durum.get(a2) and not durum.get(konu_gun) and not yeni.get(konu_gun):
                         yeni[konu_gun] = True
                         bildir.append(f"📰 {k['kod']} · {x['konu']}: {x['baslik'][:140]}")
-                        yeni[a2] = True
+                    yeni[a2] = True   # gönderilmese de görüldü say (aynı haberin diğer başlıkları ertesi gün gelmesin)
         except Exception as ex:
             print(f"{anahtar}: {ex}", file=sys.stderr)
     bildir = list(dict.fromkeys(bildir))
