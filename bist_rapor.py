@@ -1040,6 +1040,81 @@ def nav_hesapla(kod, pd_fn):
         k["oran"] = k["deger"] / top if k["deger"] else None
     return {"kalemler": kalem, "toplam": top, "hedef_iskonto": PARAM.get("HOLDING_ISKONTO", {}).get(kod, BV.HOLDING_ISKONTO.get(kod, 0.35))}
 
+def buyume_degerleme(m, emsaller=None, piyasa=None):
+    """Büyüme şirketi modeli (bebek ve genç şirketler için). Kârdan çok BÜYÜMEYE bakar; REEL (enflasyondan arındırılmış)
+    terimlerle çalışır, böylece TL'deki yüksek enflasyon büyümeyi şişirmez.
+      1) Büyüme İNA: son 12 ay hasılatı 5 yıl boyunca reel büyüme ile (yavaşlayarak %2 uzun vade büyümeye) büyür;
+         FAVÖK marjı emsal medyanına yakınsar (ölçek ekonomisi); büyüme için gereken yatırım hasılat/sermaye oranından
+         düşülür; reel AOSM ile iskonto edilir.
+      2) Büyüme ayarlı FD/Satış: emsal FD/Satış medyanı × (şirketin büyümesi / emsal büyümesi) düzeltmesi.
+      3) PEG (reel): adil F/K ≈ reel kâr büyümesi (%) — 'büyüme kadar F/K' kuralı (6x–30x arası).
+    Döner: {"adil", "potansiyel", "yontemler": [(ad, değer, ağırlık, not)], "peg", "g", "marj_hedef"} ya da None."""
+    T = m.get("T") or {}; ciro = T.get("ciro"); hs = m.get("hisse"); p = m.get("fiyat")
+    if m.get("finansal") or not ciro or ciro <= 0 or not hs or not p:
+        return None
+    pi = PARAM.get("ENFLASYON", 0.0) or 0.0
+    rr = lambda g: None if g is None else (1 + g) / (1 + pi) - 1
+    g0 = rr(m.get("ciro_b"))
+    if g0 is None: g0 = rr(m.get("ciro_cagr"))
+    if g0 is None: return None
+    g0 = float(min(max(g0, -0.15), 0.50)); gT = 0.02
+    grup = [e for e in (emsaller or []) if e is not m]
+    if len(grup) < 3: grup = [e for e in (piyasa or []) if e is not m]
+    def med(f):
+        v = [f(e) for e in grup]; v = [x for x in v if x is not None and np.isfinite(x)]
+        return float(np.median(v)) if len(v) >= 3 else None
+    mar0 = m.get("favok_marj")
+    mar_e = med(lambda e: e.get("favok_marj") if (e.get("favok_marj") or 0) > 0 else None)
+    if mar0 is None or mar0 <= 0:
+        if mar_e is None: return None
+        mar0 = max(mar0 or 0.0, 0.0); marT = mar_e
+    else:
+        marT = max(mar0, mar_e) if mar_e else mar0
+    marT = float(min(marT, 0.45))
+    vergi = PARAM.get("VERGI", 0.25)
+    sermaye = (m.get("K") or {}).get("ozk")
+    sermaye = (sermaye or 0) + max(m.get("net_borc") or 0, 0)
+    s2c = float(min(max(ciro / sermaye, 0.8), 4.0)) if sermaye and sermaye > 0 else 2.0
+    try: w_nom = wacc_hesap(m)["wacc"]
+    except Exception: w_nom = PARAM["RF"] + PARAM["ERP"]
+    wr = max((1 + w_nom) / (1 + pi) - 1, 0.06)
+    yontem = []
+    # 1) Büyüme İNA (reel)
+    R = ciro; pv = 0.0
+    for t in range(1, 6):
+        g = g0 + (gT - g0) * (t - 1) / 4
+        Rn = R * (1 + g); mar = mar0 + (marT - mar0) * t / 5
+        fcf = Rn * mar * (1 - vergi) - (Rn - R) / s2c
+        pv += fcf / (1 + wr) ** t; R = Rn
+    fcf6 = R * (1 + gT) * marT * (1 - vergi) - R * gT / s2c
+    tv = fcf6 / (wr - gT)
+    ev = pv + tv / (1 + wr) ** 5
+    oz = ev - (m.get("net_borc") or 0) - ((m.get("K") or {}).get("azinlik") or 0)
+    if oz > 0: yontem.append(["Büyüme İNA (reel)", oz / hs, 0.45, f"reel büyüme %{g0 * 100:.0f} → %2, FAVÖK marjı %{mar0 * 100:.0f} → %{marT * 100:.0f}, reel AOSM %{wr * 100:.1f}"])
+    # 2) Büyüme ayarlı FD/Satış
+    fs_e = med(lambda e: e.get("fd_satis") if (e.get("fd_satis") or 0) > 0 else None)
+    g_e = med(lambda e: rr(e.get("ciro_b")))
+    if fs_e:
+        f_ = 1.0 if g_e is None else float(min(max(((1 + g0) / (1 + g_e)) ** 3, 0.5), 2.0))
+        oz2 = ciro * fs_e * f_ - (m.get("net_borc") or 0) - ((m.get("K") or {}).get("azinlik") or 0)
+        if oz2 > 0: yontem.append(["Büyüme ayarlı FD/Satış", oz2 / hs, 0.35, f"emsal FD/Satış {fs_e:.2f}x × büyüme düzeltmesi {f_:.2f}"])
+    # 3) PEG (reel kâr büyümesi)
+    net = T.get("net"); gE = rr(m.get("net_b")); peg = None
+    if net and net > 0 and gE is not None and gE > 0.05:
+        fk_adil = float(min(max(gE * 100, 6), 30))
+        yontem.append(["PEG (büyüme kadar F/K)", net / hs * fk_adil, 0.20, f"reel kâr büyümesi %{gE * 100:.0f} → adil F/K {fk_adil:.0f}x"])
+        if m.get("fk") and m["fk"] > 0: peg = m["fk"] / (gE * 100)
+    if not yontem: return None
+    top = ag = 0.0
+    for y in yontem:   # uç sonuçlar sınırlanır (ana modelle aynı kural)
+        if not 0.4 * p <= y[1] <= 2.5 * p:
+            y[3] += f" · ham {tl(y[1])}, sınırlandı"; y[1] = min(max(y[1], 0.5 * p), 2.0 * p); y[2] /= 2
+        top += y[1] * y[2]; ag += y[2]
+    adil = top / ag
+    return {"adil": adil, "potansiyel": adil / p - 1, "yontemler": [tuple(y) for y in yontem], "peg": peg,
+            "g": g0, "marj_hedef": marT, "wacc_reel": wr}
+
+
 def degerleme(m, emsaller, nav=None):
     p = m["fiyat"]; hs = m["hisse"]; w = wacc_hesap(m); m["wacc"] = w
     Y = []  # (yöntem, değer, düşük, yüksek, ağırlık, not)
@@ -2300,7 +2375,10 @@ def ozet_satir(m):
             "Yabancı %": (m.get("yabanci") or {}).get("oran"),
             "Yabancı Δ1A": (m.get("yabanci") or {}).get("d20"),
             "Reel büyüme": reel(m.get("ciro_b")), "Çeyrek büyüme (reel)": reel(m.get("ceyrek_ciro_b")),
-            "Piyasa değeri": m.get("piy_deg")}
+            "Piyasa değeri": m.get("piy_deg"),
+            "Büyüme adil değeri": (m.get("buyume") or {}).get("adil"), "Büyüme potansiyeli": (m.get("buyume") or {}).get("potansiyel"),
+            "PEG (reel)": (m.get("buyume") or {}).get("peg"), "FD/Satış": m.get("fd_satis"),
+            "Büyüme modeli": " | ".join(f"{y[0]}: {tl(y[1])}" for y in ((m.get("buyume") or {}).get("yontemler") or []))}
 
 def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None, fx_fn=None, **param):
     """Birden çok hisseyi tarar, özet tablo döndürür. Emsaller tarama içindeki aynı sektör hisseleridir."""
@@ -2343,6 +2421,8 @@ def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None
             except Exception:
                 mm["usd"] = None
             degerleme(mm, emsal, nav); saglik(mm)
+            try: mm["buyume"] = buyume_degerleme(mm, emsal, [ham[e] for e in ham if e != k])
+            except Exception: mm["buyume"] = None
             satirlar.append(ozet_satir(mm))
         except Exception as ex:
             hatalar[k] = str(ex)

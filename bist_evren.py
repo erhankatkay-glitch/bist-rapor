@@ -160,7 +160,11 @@ def ilk_islemler(kodlar, parca=80):
 HARZ_YIL = 2  # BIST Halka Arz Endeksi: şirket işlem görmeye başladığı ilk gün endekse alınır ve 2 yıl kalır
 
 
-def bebekler(evren, ilk, harz=None, bugun=None, resmi_ilk=None):
+def bebekler(evren, ilk, harz=None, bugun=None, resmi_ilk=None, mod="resmi", yil=5, pd_esik=15.0):
+    """mod: 'resmi' → BIST'in resmi bebek tanımı (XHARZ, son 2 yıl); 'genc' → son `yil` yılda halka arz olan tüm BIST
+    şirketleri; 'kucuk' → tüm BIST'te piyasa değeri `pd_esik` milyar TL altındaki şirketler (yaşından bağımsız)."""
+    if mod != "resmi":
+        harz = None
     """Bebek şirketler = Borsa İstanbul'un resmi tanımıyla son 2 yılda halka arz edilip işlem görmeye başlayan
     şirketler (BIST Halka Arz Endeksi / XHARZ kapsamı). Resmi bileşen listesi alınabildiyse o kullanılır;
     alınamadıysa Yahoo'daki ilk işlem tarihi 2 yıldan yeni olan hisseler seçilir."""
@@ -171,25 +175,31 @@ def bebekler(evren, ilk, harz=None, bugun=None, resmi_ilk=None):
         k = r["Kod"]; b = ilk.get(k); rs = (resmi_ilk or {}).get(k) or {}
         ilk_t = rs.get("tarih") if rs.get("tarih") is not None and not pd.isna(rs.get("tarih")) else (b["ilk"] if b else None)
         yas = (bugun - pd.Timestamp(ilk_t)).days / 365.25 if ilk_t is not None else None
-        if resmi:
+        pd_mr = r.get("PD mn") / 1000 if pd.notna(r.get("PD mn")) else None
+        if mod == "kucuk":
+            if pd_mr is None or pd_mr > pd_esik: continue
+        elif mod == "genc":
+            if yas is None or yas > yil: continue
+        elif resmi:
             if k not in harz: continue
         elif yas is None or yas > HARZ_YIL:
             continue
-        pd_mr = r.get("PD mn") / 1000 if pd.notna(r.get("PD mn")) else None
         ay = round(yas * 12) if yas is not None else None
         sat.append({"Kod": k, "Şirket": r.get("Ad"), "Sektör": r.get("Sektör"),
                     "İlk işlem": pd.Timestamp(ilk_t).date() if ilk_t is not None else None, "Borsadaki süre (ay)": ay,
                     "İlk gün kapanışı": rs.get("ilk_kapanis"),
-                    "Endekste kalan (ay)": max(24 - ay, 0) if ay is not None else None,
+                    "Endekste kalan (ay)": (max(24 - ay, 0) if ay is not None else None) if mod == "resmi" else None,
                     "Piyasa değeri (mr TL)": round(pd_mr, 2) if pd_mr is not None else None,
                     "Halka açıklık %": r.get("Halka açıklık %"),
                     "İlk işlemden getiri": (b["son"] / b["ilk_fiyat"] - 1) if b and b["ilk_fiyat"] else None,
                     "Zirveden uzaklık": (b["son"] / b["zirve"] - 1) if b and b["zirve"] else None})
-    return sorted(sat, key=lambda x: (x["İlk işlem"] or dt.date(2100, 1, 1)), reverse=True), resmi
+    if mod == "kucuk":
+        return sorted(sat, key=lambda x: x["Piyasa değeri (mr TL)"] or 0, reverse=True), resmi
+    return sorted(sat, key=lambda x: (x["İlk işlem"] or dt.date(2100, 1, 1)), reverse=True), resmi and mod == "resmi"
 
 
-BEBEK_AGIRLIK = {"Reel büyüme": 0.30, "Sağlık skoru": 0.30, "Potansiyel": 0.15, "Çeyrek büyüme (reel)": 0.15, "Akış puanı": 0.10}
-BEBEK_AD = {"Reel büyüme": "hızlı reel büyüme", "Sağlık skoru": "sağlam temeller", "Potansiyel": "değerleme iskontosu",
+BEBEK_AGIRLIK = {"Reel büyüme": 0.30, "Sağlık skoru": 0.25, "Büyüme potansiyeli": 0.20, "Çeyrek büyüme (reel)": 0.15, "Akış puanı": 0.10}
+BEBEK_AD = {"Reel büyüme": "hızlı reel büyüme", "Sağlık skoru": "sağlam temeller", "Büyüme potansiyeli": "büyümesine göre ucuz",
             "Çeyrek büyüme (reel)": "son çeyrekte ivme", "Akış puanı": "para girişi"}
 
 

@@ -1245,33 +1245,40 @@ with tab_t:
 
 
 with tab_b:
-    st.caption("Bebek şirketler, Borsa İstanbul'un resmi tanımıyla belirlenir: halka arz edilip işlem görmeye başladığı ilk günden itibaren "
-               "2 yıl boyunca BIST Halka Arz Endeksi'nde (XHARZ) yer alan şirketler. Liste otomatik güncellenir; ayar gerekmez.")
-    if st.button(":material/school: Bebek şirketleri getir", type="primary", key="b_btn"):
-        with st.spinner("Resmi halka arz endeksi ve ilk işlem tarihleri alınıyor…"):
-            hedef = list(HARZ) if HARZ else list(EVREN["Kod"])
-            ilk = ilk_cek(tuple(sorted(hedef)), GUN, br.SURUM)
-            liste, resmi = EV.bebekler(EVREN, ilk, set(HARZ), resmi_ilk=resmi_ilk_cek(GUN, br.SURUM))
-            st.session_state.bebek = (liste, resmi, len(EVREN)); st.session_state.pop("bebek_derin", None)
-    if "bebek" in st.session_state:
-        liste, resmi, n_ev = st.session_state.bebek
-        st.markdown(f"**{len(liste)} bebek şirket** ({n_ev} BIST hissesi içinden)")
-        st.caption("Kaynak: " + ("Borsa İstanbul resmi XHARZ bileşen listesi." if resmi else
-                   "Resmi liste bu sefer alınamadı; ilk işlem tarihi 2 yıldan yeni olan hisseler seçildi (Yahoo).") + f" Hisse evreni: {EVREN_NOT}")
+    b_mod = st.radio("Kapsam", ["Resmi bebekler", "Genç şirketler", "Küçük şirketler"], horizontal=True, key="b_mod",
+                     help="Resmi: son 2 yılda halka arz olup BIST Halka Arz Endeksi'nde (XHARZ) yer alanlar. "
+                          "Genç: tüm BIST'te son 5 yılda halka arz olanlar. Küçük: tüm BIST'te piyasa değeri 15 milyar TL altındakiler.")
+    MOD = {"Resmi bebekler": "resmi", "Genç şirketler": "genc", "Küçük şirketler": "kucuk"}[b_mod]
+    st.caption({"resmi": "Borsa İstanbul'un resmi tanımı: halka arz edilip işlem görmeye başladığı günden itibaren 2 yıl boyunca "
+                         "BIST Halka Arz Endeksi'nde (XHARZ) yer alan şirketler.",
+                "genc": "Tüm BIST hisseleri içinden son 5 yılda halka arz olan şirketler (resmi bebekler dahil).",
+                "kucuk": "Tüm BIST hisseleri içinden piyasa değeri 15 milyar TL'nin altındaki şirketler; yaşına bakılmaz."}[MOD])
+    if st.button(":material/school: Şirketleri getir", type="primary", key="b_btn"):
+        with st.spinner("Halka arz endeksi, ilk işlem tarihleri ve piyasa değerleri alınıyor…"):
+            hedef = list(HARZ) if (HARZ and MOD == "resmi") else list(EVREN["Kod"])
+            ilk = ilk_cek(tuple(sorted(hedef)), GUN, br.SURUM) if MOD != "kucuk" else {}
+            liste, resmi = EV.bebekler(EVREN, ilk, set(HARZ), resmi_ilk=resmi_ilk_cek(GUN, br.SURUM), mod=MOD)
+            st.session_state.bebek = (liste, resmi, len(EVREN), MOD); st.session_state.pop("bebek_derin", None)
+    if "bebek" in st.session_state and st.session_state.bebek[3] == MOD:
+        liste, resmi, n_ev, _ = st.session_state.bebek
+        st.markdown(f"**{len(liste)} şirket** ({n_ev} BIST hissesi içinden)")
+        if MOD == "resmi":
+            st.caption("Kaynak: " + ("Borsa İstanbul resmi XHARZ bileşen listesi." if resmi else
+                       "Resmi liste bu sefer alınamadı; ilk işlem tarihi 2 yıldan yeni olan hisseler seçildi (Yahoo).") + f" Hisse evreni: {EVREN_NOT}")
         if liste:
             dfb = pd.DataFrame(liste)
             for c in ("İlk işlemden getiri", "Zirveden uzaklık"):
                 dfb[c] = dfb[c].apply(lambda x: None if x is None or pd.isna(x) else round(x * 100, 1))
+            if MOD != "resmi": dfb = dfb.drop(columns=[c for c in ("Endekste kalan (ay)",) if c in dfb])
             st.dataframe(dfb, hide_index=True, use_container_width=True,
                          column_config={"Halka açıklık %": st.column_config.NumberColumn(format="%.1f"),
                                         "İlk işlemden getiri": st.column_config.NumberColumn("İlk işlemden getiri %", format="%.1f"),
                                         "Zirveden uzaklık": st.column_config.NumberColumn("Zirveden %", format="%.1f")})
             st.caption("İlk işlem tarihi ve ilk gün kapanışı Borsa İstanbul'un resmi listesinden alınır (ilk gün kapanışı düzeltilmemiş fiyattır). "
-                       "'İlk işlemden getiri' bedelsiz/bölünme düzeltilmiş Yahoo verisinden hesaplanır. "
-                       "'Endekste kalan' süre dolduğunda şirket bebek statüsünden çıkar.")
-            n_derin = min(len(liste), 120)
-            if st.button(f":material/biotech: Derin analiz: bilanço, büyüme ve bebek skoru ({n_derin} şirket, 2–6 dk)", key="b_derin"):
-                with st.spinner("Şirketlerin finansalları taranıyor… Ekranı kapatmayın."):
+                       "'İlk işlemden getiri' bedelsiz/bölünme düzeltilmiş Yahoo verisinden hesaplanır.")
+            n_derin = min(len(liste), 150)
+            if st.button(f":material/biotech: Derin analiz: büyüme modeli ve bebek skoru ({n_derin} şirket, 3–8 dk)", key="b_derin"):
+                with st.spinner("Şirketlerin finansalları taranıyor ve büyüme modeli kuruluyor… Ekranı kapatmayın."):
                     kodlar = tuple(x["Kod"] for x in liste[:n_derin])
                     sat, hat = tarama(kodlar, tuple(PRM.items()), SAAT2, br.SURUM)
                     sat = EV.bebek_skoru([dict(x) for x in sat])
@@ -1284,17 +1291,39 @@ with tab_b:
             sat, hat = st.session_state.bebek_derin
             if sat:
                 dfd = pd.DataFrame(sat).sort_values("Bebek skoru", ascending=False, na_position="last")
-                for c in ("Reel büyüme", "Çeyrek büyüme (reel)", "Potansiyel", "ROE"):
+                for c in ("Reel büyüme", "Çeyrek büyüme (reel)", "Büyüme potansiyeli", "ROE"):
                     if c in dfd: dfd[c] = dfd[c].apply(lambda x: None if x is None or pd.isna(x) else round(x * 100, 1))
-                kol = [c for c in ["Kod", "Şirket", "Bebek skoru", "Neden", "Sağlık skoru", "Reel büyüme", "Çeyrek büyüme (reel)",
-                                   "Potansiyel", "ROE", "F/K", "Para akışı", "Borsadaki süre (ay)", "Endekste kalan (ay)", "Risk notu"] if c in dfd]
-                st.markdown("**🏆 Bebek skoru sıralaması**")
+                kol = [c for c in ["Kod", "Şirket", "Bebek skoru", "Neden", "Fiyat", "Büyüme adil değeri", "Büyüme potansiyeli",
+                                   "Reel büyüme", "Çeyrek büyüme (reel)", "PEG (reel)", "FD/Satış", "F/K", "Sağlık skoru", "ROE",
+                                   "Para akışı", "Borsadaki süre (ay)", "Endekste kalan (ay)", "Risk notu", "Büyüme modeli"] if c in dfd]
+                st.markdown(TS.bolum("Bebek skoru sıralaması"), unsafe_allow_html=True)
                 st.dataframe(dfd[kol], hide_index=True, use_container_width=True,
                              column_config={"Bebek skoru": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.0f"),
+                                            "Fiyat": st.column_config.NumberColumn(format="%.2f"),
+                                            "Büyüme adil değeri": st.column_config.NumberColumn("Büyüme adil değeri", format="%.2f"),
+                                            "Büyüme potansiyeli": st.column_config.NumberColumn("Büyüme potansiyeli %", format="%+.1f"),
+                                            "Reel büyüme": st.column_config.NumberColumn("Reel büyüme %", format="%+.1f"),
+                                            "Çeyrek büyüme (reel)": st.column_config.NumberColumn("Çeyrek reel %", format="%+.1f"),
+                                            "PEG (reel)": st.column_config.NumberColumn(format="%.2f"),
+                                            "FD/Satış": st.column_config.NumberColumn(format="%.2f"),
                                             "Sağlık skoru": st.column_config.NumberColumn(format="%.2f"),
-                                            "F/K": st.column_config.NumberColumn(format="%.1f")})
-                st.caption("Bebek skoru: reel hasılat büyümesi (%30), sağlık skoru (%30), değerleme potansiyeli (%15), son çeyrek büyümesi (%15) "
-                           "ve para akışının (%10) bebek şirketler içindeki yüzdelik sırasıdır. Detay için kodu 📄 Hisse sekmesine yazıp tam rapor alın. "
+                                            "F/K": st.column_config.NumberColumn(format="%.1f"),
+                                            "ROE": st.column_config.NumberColumn("ROE %", format="%.1f")})
+                with st.expander(":material/school: Büyüme şirketi modeli nasıl çalışıyor?"):
+                    st.markdown(
+                        "Genç ve küçük şirketler çoğu zaman bugünkü kârıyla değil **büyümesiyle** değerlenir. Bu yüzden bu sekmede klasik "
+                        "değerleme yerine büyüme şirketlerine uygun üç yöntem birlikte kullanılır. Hepsi **reel** (enflasyondan arındırılmış) "
+                        "rakamlarla çalışır; böylece TL'deki yüksek enflasyon büyümeyi olduğundan büyük göstermez.\n\n"
+                        "1. **Büyüme İNA (%45):** Son 12 ayın hasılatı 5 yıl boyunca şirketin reel büyümesiyle büyütülür; büyüme her yıl yavaşlayarak "
+                        "uzun vadede %2'ye iner. Kâr marjı ölçek büyüdükçe sektör ortalamasına yaklaşır. Büyümek için gereken yatırım düşülür ve "
+                        "bugüne indirgenir.\n"
+                        "2. **Büyüme ayarlı FD/Satış (%35):** Benzer şirketlerin satışlarına göre değeri, şirketin onlardan ne kadar hızlı ya da yavaş "
+                        "büyüdüğüne göre yukarı ya da aşağı düzeltilir.\n"
+                        "3. **PEG (%20):** 'Büyüme kadar F/K' kuralı. Kârı reel olarak %20 büyüyen bir şirket için 20x F/K makul sayılır. "
+                        "**PEG 1'in altındaysa** şirket büyümesine göre ucuz demektir.\n\n"
+                        "**Bebek skoru:** reel hasılat büyümesi (%30), sağlık skoru (%25), büyüme potansiyeli (%20), son çeyrek büyümesi (%15) ve "
+                        "para akışının (%10), listedeki şirketler içindeki sırasıdır.")
+                st.caption("Ayrıntılı rapor için kodu Hisse sekmesine yazın. Genç şirketlerin geçmiş verisi kısa olduğundan tahminler daha belirsizdir. "
                            "Yatırım tavsiyesi değildir.")
             if hat: st.caption("Verisi alınamayanlar: " + ", ".join(hat))
 
