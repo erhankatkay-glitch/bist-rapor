@@ -150,18 +150,18 @@ class TeknikGosterge(Flowable):
         return self.gen, self.yuk
     def draw(self):
         c = self.canv
-        c.setFillColor(colors.white); c.setStrokeColor(R["cizgi"]); c.setLineWidth(0.8)
+        c.setFillColor(R["zemin"]); c.setStrokeColor(R["cizgi"]); c.setLineWidth(0.8)
         c.roundRect(0, 0, self.gen, self.yuk, 9, stroke=1, fill=1)
         c.setFillColor(R["altin"]); c.roundRect(10, self.yuk - 17, 3, 10, 1.5, stroke=0, fill=1)
         c.setFillColor(R["murekkep"]); c.setFont("DVB", 8); c.drawString(17, self.yuk - 15.5, self.b.upper())
         if self.p is None:
             c.setFont("DV", 8); c.setFillColor(R["soluk"]); c.drawCentredString(self.gen / 2, self.yuk / 2, "Veri yetersiz"); return
         cx, cy, r = self.gen / 2, 34, min(self.gen / 2 - 16, 50)
-        renkler = [R["kirmizi"], colors.HexColor("#F87171"), colors.HexColor("#CBD5E1"), colors.HexColor("#4ADE80"), R["yesil"]]
+        renkler = [R["kirmizi"], colors.HexColor("#F87171"), colors.HexColor("#52525B"), colors.HexColor("#4ADE80"), R["yesil"]]
         for i, rk in enumerate(renkler):
-            c.setFillColor(rk); c.setStrokeColor(colors.white); c.setLineWidth(1.2)
+            c.setFillColor(rk); c.setStrokeColor(R["zemin"]); c.setLineWidth(1.2)
             c.wedge(cx - r, cy - r, cx + r, cy + r, 180 - i * 36, -36, stroke=1, fill=1)
-        c.setFillColor(colors.white); c.circle(cx, cy, r * 0.62, stroke=0, fill=1)
+        c.setFillColor(R["zemin"]); c.circle(cx, cy, r * 0.62, stroke=0, fill=1)
         c.rect(cx - r - 2, cy - r - 2, 2 * r + 4, r + 2, stroke=0, fill=1)
         aci = math.radians(180 - self.p / 100 * 180)
         c.setStrokeColor(R["murekkep"]); c.setLineWidth(2); c.setLineCap(1)

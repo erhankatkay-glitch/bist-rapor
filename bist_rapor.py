@@ -1629,7 +1629,7 @@ def g_saglik(m, baslik="Finansal Sağlık Skoru – Kategoriler (1–5)"):
     k = list(m["saglik"].keys()); v = [m["saglik"][x] for x in k]
     fig, ax = plt.subplots(figsize=(7.5, 0.42 * len(k) + 0.5))
     renk = [C["yesil"] if s >= 3.5 else C["sari"] if s >= 2.5 else C["kirmizi"] for s in v]
-    ax.barh(k[::-1], [5] * len(k), color="#EEF1F5", height=0.6)
+    ax.barh(k[::-1], [5] * len(k), color="#232429", height=0.6)
     ax.barh(k[::-1], v[::-1], color=renk[::-1], height=0.6)
     for i, s in enumerate(v[::-1]):
         ax.text(s + 0.06, i, _tr(f"{s:.2f}"), va="center", fontsize=8, fontweight="bold")
@@ -1803,9 +1803,9 @@ def puan_renk(p):
     return YESIL if p >= 3.5 else SARI if p >= 2.5 else KIRMIZI
 
 def kutu(etiket, deger_, alt=None, renk=LAC):
-    icerik = [[Paragraph(f'<font size="6.8" color="#6B7280">{etiket}</font>', ST["hucre"])],
+    icerik = [[Paragraph(f'<font size="6.8" color="#A1A1AA">{etiket}</font>', ST["hucre"])],
               [Paragraph(f'<font name="DVB" size="11.5" color="{renk.hexval().replace("0x", "#")}">{deger_}</font>', ST["hucre"])]]
-    if alt: icerik.append([Paragraph(f'<font size="6.8" color="#6B7280">{alt}</font>', ST["hucre"])])
+    if alt: icerik.append([Paragraph(f'<font size="6.8" color="#A1A1AA">{alt}</font>', ST["hucre"])])
     t = Table(icerik); t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), ACIK), ("LEFTPADDING", (0, 0), (-1, -1), 6),
                                               ("TOPPADDING", (0, 0), (-1, -1), 1.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 1.5),
                                               ("LINEBEFORE", (0, 0), (0, -1), 2.2, renk)]))
@@ -1940,7 +1940,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
             wl, gl_, M = m["duyarlilik"]
             v = [["AOSM \\ g"] + [yz(x) for x in gl_]] + [[yz(wl[i])] + [tl(x) for x in M[i]] for i in range(len(wl))]
             t = tablo(v, [W * .2] + [W * .16] * 5)
-            st = [("BACKGROUND", (3, 3), (3, 3), colors.HexColor("#FFE8C7")), ("FONTNAME", (3, 3), (3, 3), "DVB"),
+            st = [("BACKGROUND", (3, 3), (3, 3), colors.HexColor("#3A2E12")), ("FONTNAME", (3, 3), (3, 3), "DVB"),
                   ("BACKGROUND", (0, 1), (0, -1), ACIK), ("FONTNAME", (0, 1), (0, -1), "DVB")]
             for i in range(len(wl)):
                 for j in range(len(gl_)):
@@ -2053,7 +2053,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         v.append(["Emsal medyanı", med("piy_deg", tl), med("fk", kat), med("pddd", kat), med("fd_favok", kat), med("roe", yz),
                   med("net_marj", yz), "–", "–"])
         t = tablo(v, [W * .12] + [W * .11] * 8, kalin_son=True, font=7.3)
-        t.setStyle(TableStyle([("BACKGROUND", (0, 1), (-1, 1), colors.HexColor("#FFE8C7")), ("FONTNAME", (0, 1), (-1, 1), "DVB")]))
+        t.setStyle(TableStyle([("BACKGROUND", (0, 1), (-1, 1), colors.HexColor("#3A2E12")), ("FONTNAME", (0, 1), (-1, 1), "DVB")]))
         E.append(t)
         ge = g_emsal(m, emsaller)
         if ge: E += [Spacer(1, 6), _img(ge, W, 2.8 / 7.5)]

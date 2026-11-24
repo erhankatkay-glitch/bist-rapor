@@ -188,7 +188,7 @@ def g_korelasyon(p):
     ax.set_xticks(range(n)); ax.set_yticks(range(n)); ax.set_xticklabels(k.columns, rotation=60, fontsize=6.5); ax.set_yticklabels(k.columns, fontsize=6.5)
     for i in range(n):
         for j in range(n):
-            ax.text(j, i, f"{k.values[i, j]:.1f}".replace(".", ","), ha="center", va="center", fontsize=5.5, color="white" if abs(k.values[i, j]) > 0.6 else "black")
+            ax.text(j, i, f"{k.values[i, j]:.1f}".replace(".", ","), ha="center", va="center", fontsize=5.5, color="white" if abs(k.values[i, j]) > 0.6 else "#E4E4E7")
     ax.set_title("Korelasyon matrisi (günlük getiriler)", loc="left"); fig.colorbar(im, fraction=0.04)
     return _png(fig)
 

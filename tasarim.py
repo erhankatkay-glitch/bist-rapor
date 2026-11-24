@@ -41,11 +41,12 @@ def _kaydet():
 AILE = _kaydet()
 
 # ---------------------------------------------------------------- Renkler
-HEX = {
-    "murekkep": "#0F172A", "metin": "#1E293B", "soluk": "#64748B", "cizgi": "#E2E8F0", "zemin": "#F8FAFC",
-    "zemin2": "#F1F5F9", "ana": "#4F46E5", "ana_acik": "#EEF2FF", "turkuaz": "#0D9488", "turkuaz_acik": "#CCFBF1",
-    "yesil": "#16A34A", "yesil_acik": "#DCFCE7", "kirmizi": "#DC2626", "kirmizi_acik": "#FEE2E2",
-    "sari": "#D97706", "sari_acik": "#FEF3C7", "gri": "#94A3B8", "turuncu": "#EA580C", "mor": "#7C3AED",
+HEX = {   # KATKAY koyu kimliği: siyah/antrasit zemin, altın vurgu, neon yeşil–kırmızı (uygulama ve Telegram ile aynı)
+    "murekkep": "#F4F4F5", "metin": "#D4D4D8", "soluk": "#A1A1AA", "cizgi": "#2A2B30", "zemin": "#16171A",
+    "zemin2": "#1E1F23", "ana": "#E8B84A", "ana_acik": "#2A2313", "turkuaz": "#2DD4BF", "turkuaz_acik": "#0E2A27",
+    "yesil": "#22C55E", "yesil_acik": "#0F2A1A", "kirmizi": "#EF4444", "kirmizi_acik": "#2E1515",
+    "sari": "#F59E0B", "sari_acik": "#2E2410", "gri": "#71717A", "turuncu": "#FB923C", "mor": "#A78BFA",
+    "sayfa": "#0E0F11",
 }
 R = {k: colors.HexColor(v) for k, v in HEX.items()}
 
@@ -64,11 +65,12 @@ plt.rcParams.update({
     "axes.titlecolor": HEX["murekkep"], "axes.labelcolor": HEX["soluk"], "axes.edgecolor": HEX["cizgi"],
     "xtick.color": HEX["soluk"], "ytick.color": HEX["soluk"], "axes.spines.top": False, "axes.spines.right": False,
     "axes.grid": True, "grid.color": HEX["cizgi"], "grid.linewidth": 0.6, "axes.axisbelow": True,
-    "legend.frameon": False, "figure.facecolor": "white", "axes.facecolor": "white",
+    "legend.frameon": False, "figure.facecolor": HEX["zemin"], "axes.facecolor": HEX["zemin"], "savefig.facecolor": HEX["zemin"],
+    "text.color": HEX["metin"], "legend.labelcolor": HEX["metin"],
     "axes.prop_cycle": matplotlib.cycler(color=[HEX["ana"], HEX["turkuaz"], HEX["turuncu"], HEX["mor"], HEX["sari"]]),
 })
 GRAFIK = {"lac": HEX["murekkep"], "mavi": HEX["ana"], "tur": HEX["turuncu"], "yesil": HEX["yesil"],
-          "kirmizi": HEX["kirmizi"], "sari": HEX["sari"], "gri": HEX["gri"], "acik": "#C7D2FE", "turkuaz": HEX["turkuaz"]}
+          "kirmizi": HEX["kirmizi"], "sari": HEX["sari"], "gri": HEX["gri"], "acik": "#4A3F22", "turkuaz": HEX["turkuaz"]}
 
 # ---------------------------------------------------------------- Metin stilleri
 def _st(ad, **kw):
@@ -96,7 +98,7 @@ class Bolum(Flowable):
     def draw(self):
         c = self.canv
         c.setFillColor(R["ana"]); c.roundRect(0, 6, 22, 22, 6, stroke=0, fill=1)
-        c.setFillColor(colors.white); c.setFont("DVX", 11); c.drawCentredString(11, 12.5, self.no)
+        c.setFillColor(colors.HexColor("#141414")); c.setFont("DVX", 11); c.drawCentredString(11, 12.5, self.no)
         c.setFillColor(R["murekkep"]); c.setFont("DVX", 15); c.drawString(32, 11, self.baslik)
         c.setStrokeColor(R["cizgi"]); c.setLineWidth(0.8); c.line(0, 1, self.gen, 1)
 
@@ -210,6 +212,7 @@ def sayfa_cizici(kod, baslik, tarih, kapak_yuk=0):
 
     def ciz(c, doc):
         c.saveState(); W_, H_ = A4
+        c.setFillColor(R["sayfa"]); c.rect(0, 0, W_, H_, fill=1, stroke=0)
         if doc.page == 1 and kapak_yuk:
             y0 = H_ - kapak_yuk
             c.setFillColor(R["gece"]); c.rect(0, y0, W_, kapak_yuk, fill=1, stroke=0)
@@ -281,7 +284,7 @@ SOZLUK_HISSE = [
 # =====================================================================
 # PRO TARZI BİLEŞENLER
 # =====================================================================
-HEX.update({"altin": "#E8B84A", "altin_acik": "#FBF1D6", "gece": "#0B0B0C", "gece2": "#17181B"})
+HEX.update({"altin": "#E8B84A", "altin_acik": "#2A2313", "gece": "#060607", "gece2": "#131416"})
 R.update({k: colors.HexColor(HEX[k]) for k in ("altin", "altin_acik", "gece", "gece2")})
 
 import re as _re
@@ -320,7 +323,7 @@ class Panel(Flowable):
         return self.gen, self.yuk
     def cerceve(self):
         c = self.canv
-        c.setFillColor(colors.white); c.setStrokeColor(R["cizgi"]); c.setLineWidth(0.8)
+        c.setFillColor(R["zemin"]); c.setStrokeColor(R["cizgi"]); c.setLineWidth(0.8)
         c.roundRect(0, 0, self.gen, self.yuk, 9, stroke=1, fill=1)
         c.setFillColor(R["altin"]); c.roundRect(12, self.yuk - 19, 3, 11, 1.5, stroke=0, fill=1)
         c.setFillColor(R["murekkep"]); c.setFont("DVB", 8.6); c.drawString(20, self.yuk - 17, self.baslik.upper())
@@ -423,7 +426,7 @@ class AralikCubugu(Flowable):
         if self.o is not None:
             c.setStrokeColor(R["murekkep"]); c.setLineWidth(1); c.line(X(self.o), y - 5, X(self.o), y + 5)
             c.setFont("DV", 6.2); c.setFillColor(R["murekkep"]); c.drawCentredString(X(self.o), y + 7, f"{self.oe} {_sayi(self.o)}")
-        c.setFillColor(colors.white); c.setStrokeColor(R["ana"]); c.setLineWidth(1.6); c.circle(X(self.v), y, 4, stroke=1, fill=1)
+        c.setFillColor(R["sayfa"]); c.setStrokeColor(R["ana"]); c.setLineWidth(1.6); c.circle(X(self.v), y, 4, stroke=1, fill=1)
         c.setFont("DV", 6.8); c.setFillColor(R["soluk"])
         c.drawString(x0, 3, f"{_sayi(self.lo)} {self.s}"); c.drawRightString(x1, 3, f"{_sayi(self.hi)} {self.s}")
         c.setFont("DVB", 6.8); c.setFillColor(R["ana"])
@@ -544,7 +547,7 @@ def ozet_paneli(etiket, baslik, gorus, metin, W, alt_bilgi=None):
     if alt_bilgi:
         icerik += [Spacer(1, 4), Paragraph(f'<font color="{HEX["soluk"]}">{alt_bilgi}</font>', _st("oa", fontSize=7, leading=9))]
     t = Table([[icerik]], colWidths=[W])
-    t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")), ("LINEBEFORE", (0, 0), (0, -1), 3, R["altin"]),
+    t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), R["zemin"]), ("LINEBEFORE", (0, 0), (0, -1), 3, R["altin"]),
                            ("BOX", (0, 0), (-1, -1), 0.6, R["cizgi"]), ("LEFTPADDING", (0, 0), (-1, -1), 12), ("RIGHTPADDING", (0, 0), (-1, -1), 12),
                            ("TOPPADDING", (0, 0), (-1, -1), 9), ("BOTTOMPADDING", (0, 0), (-1, -1), 10)]))
     t.hAlign = "LEFT"; return t
