@@ -127,6 +127,8 @@ BANT_STIL = """
 .logo{flex:0 0 auto;width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
       background:linear-gradient(145deg,#F7D98B 0%,#E8B84A 45%,#9C6F1E 100%);
       box-shadow:0 6px 18px rgba(232,184,74,.35),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -2px 0 rgba(0,0,0,.25)}
+.logo-img{flex:0 0 auto;width:46px;height:46px;border-radius:12px;display:block;
+          box-shadow:0 6px 18px rgba(232,184,74,.25),0 0 0 1px rgba(232,184,74,.35)}
 .ad{color:#fff;font-weight:900;font-size:clamp(.86rem,4.3vw,1.12rem);letter-spacing:.01em;line-height:1.1;white-space:nowrap}
 .ad span{color:#E8B84A}
 .alt{white-space:nowrap;color:#9A9BA3;font-size:clamp(.56rem,2.6vw,.68rem);font-weight:600;letter-spacing:.05em;margin-top:3px}
@@ -158,6 +160,19 @@ LOGO = ('<svg width="28" height="28" viewBox="0 0 24 24" fill="none">'
 SERIT = ["BIST 100", "USD/TRY", "Gram altın", "Ons altın", "Bitcoin", "S&P 500", "Nasdaq", "Brent petrol", "Brent", "Gümüş", "EUR/TRY", "Ethereum", "Dolar endeksi", "VIX"]
 
 _HERO = None
+_LOGO = None
+SIMGE_URL = "https://raw.githubusercontent.com/erhankatkay-glitch/bist-rapor/main/varlik/apple-touch-icon.png"
+
+
+def _logo_url():
+    global _LOGO
+    if _LOGO is None:
+        yol = os.path.join(os.path.dirname(os.path.abspath(__file__)), "varlik", "logo_96.png")
+        try:
+            _LOGO = "data:image/png;base64," + base64.b64encode(open(yol, "rb").read()).decode()
+        except Exception:
+            _LOGO = ""
+    return _LOGO
 
 
 def _hero_url():
@@ -207,7 +222,8 @@ def ust_bant(pv=None):
                   for ad, a in piyasa_durumu(t).items())
     hero = _hero_url()
     return ((f'<div class="hero" style="background-image:url({hero})"></div>' if hero else '<div style="height:36px"></div>') +
-            f'<div class="ub"><div class="ust"><div class="marka"><div class="logo">{LOGO}</div>'
+            f'<div class="ub"><div class="ust"><div class="marka">'
+            + (f'<img class="logo-img" src="{_logo_url()}" alt="KATKAY">' if _logo_url() else f'<div class="logo">{LOGO}</div>') +
             f'<div><div class="ad">{MARKA_1} <span>{MARKA_2}</span></div><div class="alt">BIST · ABD · KRİPTO · EMTİA</div></div></div>'
             f'<div class="saat" id="saat">{t:%H:%M}<small id="tarih">{t.day} {ay} {gun} · TSİ</small></div></div>'
             f'<div class="durum">{dur}</div>{_serit(pv)}</div>')
@@ -252,6 +268,16 @@ CANLI_JS = """
     durum("d_bist",t.wd>=1&&t.wd<=5&&dk>=600&&dk<1090); durum("d_abd",n.wd>=1&&n.wd<=5&&ndk>=570&&ndk<960);
   }
   saat(); setInterval(saat,10000);
+  // ---- ana ekran simgesi / sekme simgesi
+  [window.parent, window.top].forEach(w=>{try{
+    const D=w.document; if(D.getElementById("kk-simge")) return;
+    const ek=(rel,extra)=>{const l=D.createElement("link"); l.rel=rel; l.href=__SIMGE__; Object.assign(l,extra||{}); D.head.appendChild(l); return l;};
+    ek("apple-touch-icon").id="kk-simge"; ek("icon",{type:"image/png"});
+    [["apple-mobile-web-app-title","KATKAY"],["application-name","KATKAY Yatırım"],["apple-mobile-web-app-capable","yes"],
+     ["apple-mobile-web-app-status-bar-style","black-translucent"],["theme-color","#0B0B0C"]].forEach(([n,c])=>{
+       const m=D.createElement("meta"); m.name=n; m.content=c; D.head.appendChild(m);});
+    D.title="KATKAY YATIRIM A.Ş.";
+  }catch(e){}});
   // ---- alt gezinme çubuğu (ana sayfaya eklenir, sekmeleri tıklar)
   try{
     const P=window.parent.document, OGE=__OGE__;
@@ -276,7 +302,8 @@ CANLI_JS = """
 
 def ust_bant_sayfa(pv=None):
     import json
-    js = CANLI_JS.replace("__OGE__", json.dumps(NAV_OGE)).replace("__STIL__", json.dumps(NAV_STIL))
+    js = (CANLI_JS.replace("__OGE__", json.dumps(NAV_OGE)).replace("__STIL__", json.dumps(NAV_STIL))
+          .replace("__SIMGE__", json.dumps(SIMGE_URL)))
     return ("<!DOCTYPE html><html><head><meta charset='utf-8'>" + BANT_STIL + "</head><body>" + ust_bant(pv) + js + "</body></html>")
 
 

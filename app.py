@@ -39,7 +39,7 @@ DURUM_EMOJI = {"iyi": "🟢", "orta": "🟡", "zayif": "🔴", "yok": "⚪"}
 ETK_RENK = {"GÜÇLÜ AL": "#22C55E", "AL": "#22C55E", "NÖTR": "#F59E0B", "SAT": "#EF4444", "GÜÇLÜ SAT": "#EF4444"}
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
 
-st.set_page_config(page_title="KATKAY YATIRIM A.Ş.", page_icon="📈", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="KATKAY YATIRIM A.Ş.", page_icon="varlik/favicon.png", layout="centered", initial_sidebar_state="collapsed")
 import uygulama_stil as TS
 TS = importlib.reload(TS)
 st.markdown(TS.STIL, unsafe_allow_html=True)
