@@ -5,7 +5,7 @@ on:
     - cron: "*/30 * * * *"   # 30 dakikada bir: alarmlar + zamanı gelen Telegram mesajlarını sil
   push:
     branches: [main]
-    paths: ["haber.py", "alarm.py"]   # bu dosyalar güncellenince hemen bir tur çalışsın
+    paths: ["haber.py", "alarm.py", "alarmlar.txt"]   # bu dosyalar güncellenince hemen bir tur çalışsın
   workflow_dispatch: {}
 
 permissions:

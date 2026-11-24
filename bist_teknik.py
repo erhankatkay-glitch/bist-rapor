@@ -29,6 +29,11 @@ ETIKETLER = ["GÜÇLÜ SAT", "SAT", "NÖTR", "AL", "GÜÇLÜ AL"]
 # =====================================================================
 # VERİ
 # =====================================================================
+KURESEL = {"USDTRY": ("TRY=X", "Dolar/TL"), "EURTRY": ("EURTRY=X", "Euro/TL"), "DXY": ("DX-Y.NYB", "Dolar endeksi (DXY)"),
+           "SP500": ("^GSPC", "S&P 500"), "NASDAQ": ("^IXIC", "Nasdaq"), "DOW": ("^DJI", "Dow Jones"), "DAX": ("^GDAXI", "DAX"),
+           "VIX": ("^VIX", "VIX korku endeksi"), "US10Y": ("^TNX", "ABD 10 yıllık faiz")}
+
+
 def yahoo_sembol(kod):
     """BIST kodu / emtia / kripto için Yahoo sembolü ve türü."""
     import bist_varlik as V, bist_kripto as KR
@@ -38,8 +43,10 @@ def yahoo_sembol(kod):
     if k in V.VARLIKLAR:
         y, _, tur, *_ = V.VARLIKLAR[k]
         return (y or "GC=F"), tur
-    if k in ("XU100", "XU030", "XBANK", "XUSIN"):
+    if k in ("XU100", "XU030", "XBANK", "XUSIN", "XHOLD"):
         return k + ".IS", "endeks"
+    if k in KURESEL:
+        return KURESEL[k][0], "endeks"
     return k.replace(".IS", "") + ".IS", "hisse"
 
 
@@ -802,7 +809,8 @@ def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A"), kisa_vade=False):
         ad = V.VARLIKLAR[baz][1] if baz in V.VARLIKLAR else KR.ESKI.get(baz, baz)
         ad = f"{ad} ({baz}/{par}{', ' + h.attrs['borsa'] if h.attrs.get('borsa') else ''})"
     else:
-        ad = V.VARLIKLAR[kod][1] if kod in V.VARLIKLAR else {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka"}.get(kod, bv.sirket_adi(kod))
+        ad = V.VARLIKLAR[kod][1] if kod in V.VARLIKLAR else KURESEL[kod][1] if kod in KURESEL else \
+            {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka", "XHOLD": "BIST Holding"}.get(kod, bv.sirket_adi(kod))
     sonuc = {"kod": kod, "ad": ad, "tur": tur, "para": para_k or ("₺" if tur == "hisse" or kod == "GRAMALTIN" else "" if tur == "endeks" else "$"),
              "tf": {}, "fiyat_zamani": h.index[-1]}
     for tf in tfler:

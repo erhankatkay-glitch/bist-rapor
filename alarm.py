@@ -47,6 +47,11 @@ def kurallar(metin):
     return K
 
 
+def _ad(kod):
+    import bist_teknik as T
+    return f"{kod} ({T.KURESEL[kod][1]})" if kod in T.KURESEL else {"XU100": "BIST 100", "XBANK": "BIST Banka"}.get(kod, kod)
+
+
 def _kripto(kod):
     import bist_kripto as KR, bist_varlik as V
     return KR.kripto_mu(kod) or (kod in V.VARLIKLAR and V.VARLIKLAR[kod][2] == "kripto")
@@ -109,7 +114,7 @@ def tara(K, durum):
                 else:
                     gun_anahtar = f"{anahtar}|{bugun}"
                     if abs(d) >= k["deger"] and not durum.get(gun_anahtar):
-                        bildir.append(f"⚡ {k['kod']} bugün {_p(d)} hareket etti (fiyat {_s(p)})")
+                        bildir.append(f"⚡ {_ad(k['kod'])} bugün {_p(d)} hareket etti (fiyat {_s(p)})")
                         yeni[gun_anahtar] = True
             elif k["tip"] in ("rsi", "puan"):
                 s = teknik(k["kod"]); g = s["tf"]["G"]

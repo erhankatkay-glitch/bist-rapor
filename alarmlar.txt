@@ -7,5 +7,58 @@
 # KAP haberi:  ASELS KAP
 # OTOMATIK:    takip listelerindeki tüm varlıklar için formasyon + KAP alarmları
 OTOMATIK
+
+# ---------------- PİYASA BELİRLEYİCİLER ----------------
+# Endeksler ve kur: sert günlük hareket + yeni formasyon/kırılım
+XU100 %2.5
+XU100 FORMASYON
+XBANK %3.5
+XBANK FORMASYON
+USDTRY %1
+USDTRY FORMASYON
+# Küresel yön: ABD borsaları, dolar endeksi, ABD faizi, korku endeksi
+SP500 %1.8
+SP500 FORMASYON
+NASDAQ %2.2
+DXY %0.8
+US10Y %3
+VIX > 25
+# BIST'in ağır topları (endeksi en çok taşıyan hisseler): sert hareket + KAP
+ASELS %5
+THYAO %5
+GARAN %5
+KCHOL %5
+AKBNK %5
+BIMAS %5
+TUPRS %5
+ISCTR %5
+YKBNK %5
+FROTO %5
+SAHOL %5
+EREGL %5
+TCELL %5
+ENKAI %5
+GARAN KAP
+BIMAS KAP
+TUPRS KAP
+ISCTR KAP
+YKBNK KAP
+FROTO KAP
+SAHOL KAP
+EREGL KAP
+TCELL KAP
+ENKAI KAP
+# Emtia
+ALTIN %2
+ALTIN FORMASYON
+GUMUS %3.5
+BRENT %3.5
+BRENT FORMASYON
+# Kripto: piyasayı sürükleyenler
 BTC/USDT %5
+BTC/USDT FORMASYON
 ETH/USDT %6
+ETH/USDT FORMASYON
+SOL/USDT %8
+BNB/USDT %6
+XRP/USDT %8
