@@ -1,0 +1,33 @@
+name: Hisse listesi testi
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: |
+          python - <<'PY'
+          import bist_evren as EV
+          try:
+              b = EV.bist_endeks_bilesenleri()
+              print("BIST dosyası satır:", len(b), "endeksler:", sorted(b["Endeks"].unique())[:15], "...")
+              print("XUTUM:", (b["Endeks"] == "XUTUM").sum(), "XHARZ:", sorted(b.loc[b["Endeks"] == "XHARZ", "Kod"]))
+              print(b.head(5).to_string())
+          except Exception as e:
+              print("BIST dosyası HATA:", repr(e))
+          df, harz, n = EV.bist_listesi()
+          print("TOPLAM:", len(df), "|", n, "| XHARZ:", len(harz))
+          print(df.head(3).to_string())
+          ilk = EV.ilk_islemler(sorted(harz)[:40])
+          liste, resmi = EV.bebekler(df, ilk, harz)
+          print("BEBEK:", len(liste), "resmi:", resmi)
+          for x in liste[:8]: print(x)
+          PY
