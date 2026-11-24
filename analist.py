@@ -20,6 +20,12 @@ def yuzde(x, d=1, isaret=False):
 PARA = "TL"
 
 
+def getiri_ifade(r):
+    """'+%12 getiri sağladı' / '%17 değer kaybetti' (eksi getiriyi doğal dille anlatır)."""
+    if r is None: return "–"
+    return f"{yuzde(r, 1, True)} getiri sağladı" if r >= 0 else f"%{abs(r) * 100:.1f} değer kaybetti".replace(".", ",")
+
+
 def EN():
     import bist_rapor as br
     return br.EN
@@ -270,7 +276,7 @@ def yonetici_ozeti(m, kisa=False):
         if t: C.append(t + ".")
     r1, e1 = m["r"].get("1Y"), m["r_endeks"].get("1Y")
     if r1 is not None:
-        t = f"Hisse son 12 ayda {yuzde(r1, 1, True)} getiri sağladı" + (f" ve {EN()} endeksinin ({yuzde(e1, 1, True)}) {'üzerinde' if r1 > e1 else 'gerisinde'} kaldı" if e1 is not None else "")
+        t = f"Hisse son 12 ayda {getiri_ifade(r1)}" + (f" ve {EN()} endeksinin ({yuzde(e1, 1, True)}) {'üzerinde' if r1 > e1 else 'gerisinde'} kaldı" if e1 is not None else "")
         if (m.get("mta") or {}).get("puan") is None:
             t += f"; teknik göstergeler {TEKNIK_IFADE.get(m['teknik_ozet'], kk(m['teknik_ozet']))} sinyal veriyor" + (
                 f", hacim bazlı göstergeler ise {AKIS_IFADE.get((m.get('akis') or {}).get('ozet'), 'karışık bir görünüme')} işaret ediyor" if m.get("akis") else "") + "."
@@ -299,6 +305,10 @@ def senaryolar(m):
     """Olumlu / olumsuz senaryo metinleri."""
     sc = m.get("senaryo") or {}; out = []
     iy, ko = sc.get("İyimser"), sc.get("Kötümser")
+    adil = m.get("adil")
+    # Tutarlılık: olumlu ≥ baz ≥ olumsuz olmalı; DCF senaryosu bunu bozuyorsa değerleme bandı kullanılır
+    if iy and ko and adil and (iy["deger"] < adil * 1.03 or ko["deger"] > adil * 0.97):
+        iy = ko = None
     if iy and ko:
         out.append(("Olumlu senaryo", fiyat(iy["deger"]), yuzde(iy["deger"] / m["fiyat"] - 1, 1, True),
                     f"Başlangıç büyümesinin {yuzde(iy['g0'])}, serbest nakit akışı marjının {yuzde(iy['marj'])} ve sermaye maliyetinin {yuzde(iy['wacc'])} "
@@ -307,6 +317,8 @@ def senaryolar(m):
                     f"Büyümenin {yuzde(ko['g0'])} seviyesine gerilemesi, marjın {yuzde(ko['marj'])} düzeyinde kalması ve sermaye maliyetinin "
                     f"{yuzde(ko['wacc'])} seviyesine yükselmesi; maliyet baskılarının ve finansman giderlerinin artması."))
     elif m.get("adil_yuksek") and m.get("adil_dusuk"):
+        yu = max(m["adil_yuksek"], (adil or 0) * 1.15); du = min(m["adil_dusuk"], (adil or 1e18) * 0.85)
+        m = dict(m, adil_yuksek=yu, adil_dusuk=du)
         out.append(("Olumlu senaryo", fiyat(m["adil_yuksek"]), yuzde(m["adil_yuksek"] / m["fiyat"] - 1, 1, True),
                     "Değerleme yöntemlerinin üst bandı: kârlılığın sürdürülmesi ve çarpanların emsal ortalamalarına yakınsaması."))
         out.append(("Olumsuz senaryo", fiyat(m["adil_dusuk"]), yuzde(m["adil_dusuk"] / m["fiyat"] - 1, 1, True),
@@ -431,7 +443,7 @@ def bolum_girisi(m, bolum):
         return "Şirket benzer ölçek ve faaliyet alanındaki emsalleriyle temel çarpanlar üzerinden karşılaştırılmıştır."
     if bolum == "fiyat":
         sv = m.get("seviye") or {}; r1, e1 = m["r"].get("1Y"), m["r_endeks"].get("1Y")
-        t = (f"Hisse son 12 ayda {yuzde(r1, 1, True)} getiri sağladı" + (f"; aynı dönemde {EN()} {yuzde(e1, 1, True)}" if e1 is not None else "") + ". ") if r1 is not None else ""
+        t = (f"Hisse son 12 ayda {getiri_ifade(r1)}" + (f"; aynı dönemde {EN()} {yuzde(e1, 1, True)}" if e1 is not None else "") + ". ") if r1 is not None else ""
         if sv.get("destek") and sv.get("direnc"):
             t += f"Fiyat <b>{fiyat(sv['destek'][0][0])}</b> destek ve <b>{fiyat(sv['direnc'][0][0])}</b> direnç bandında hareket ediyor."
         return t

@@ -1,0 +1,56 @@
+name: Deneme – temel analiz (geçici)
+on:
+  push:
+    branches: [deneme-firsat]
+permissions:
+  contents: write
+jobs:
+  deneme:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DURUM_KLON: onceki
+      DURUM_CIKTI: cikti
+      YAYIN_DAL: deneme-cikti
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: git clone -q --depth 1 --branch bulten "$GH_URL" onceki || mkdir -p onceki
+      - name: Raporlar
+        run: |
+          mkdir -p cikti/temel
+          for K in NVDA.US THYAO; do
+            python -c "
+          import bist_rapor as br, traceback
+          try:
+              d, m = br.rapor('$K', klasor='cikti/temel', detay=True)
+              print('$K', 'adil', m.get('adil'), 'pot', m.get('potansiyel'), 'skor', m.get('genel_skor'), 'emsal', len(m.get('emsal_liste') or []), br.PB, br.EN)
+          except Exception: traceback.print_exc()
+          " >> cikti/temel/log.txt 2>&1
+          done
+          python -c "
+          import kart as K, pandas as pd, json
+          d = pd.read_csv('onceki/bist/ozet.csv'); m = json.load(open('onceki/bist/meta.json'))
+          m['endeks'] = dict(m['endeks'], fiyat=10452.3, degisim=-0.012)
+          K.bulten_karti(m, d.to_dict('records'), 'cikti/temel/bkart.png', 'BIST')
+          " >> cikti/temel/log.txt 2>&1
+          printf "THYAO 100 @ 400\nNVDA.US 10 @ 250\nBTC/USDT 0.1 @ 90000\n" > portfoy.txt
+          python -c "
+          import alarm, json
+          durum = {}
+          K = alarm.kurallar('OTOMATIK')
+          import portfoy as P; print(P.takip())
+          b, y = alarm.tara([], durum)
+          print('\n'.join(b))
+          out = alarm.portfoy_kontrol({}, {}, lambda k: __import__('bist_teknik').analiz(k, tfler=('G',)), '2026-11-24')
+          print('\n'.join(alarm.tg_kac(o) for o in out))
+          " >> cikti/temel/log.txt 2>&1 || true
+          tail -60 cikti/temel/log.txt
+      - name: Yayınla
+        if: always()
+        run: python yayinla.py cikti "deneme temel"

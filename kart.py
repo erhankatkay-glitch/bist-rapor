@@ -77,6 +77,7 @@ def _grafik(fig, f, a, kutu):
 
 def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     import firsat as F
+    H = 1660; OF = 160   # alttaki "Basitçe" kutusu için ek alan
     fig = plt.figure(figsize=(W / 100, H / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
     yon = f["yon"]; ana = C["yesil"] if yon == 1 else C["kirmizi"]; p = f["plan"]; g = p["giris"]
@@ -89,12 +90,13 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     if ad and ad not in f["kod"]: _t(ax, 48, H - 180, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
     _kutu(ax, 48, H - 250, 150, 48, ana, r=24)
     _t(ax, 123, H - 234, "AL" if yon == 1 else "SAT", 22, "#FFFFFF", "bold", ha="center")
-    _t(ax, 214, H - 234, textwrap.shorten(f["kurulum_ad"], 40, placeholder="…"), 18, C["yazi"], "medium")
+    ku = f["kurulum_ad"]
+    _t(ax, 214, H - 234, textwrap.shorten(ku, 40 if len(ku) <= 40 else 54, placeholder="…"), 18 if len(ku) <= 40 else 15, C["yazi"], "medium")
     _halka(ax, W - 125, H - 150, 82, f["puan"], ana)
     # ---- grafik
-    _grafik(fig, f, a, [0.045, 0.505, 0.90, 0.30])
+    _grafik(fig, f, a, [0.045, (757 + OF) / H, 0.90, 450 / H])
     # ---- işlem merdiveni
-    y0 = 445; _kutu(ax, 40, y0, W - 80, 290, C["panel"])
+    y0 = 445 + OF; _kutu(ax, 40, y0, W - 80, 290, C["panel"])
     _t(ax, 68, y0 + 252, "İŞLEM PLANI", 15, C["altin"], "semibold")
     _t(ax, W - 68, y0 + 252, f"süre: en fazla {F.SURE_AD[f['tf']](F.MAKS_BAR[f['tf']])}", 14, C["soluk"], ha="right")
     satir = [(f"H{i + 1}", z["fiyat"], C["yesil"], f"{F.rr(z['r'])} · " + ("risk katı hedefi" if z["etiket"].endswith("R hedefi") else z["etiket"]))
@@ -115,13 +117,13 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
                ("RİSK / ÖDÜL", f"1 : {p['hedef'][1]['r']:.1f}".replace(".", ","), "H2'ye göre")]
     bw = (W - 80 - 3 * 16) / 4
     for i, (b, d, alt) in enumerate(kutular):
-        x = 40 + i * (bw + 16); _kutu(ax, x, 300, bw, 125, C["panel"])
-        _t(ax, x + bw / 2, 392, b, 13, C["soluk"], "semibold", ha="center")
-        _t(ax, x + bw / 2, 340, d, 30, C["yazi"], "bold", ha="center")
-        _t(ax, x + bw / 2, 315, alt, 12, C["silik"], ha="center")
+        x = 40 + i * (bw + 16); _kutu(ax, x, 300 + OF, bw, 125, C["panel"])
+        _t(ax, x + bw / 2, 392 + OF, b, 13, C["soluk"], "semibold", ha="center")
+        _t(ax, x + bw / 2, 340 + OF, d, 30, C["yazi"], "bold", ha="center")
+        _t(ax, x + bw / 2, 315 + OF, alt, 12, C["silik"], ha="center")
     # ---- teyit rozetleri
-    _t(ax, 48, 262, "TEYİTLER", 15, C["altin"], "semibold")
-    x, y = 48, 210
+    _t(ax, 48, 262 + OF, "TEYİTLER", 15, C["altin"], "semibold")
+    x, y = 48, 210 + OF
     for metin, ok in f["teyit"]:
         w_ = 30 + 11.2 * len(metin)
         if x + w_ > W - 40: x, y = 48, y - 50
@@ -141,10 +143,29 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     for r_ in (f.get("risk") or [])[:2]:
         ax.add_patch(Circle((58, y + 7), 7, color=C["altin"])); _t(ax, 76, y, textwrap.shorten(r_, 92, placeholder="…"), 16, C["altin"])
         y -= 34
+    # ---- basitçe (bilmeyenin anlayacağı dil)
+    _kutu(ax, 40, 40, W - 80, 172, C["panel2"], kenar=C["altin"])
+    _t(ax, 68, 182, "BASİTÇE", 14, C["altin"], "semibold")
+    for i_, sat_ in enumerate(textwrap.wrap(basitce(f), 82)[:4]):
+        _t(ax, 68, 150 - i_ * 28, sat_, 17, C["yazi"])
     # ---- alt bilgi
-    _t(ax, W / 2, 22, "Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    _t(ax, W / 2, 16, "Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
     return dosya
+
+
+def basitce(f):
+    """Teknik bilgisi olmayan biri için tek paragraflık işlem anlatımı."""
+    p = f["plan"]; g, st = p["giris"], p["stop"]; h1, h2 = p["hedef"][0]["fiyat"], p["hedef"][1]["fiyat"]
+    yz_ = lambda x: f"%{abs(x) * 100:.1f}".replace(".", ",")
+    risk, k1, k2 = yz_(st / g - 1), yz_(h1 / g - 1), yz_(h2 / g - 1)
+    if f["yon"] == 1:
+        return (f"{_fy(g)} civarından alım düşünülebilir. Fiyat {_fy(st)} seviyesinin altına inerse işlem geçersiz sayılır ve zarar "
+                f"kesilir (yaklaşık {risk}). Yükselişte ilk kâr {_fy(h1)} seviyesinde ({k1}) alınır, stop alış fiyatına "
+                f"çekilir; böylece kalan pozisyon zararsız taşınır. Sonraki hedef {_fy(h2)} ({k2}).")
+    return (f"Fiyatın düşmesi beklenir (vadeli işlemde açığa satış). {_fy(g)} civarından satış pozisyonu düşünülebilir. Fiyat {_fy(st)} "
+            f"seviyesinin üzerine çıkarsa işlem kapatılır (yaklaşık {risk} zarar). Düşüşte ilk kâr {_fy(h1)} seviyesinde "
+            f"({k1}) alınır, stop giriş fiyatına çekilir. Sonraki hedef {_fy(h2)} ({k2}).")
 
 
 def baslik_metni(f):
@@ -154,3 +175,124 @@ def baslik_metni(f):
     h = " · ".join(f"H{i + 1} <b>{F.fy(z['fiyat'])}</b>" for i, z in enumerate(p["hedef"]))
     return (f"{'🟢' if f['yon'] == 1 else '🔴'} <b>{F._e(F.gorunen(f['kod'], f.get('ad')))} · {'AL' if f['yon'] == 1 else 'SAT'}</b> · puan <b>{f['puan']:.0f}</b>\n"
             f"Giriş <b>{F.fy(g)}</b> · Stop <b>{F.fy(p['stop'])}</b> ({F.yz((p['stop'] - g) / g)})\n{h}")
+
+
+# ================================================================== KAPANIŞ BÜLTENİ KARTI
+ETIKET_RENK = {"GÜÇLÜ AL": "#16A34A", "AL": "#4ADE80", "NÖTR": "#64748B", "SAT": "#F87171", "GÜÇLÜ SAT": "#DC2626"}
+
+
+def _kod(k):
+    k = str(k)
+    return k[:-3] if k.endswith(".US") else k.replace("/USDT", "").replace("/TRY", "").replace("@OKX", "")
+
+
+def piyasa_yorumu(df, meta):
+    """Bilmeyenin de anlayacağı 2–3 cümlelik günün özeti."""
+    n = len(df); E = meta.get("endeks") or {}
+    if "Değişim" in df: df = df[df["Değişim"].abs() <= 0.6]
+    yuk = int((df["Değişim"] > 0).sum()) if "Değişim" in df else 0; dus = int((df["Değişim"] < 0).sum()) if "Değişim" in df else 0
+    al = int(df["Genel"].isin(["AL", "GÜÇLÜ AL"]).sum()); sat = int(df["Genel"].isin(["SAT", "GÜÇLÜ SAT"]).sum())
+    if E.get("puan") is not None:
+        p = E["puan"]
+        ton = ("alıcılar güçlü" if p >= 70 else "alıcılar önde" if p >= 58 else "kararsız bir görünüm hâkim" if p > 42 else "satıcılar önde" if p > 30 else "satıcılar güçlü")
+        c1 = f"{E['ad']} teknik puanı {p:.0f}/100: {ton}."
+    else:
+        c1 = ""
+    c2 = (f"Bugün {n} varlıktan {yuk} tanesi yükseldi, {dus} tanesi düştü" if n else "") + (
+        f"; teknik görünümü AL olanların oranı %{al / n * 100:.0f}, SAT olanların %{sat / n * 100:.0f}." if n else "")
+    k = int(df["Kırılım"].sum()) if "Kırılım" in df else 0; k2 = int(df["Kırılım −"].sum()) if "Kırılım −" in df else 0
+    c3 = (f"{k} yukarı ve {k2} aşağı kırılım var; " if k or k2 else "") + (
+        "yukarı kırılımların fazlası alıcıların toparlandığına işaret ediyor." if k > k2 * 1.3 else
+        "aşağı kırılımların fazlası satış baskısının sürdüğünü gösteriyor." if k2 > k * 1.3 else "iki taraf dengede.")
+    return " ".join(x for x in (c1, c2, c3) if x)
+
+
+def bulten_karti(meta, satir, dosya, piyasa_ad):
+    import pandas as pd, tg
+    df = pd.DataFrame(satir)
+    fig = plt.figure(figsize=(W / 100, H / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
+    ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
+    ax.add_patch(Rectangle((0, H - 8), W, 8, color=C["altin"]))
+    _t(ax, 48, H - 70, f"{tg.buyuk(piyasa_ad)}  ·  KAPANIŞ ÖZETİ", 15, C["altin"], "semibold")
+    import datetime as _dt
+    try: tarih = _dt.date.fromisoformat(str(meta["kapanis"])[:10]).strftime("%d.%m.%Y")
+    except Exception: tarih = str(meta["kapanis"])
+    _t(ax, W - 48, H - 70, tarih, 15, C["soluk"], ha="right")
+    E = meta.get("endeks") or {}
+    # --- endeks paneli
+    _kutu(ax, 40, H - 330, W - 80, 230, C["panel"])
+    _t(ax, 72, H - 150, E.get("ad", ""), 22, C["soluk"], "medium")
+    if E.get("fiyat"):
+        _t(ax, 72, H - 225, _fy(E["fiyat"]), 58, weight="bold")
+        if E.get("degisim") is not None:
+            d = E["degisim"]; _t(ax, 72, H - 280, _yz(d) + "  bugün", 24, C["yesil"] if d >= 0 else C["kirmizi"], "semibold")
+    if E.get("puan") is not None:
+        renk = ETIKET_RENK.get(E.get("etiket"), C["altin"])
+        _halka(ax, W - 170, H - 215, 88, E["puan"], renk)
+        _t(ax, W - 170, H - 322, E.get("etiket", ""), 17, renk, "bold", ha="center")
+    # --- piyasa genişliği
+    n = len(df); y0 = H - 470
+    _t(ax, 48, y0 + 105, "PİYASA GENİŞLİĞİ", 15, C["altin"], "semibold")
+    _t(ax, W - 48, y0 + 105, f"{n:,} varlık".replace(",", "."), 15, C["soluk"], ha="right")
+    if n:
+        x = 48; ws = W - 96
+        for et in ("GÜÇLÜ AL", "AL", "NÖTR", "SAT", "GÜÇLÜ SAT"):
+            k = int((df["Genel"] == et).sum()); w_ = ws * k / n
+            if w_ > 0:
+                ax.add_patch(Rectangle((x, y0 + 40), w_, 34, color=ETIKET_RENK[et]))
+                if w_ > 70: _t(ax, x + w_ / 2, y0 + 50, f"%{k / n * 100:.0f}", 15, "#FFFFFF", "bold", ha="center")
+            x += w_
+        xs = 48
+        for et in ("GÜÇLÜ AL", "AL", "NÖTR", "SAT", "GÜÇLÜ SAT"):
+            ax.add_patch(Rectangle((xs, y0 + 8), 14, 14, color=ETIKET_RENK[et])); _t(ax, xs + 22, y0 + 9, et.title().replace("Güçlü", "Güçlü"), 13, C["soluk"])
+            xs += 190
+    # --- günün özeti
+    yor = piyasa_yorumu(df, meta)
+    y1 = y0 - 190; _kutu(ax, 40, y1, W - 80, 170, C["panel2"], kenar=C["altin"])
+    _t(ax, 68, y1 + 135, "GÜNÜN ÖZETİ", 14, C["altin"], "semibold")
+    for i, sat_ in enumerate(textwrap.wrap(yor, 78)[:4]):
+        _t(ax, 68, y1 + 100 - i * 30, sat_, 18, C["yazi"])
+    # --- en güçlüler & günün en çok yükselen/düşenleri
+    y2 = y1 - 40
+    _t(ax, 48, y2, "EN GÜÇLÜ TEKNİK GÖRÜNÜM", 15, C["altin"], "semibold")
+    _t(ax, 580, y2, "GÜNÜN HAREKETLİLERİ", 15, C["altin"], "semibold")
+    top = df.nlargest(5, "Teknik puan") if n else df
+    for i, (_, r) in enumerate(top.iterrows()):
+        yy = y2 - 50 - i * 46
+        _t(ax, 48, yy, _kod(r["Kod"]), 20, weight="bold")
+        ax.add_patch(Rectangle((210, yy - 2), 260, 18, color=C["cizgi"]))
+        ax.add_patch(Rectangle((210, yy - 2), 260 * r["Teknik puan"] / 100, 18, color=C["yesil"]))
+        _t(ax, 485, yy, f"{r['Teknik puan']:.0f}", 18, C["yesil"], "bold")
+    if n and "Değişim" in df:
+        g = df.dropna(subset=["Değişim"])
+        # Veri hatası / bölünme-bedelsiz düzeltmesi kaynaklı uç değerleri ele (BIST günlük limit ±%10, yeni arzlarda ±%20)
+        g = g[g["Değişim"].abs() <= (0.205 if piyasa_ad == "BIST" else 0.6)]
+        hk = list(g.nlargest(3, "Değişim").itertuples()) + list(g.nsmallest(2, "Değişim").itertuples())
+        for i, r in enumerate(hk):
+            yy = y2 - 50 - i * 46
+            _t(ax, 580, yy, _kod(r.Kod), 20, weight="bold")
+            _t(ax, W - 48, yy, _yz(r.Değişim), 20, C["yesil"] if r.Değişim >= 0 else C["kirmizi"], "bold", ha="right")
+    # --- sinyal rozetleri
+    y3 = y2 - 300
+    def satir_(baslik, kodlar, renk, y):
+        _t(ax, 48, y, baslik, 15, renk, "semibold")
+        x = 48; y_ = y - 50
+        for k in kodlar[:8]:
+            m = _kod(k); w_ = 28 + 13 * len(m)
+            if x + w_ > W - 40: break
+            _kutu(ax, x, y_, w_, 36, C["panel2"], r=18, kenar=renk); _t(ax, x + w_ / 2, y_ + 11, m, 16, renk, "semibold", ha="center"); x += w_ + 10
+        return y - 95
+    if n:
+        k = df[df["Kırılım"]].nlargest(8, "Teknik puan")["Kod"].tolist() if "Kırılım" in df else []
+        if k: y3 = satir_("YUKARI KIRILIMLAR", k, C["yesil"], y3)
+        if "Balina" in df:
+            b = df["Balina"].fillna("").astype(str)
+            k = df[b.str.contains("alımı|birikim|Alım emilimi")].nlargest(8, "Teknik puan")["Kod"].tolist()
+            if k: y3 = satir_("BALİNA ALIMI / BİRİKİM", k, C["turkuaz"], y3)
+        k = df[df["Kırılım −"]].nsmallest(8, "Teknik puan")["Kod"].tolist() if "Kırılım −" in df else []
+        if k and y3 > 140: y3 = satir_("AŞAĞI KIRILIMLAR", k, C["kirmizi"], y3)
+        k = df[df["RSI"] < 30].nsmallest(8, "RSI")["Kod"].tolist() if "RSI" in df else []
+        if k and y3 > 140: y3 = satir_("AŞIRI SATIM (TEPKİ ADAYI)", k, C["altin"], y3)
+    _t(ax, W / 2, 22, "Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
+    return dosya

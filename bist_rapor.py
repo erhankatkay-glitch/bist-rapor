@@ -46,6 +46,11 @@ ABD_PARAM = {"RF": 0.043,          # ABD 10 yıllık tahvil
              "ERP": 0.050, "TERMINAL_G": 0.025, "ENFLASYON": 0.029, "VERGI": 0.21}
 
 
+def AN_getiri(r):
+    import analist as AN
+    return AN.getiri_ifade(r)
+
+
 def SYM():
     return "$" if PIYASA == "abd" else "₺"
 
@@ -594,7 +599,7 @@ def metrikler(d, endeks=None):
     info, h = d["info"], d["hist"]
     A, B, N = d["gelir"], d["bilanco"], d["nakit"]
     qA, qB, qN = d.get("q_gelir"), d.get("q_bilanco"), d.get("q_nakit")
-    m = {"kod": d["kod"], "ad": BV.ad(d["kod"]) or info.get("longName") or info.get("shortName") or d["kod"],
+    m = {"kod": d["kod"][:-3] if d["kod"].endswith(".US") else d["kod"], "kod_tam": d["kod"], "ad": BV.ad(d["kod"]) or info.get("longName") or info.get("shortName") or d["kod"],
          "sektor": info.get("sector") or "–", "sanayi": info.get("industry") or "–"}
     m["finansal"] = finansal_mi(info, d["kod"]); m["kur_notu"] = d.get("kur_notu")
     m["kaynak"] = d.get("kaynak", "Yahoo Finance"); m["kaynak_hata"] = d.get("kaynak_hata")
@@ -1281,7 +1286,7 @@ def yatirim_ozeti(m):
                  f"karşılaştırıldığında {'reel getiri yaratıldığını' if m['roe'] > PARAM['ENFLASYON'] else 'reel bazda getiri üretilemediğini'} gösteriyor.")
     if m["r"].get("1Y") is not None:
         e1 = m["r_endeks"].get("1Y")
-        c.append(f"Hisse son bir yılda {yz(m['r']['1Y'])} getiri sağladı" + (f" ({EN}: {yz(e1)})" if e1 is not None else "") +
+        c.append(f"Hisse son bir yılda {AN_getiri(m['r']['1Y'])}" + (f" ({EN}: {yz(e1)})" if e1 is not None else "") +
                  f"; teknik görünüm <b>{kucuk(m['teknik_ozet'])}</b>.")
     return " ".join(c)
 
@@ -1383,7 +1388,7 @@ def kisaca(m, bolum):
         return "Benzer şirketlerle oranlar karşılaştırılır; daha düşük F/K ve PD/DD, görece ucuzluğa işaret eder."
     if bolum == "fiyat":
         sv = m.get("seviye") or {}
-        t = f"Son 1 yılda hisse {yz(m['r'].get('1Y'), 0)} " + (f"({EN} {yz(m['r_endeks'].get('1Y'), 0)}) " if m["r_endeks"].get("1Y") is not None else "") + "getiri sağladı. "
+        t = f"Son 1 yılda hisse {AN_getiri(m['r'].get('1Y'))}" + (f" ({EN}: {yz(m['r_endeks'].get('1Y'), 0)})" if m["r_endeks"].get("1Y") is not None else "") + ". "
         if sv.get("destek") and sv.get("direnc"):
             t += f"Fiyat şu anda <b>{tl(sv['destek'][0][0])} {PB}</b> desteği ile <b>{tl(sv['direnc'][0][0])} {PB}</b> direnci arasında."
         return t
@@ -1697,7 +1702,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
 
     # ---------------- SAYFA 1: PRO ÖZET ----------------
     _sek = AN.sektor_adi(m)[1]
-    E += TS.pro_kapak(m["ad"], f"{'ABD: ' + m['kod'][:-3] if PIYASA == 'abd' else 'BIST: ' + m['kod']}  ·  {_sek[:1].upper() + _sek[1:] if _sek else 'Hisse'}  ·  {m['tarih']:%d.%m.%Y}  ·  Kaynak: {str(m.get('kaynak', 'Yahoo')).split(' (')[0]}",
+    E += TS.pro_kapak(m["ad"], f"{('ABD: ' if PIYASA == 'abd' else 'BIST: ') + m['kod']}  ·  {_sek[:1].upper() + _sek[1:] if _sek else 'Hisse'}  ·  {m['tarih']:%d.%m.%Y}  ·  Kaynak: {str(m.get('kaynak', 'Yahoo')).split(' (')[0]}",
                       f"{tl(m['fiyat'])} {SYM()}", m["r"].get("1G"), W,
                       rozet=f"MODEL GÖRÜŞÜ: {m['gorus'].upper()}" if m.get("gorus") not in (None, "–") else None,
                       guncel=f"Fiyat: {TS.zaman_metni(m.get('fiyat_zamani') or m['tarih'])} (~15 dk gecikmeli)  ·  Son mali tablo: "
