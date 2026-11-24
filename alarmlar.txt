@@ -12,6 +12,8 @@ OTOMATIK
 # Endeksler ve kur: sert günlük hareket + yeni formasyon/kırılım
 XU100 %2.5
 XU100 FORMASYON
+XU030 %2.5
+XU030 FORMASYON
 XBANK %3.5
 XBANK FORMASYON
 USDTRY %1
@@ -52,6 +54,7 @@ ENKAI KAP
 ALTIN %2
 ALTIN FORMASYON
 GUMUS %3.5
+GUMUS FORMASYON
 BRENT %3.5
 BRENT FORMASYON
 # Kripto: piyasayı sürükleyenler

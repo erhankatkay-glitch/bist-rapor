@@ -49,7 +49,7 @@ def kurallar(metin):
 
 def _ad(kod):
     import bist_teknik as T
-    return f"{kod} ({T.KURESEL[kod][1]})" if kod in T.KURESEL else {"XU100": "BIST 100", "XBANK": "BIST Banka"}.get(kod, kod)
+    return f"{kod} ({T.KURESEL[kod][1]})" if kod in T.KURESEL else {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka"}.get(kod, kod)
 
 
 def _kripto(kod):
@@ -136,7 +136,9 @@ def tara(K, durum):
                 if _kripto(k["kod"]) or k["kod"] in V.VARLIKLAR: continue
                 for x in BB.kap_haberleri(k["kod"], bv.sirket_adi(k["kod"]), gun=3, adet=6):
                     a2 = f"{k['kod']}|KAP|{x['baslik'][:80]}"
-                    if not durum.get(a2):
+                    konu_gun = f"{k['kod']}|KAPKONU|{x['konu']}|{bugun}"   # aynı konuda günde tek bildirim
+                    if not durum.get(a2) and not durum.get(konu_gun) and not yeni.get(konu_gun):
+                        yeni[konu_gun] = True
                         bildir.append(f"📰 {k['kod']} · {x['konu']}: {x['baslik'][:140]}")
                         yeni[a2] = True
         except Exception as ex:
