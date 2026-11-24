@@ -207,6 +207,42 @@ def veri_cek(kod, hafif=False):
         d["temettu"] = _naive(t.dividends) if not hafif else pd.Series(dtype=float)
     except Exception:
         d["temettu"] = pd.Series(dtype=float)
+    fin_pb = (info.get("financialCurrency") or "").upper()
+    pb = (info.get("currency") or "TRY").upper()
+    d["kur_notu"] = None
+    if fin_pb and fin_pb != pb:
+        try:
+            fx = _naive(yf.Ticker(f"{fin_pb}{pb}=X").history(period="10y"))["Close"]
+            kur_cevir(d, fx)
+            d["kur_notu"] = f"Finansallar {fin_pb} raporlanmış; dönem sonu {fin_pb}/{pb} kuruyla TL'ye çevrildi."
+        except Exception as ex:
+            d["kur_notu"] = f"UYARI: Finansallar {fin_pb} cinsinden, kur çevrimi yapılamadı ({ex}); oranlar hatalı olabilir."
+    return d
+
+_KUR_DISI = ("Share", "Shares", "Tax Rate", "Ordinary Shares Number")
+
+def kur_cevir(d, fx):
+    """Finansallar farklı para biriminde raporlanmışsa (örn. THYAO: USD) her dönemi
+    o dönem sonu kuruyla TL'ye çevirir. Hisse adedi ve oran satırları çevrilmez."""
+    fx = fx.dropna().sort_index()
+    if fx.empty:
+        return d
+    def oran(t):
+        s = fx[fx.index <= t]
+        return float(s.iloc[-1]) if len(s) else float(fx.iloc[0])
+    for k in ("gelir", "bilanco", "nakit", "q_gelir", "q_bilanco", "q_nakit"):
+        df = d.get(k)
+        if df is None or not isinstance(df, pd.DataFrame) or df.empty:
+            continue
+        df = df.copy()
+        maske = [not any(x in str(i) for x in _KUR_DISI) for i in df.index]
+        for c in df.columns:
+            try:
+                r = oran(pd.Timestamp(c).tz_localize(None) if pd.Timestamp(c).tzinfo else pd.Timestamp(c))
+            except Exception:
+                continue
+            df.loc[maske, c] = pd.to_numeric(df.loc[maske, c], errors="coerce") * r
+        d[k] = df
     return d
 
 def endeks_cek():
@@ -229,7 +265,7 @@ def metrikler(d, endeks=None):
     qA, qB, qN = d.get("q_gelir"), d.get("q_bilanco"), d.get("q_nakit")
     m = {"kod": d["kod"], "ad": info.get("longName") or info.get("shortName") or d["kod"],
          "sektor": info.get("sector") or "–", "sanayi": info.get("industry") or "–"}
-    m["finansal"] = finansal_mi(info, d["kod"])
+    m["finansal"] = finansal_mi(info, d["kod"]); m["kur_notu"] = d.get("kur_notu")
     kap = h["Close"].dropna(); p = float(kap.iloc[-1]); m["fiyat"] = p
     m["tarih"] = kap.index[-1]
 
@@ -936,6 +972,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     # ---------------- SAYFA 1: ÖZET ----------------
     E.append(Paragraph(f"{m['ad']}", ST["h1"]))
     E.append(Paragraph(f'<font color="#6B7280">BIST: {m["kod"]}  ·  {m["sektor"]} / {m["sanayi"]}  ·  Veri tarihi {m["tarih"]:%d.%m.%Y}</font>', ST["p"]))
+    if m.get("kur_notu"):
+        E.append(Paragraph(f'<font color="#6B7280">ⓘ {m["kur_notu"]}</font>', ST["kucuk"]))
     E.append(Spacer(1, 7))
     kw = W / 4 - 3
     satir1 = [kutu("SON FİYAT", f"{tl(m['fiyat'])} TL", f"52H: {tl(m['dip52'])} – {tl(m['zirve52'])}"),
