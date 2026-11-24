@@ -43,7 +43,7 @@ def cek(timeout=40):
     T = pd.read_excel(io.BytesIO(zf.read(ad)), sheet_name=None, header=None)
     df = T.get("T1")
     if df is None: df = next(v for k, v in T.items() if str(k).strip().upper() == "T1")
-    etiket = df.iloc[:, 1].astype(str).str.strip()
+    etiket = df.iloc[:, 1].map(lambda v: "" if pd.isna(v) else str(v).strip())   # pandas 3: astype(str) NaN'ı korur
 
     def blok(baslik):
         i = next(k for k, e in enumerate(etiket) if e.upper().startswith(baslik))
