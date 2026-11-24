@@ -1,0 +1,61 @@
+Emtia: 16 varlık saatlik veri
+emtia: 16 varlık, veri indiriliyor…
+Analiz: 16 tamam, 0 hata
+Yazıldı: cikti/emtia
+emtia G: 16 varlık, 5 aday, 1 fırsat (2 sn)
+[Telegram kapalı] firsat:emtia:G:
+🎯 Emtia · Günlük fırsatlar
+Mum: 24.11.2026 · 16 likit varlık tarandı · 1 fırsat
+
+🟢 DOGALGAZ · AL · Puan 58/100
+Kurulum: İkili dip – teyit + Trend içi geri çekilme
+Giriş: 3,61 (bölge 3,55 – 3,63)
+Stop: 3,04 (−%15,8) · son yapı + ATR payı
+H1: 4,32 (+%19,6) · 1,2R · Fib uzantı %161,8 — yarısını kapat, stopu girişe çek
+H2: 5,14 (+%42,2) · 2,7R · direnç (3 temas) — %30'unu kapat
+H3: 5,58 (+%54,5) · 3,4R · direnç (14 temas) — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 20 günlük mum
+Geçmiş: bu varlıkta 20 örnek, H1'e stoptan önce ulaşma %30, ort. +0,09R
+Teyit: Haftalık AL (70) ✓ · Günlük puanı 88 ✓ · Hacim 0,2x ✗ · RSI 64 ✓ · ADX 28 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 93 ✓
+
+Plan: H1'de pozisyonun yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 görülünce stop girişe çekilir. Model çıktısıdır, yatırım tavsiyesi değildir.
+
+emtia H: 16 varlık, 2 aday, 1 fırsat (0 sn)
+[Telegram kapalı] firsat:emtia:H:
+🎯 Emtia · Haftalık fırsatlar
+Mum: 27.11.2026 haftası · 16 likit varlık tarandı · 1 fırsat
+
+🟢 PAMUK · AL · Puan 60/100
+Kurulum: Trend içi geri çekilme
+Giriş: 81,21 (bölge 80,03 – 81,60)
+Stop: 73,67 (−%9,3) · son yapı + ATR payı
+H1: 91,76 (+%13,0) · 1,4R · önceki tepe (04.09.2026) — yarısını kapat, stopu girişe çek
+H2: 100,70 (+%24,0) · 2,6R · Fib uzantı %127,2 — %30'unu kapat
+H3: 106,86 (+%31,6) · 3,4R · direnç (1 temas) — kalanı kapat
+Süre: giriş 1 mum içinde; plan en fazla 12 hafta
+Geçmiş: bu varlıkta 7 örnek, H1'e stoptan önce ulaşma %43, ort. +0,69R | piyasa geneli %41 (216 örnek)
+Teyit: Aylık GÜÇLÜ AL (79) ✓ · Haftalık puanı 60 ✓ · Hacim 53,7x ✓ · RSI 54 ✓ · ADX 22 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 74 ✓
+🐋 Balina: Balina alımı (06.11.2026) · Balina satışı (20.11.2026) · Balina alımı (27.11.2026)
+
+Plan: H1'de pozisyonun yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 görülünce stop girişe çekilir. Model çıktısıdır, yatırım tavsiyesi değildir.
+
+emtia A: 16 varlık, 0 aday, 0 fırsat (0 sn)
+[Telegram kapalı] bulten:emtia:
+📊 Kapanış Teknik Bülteni – Emtia
+Kapanış: 2026-11-24 · 16 varlık
+Altın (ons): GÜÇLÜ SAT (16/100)
+
+🟢 En güçlü: SOYA (74), DOGALGAZ (72), PAMUK (72), SEKER (52), BUGDAY (52), MISIR (50)
+🚀 Yukarı kırılım: SOYA, DOGALGAZ, PAMUK, MISIR, KAKAO
+⚠️ Aşağı kırılım: PALADYUM, KAHVE, PLATIN, WTI, BRENT
+🐋 Balina alımı/birikim: SOYA
+🐋 Balina satışı/dağıtım: GUMUS, BAKIR, KAKAO, SOYA
+🔻 Aşırı satım: PLATIN, BAKIR, PALADYUM, GUMUS
+
+Tüm liste, grafikler ve raporlar uygulamanın Teknik sekmesinde.
+Model çıktısıdır, yatırım tavsiyesi değildir.
+
+
+real	0m33.114s
+user	0m29.659s
+sys	0m0.573s

@@ -1,0 +1,38 @@
+ABD: 1917 likit hisse için saatlik veri indiriliyor…
+Saatlik veri: 1917 hisse
+abd 4S: 1910 varlık, 99 aday, 5 fırsat (30 sn)
+[Telegram kapalı] firsat:abd:4S:
+🎯 ABD · 4 saatlik fırsatlar
+Mum: 24.11.2026 00:00 TSİ · 1910 likit varlık tarandı · 5 fırsat
+
+🟢 CCC.US · AL · Puan 78/100
+Kurulum: Trend içi geri çekilme
+Giriş: 7,70 (bölge 7,70 – 7,71)
+Stop: 7,64 (−%0,8) · son yapı + ATR payı
+H1: 7,79 (+%1,1) · 1,4R · pivot R3 — yarısını kapat, stopu girişe çek
+H2: 7,91 (+%2,6) · 3,2R · direnç (1 temas) — %30'unu kapat
+H3: 7,97 (+%3,5) · 4,2R · 4,2R hedefi — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 30 adet 4 saatlik mum
+Geçmiş: bu varlıkta 6 örnek, H1'e stoptan önce ulaşma %50, ort. +0,42R | piyasa geneli %48 (14.790 örnek)
+Teyit: Günlük GÜÇLÜ AL (79) ✓ · 4 saatlik puanı 76 ✓ · Hacim 3,4x ✓ · RSI 58 ✓ · ADX 22 ✓ · EMA50/SMA200 trend uyumlu ✓
+🐋 Balina: Balina alımı (20.11 09:30) · Balina satışı (20.11 13:30) · Alım emilimi (absorption) (23.11 09:30)
+
+🟢 ALRM.US · AL · Puan 74/100
+Kurulum: Ters omuz-baş-omuz (TOBO) – teyit + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme
+Giriş: 66,84 (bölge 66,48 – 66,96)
+Stop: 64,24 (−%3,9) · son yapı + ATR payı
+H1: 71,48 (+%6,9) · 1,8R · formasyonun ölçtüğü hedef — yarısını kapat, stopu girişe çek
+H2: 74,09 (+%10,9) · 2,8R · Fib uzantı %127,2 — %30'unu kapat
+H3: 80,07 (+%19,8) · 5,1R · Fib uzantı %161,8 — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 30 adet 4 saatlik mum
+Geçmiş: bu varlıkta 12 örnek, H1'e stoptan önce ulaşma %42, ort. +0,60R
+Teyit: Günlük AL (73) ✓ · 4 saatlik puanı 76 ✓ · Hacim 1,0x ✗ · RSI 58 ✓ · ADX 22 ✓ · EMA50/SMA200 trend uyumlu ✓
+🐋 Balina: Sessiz bir
+
+
+real	6m55.948s
+user	3m1.240s
+sys	0m3.957s
+Crumb fetch rate-limited (HTTP 429), continuing without crumb
+{'tur': 'ABD bilançosu', 'yon': 1, 'etki': [('NVDA.US', 1, 'bilanço beklentileri aştı; kazanç tahminleri yukarı revize edilebilir'), ('NASDAQ', 1, 'endeksteki ağırlığı yüksek dev şirket; endeksi aynı yönde etkiler')], 'onem': 2}
+{'degisim': -0.0728664601612693, 'hacim_k': 1.5898526984637569, 'p0': 165.1649932861328, 'p1': 153.1300048828125, 'oyn': 0.07080985707946748, 'saat': 3}

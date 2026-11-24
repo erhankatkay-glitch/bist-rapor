@@ -1,0 +1,114 @@
+Hisse evreni: 629 · Borsa İstanbul endeks bileşenleri (578 hisse) · İş Yatırım (629 hisse)
+BIST: 629 hisse için saatlik veri indiriliyor…
+$ISATR.IS: possibly delisted; no price data found  (period=180d)
+
+1 Failed download:
+['ISATR.IS']: possibly delisted; no price data found  (period=180d)
+Saatlik veri: 627 hisse
+bist 4S: 304 varlık, 6 aday, 2 fırsat (3 sn)
+GMTAS.IS: No earnings dates found, symbol may be delisted
+EGGUB.IS: No earnings dates found, symbol may be delisted
+[Telegram kapalı] firsat:bist:4S:
+🎯 BIST · 4 saatlik fırsatlar
+Mum: 24.11.2026 14:00 TSİ · 304 likit varlık tarandı · 2 fırsat
+
+🟢 GMTAS · AL · Puan 61/100
+Kurulum: Düşen trend çizgisi kırıldı – kırılım
+Giriş: 46,36 (bölge 45,88 – 46,52)
+Stop: 44,77 (−%3,4) · son yapı + ATR payı
+H1: 48,31 (+%4,2) · 1,2R · pivot R1 — yarısını kapat, stopu girişe çek
+H2: 50,25 (+%8,4) · 2,4R · pivot R2 — %30'unu kapat
+H3: 51,69 (+%11,5) · 3,4R · direnç (1 temas) — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 30 adet 4 saatlik mum
+Geçmiş: bu varlıkta 14 örnek, H1'e stoptan önce ulaşma %50, ort. +0,01R
+Teyit: Günlük NÖTR (56) ✓ · 4 saatlik puanı 59 ✓ · Hacim 7,4x ✓ · RSI 49 ✗ · ADX 27 ✓
+🐋 Balina: Balina alımı (24.11.2026)
+
+🟢 EGGUB · AL · Puan 56/100
+Kurulum: Hacimli kırılım
+Giriş: 95,95 (bölge 94,50 – 95,95)
+Stop: 91,41 (−%4,7) · son yapı + ATR payı
+H1: 101,45 (+%5,7) · 1,2R · pivot R2 — yarısını kapat, stopu girişe çek
+H2: 105,89 (+%10,4) · 2,2R · önceki tepe (23.09.2026) — %30'unu kapat
+H3: 112,89 (+%17,7) · 3,7R · önceki tepe (14.09.2026) — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 30 adet 4 saatlik mum
+Geçmiş: bu varlıkta 5 örnek, H1'e stoptan önce ulaşma %40, ort. −0,06R | piyasa geneli %50 (1.171 örnek)
+Teyit: Günlük GÜÇLÜ AL (82) ✓ · 4 saatlik puanı 90 ✓ · Hacim 4,6x ✓ · RSI 68 ✓ · ADX 31 ✓
+🐋 Balina: Balina alımı (23.11.2026) · Balina alımı (24.11.2026)
+⚠️ 99,78 seviyesinde direnç (27 temas) H1'den önce engel (0,8R) · Bu varlıkta bu kurulumun geçmiş ortalaması negatif (−0,06R)
+
+Plan: H1'de pozisyonun yarı
+
+Hisse evreni: 629 · Borsa İstanbul endeks bileşenleri (578 hisse) · İş Yatırım (629 hisse)
+bist: 629 varlık, veri indiriliyor…
+Analiz: 628 tamam, 1 hata
+Yazıldı: cikti/bist
+bist G: 335 varlık, 6 aday, 1 fırsat (9 sn)
+EGGUB.IS: No earnings dates found, symbol may be delisted
+[Telegram kapalı] firsat:bist:G:
+🎯 BIST · Günlük fırsatlar
+Mum: 24.11.2026 · 335 likit varlık tarandı · 1 fırsat
+
+🟢 EGGUB · AL · Puan 71/100
+Kurulum: Hacimli kırılım
+Giriş: 95,90 (bölge 94,50 – 95,90)
+Stop: 90,72 (−%5,4) · son yapı + ATR payı
+H1: 101,63 (+%6,0) · 1,1R · pivot R2 — yarısını kapat, stopu girişe çek
+H2: 106,57 (+%11,1) · 2,1R · pivot R3 — %30'unu kapat
+H3: 112,80 (+%17,6) · 3,3R · önceki tepe (14.09.2026) — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 20 günlük mum
+Geçmiş: bu varlıkta 35 örnek, H1'e stoptan önce ulaşma %69, ort. +0,42R | piyasa geneli %62 (7.725 örnek)
+Teyit: Haftalık NÖTR (43) ✗ · Günlük puanı 79 ✓ · Hacim 3,2x ✓ · RSI 64 ✓ · ADX 25 ✓ · RS 89 ✓
+🐋 Balina: Balina alımı (20.11.2026) · Balina alımı (23.11.2026) · Balina alımı (24.11.2026)
+
+Plan: H1'de pozisyonun yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 görülünce stop girişe çekilir. Model çıktısıdır, yatırım tavsiyesi değildir.
+
+bist H: 315 varlık, 8 aday, 0 fırsat (4 sn)
+bist A: 274 varlık, 6 aday, 2 fırsat (1 sn)
+[Telegram kapalı] firsat:bist:A:
+🎯 BIST · Aylık fırsatlar
+Mum: 11.2026 ayı · 274 likit varlık tarandı · 2 fırsat
+
+🟢 TAVHL · AL · Puan 58/100
+Kurulum: Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme
+Giriş: 289,50 (bölge 277,02 – 293,66)
+Stop: 229,15 (−%20,8) · son yapı + ATR payı
+H1: 350,40 (+%21,0) · 1,0R · direnç (2 temas) — yarısını kapat, stopu girişe çek
+H2: 459,73 (+%58,8) · 2,8R · Fib uzantı %127,2 — %30'unu kapat
+H3: 581,28 (+%100,8) · 4,8R · Fib uzantı %161,8 — kalanı kapat
+Süre: giriş 1 mum içinde; plan en fazla 8 ay
+Geçmiş: bu varlıkta 5 örnek, H1'e stoptan önce ulaşma %60, ort. +0,37R
+Teyit: Haftalık GÜÇLÜ AL (81) ✓ · Aylık puanı 64 ✓ · Hacim 1,0x ✗ · RSI 58 ✓ · ADX 34 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 93 ✓
+⚠️ 340,78 seviyesinde önceki tepe (30.04.2026) H1'den önce engel (0,8R)
+
+🟢 GARAN · AL · Puan 55/100
+Kurulum: Alçalan üçgen – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme
+Giriş: 144,50 (bölge 138,57 – 146,48)
+Stop: 111,87 (−%22,6) · son yapı + ATR payı
+H1: 186,33 (+%28,9) · 1,3R · formasyonun ölçtüğü hedef — yarısını kapat, stopu girişe çek
+H2: 206,13 (+%42,7) · 1,9R · Fib uzantı %127,2 — %30'unu kapat
+H3: 260,86 (+%80,5) · 3,6R · Fib uzantı %161,8 — kalanı kapat
+Süre: giriş 1 mum içinde; plan en fazla 8 ay
+Geçmiş: bu varlıkta 4 örnek, H1'e stoptan önce ulaşma %25, ort. +0,56R
+Teyit: Haftalık GÜÇLÜ AL (94) ✓ · Aylık puanı 69 ✓ · Hacim 0,8x ✗ · RSI 60 ✓ · ADX 30 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 95 ✓
+⚠️ 161,13 seviyesinde direnç (1 temas) H1
+
+[Telegram kapalı] bulten:bist:
+📊 Kapanış Teknik Bülteni – BIST
+Kapanış: 2026-11-24 · 628 varlık
+BIST 100: SAT (35/100)
+
+🟢 En güçlü: OZYSR (82), ORZAX (82), METRO (81), GARAN (79), DOCO (78), CITAS (77)
+🚀 Yukarı kırılım: METRO, GARAN, BAHKM, AKFIS, IDGYO, FRIGO, NETGL, THYAO
+⚠️ Aşağı kırılım: KUTPO, ARMGD, OYAYO, KRSTL, VANGD, ATAKP, USHOL, ARCLK
+🐋 Balina alımı/birikim: CITAS, HKTM, IDGYO, AVGYO, QUICK, KRPLS, EGGUB, AHGAZ
+🐋 Balina satışı/dağıtım: PSGYO, OFSYM, EFOR, HATEK, AVOD, SEGMN, BULGS, OTTO
+🔻 Aşırı satım: DUNYH, RALYH, OZATD, TRHOL, SOKM, ARASE, YATAS, MNDTR
+
+Tüm liste, grafikler ve raporlar uygulamanın Teknik sekmesinde.
+Model çıktısıdır, yatırım tavsiyesi değildir.
+
+
+real	3m49.018s
+user	3m14.965s
+sys	0m5.583s

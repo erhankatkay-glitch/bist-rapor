@@ -1,0 +1,115 @@
+Kripto: 78 likit coin (24s hacim ≥ 5 mn $), USDT/TRY 50.55
+kripto 4S: 77 varlık, 25 aday, 5 fırsat (3 sn)
+[Telegram kapalı] firsat:kripto:4S:
+🎯 Kripto · 4 saatlik fırsatlar
+Mum: 24.11.2026 15:00 TSİ · 77 likit varlık tarandı · 5 fırsat
+SAT fırsatları vadeli (kaldıraçlı) işlem içindir; spot piyasada açığa satış yapılamaz.
+
+🔴 XLM/USDT · SAT · Puan 75/100
+Kurulum: Düşüş trendinde tepki satışı
+Giriş: 0,1271 (bölge 0,1268 – 0,1281)
+Stop: 0,1334 (+%5,0) · son yapı + ATR payı
+H1: 0,1201 (−%5,5) · 1,1R · destek (1 temas) — yarısını kapat, stopu girişe çek
+H2: 0,1058 (−%16,7) · 3,4R · Fib uzantı %127,2 — %30'unu kapat
+H3: 0,08810 (−%30,7) · 6,2R · Fib uzantı %161,8 — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 30 adet 4 saatlik mum
+Geçmiş: bu varlıkta 39 örnek, H1'e stoptan önce ulaşma %64, ort. +0,30R | piyasa geneli %51 (1.781 örnek)
+Teyit: Günlük GÜÇLÜ SAT (25) ✓ · 4 saatlik puanı 13 ✓ · Hacim 1,4x ✗ · RSI 43 ✓ · ADX 24 ✓ · EMA50/SMA200 trend uyumlu ✓
+🐋 Balina: canlı akış: son 1000 işlemde (~100 dk) 6 büyük işlem (≥10 bin $); büyük alış 52 bin $ / satış 25 bin $ → net alış
+TL paritesi XLM/TRY (Binance) ≈ giriş 6,42 ₺ · stop 6,74 ₺ · H1 6,07 ₺ (USDT/TRY 50,55 ile)
+⚠️ Canlı işlem akışında büyük oyuncular ters yönde
+
+🔴 DOGE/USDT · SAT · Puan 66/100
+Kurulum: Düşüş trendinde tepki satışı
+Giriş: 0,05594 (bölge 0,05579 – 0,05640)
+Stop: 0,05766 (+%3,1) · son yapı + ATR payı
+H1: 0,05404 (−%3,4) · 1,1R · pivot S3 — yarısını kapat, stopu girişe çek
+H2: 0,05092 (−%9,0) · 2,9R · destek (1 temas) — %30'unu kapat
+H3: 0,04921 (−%12,0) · 3,9R · 3,9R hedefi — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 30 adet 4 saatlik 
+
+kripto G: 73 varlık, 12 aday, 0 fırsat (2 sn)
+Kripto evreni: 794 coin · Binance: 832 parite · OKX: 632 parite
+Analiz: 794 tamam, 0 hata
+Yazıldı: cikti/kripto
+[Telegram kapalı] bulten:kripto:
+📊 Kapanış Teknik Bülteni – Kripto (USDT)
+Kapanış: 2026-11-23 · 794 varlık
+Bitcoin (BTC/USDT, Binance): SAT (28/100)
+
+🟢 En güçlü: XGME/USDT@OKX (97), GMEB/USDT (97), XOKTA/USDT@OKX (85), KITE/USDT (82), XBSP/USDT@OKX (82), XSONY/USDT@OKX (81)
+🚀 Yukarı kırılım: XOKTA/USDT@OKX, KITE/USDT, XBSP/USDT@OKX, XSONY/USDT@OKX, VVV/USDT@OKX, XWEN/USDT@OKX, OPG/USDT, U/USDT
+⚠️ Aşağı kırılım: DOS/USDT@OKX, GPROB/USDT, XOSCR/USDT@OKX, GSB/USDT, SPYB/USDT, XSPY/USDT@OKX, XIWM/USDT@OKX, HOLO/USDT
+🐋 Balina alımı/birikim: XGME/USDT@OKX, XSONY/USDT@OKX, PROS/USDT@OKX, XUVXY/USDT@OKX, XTMF/USDT@OKX, MMT/USDT, RWUSD/USDT, XSQQQ/USDT@OKX
+🐋 Balina satışı/dağıtım: DOS/USDT@OKX, XMSFT/USDT@OKX, GSB/USDT, SPYB/USDT, XSPY/USDT@OKX, XGPRO/USDT@OKX, PYPLB/USDT, KAVA/USDT
+🔻 Aşırı satım: AUDM/USDT@OKX, KAVA/USDT, MANTRA/USDT, XGPRO/USDT@OKX, XSNDK/USDT@OKX, SNDKB/USDT, BIGTIME/USDT, CFG/USDT
+
+Tüm liste, grafikler ve raporlar uygulamanın Teknik sekmesinde.
+Model çıktısıdır, yatırım tavsiyesi değildir.
+
+Kripto evreni: 794 coin · Binance: 832 parite · OKX: 632 parite
+Analiz: 332 tamam, 0 hata
+Yazıldı: cikti/kripto_tl
+[Telegram kapalı] bulten:kripto_tl:
+📊 Kapanış Teknik Bülteni – Kripto TL Pariteleri
+Kapanış: 2026-11-23 · 332 varlık
+Bitcoin (BTC/TRY, Binance): SAT (41/100)
+
+🟢 En güçlü: NIGHT/TRY (84), KITE/TRY (80), MMT/TRY (74), SENT/TRY (74), VVV/TRY@OKX (73), OPG/TRY (72)
+🚀 Yukarı kırılım: VVV/TRY@OKX, OPG/TRY, FF/TRY, DODO/TRY, HMSTR/TRY, LISTA/TRY, GPS/TRY, YB/TRY
+⚠️ Aşağı kırılım: RE/TRY, DOS/TRY@OKX, SLX/TRY@OKX, CFG/TRY, MITO/TRY, ZKP/TRY, AT/TRY, GIGGLE/TRY
+🐋 Balina alımı/birikim: MMT/TRY, SENT/TRY, DODO/TRY, SHELL/TRY, NES/TRY@OKX, AIGENSYN/TRY, ORBS/TRY@OKX, SPACE/TRY@OKX
+🐋 Balina satışı/dağıtım: DOS/TRY@OKX, CFG/TRY, ZKP/TRY, WCT/TRY, SKY/TRY, ENS/TRY, CORE/TRY@OKX, RVN/TRY
+🔻 Aşırı satım: DATA/TRY@OKX, SLX/TRY@OKX, MANTRA/TRY, CFG/TRY, THE/TRY, SYRUP/TRY, ACE/TRY, STRAX/TRY
+
+Tüm liste, grafikler ve raporlar uygulamanın Teknik sekmesinde.
+Model çıktısıdır, yatırım tavsiyesi değildir.
+
+kripto H: 50 varlık, 1 aday, 0 fırsat (0 sn)
+kripto A: 37 varlık, 6 aday, 2 fırsat (0 sn)
+[Telegram kapalı] firsat:kripto:A:
+🎯 Kripto · Aylık fırsatlar
+Mum: 11.2026 ayı · 37 likit varlık tarandı · 2 fırsat
+SAT fırsatları vadeli (kaldıraçlı) işlem içindir; spot piyasada açığa satış yapılamaz.
+
+🔴 XLM/USDT · SAT · Puan 61/100
+Kurulum: İkili tepe – teyit + SuperTrend sat dönüşü
+Giriş: 0,1302 (bölge 0,1210 – 0,1579)
+Stop: 0,3259 (+%150,3) · son yapı + ATR payı
+H1: -0,1634 (−%225,5) · 1,5R · 1,5R hedefi — yarısını kapat, stopu girişe çek
+H2: -0,3591 (−%375,8) · 2,5R · 2,5R hedefi — %30'unu kapat
+H3: -0,5549 (−%526,2) · 3,5R · 3,5R hedefi — kalanı kapat
+Süre: giriş 1 mum içinde; plan en fazla 8 ay
+Geçmiş: bu varlıkta yeterli örnek yok
+Teyit: Haftalık GÜÇLÜ SAT (24) ✓ · Aylık puanı 16 ✓ · Hacim 0,6x ✗ · RSI 43 ✓ · ADX 27 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 61 ✗
+🐋 Balina: canlı akış: son 1000 işlemde (~105 dk) 6 büyük işlem (≥10 bin $); büyük alış 58 bin $ / satış 25 bin $ → net alış
+Türev: açık pozisyon 7g −%7,2 · vadeli agresif alış %49 · son tasfiyeler: long 0 bin $ / short 0 bin $
+TL paritesi XLM/TRY (Binance) ≈ giriş 6,58 ₺ · stop 16,48 ₺ · H1 -8,26 ₺ (USDT/TRY 50,55 ile)
+⚠️ 0,07945 seviyesinde önceki dip (31.12.2022) H1'den önce engel (0,3R) · Canlı işlem akışında büyük oyuncular ters yönde
+
+🔴 FET/USDT · SAT · Puan 60/100
+Kurulum: Ayı bayrağı – kırılım
+Giriş: 0,1086 (bölge 0,08407 – 0,1822)
+Stop: 0,8444 (+%677,5) · son yapı + ATR payı
+H1: -0,9075 (−%935,6) · 1,4R · formasyonun ölçtüğü hedef — yarısını kapat, stopu girişe çek
+H2: -1,73 (−%1693,8) · 2,5R · 2,5R hedefi — %30'unu kapat
+H3: -2,47 (−%2371,
+
+[Telegram kapalı] karne:
+📒 Haftalık fırsat karnesi
+
+BIST · açık 0
+Son 7 günde kapanan kurulum yok
+
+Kripto · açık 7
+Son 7 günde kapanan kurulum yok
+
+Emtia · açık 0
+Son 7 günde kapanan kurulum yok
+
+R: stop mesafesi kadar risk birimi. Model çıktısıdır, yatırım tavsiyesi değildir.
+
+
+real	8m30.323s
+user	2m41.817s
+sys	0m6.309s

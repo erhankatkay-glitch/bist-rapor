@@ -1,0 +1,165 @@
+
+1 Failed download:
+['ACTU']: OperationalError('database is locked')
+$BATRA: possibly delisted; no price data found  (period=3mo)
+
+1 Failed download:
+['BATRA']: possibly delisted; no price data found  (period=3mo)
+ABD: 5390 hisse, 1917 likit (20g medyan hacim ≥ 20 mn $, fiyat ≥ 3 $)
+abd: 1917 varlık, veri indiriliyor…
+Analiz: 1915 tamam, 2 hata
+Yazıldı: cikti/abd
+ABD: 1917 likit hisse için saatlik veri indiriliyor…
+$AFG: possibly delisted; no price data found  (period=180d)
+
+1 Failed download:
+['AFG']: possibly delisted; no price data found  (period=180d)
+Saatlik veri: 1916 hisse
+abd 4S: 1909 varlık, 98 aday, 5 fırsat (54 sn)
+[Telegram kapalı] firsat:abd:4S:
+🎯 ABD · 4 saatlik fırsatlar
+Mum: 24.11.2026 00:00 TSİ · 1909 likit varlık tarandı · 5 fırsat
+
+🟢 CCC.US · AL · Puan 78/100
+Kurulum: Trend içi geri çekilme
+Giriş: 7,70 (bölge 7,70 – 7,71)
+Stop: 7,64 (−%0,8) · son yapı + ATR payı
+H1: 7,79 (+%1,1) · 1,4R · pivot R3 — yarısını kapat, stopu girişe çek
+H2: 7,91 (+%2,6) · 3,2R · direnç (1 temas) — %30'unu kapat
+H3: 7,97 (+%3,5) · 4,2R · 4,2R hedefi — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 30 adet 4 saatlik mum
+Geçmiş: bu varlıkta 6 örnek, H1'e stoptan önce ulaşma %50, ort. +0,42R | piyasa geneli %49 (14.776 örnek)
+Teyit: Günlük GÜÇLÜ AL (79) ✓ · 4 saatlik puanı 76 ✓ · Hacim 3,4x ✓ · RSI 58 ✓ · ADX 22 ✓ · EMA50/SMA200 trend uyumlu ✓
+🐋 Balina: Balina alımı (20.11 09:30) · Balina satışı (20.11 13:30) · Alım emilimi (absorption) (23.11 09:30)
+
+🟢 ALRM.US · AL · Puan 74/100
+Kurulum: Ters omuz-baş-omuz (TOBO) – teyit + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme
+Giriş: 66,84 (bölge 66,48 – 66,96)
+Stop: 64,24 (−%3,9) · son yapı + ATR payı
+H1: 71,48 (+%6,9) · 1,8R · formasyonun ölçtüğü hedef — yarısını kapat, stopu girişe çek
+H2: 74,09 (+%10,9) · 2,8R · Fib uzantı %127,2 — %30'unu kapat
+H3: 80,07 (+%19,8) · 5,1R · Fib uzantı %161,8 — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 30 adet 4 saatlik mum
+Geçmiş: bu varlıkta 12 örnek, H1'e stoptan önce ulaşma %42, ort. +0,60R
+Teyit: Günlük AL (73) ✓ · 4 saatlik puanı 76 ✓ · Hacim 1,0x ✗ · RSI 58 ✓ · ADX 22 ✓ · EMA50/SMA200 trend uyumlu ✓
+🐋 Balina: Sessiz bir
+
+abd G: 1915 varlık, 250 aday, 5 fırsat (95 sn)
+[Telegram kapalı] firsat:abd:G:
+🎯 ABD · Günlük fırsatlar
+Mum: 24.11.2026 · 1915 likit varlık tarandı · 5 fırsat
+
+🟢 FTS.US · AL · Puan 69/100
+Kurulum: Simetrik üçgen – yukarı kırılım
+Giriş: 59,50 (bölge 59,25 – 59,58)
+Stop: 57,84 (−%2,8) · son yapı + ATR payı
+H1: 61,23 (+%2,9) · 1,0R · 52 dönem zirvesi — yarısını kapat, stopu girişe çek
+H2: 67,91 (+%14,1) · 5,1R · formasyonun ölçtüğü hedef — %30'unu kapat
+H3: 69,57 (+%16,9) · 6,1R · 6,1R hedefi — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 20 günlük mum
+Geçmiş: bu varlıkta 27 örnek, H1'e stoptan önce ulaşma %59, ort. +0,79R
+Teyit: Haftalık GÜÇLÜ AL (83) ✓ · Günlük puanı 65 ✓ · Hacim 0,1x ✗ · RSI 62 ✓ · ADX 37 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 68 ✓
+
+🟢 SPOT.US · AL · Puan 67/100
+Kurulum: Trend içi geri çekilme
+Giriş: 600,72 (bölge 594,45 – 602,80)
+Stop: 566,87 (−%5,6) · son yapı + ATR payı
+H1: 635,00 (+%5,7) · 1,0R · 52 dönem zirvesi — yarısını kapat, stopu girişe çek
+H2: 688,39 (+%14,6) · 2,6R · Fib uzantı %127,2 — %30'unu kapat
+H3: 742,24 (+%23,6) · 4,2R · direnç (4 temas) — kalanı kapat
+Süre: giriş 2 mum içinde; plan en fazla 20 günlük mum
+Geçmiş: bu varlıkta 55 örnek, H1'e stoptan önce ulaşma %58, ort. +0,26R | piyasa geneli %48 (72.805 örnek)
+Teyit: Haftalık GÜÇLÜ AL (85) ✓ · Günlük puanı 71 ✓ · Hacim 0,2x ✗ · RSI 56 ✓ · ADX 20 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 73 ✓
+
+🟢 BIIB.US · AL · Puan 65/100
+Kurulum: İkili dip – teyit
+Giriş: 264,14 (bölge 261,84 – 264,91)
+Stop: 241,28 (−%8,7) · son yapı + ATR payı
+H1: 289,91 (+%9,8) · 1,1R · Fib uzantı 
+
+abd H: 1898 varlık, 107 aday, 5 fırsat (46 sn)
+[Telegram kapalı] firsat:abd:H:
+🎯 ABD · Haftalık fırsatlar
+Mum: 27.11.2026 haftası · 1898 likit varlık tarandı · 5 fırsat
+
+🟢 CRAI.US · AL · Puan 65/100
+Kurulum: Yükselen kama – yukarı kırılım
+Giriş: 230,32 (bölge 225,62 – 231,89)
+Stop: 189,67 (−%17,6) · son yapı + ATR payı
+H1: 272,59 (+%18,4) · 1,0R · formasyonun ölçtüğü hedef — yarısını kapat, stopu girişe çek
+H2: 331,94 (+%44,1) · 2,5R · 2,5R hedefi — %30'unu kapat
+H3: 372,58 (+%61,8) · 3,5R · 3,5R hedefi — kalanı kapat
+Süre: giriş 1 mum içinde; plan en fazla 12 hafta
+Geçmiş: bu varlıkta 29 örnek, H1'e stoptan önce ulaşma %45, ort. +0,32R
+Teyit: Aylık GÜÇLÜ AL (89) ✓ · Haftalık puanı 87 ✓ · Hacim 0,2x ✗ · RSI 74 ✓ · ADX 25 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 92 ✓
+
+🟢 TNL.US · AL · Puan 64/100
+Kurulum: Yatay bant – yukarı kırılım
+Giriş: 80,72 (bölge 79,36 – 81,17)
+Stop: 67,15 (−%16,8) · son yapı + ATR payı
+H1: 94,38 (+%16,9) · 1,0R · formasyonun ölçtüğü hedef — yarısını kapat, stopu girişe çek
+H2: 109,13 (+%35,2) · 2,1R · Fib uzantı %161,8 — %30'unu kapat
+H3: 128,20 (+%58,8) · 3,5R · 3,5R hedefi — kalanı kapat
+Süre: giriş 1 mum içinde; plan en fazla 12 hafta
+Geçmiş: bu varlıkta 24 örnek, H1'e stoptan önce ulaşma %46, ort. +0,27R
+Teyit: Aylık GÜÇLÜ AL (85) ✓ · Haftalık puanı 72 ✓ · Hacim 0,2x ✗ · RSI 66 ✓ · ADX 24 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 77 ✓
+
+🟢 DBX.US · AL · Puan 63/100
+Kurulum: Trend içi geri çekilme
+Giriş: 37,03 (bölge 36,23 – 37,30)
+Stop: 30,80 (−%16,8) · son yapı + ATR payı
+H1: 48,43 (+%30,8) · 1,8R · Fib uzantı %161,8 — yarısını kapat, st
+
+abd A: 1818 varlık, 194 aday, 5 fırsat (21 sn)
+[Telegram kapalı] firsat:abd:A:
+🎯 ABD · Aylık fırsatlar
+Mum: 11.2026 ayı · 1818 likit varlık tarandı · 5 fırsat
+
+🟢 SGRY.US · AL · Puan 81/100
+Kurulum: Hacimli kırılım + SuperTrend al dönüşü
+Giriş: 26,75 (bölge 25,05 – 26,75)
+Stop: 21,65 (−%19,1) · son yapı + ATR payı
+H1: 33,52 (+%25,3) · 1,3R · direnç (1 temas) — yarısını kapat, stopu girişe çek
+H2: 38,61 (+%44,3) · 2,3R · direnç (4 temas) — %30'unu kapat
+H3: 44,53 (+%66,5) · 3,5R · Fib %38,2 — kalanı kapat
+Süre: giriş 1 mum içinde; plan en fazla 8 ay
+Geçmiş: bu varlıkta yeterli örnek yok | piyasa geneli %52 (841 örnek)
+Teyit: Haftalık AL (74) ✓ · Aylık puanı 81 ✓ · Hacim 2,2x ✓ · RSI 59 ✓ · ADX 30 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 98 ✓
+🐋 Balina: Balina alımı (31.10.2026)
+
+🟢 FWONK.US · AL · Puan 80/100
+Kurulum: Simetrik üçgen – yukarı kırılım + Trend içi geri çekilme
+Giriş: 106,12 (bölge 102,91 – 107,19)
+Stop: 84,42 (−%20,4) · son yapı + ATR payı
+H1: 137,22 (+%29,3) · 1,4R · Fib uzantı %127,2 — yarısını kapat, stopu girişe çek
+H2: 169,73 (+%59,9) · 2,9R · Fib uzantı %161,8 — %30'unu kapat
+H3: 191,42 (+%80,4) · 3,9R · 3,9R hedefi — kalanı kapat
+Süre: giriş 1 mum içinde; plan en fazla 8 ay
+Geçmiş: bu varlıkta 2 örnek, H1'e stoptan önce ulaşma %50, ort. +1,13R
+Teyit: Haftalık GÜÇLÜ AL (77) ✓ · Aylık puanı 89 ✓ · Hacim 1,5x ✓ · RSI 62 ✓ · ADX 21 ✓ · EMA50/SMA200 trend uyumlu ✓ · RS 69 ✓
+🐋 Balina: Sessiz birikim (son 20 mum)
+
+🟢 FWONA.US · AL · Puan 76/100
+Kurulum: Ters omuz-baş-omuz (TOBO) – teyit + Düşen trend çizgisi kırıldı – kırılım + Hacimli kırılım + Tr
+
+[Telegram kapalı] bulten:abd:
+📊 Kapanış Teknik Bülteni – ABD Borsaları
+Kapanış: 2026-11-24 · 1915 varlık
+S&P 500: SAT (28/100)
+
+🟢 En güçlü: MBGL.US (98), TENB.US (90), GILD.US (90), BBIO.US (90), TGT.US (88), PTC.US (88)
+🚀 Yukarı kırılım: MBGL.US, TENB.US, GILD.US, BBIO.US, TGT.US, PTC.US, IPAR.US, CRAI.US
+⚠️ Aşağı kırılım: SPCX.US, GENI.US, AMBQ.US, NXE.US, INFQ.US, APTV.US, ADNT.US, ETOR.US
+🐋 Balina alımı/birikim: WWW.US, AES.US, BIP.US, PAYO.US, KR.US, VRSN.US, KDP.US, VVV.US
+🐋 Balina satışı/dağıtım: CRSP.US, ADNT.US, Q.US, BRUN.US, NBIS.US, HONA.US, JEF.US, EROC.US
+🔻 Aşırı satım: EMBJ.US, ANDE.US, CLMT.US, CSIQ.US, CVI.US, HWC.US, SEDG.US, SNEX.US
+
+Tüm liste, grafikler ve raporlar uygulamanın Teknik sekmesinde.
+Model çıktısıdır, yatırım tavsiyesi değildir.
+
+
+real	19m22.115s
+user	15m30.956s
+sys	0m22.501s
+{'tur': 'ABD bilançosu', 'yon': 1, 'etki': [('NVDA.US', 1, 'bilanço beklentileri aştı; kazanç tahminleri yukarı revize edilebilir'), ('NASDAQ', 1, 'endeksteki ağırlığı yüksek dev şirket; endeksi aynı yönde etkiler')], 'onem': 2}
+{'degisim': -0.07890619053863346, 'hacim_k': 1.4253391034684524, 'p0': 166.39999389648438, 'p1': 153.27000427246094, 'oyn': 0.06969818575069596, 'saat': 3}

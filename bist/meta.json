@@ -1,0 +1,109 @@
+{
+ "piyasa": "bist",
+ "baslik": "Kapanış Teknik Bülteni – BIST",
+ "uretim": "24.11.2026 15:53",
+ "kapanis": "2026-11-24",
+ "adet": 628,
+ "hata": 1,
+ "grafikler": [
+  {
+   "kod": "XU100",
+   "ad": "BIST 100",
+   "etiket": "SAT",
+   "puan": 35.3,
+   "dosya": "grafik/XU100.png",
+   "yorum": "BIST 100 teknik olarak kısa vadede (günlük) nötr, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) nötr görünümde. Öne çıkan: İkili dip – oluşumda; Pozitif uyumsuzluk (RSI). En yakın destek 9.940,57, direnç 11.886,27."
+  },
+  {
+   "kod": "THYAO",
+   "ad": "Türk Hava Yolları",
+   "etiket": "AL",
+   "puan": 66.3,
+   "dosya": "grafik/THYAO.png",
+   "yorum": "Türk Hava Yolları teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al, uzun vadede (aylık) nötr görünümde. Öne çıkan: Yutan ayı; Boğa bayrağı – oluşumda. En yakın destek 287,64, direnç 344,11."
+  },
+  {
+   "kod": "ASELS",
+   "ad": "Aselsan",
+   "etiket": "SAT",
+   "puan": 38.2,
+   "dosya": "grafik/ASELS.png",
+   "yorum": "Aselsan teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) sat, uzun vadede (aylık) nötr görünümde. Öne çıkan: İkili tepe – TEYİT (boyun çizgisi kırıldı); Yükselen kanal – AŞAĞI KIRILIM. En yakın destek 284,88, direnç 338,30."
+  },
+  {
+   "kod": "KCHOL",
+   "ad": "Koç Holding",
+   "etiket": "SAT",
+   "puan": 41.9,
+   "dosya": "grafik/KCHOL.png",
+   "yorum": "Koç Holding teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) sat, uzun vadede (aylık) al görünümde. Öne çıkan: İkili dip – oluşumda; Karakter değişimi aşağı (CHoCH). En yakın destek 148,93, direnç 192,08."
+  },
+  {
+   "kod": "AKBNK",
+   "ad": "Akbank",
+   "etiket": "SAT",
+   "puan": 35.5,
+   "dosya": "grafik/AKBNK.png",
+   "yorum": "Akbank teknik olarak kısa vadede (günlük) nötr, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) nötr görünümde. Öne çıkan: İkili dip – oluşumda; Gizli pozitif uyumsuzluk (MACD). En yakın destek 61,95, direnç 74,66."
+  },
+  {
+   "kod": "METRO",
+   "ad": "Metro Tic. Mali Yat.",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 81.1,
+   "dosya": "grafik/METRO.png",
+   "yorum": "Metro Tic. Mali Yat. teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Çekiç. En yakın destek 8,26, direnç 9,25."
+  },
+  {
+   "kod": "GARAN",
+   "ad": "Garanti BBVA",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 79.1,
+   "dosya": "grafik/GARAN.png",
+   "yorum": "Garanti BBVA teknik olarak kısa vadede (günlük) al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Altın kesişim (SMA50 > SMA200). En yakın destek 128,28, direnç 157,90."
+  },
+  {
+   "kod": "BAHKM",
+   "ad": "Bahadır Kimya",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 77.1,
+   "dosya": "grafik/BAHKM.png",
+   "yorum": "Bahadır Kimya teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al görünümde. Öne çıkan: Yükselen üçgen – YUKARI KIRILIM; Yutan ayı. En yakın destek 171,42, direnç 195,72."
+  },
+  {
+   "kod": "AKFIS",
+   "ad": "Akfen İnşaat",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 75.4,
+   "dosya": "grafik/AKFIS.png",
+   "yorum": "Akfen İnşaat teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al görünümde. Öne çıkan: Ters omuz-baş-omuz (TOBO) – TEYİT (boyun çizgisi kırıldı); Simetrik üçgen – YUKARI KIRILIM. En yakın destek 12,72, direnç 16,29."
+  },
+  {
+   "kod": "OZYSR",
+   "ad": "Özyaşar Tel",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 81.7,
+   "dosya": "grafik/OZYSR.png",
+   "yorum": "Özyaşar Tel teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) al görünümde. Öne çıkan: Yutan boğa; Yükselen kanal – içinde. En yakın destek 13,09, direnç 14,07."
+  },
+  {
+   "kod": "ORZAX",
+   "ad": "Orzaks İlaç",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 81.6,
+   "dosya": "grafik/ORZAX.png",
+   "yorum": "Orzaks İlaç teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Çekiç; Kayan yıldız. En yakın destek 61,90, direnç 68,05."
+  }
+ ],
+ "raporlar": [
+  "rapor/THYAO_Teknik.pdf",
+  "rapor/ASELS_Teknik.pdf",
+  "rapor/KCHOL_Teknik.pdf",
+  "rapor/AKBNK_Teknik.pdf"
+ ],
+ "endeks": {
+  "ad": "BIST 100",
+  "etiket": "SAT",
+  "puan": 35.3
+ }
+}

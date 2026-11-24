@@ -1,0 +1,2448 @@
+{
+"4S": {
+"zaman": "2026-11-24T15:32:01.226201+00:00",
+"mum": "2026-11-23T13:30:00",
+"taranan": 1909,
+"firsatlar": [
+{
+"kod": "CCC.US",
+"ad": "CCC Intelligent Solutions Holdings Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "4S",
+"yon": 1,
+"kurulum": "GERI",
+"kurulum_ad": "Trend içi geri çekilme",
+"aciklama": "Yükselen trendde EMA20 bölgesine gelen geri çekilme alıcıyla karşılandı; önceki mumun tepesi aşıldı.",
+"plan": {
+"giris": 7.704999923706055,
+"bolge": [
+7.696011416799963,
+7.707996092674752
+],
+"stop": 7.64101158846134,
+"risk": 0.06398833524471481,
+"atr": 0.02996168968697164,
+"hedef": [
+{
+"fiyat": 7.793333212534586,
+"etiket": "pivot R3",
+"r": 1.380459242934083
+},
+{
+"fiyat": 7.907003678443412,
+"etiket": "direnç (1 temas)",
+"r": 3.156884047144236
+},
+{
+"fiyat": 7.970992013688127,
+"etiket": "4,2R hedefi",
+"r": 4.156884047144236
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 77.9,
+"gecmis": {
+"n": 6,
+"p1": 0.5,
+"p2": 0.3333333333333333,
+"ort_R": 0.4192061260430133,
+"kazanc": 0.5
+},
+"piyasa_gecmis": {
+"n": 14776,
+"p1": 0.48504331348132107,
+"p2": 0.229020032485111,
+"ort_R": 0.0033089151887469945,
+"kazanc": 0.5001353546291283
+},
+"p1_harman": 0.4893166524866579,
+"beklenen_R": 0.12213668971853739,
+"teyit": [
+[
+"Günlük GÜÇLÜ AL (79)",
+true
+],
+[
+"4 saatlik puanı 76",
+true
+],
+[
+"Hacim 3,4x",
+true
+],
+[
+"RSI 58",
+true
+],
+[
+"ADX 22",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+]
+],
+"risk": [],
+"balina": [
+[
+"Balina alımı",
+1,
+"20.11 09:30: hacim 20 dönem medyanının 7,1 katı; büyük alıcı girişi."
+],
+[
+"Balina satışı",
+-1,
+"20.11 13:30: hacim 20 dönem medyanının 3,6 katı; büyük satıcı çıkışı."
+],
+[
+"Alım emilimi (absorption)",
+1,
+"23.11 09:30: 3,9 kat hacimle gelen satışlar karşılandı, uzun alt fitil."
+]
+],
+"ust_puan": 78.54166666666666,
+"rsi": 58.2569311119547,
+"adx": 22.01559823792943,
+"hacim_k": 3.3791928661441424,
+"mum": "2026-11-23T13:30:00",
+"ekstra": {}
+},
+{
+"kod": "ALRM.US",
+"ad": "Alarm.com Holdings, Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "4S",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Ters omuz-baş-omuz (TOBO) – teyit + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme",
+"aciklama": "Klasik dip dönüş formasyonu.",
+"plan": {
+"giris": 66.83999633789062,
+"bolge": [
+66.47895112085355,
+66.96034474356965
+],
+"stop": 64.23895325708402,
+"risk": 2.6010430808066047,
+"atr": 1.2034840567902592,
+"hedef": [
+{
+"fiyat": 71.48342594347503,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.785218261031046
+},
+{
+"fiyat": 74.09379602050781,
+"etiket": "Fib uzantı %127,2",
+"r": 2.7888041286758396
+},
+{
+"fiyat": 80.07094522857666,
+"etiket": "Fib uzantı %161,8",
+"r": 5.0867857546530955
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 74.5,
+"gecmis": {
+"n": 12,
+"p1": 0.4166666666666667,
+"p2": 0.25,
+"ort_R": 0.5962355926858508,
+"kazanc": 0.5833333333333334
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.46296296296296297,
+"beklenen_R": 0.5427713745270448,
+"teyit": [
+[
+"Günlük AL (73)",
+true
+],
+[
+"4 saatlik puanı 76",
+true
+],
+[
+"Hacim 1,0x",
+false
+],
+[
+"RSI 58",
+true
+],
+[
+"ADX 22",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+]
+],
+"risk": [],
+"balina": [
+[
+"Sessiz birikim",
+1,
+"Son 20 mumda fiyat yatay (%2,2) ama OBV alıcılardan yana (+0,28)."
+]
+],
+"ust_puan": 72.91666666666666,
+"rsi": 57.52048011843016,
+"adx": 22.404725035547013,
+"hacim_k": 0.9739720129171152,
+"mum": "2026-11-23T13:30:00",
+"ekstra": {}
+},
+{
+"kod": "VRDN.US",
+"ad": "Viridian Therapeutics, Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "4S",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili dip – teyit",
+"aciklama": "Fiyat aynı desteği iki kez kıramadı.",
+"plan": {
+"giris": 31.920000076293945,
+"bolge": [
+31.636173214375507,
+32.01460903026676
+],
+"stop": 29.58617397731496,
+"risk": 2.333826098978985,
+"atr": 0.9460895397281314,
+"hedef": [
+{
+"fiyat": 36.03400015258789,
+"etiket": "Fib uzantı %127,2",
+"r": 1.7627706186393934
+},
+{
+"fiyat": 41.05100015258789,
+"etiket": "Fib uzantı %161,8",
+"r": 3.912459493142451
+},
+{
+"fiyat": 43.38482625156688,
+"etiket": "4,9R hedefi",
+"r": 4.9124594931424514
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 69.5,
+"gecmis": {
+"n": 11,
+"p1": 0.5454545454545454,
+"p2": 0.18181818181818182,
+"ort_R": 1.0778543705029286,
+"kazanc": 0.7272727272727273
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.5192307692307693,
+"beklenen_R": 0.7444768490589314,
+"teyit": [
+[
+"Günlük GÜÇLÜ AL (89)",
+true
+],
+[
+"4 saatlik puanı 84",
+true
+],
+[
+"Hacim 0,7x",
+false
+],
+[
+"RSI 66",
+true
+],
+[
+"ADX 39",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 88.97916666666667,
+"rsi": 66.31273734161701,
+"adx": 38.71674678798965,
+"hacim_k": 0.7220001536942784,
+"mum": "2026-11-23T13:30:00",
+"ekstra": {}
+},
+{
+"kod": "CBRL.US",
+"ad": "Cracker Barrel Old Country Store, Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "4S",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Yükselen kama – yukarı kırılım",
+"aciklama": "Daralan yükseliş; genellikle aşağı kırılır.",
+"plan": {
+"giris": 74.83000183105469,
+"bolge": [
+74.20686798921344,
+75.03771311166844
+],
+"stop": 69.55686646333453,
+"risk": 5.273135367720158,
+"atr": 2.077112806137491,
+"hedef": [
+{
+"fiyat": 83.75843951416016,
+"etiket": "Fib uzantı %127,2",
+"r": 1.6931933395378933
+},
+{
+"fiyat": 94.8806096725464,
+"etiket": "Fib uzantı %161,8",
+"r": 3.8024071910296127
+},
+{
+"fiyat": 100.15374504026656,
+"etiket": "4,8R hedefi",
+"r": 4.802407191029612
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 68.0,
+"gecmis": {
+"n": 9,
+"p1": 0.4444444444444444,
+"p2": 0.2222222222222222,
+"ort_R": 1.269250261163821,
+"kazanc": 0.8888888888888888
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.4791666666666667,
+"beklenen_R": 0.7884688479364329,
+"teyit": [
+[
+"Günlük GÜÇLÜ AL (78)",
+true
+],
+[
+"4 saatlik puanı 94",
+true
+],
+[
+"Hacim 1,5x",
+false
+],
+[
+"RSI 66",
+true
+],
+[
+"ADX 23",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 78.27083333333334,
+"rsi": 66.10961649895754,
+"adx": 22.62625608503083,
+"hacim_k": 1.4758533681610604,
+"mum": "2026-11-23T13:30:00",
+"ekstra": {}
+},
+{
+"kod": "TNL.US",
+"ad": "Travel   Leisure Co. Common  Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "4S",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Düşen trend çizgisi kırıldı – kırılım",
+"aciklama": "Alçalan tepeleri birleştiren çizginin üzerine çıkıldı.",
+"plan": {
+"giris": 80.8550033569336,
+"bolge": [
+80.40217669648392,
+81.00594557708348
+],
+"stop": 76.59217150849564,
+"risk": 4.262831848437955,
+"atr": 1.5094222014988998,
+"hedef": [
+{
+"fiyat": 86.48359857177735,
+"etiket": "Fib uzantı %127,2",
+"r": 1.3203887497711793
+},
+{
+"fiyat": 93.4208983078003,
+"etiket": "Fib uzantı %161,8",
+"r": 2.9477810520420302
+},
+{
+"fiyat": 97.68373015623825,
+"etiket": "3,9R hedefi",
+"r": 3.9477810520420302
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 64.5,
+"gecmis": {
+"n": 12,
+"p1": 0.4166666666666667,
+"p2": 0.16666666666666666,
+"ort_R": 0.5008333157307813,
+"kazanc": 0.5833333333333334
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.46296296296296297,
+"beklenen_R": 0.500370362547014,
+"teyit": [
+[
+"Günlük GÜÇLÜ AL (75)",
+true
+],
+[
+"4 saatlik puanı 74",
+true
+],
+[
+"Hacim 1,4x",
+false
+],
+[
+"RSI 65",
+true
+],
+[
+"ADX 23",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 75.125,
+"rsi": 65.45920901195947,
+"adx": 22.73347738338287,
+"hacim_k": 1.3965840777571774,
+"mum": "2026-11-23T13:30:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "CCC.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 77.9
+},
+{
+"kod": "ALRM.US",
+"yon": 1,
+"kurulum": "Ters omuz-baş-omuz (TOBO) – teyit + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme",
+"puan": 74.5
+},
+{
+"kod": "VRDN.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 69.5
+},
+{
+"kod": "CBRL.US",
+"yon": 1,
+"kurulum": "Yükselen kama – yukarı kırılım",
+"puan": 68.0
+},
+{
+"kod": "TNL.US",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 64.5
+},
+{
+"kod": "PAR.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 62.7
+},
+{
+"kod": "CON.US",
+"yon": 1,
+"kurulum": "Alçalan üçgen – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 59.5
+},
+{
+"kod": "MSGE.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Yükselen üçgen – yukarı kırılım",
+"puan": 59.0
+},
+{
+"kod": "TECH.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Ters omuz-baş-omuz (TOBO) – teyit + Düşen kanal – yukarı kırılım",
+"puan": 57.9
+},
+{
+"kod": "DBX.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Simetrik üçgen – yukarı kırılım",
+"puan": 56.8
+},
+{
+"kod": "EPR.US",
+"yon": 1,
+"kurulum": "Ters omuz-baş-omuz (TOBO) – teyit + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 56.7
+},
+{
+"kod": "PAYO.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 56.3
+},
+{
+"kod": "VRNS.US",
+"yon": 1,
+"kurulum": "SuperTrend al dönüşü",
+"puan": 54.1
+},
+{
+"kod": "GKOS.US",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 53.8
+},
+{
+"kod": "HR.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 53.6
+},
+{
+"kod": "PATK.US",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 53.6
+},
+{
+"kod": "BJRI.US",
+"yon": 1,
+"kurulum": "Yükselen kanal – yukarı kırılım",
+"puan": 53.1
+},
+{
+"kod": "CCK.US",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım",
+"puan": 52.4
+},
+{
+"kod": "BMI.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Hacimli kırılım + Sıkışma kırılımı",
+"puan": 51.8
+},
+{
+"kod": "AKR.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 51.7
+}
+],
+"grafik": {
+"CCC.US": "grafik/4S_CCC.US.png",
+"ALRM.US": "grafik/4S_ALRM.US.png",
+"VRDN.US": "grafik/4S_VRDN.US.png",
+"CBRL.US": "grafik/4S_CBRL.US.png",
+"TNL.US": "grafik/4S_TNL.US.png"
+}
+},
+"G": {
+"zaman": "2026-11-24T15:33:40.156542+00:00",
+"mum": "2026-11-24T00:00:00",
+"taranan": 1915,
+"firsatlar": [
+{
+"kod": "FTS.US",
+"ad": "Fortis Inc. Common Shares",
+"para": "$",
+"piyasa": "abd",
+"tf": "G",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Simetrik üçgen – yukarı kırılım",
+"aciklama": "Daralan sıkışma; kırılım yönü belirleyici.",
+"plan": {
+"giris": 59.5,
+"bolge": [
+59.24632779009597,
+59.584557403301346
+],
+"stop": 57.83632794268386,
+"risk": 1.6636720573161412,
+"atr": 0.845574033013428,
+"hedef": [
+{
+"fiyat": 61.23174762083945,
+"etiket": "52 dönem zirvesi",
+"r": 1.0409188597139323
+},
+{
+"fiyat": 67.9109619713712,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 5.05566102068209
+},
+{
+"fiyat": 69.57463402868734,
+"etiket": "6,1R hedefi",
+"r": 6.05566102068209
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 68.8,
+"gecmis": {
+"n": 27,
+"p1": 0.5925925925925926,
+"p2": 0.07407407407407407,
+"ort_R": 0.7918847567247141,
+"kazanc": 0.7777777777777778
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.5595238095238095,
+"beklenen_R": 0.6876402007516019,
+"teyit": [
+[
+"Haftalık GÜÇLÜ AL (83)",
+true
+],
+[
+"Günlük puanı 65",
+true
+],
+[
+"Hacim 0,1x",
+false
+],
+[
+"RSI 62",
+true
+],
+[
+"ADX 37",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 68",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 83.33333333333334,
+"rsi": 62.144918801236905,
+"adx": 37.48256313183647,
+"hacim_k": 0.07641783503852469,
+"mum": "2026-11-24T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "SPOT.US",
+"ad": "Spotify Technology S.A. Ordinary Shares",
+"para": "$",
+"piyasa": "abd",
+"tf": "G",
+"yon": 1,
+"kurulum": "GERI",
+"kurulum_ad": "Trend içi geri çekilme",
+"aciklama": "Yükselen trendde EMA20 bölgesine gelen geri çekilme alıcıyla karşılandı; önceki mumun tepesi aşıldı.",
+"plan": {
+"giris": 600.7150268554688,
+"bolge": [
+594.4545554964983,
+602.8018506417923
+],
+"stop": 566.868556961342,
+"risk": 33.8464698941267,
+"atr": 20.868237863234746,
+"hedef": [
+{
+"fiyat": 635.0,
+"etiket": "52 dönem zirvesi",
+"r": 1.012955656875775
+},
+{
+"fiyat": 688.3935966796876,
+"etiket": "Fib uzantı %127,2",
+"r": 2.590479010026197
+},
+{
+"fiyat": 742.2356707205124,
+"etiket": "direnç (4 temas)",
+"r": 4.181252706935958
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 67.3,
+"gecmis": {
+"n": 55,
+"p1": 0.5818181818181818,
+"p2": 0.16363636363636364,
+"ort_R": 0.25879514432813605,
+"kazanc": 0.6545454545454545
+},
+"piyasa_gecmis": {
+"n": 72805,
+"p1": 0.4784836206304512,
+"p2": 0.2170730032278003,
+"ort_R": 0.05962225901890039,
+"kazanc": 0.5192500515074514
+},
+"p1_harman": 0.5596750615636682,
+"beklenen_R": 0.21611524033329985,
+"teyit": [
+[
+"Haftalık GÜÇLÜ AL (85)",
+true
+],
+[
+"Günlük puanı 71",
+true
+],
+[
+"Hacim 0,2x",
+false
+],
+[
+"RSI 56",
+true
+],
+[
+"ADX 20",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 73",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 84.70238095238095,
+"rsi": 56.34250519339554,
+"adx": 20.337230722839234,
+"hacim_k": 0.16612472380701118,
+"mum": "2026-11-24T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "BIIB.US",
+"ad": "Biogen Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "G",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili dip – teyit",
+"aciklama": "Fiyat aynı desteği iki kez kıramadı.",
+"plan": {
+"giris": 264.1426086425781,
+"bolge": [
+261.8418334923675,
+264.9095336926483
+],
+"stop": 241.27922668084412,
+"risk": 22.863381961734007,
+"atr": 7.669250500701938,
+"hedef": [
+{
+"fiyat": 289.914255859375,
+"etiket": "Fib uzantı %127,2",
+"r": 1.1272018837777522
+},
+{
+"fiyat": 318.1720805053711,
+"etiket": "Fib uzantı %161,8",
+"r": 2.363144348164286
+},
+{
+"fiyat": 352.04307250852355,
+"etiket": "direnç (8 temas)",
+"r": 3.844595870071309
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 64.7,
+"gecmis": {
+"n": 27,
+"p1": 0.4444444444444444,
+"p2": 0.037037037037037035,
+"ort_R": 0.0757504433545747,
+"kazanc": 0.5555555555555556
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.4642857142857143,
+"beklenen_R": 0.2272681421565123,
+"teyit": [
+[
+"Haftalık AL (75)",
+true
+],
+[
+"Günlük puanı 83",
+true
+],
+[
+"Hacim 0,2x",
+false
+],
+[
+"RSI 66",
+true
+],
+[
+"ADX 23",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 90",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 74.83630952380952,
+"rsi": 66.12444563653591,
+"adx": 23.26043284527016,
+"hacim_k": 0.2418121421390795,
+"mum": "2026-11-24T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "HAYW.US",
+"ad": "Hayward Holdings, Inc. Common Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "G",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Düşen trend çizgisi kırıldı – kırılım",
+"aciklama": "Alçalan tepeleri birleştiren çizginin üzerine çıkıldı.",
+"plan": {
+"giris": 16.43000030517578,
+"bolge": [
+16.26187569457567,
+16.486041842042486
+],
+"stop": 15.71187550384081,
+"risk": 0.7181248013349713,
+"atr": 0.5604153686670286,
+"hedef": [
+{
+"fiyat": 17.198957623899897,
+"etiket": "önceki tepe (04.11.2026)",
+"r": 1.070785074258191
+},
+{
+"fiyat": 18.878958882749995,
+"etiket": "direnç (2 temas)",
+"r": 3.4102130618823874
+},
+{
+"fiyat": 19.541458310545405,
+"etiket": "direnç (2 temas)",
+"r": 4.33275386059014
+}
+],
+"engel": {
+"fiyat": 16.98395937866064,
+"etiket": "önceki tepe (09.11.2026)",
+"r": 0.7713966603786218
+},
+"uzak": false,
+"seviye": null
+},
+"puan": 64.2,
+"gecmis": {
+"n": 15,
+"p1": 0.7333333333333333,
+"p2": 0.13333333333333333,
+"ort_R": 0.5530756307606595,
+"kazanc": 0.7333333333333333
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.6166666666666667,
+"beklenen_R": 0.5265378153803297,
+"teyit": [
+[
+"Haftalık AL (72)",
+true
+],
+[
+"Günlük puanı 72",
+true
+],
+[
+"Hacim 0,0x",
+false
+],
+[
+"RSI 61",
+true
+],
+[
+"ADX 42",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 70",
+true
+]
+],
+"risk": [
+"16,98 seviyesinde önceki tepe (09.11.2026) H1'den önce engel (0,8R)"
+],
+"balina": [],
+"ust_puan": 72.47916666666667,
+"rsi": 61.365961961960885,
+"adx": 41.64308743719122,
+"hacim_k": 0.049904135384314395,
+"mum": "2026-11-24T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "AHR.US",
+"ad": "American Healthcare REIT, Inc. Common Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "G",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Yükselen üçgen – yukarı kırılım + Boğa bayrağı – kırılım",
+"aciklama": "Yatay direnç + yükselen dipler; genellikle yukarı kırılır.",
+"plan": {
+"giris": 59.380001068115234,
+"bolge": [
+58.97812147280057,
+59.513960933220126
+],
+"stop": 56.68012113710721,
+"risk": 2.6998799310080273,
+"atr": 1.339598651048901,
+"hedef": [
+{
+"fiyat": 63.66974222820852,
+"etiket": "Fib uzantı %127,2",
+"r": 1.5888636790198547
+},
+{
+"fiyat": 68.91665930359481,
+"etiket": "Fib uzantı %161,8",
+"r": 3.532252722038262
+},
+{
+"fiyat": 76.04492476357191,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 6.172468450933914
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 62.5,
+"gecmis": {
+"n": 21,
+"p1": 0.3333333333333333,
+"p2": 0.0,
+"ort_R": 0.602724665565825,
+"kazanc": 0.6666666666666666
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.4027777777777778,
+"beklenen_R": 0.5599227215800646,
+"teyit": [
+[
+"Haftalık GÜÇLÜ AL (79)",
+true
+],
+[
+"Günlük puanı 86",
+true
+],
+[
+"Hacim 0,1x",
+false
+],
+[
+"RSI 66",
+true
+],
+[
+"ADX 24",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 73",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 79.02462121212122,
+"rsi": 66.08366745255651,
+"adx": 24.098600965736225,
+"hacim_k": 0.05080078566338148,
+"mum": "2026-11-24T00:00:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "FTS.US",
+"yon": 1,
+"kurulum": "Simetrik üçgen – yukarı kırılım",
+"puan": 68.8
+},
+{
+"kod": "SPOT.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 67.3
+},
+{
+"kod": "BIIB.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 64.7
+},
+{
+"kod": "HAYW.US",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 64.2
+},
+{
+"kod": "AHR.US",
+"yon": 1,
+"kurulum": "Yükselen üçgen – yukarı kırılım + Boğa bayrağı – kırılım",
+"puan": 62.5
+},
+{
+"kod": "GILD.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Alçalan üçgen – yukarı kırılım",
+"puan": 62.0
+},
+{
+"kod": "NATL.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 61.7
+},
+{
+"kod": "GDYN.US",
+"yon": 1,
+"kurulum": "Boğa bayrağı – kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 60.8
+},
+{
+"kod": "OMC.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 60.3
+},
+{
+"kod": "DLTR.US",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 58.8
+},
+{
+"kod": "MRNA.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 58.6
+},
+{
+"kod": "REGN.US",
+"yon": 1,
+"kurulum": "Boğa bayrağı – kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 58.5
+},
+{
+"kod": "GKOS.US",
+"yon": 1,
+"kurulum": "Yükselen üçgen – yukarı kırılım + Boğa bayrağı – kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 57.9
+},
+{
+"kod": "ALKS.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Trend içi geri çekilme",
+"puan": 57.9
+},
+{
+"kod": "DUK.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Simetrik üçgen – yukarı kırılım",
+"puan": 57.6
+},
+{
+"kod": "WTW.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Simetrik üçgen – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 57.6
+},
+{
+"kod": "WCN.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 57.4
+},
+{
+"kod": "GEN.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Boğa bayrağı – kırılım + Trend içi geri çekilme",
+"puan": 57.2
+},
+{
+"kod": "EIX.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 57.1
+},
+{
+"kod": "BBIO.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 56.6
+}
+],
+"grafik": {
+"FTS.US": "grafik/G_FTS.US.png",
+"SPOT.US": "grafik/G_SPOT.US.png",
+"BIIB.US": "grafik/G_BIIB.US.png",
+"HAYW.US": "grafik/G_HAYW.US.png",
+"AHR.US": "grafik/G_AHR.US.png"
+}
+},
+"H": {
+"zaman": "2026-11-24T15:34:29.717677+00:00",
+"mum": "2026-11-27T00:00:00",
+"taranan": 1898,
+"firsatlar": [
+{
+"kod": "CRAI.US",
+"ad": "CRA International,Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "H",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Yükselen kama – yukarı kırılım",
+"aciklama": "Daralan yükseliş; genellikle aşağı kırılır.",
+"plan": {
+"giris": 230.32000732421875,
+"bolge": [
+225.6236545825882,
+231.8854582380956
+],
+"stop": 189.67364237555694,
+"risk": 40.64636494866181,
+"atr": 15.654509138768494,
+"hedef": [
+{
+"fiyat": 272.59282856396874,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.0400148031230458
+},
+{
+"fiyat": 331.9359196958733,
+"etiket": "2,5R hedefi",
+"r": 2.5
+},
+{
+"fiyat": 372.5822846445351,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 64.9,
+"gecmis": {
+"n": 29,
+"p1": 0.4482758620689655,
+"p2": 0.13793103448275862,
+"ort_R": 0.32027409064895573,
+"kazanc": 0.5862068965517241
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.4659090909090909,
+"beklenen_R": 0.3815442870186299,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (89)",
+true
+],
+[
+"Haftalık puanı 87",
+true
+],
+[
+"Hacim 0,2x",
+false
+],
+[
+"RSI 74",
+true
+],
+[
+"ADX 25",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 92",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 89.0625,
+"rsi": 74.1006857319606,
+"adx": 25.04917377723027,
+"hacim_k": 0.16949912059340827,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "TNL.US",
+"ad": "Travel   Leisure Co. Common  Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "H",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Yatay bant – yukarı kırılım",
+"aciklama": "Fiyat yatay bir aralıkta dalgalanıyor.",
+"plan": {
+"giris": 80.71880340576172,
+"bolge": [
+79.36214035768425,
+81.17102442178754
+],
+"stop": 67.15217292498704,
+"risk": 13.566630480774677,
+"atr": 4.522210160258224,
+"hedef": [
+{
+"fiyat": 94.38086107943646,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.0070339641840538
+},
+{
+"fiyat": 109.12693359463674,
+"etiket": "Fib uzantı %161,8",
+"r": 2.093970955362298
+},
+{
+"fiyat": 128.2020100884731,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 63.5,
+"gecmis": {
+"n": 24,
+"p1": 0.4583333333333333,
+"p2": 0.20833333333333334,
+"ort_R": 0.2676842812347897,
+"kazanc": 0.625
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.47435897435897434,
+"beklenen_R": 0.3570364807598706,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (85)",
+true
+],
+[
+"Haftalık puanı 72",
+true
+],
+[
+"Hacim 0,2x",
+false
+],
+[
+"RSI 66",
+true
+],
+[
+"ADX 24",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 77",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 84.75877192982456,
+"rsi": 66.42911296282591,
+"adx": 24.288252665640208,
+"hacim_k": 0.23535610821099184,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "DBX.US",
+"ad": "Dropbox, Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "H",
+"yon": 1,
+"kurulum": "GERI",
+"kurulum_ad": "Trend içi geri çekilme",
+"aciklama": "Yükselen trendde EMA20 bölgesine gelen geri çekilme alıcıyla karşılandı; önceki mumun tepesi aşıldı.",
+"plan": {
+"giris": 37.029998779296875,
+"bolge": [
+36.22742908663373,
+37.29752201018459
+],
+"stop": 30.79743068880658,
+"risk": 6.232568090490297,
+"atr": 2.6752323088771632,
+"hedef": [
+{
+"fiyat": 48.42921176910401,
+"etiket": "Fib uzantı %161,8",
+"r": 1.8289752834309416
+},
+{
+"fiyat": 54.661779859594304,
+"etiket": "2,8R hedefi",
+"r": 2.8289752834309416
+},
+{
+"fiyat": 60.8943479500846,
+"etiket": "3,8R hedefi",
+"r": 3.8289752834309416
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 62.7,
+"gecmis": {
+"n": 12,
+"p1": 0.3333333333333333,
+"p2": 0.08333333333333333,
+"ort_R": 0.2597933941134842,
+"kazanc": 0.5
+},
+"piyasa_gecmis": {
+"n": 26835,
+"p1": 0.44196012670020496,
+"p2": 0.16519470840320477,
+"ort_R": 0.1191735852883555,
+"kazanc": 0.5506614495994038
+},
+"p1_harman": 0.39368155187048426,
+"beklenen_R": 0.1816712780995238,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (85)",
+true
+],
+[
+"Haftalık puanı 80",
+true
+],
+[
+"Hacim 0,3x",
+false
+],
+[
+"RSI 61",
+true
+],
+[
+"ADX 27",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 86",
+true
+]
+],
+"risk": [],
+"balina": [
+[
+"Alım emilimi (absorption)",
+1,
+"13.11.2026: 2,9 kat hacimle gelen satışlar karşılandı, uzun alt fitil."
+]
+],
+"ust_puan": 84.55357142857143,
+"rsi": 60.907048423813784,
+"adx": 26.841506413619953,
+"hacim_k": 0.32160084044788423,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "KYMR.US",
+"ad": "Kymera Therapeutics, Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "H",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Yükselen kanal – yukarı kırılım + Hacimli kırılım",
+"aciklama": "Paralel yükselen trend kanalı.",
+"plan": {
+"giris": 164.84249877929688,
+"bolge": [
+160.08566541051124,
+166.42810990222543
+],
+"stop": 109.63816327428076,
+"risk": 55.20433550501612,
+"atr": 15.856111229285485,
+"hedef": [
+{
+"fiyat": 223.41656396484376,
+"etiket": "Fib uzantı %127,2",
+"r": 1.0610410332758118
+},
+{
+"fiyat": 278.8993951263428,
+"etiket": "Fib uzantı %161,8",
+"r": 2.0660858482153492
+},
+{
+"fiyat": 358.0576730468533,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": {
+"fiyat": 179.8000030517578,
+"etiket": "52 dönem zirvesi",
+"r": 0.270947999566118
+},
+"uzak": false,
+"seviye": null
+},
+"puan": 62.1,
+"gecmis": {
+"n": 11,
+"p1": 0.36363636363636365,
+"p2": 0.0,
+"ort_R": 0.20405666622892046,
+"kazanc": 0.5454545454545454
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.4423076923076923,
+"beklenen_R": 0.37479320494300483,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (83)",
+true
+],
+[
+"Haftalık puanı 80",
+true
+],
+[
+"Hacim 2,5x",
+true
+],
+[
+"RSI 72",
+true
+],
+[
+"ADX 34",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 97",
+true
+]
+],
+"risk": [
+"179,80 seviyesinde 52 dönem zirvesi H1'den önce engel (0,3R)"
+],
+"balina": [],
+"ust_puan": 82.97916666666667,
+"rsi": 71.74599920700597,
+"adx": 33.87753367123202,
+"hacim_k": 2.535412799807159,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "BIP.US",
+"ad": "Brookfield Infrastructure Partners Inc. Class A Subordinate Voting Shares",
+"para": "$",
+"piyasa": "abd",
+"tf": "H",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili dip – teyit",
+"aciklama": "Fiyat aynı desteği iki kez kıramadı.",
+"plan": {
+"giris": 45.18000030517578,
+"bolge": [
+44.49629476949296,
+45.40790215040339
+],
+"stop": 38.342944948347615,
+"risk": 6.8370553568281665,
+"atr": 2.279018452276055,
+"hedef": [
+{
+"fiyat": 52.72812660495427,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.1040025136318627
+},
+{
+"fiyat": 61.97568210375484,
+"etiket": "Fib uzantı %161,8",
+"r": 2.4565665951212776
+},
+{
+"fiyat": 69.10969405407437,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": {
+"fiyat": 47.540000915527344,
+"etiket": "52 dönem zirvesi",
+"r": 0.3451779292666733
+},
+"uzak": false,
+"seviye": null
+},
+"puan": 59.8,
+"gecmis": {
+"n": 19,
+"p1": 0.3684210526315789,
+"p2": 0.0,
+"ort_R": 0.3428045657104799,
+"kazanc": 0.7894736842105263
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.4264705882352941,
+"beklenen_R": 0.41215549260291523,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (89)",
+true
+],
+[
+"Haftalık puanı 76",
+true
+],
+[
+"Hacim 2,3x",
+true
+],
+[
+"RSI 74",
+true
+],
+[
+"ADX 17",
+false
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 83",
+true
+]
+],
+"risk": [
+"47,54 seviyesinde 52 dönem zirvesi H1'den önce engel (0,3R)"
+],
+"balina": [
+[
+"Balina alımı",
+1,
+"20.11.2026: hacim 20 dönem medyanının 4,2 katı; büyük alıcı girişi."
+]
+],
+"ust_puan": 89.0625,
+"rsi": 74.01561471043001,
+"adx": 17.39619998738473,
+"hacim_k": 2.3386498262768933,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "CRAI.US",
+"yon": 1,
+"kurulum": "Yükselen kama – yukarı kırılım",
+"puan": 64.9
+},
+{
+"kod": "TNL.US",
+"yon": 1,
+"kurulum": "Yatay bant – yukarı kırılım",
+"puan": 63.5
+},
+{
+"kod": "DBX.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 62.7
+},
+{
+"kod": "KYMR.US",
+"yon": 1,
+"kurulum": "Yükselen kanal – yukarı kırılım + Hacimli kırılım",
+"puan": 62.1
+},
+{
+"kod": "BIP.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 59.8
+},
+{
+"kod": "ARQT.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Trend içi geri çekilme",
+"puan": 55.9
+},
+{
+"kod": "ANF.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 55.7
+},
+{
+"kod": "GHC.US",
+"yon": 1,
+"kurulum": "Yükselen üçgen – yukarı kırılım",
+"puan": 54.7
+},
+{
+"kod": "SRRK.US",
+"yon": 1,
+"kurulum": "Ters omuz-baş-omuz (TOBO) – teyit + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme",
+"puan": 54.6
+},
+{
+"kod": "NATL.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Yükselen kama – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme",
+"puan": 54.2
+},
+{
+"kod": "ETON.US",
+"yon": 1,
+"kurulum": "Yükselen kama – yukarı kırılım",
+"puan": 54.1
+},
+{
+"kod": "VRTX.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 53.9
+},
+{
+"kod": "BJRI.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 53.9
+},
+{
+"kod": "DLTR.US",
+"yon": 1,
+"kurulum": "Yükselen kanal – yukarı kırılım",
+"puan": 50.4
+},
+{
+"kod": "U.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 49.9
+},
+{
+"kod": "FRO.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 49.5
+},
+{
+"kod": "NJR.US",
+"yon": 1,
+"kurulum": "Düşen kanal – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 49.1
+},
+{
+"kod": "DRI.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 49.0
+},
+{
+"kod": "ARMK.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Düşen kanal – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 48.9
+},
+{
+"kod": "BRK.B.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 48.7
+}
+],
+"grafik": {
+"CRAI.US": "grafik/H_CRAI.US.png",
+"TNL.US": "grafik/H_TNL.US.png",
+"DBX.US": "grafik/H_DBX.US.png",
+"KYMR.US": "grafik/H_KYMR.US.png",
+"BIP.US": "grafik/H_BIP.US.png"
+}
+},
+"A": {
+"zaman": "2026-11-24T15:34:55.105004+00:00",
+"mum": "2026-11-30T00:00:00",
+"taranan": 1818,
+"firsatlar": [
+{
+"kod": "SGRY.US",
+"ad": "Surgery Partners, Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "A",
+"yon": 1,
+"kurulum": "KIRILIM",
+"kurulum_ad": "Hacimli kırılım + SuperTrend al dönüşü",
+"aciklama": "Fiyat son 20 mumun zirvesini ortalamanın üzerindeki hacimle aştı ve mumun üst bölgesinde kapattı.",
+"plan": {
+"giris": 26.75,
+"bolge": [
+25.049999237060547,
+26.75
+],
+"stop": 21.647148497486306,
+"risk": 5.102851502513694,
+"atr": 4.53713431943232,
+"hedef": [
+{
+"fiyat": 33.51628778875989,
+"etiket": "direnç (1 temas)",
+"r": 1.3259817154049607
+},
+{
+"fiyat": 38.61003683508557,
+"etiket": "direnç (4 temas)",
+"r": 2.3241979174277856
+},
+{
+"fiyat": 44.5284411315918,
+"etiket": "Fib %38,2",
+"r": 3.4840208700633433
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": 25.049999237060547
+},
+"puan": 81.1,
+"gecmis": {
+"n": 0
+},
+"piyasa_gecmis": {
+"n": 841,
+"p1": 0.5231866825208086,
+"p2": 0.2972651605231867,
+"ort_R": 0.17572516418333772,
+"kazanc": 0.5481569560047562
+},
+"p1_harman": 0.5231866825208086,
+"beklenen_R": 0.1757251641833377,
+"teyit": [
+[
+"Haftalık AL (74)",
+true
+],
+[
+"Aylık puanı 81",
+true
+],
+[
+"Hacim 2,2x",
+true
+],
+[
+"RSI 59",
+true
+],
+[
+"ADX 30",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 98",
+true
+]
+],
+"risk": [],
+"balina": [
+[
+"Balina alımı",
+1,
+"31.10.2026: hacim 20 dönem medyanının 3,4 katı; büyük alıcı girişi."
+]
+],
+"ust_puan": 74.22348484848484,
+"rsi": 59.052252369464526,
+"adx": 29.686556343749757,
+"hacim_k": 2.1655774841878253,
+"mum": "2026-11-30T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "FWONK.US",
+"ad": "Liberty Media Corporation - Series C Common Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "A",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Simetrik üçgen – yukarı kırılım + Trend içi geri çekilme",
+"aciklama": "Daralan sıkışma; kırılım yönü belirleyici.",
+"plan": {
+"giris": 106.12000274658203,
+"bolge": [
+102.9141040405902,
+107.18863564857931
+],
+"stop": 84.42409854742614,
+"risk": 21.69590419915589,
+"atr": 10.686329019972774,
+"hedef": [
+{
+"fiyat": 137.21631356811523,
+"etiket": "Fib uzantı %127,2",
+"r": 1.4332802420257293
+},
+{
+"fiyat": 169.7254430809021,
+"etiket": "Fib uzantı %161,8",
+"r": 2.9316796271987005
+},
+{
+"fiyat": 191.421347280058,
+"etiket": "3,9R hedefi",
+"r": 3.9316796271987005
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 79.9,
+"gecmis": {
+"n": 2,
+"p1": 0.5,
+"p2": 0.0,
+"ort_R": 1.134936539764336,
+"kazanc": 1.0
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.5,
+"beklenen_R": 0.574698416442863,
+"teyit": [
+[
+"Haftalık GÜÇLÜ AL (77)",
+true
+],
+[
+"Aylık puanı 89",
+true
+],
+[
+"Hacim 1,5x",
+true
+],
+[
+"RSI 62",
+true
+],
+[
+"ADX 21",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 69",
+true
+]
+],
+"risk": [],
+"balina": [
+[
+"Sessiz birikim",
+1,
+"Son 20 mumda fiyat yatay (%17,9) ama OBV alıcılardan yana (+0,25)."
+]
+],
+"ust_puan": 77.0625,
+"rsi": 62.19243285845097,
+"adx": 21.303583653410385,
+"hacim_k": 1.502106222588885,
+"mum": "2026-11-30T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "FWONA.US",
+"ad": "Liberty Media Corporation - Series A Common Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "A",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Ters omuz-baş-omuz (TOBO) – teyit + Düşen trend çizgisi kırıldı – kırılım + Hacimli kırılım + Trend içi geri çekilme + Sıkışma kırılımı",
+"aciklama": "Klasik dip dönüş formasyonu.",
+"plan": {
+"giris": 102.19000244140625,
+"bolge": [
+99.17542450929116,
+103.19486175211128
+],
+"stop": 77.72541993165444,
+"risk": 24.464582509751807,
+"atr": 10.048593107050307,
+"hedef": [
+{
+"fiyat": 131.10015594482422,
+"etiket": "Fib uzantı %127,2",
+"r": 1.1817145660218857
+},
+{
+"fiyat": 162.3675644683838,
+"etiket": "Fib uzantı %161,8",
+"r": 2.4597829128287887
+},
+{
+"fiyat": 187.81604122553756,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 75.9,
+"gecmis": {
+"n": 3,
+"p1": 0.6666666666666666,
+"p2": 0.0,
+"ort_R": 1.0453006502707314,
+"kazanc": 1.0
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.5277777777777778,
+"beklenen_R": 0.5908834417117885,
+"teyit": [
+[
+"Haftalık AL (71)",
+true
+],
+[
+"Aylık puanı 84",
+true
+],
+[
+"Hacim 1,8x",
+true
+],
+[
+"RSI 65",
+true
+],
+[
+"ADX 29",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 78",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 70.625,
+"rsi": 64.8140698333988,
+"adx": 29.012386754569214,
+"hacim_k": 1.7984756208084103,
+"mum": "2026-11-30T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "INSM.US",
+"ad": "Insmed Incorporated",
+"para": "$",
+"piyasa": "abd",
+"tf": "A",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili dip – teyit + Düşen trend çizgisi kırıldı – kırılım",
+"aciklama": "Fiyat aynı desteği iki kez kıramadı.",
+"plan": {
+"giris": 170.3699951171875,
+"bolge": [
+162.14641138916556,
+173.1111896931948
+],
+"stop": 84.40641352539605,
+"risk": 85.96358159179145,
+"atr": 27.411945760073092,
+"hedef": [
+{
+"fiyat": 267.54167988586426,
+"etiket": "Fib uzantı %127,2",
+"r": 1.1303819939716837
+},
+{
+"fiyat": 337.2399197406769,
+"etiket": "Fib uzantı %161,8",
+"r": 1.9411699877267978
+},
+{
+"fiyat": 471.2425306884576,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": {
+"fiyat": 210.0088054239927,
+"etiket": "direnç (1 temas)",
+"r": 0.46111166581023716
+},
+"uzak": false,
+"seviye": null
+},
+"puan": 74.8,
+"gecmis": {
+"n": 5,
+"p1": 1.0,
+"p2": 0.4,
+"ort_R": 1.1426427957707976,
+"kazanc": 1.0
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.625,
+"beklenen_R": 0.6606606989426994,
+"teyit": [
+[
+"Haftalık GÜÇLÜ AL (80)",
+true
+],
+[
+"Aylık puanı 79",
+true
+],
+[
+"Hacim 1,9x",
+true
+],
+[
+"RSI 63",
+true
+],
+[
+"ADX 31",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 87",
+true
+]
+],
+"risk": [
+"210,01 seviyesinde direnç (1 temas) H1'den önce engel (0,5R)"
+],
+"balina": [],
+"ust_puan": 79.89583333333333,
+"rsi": 63.33169567557765,
+"adx": 31.199917383899184,
+"hacim_k": 1.8587842691029293,
+"mum": "2026-11-30T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "DRI.US",
+"ad": "Darden Restaurants, Inc. Common Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "A",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili dip – teyit + Yükselen kanal – yukarı kırılım",
+"aciklama": "Fiyat aynı desteği iki kez kıramadı.",
+"plan": {
+"giris": 237.13999938964844,
+"bolge": [
+230.5730820313567,
+239.32897184241236
+],
+"stop": 184.54650259922144,
+"risk": 52.593496790427,
+"atr": 21.889724527639068,
+"hedef": [
+{
+"fiyat": 299.76633533298974,
+"etiket": "Fib uzantı %127,2",
+"r": 1.1907619718250122
+},
+{
+"fiyat": 375.4364546255549,
+"etiket": "Fib uzantı %161,8",
+"r": 2.629535278610321
+},
+{
+"fiyat": 428.02995141598194,
+"etiket": "3,6R hedefi",
+"r": 3.629535278610321
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 70.9,
+"gecmis": {
+"n": 2,
+"p1": 0.5,
+"p2": 0.0,
+"ort_R": 0.6040524003227324,
+"kazanc": 1.0
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.5,
+"beklenen_R": 0.512241458861498,
+"teyit": [
+[
+"Haftalık GÜÇLÜ AL (86)",
+true
+],
+[
+"Aylık puanı 91",
+true
+],
+[
+"Hacim 0,6x",
+false
+],
+[
+"RSI 67",
+true
+],
+[
+"ADX 27",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 79",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 86.20192307692307,
+"rsi": 67.091572100175,
+"adx": 27.097648895608895,
+"hacim_k": 0.5864614532658783,
+"mum": "2026-11-30T00:00:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "SGRY.US",
+"yon": 1,
+"kurulum": "Hacimli kırılım + SuperTrend al dönüşü",
+"puan": 81.1
+},
+{
+"kod": "FWONK.US",
+"yon": 1,
+"kurulum": "Simetrik üçgen – yukarı kırılım + Trend içi geri çekilme",
+"puan": 79.9
+},
+{
+"kod": "FWONA.US",
+"yon": 1,
+"kurulum": "Ters omuz-baş-omuz (TOBO) – teyit + Düşen trend çizgisi kırıldı – kırılım + Hacimli kırılım + Trend içi geri çekilme + Sıkışma kırılımı",
+"puan": 75.9
+},
+{
+"kod": "INSM.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 74.8
+},
+{
+"kod": "DRI.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Yükselen kanal – yukarı kırılım",
+"puan": 70.9
+},
+{
+"kod": "MAR.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 67.9
+},
+{
+"kod": "COST.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 67.4
+},
+{
+"kod": "BIP.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Hacimli kırılım",
+"puan": 67.0
+},
+{
+"kod": "FTS.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 66.7
+},
+{
+"kod": "ED.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 66.1
+},
+{
+"kod": "PG.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 65.2
+},
+{
+"kod": "GME.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Alçalan kama – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 64.7
+},
+{
+"kod": "IBN.US",
+"yon": 1,
+"kurulum": "Yükselen üçgen – yukarı kırılım + Sıkışma kırılımı",
+"puan": 64.0
+},
+{
+"kod": "THG.US",
+"yon": 1,
+"kurulum": "Yükselen kanal – yukarı kırılım",
+"puan": 63.5
+},
+{
+"kod": "TDC.US",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 63.3
+},
+{
+"kod": "CPAY.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 63.1
+},
+{
+"kod": "TGT.US",
+"yon": 1,
+"kurulum": "Yükselen kama – yukarı kırılım",
+"puan": 62.9
+},
+{
+"kod": "CL.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Yükselen üçgen – yukarı kırılım",
+"puan": 62.5
+},
+{
+"kod": "TNL.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 62.3
+},
+{
+"kod": "OGE.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 61.7
+}
+],
+"grafik": {
+"SGRY.US": "grafik/A_SGRY.US.png",
+"FWONK.US": "grafik/A_FWONK.US.png",
+"FWONA.US": "grafik/A_FWONA.US.png",
+"INSM.US": "grafik/A_INSM.US.png",
+"DRI.US": "grafik/A_DRI.US.png"
+}
+}
+}

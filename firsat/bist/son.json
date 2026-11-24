@@ -1,0 +1,715 @@
+{
+"4S": {
+"zaman": "2026-11-24T12:50:44.742808+00:00",
+"mum": "2026-11-24T10:00:00",
+"taranan": 304,
+"firsatlar": [
+{
+"kod": "GMTAS",
+"ad": "GMTAS",
+"para": "₺",
+"piyasa": "bist",
+"tf": "4S",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Düşen trend çizgisi kırıldı – kırılım",
+"aciklama": "Alçalan tepeleri birleştiren çizginin üzerine çıkıldı.",
+"plan": {
+"giris": 46.36000061035156,
+"bolge": [
+45.883155960041705,
+46.51894882712151
+],
+"stop": 44.77051844265204,
+"risk": 1.589482167699522,
+"atr": 1.5894821676995239,
+"hedef": [
+{
+"fiyat": 48.30666732788086,
+"etiket": "pivot R1",
+"r": 1.2247175571316617
+},
+{
+"fiyat": 50.253334045410156,
+"etiket": "pivot R2",
+"r": 2.4494351142633235
+},
+{
+"fiyat": 51.691050257351144,
+"etiket": "direnç (1 temas)",
+"r": 3.353953731179808
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 60.7,
+"gecmis": {
+"n": 14,
+"p1": 0.5,
+"p2": 0.07142857142857142,
+"ort_R": 0.010717212734073143,
+"kazanc": 0.5714285714285714
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.5,
+"beklenen_R": 0.26379451649231117,
+"teyit": [
+[
+"Günlük NÖTR (56)",
+true
+],
+[
+"4 saatlik puanı 59",
+true
+],
+[
+"Hacim 7,4x",
+true
+],
+[
+"RSI 49",
+false
+],
+[
+"ADX 27",
+true
+]
+],
+"risk": [],
+"balina": [
+[
+"Balina alımı",
+1,
+"24.11.2026: hacim 20 dönem medyanının 7,4 katı; büyük alıcı girişi."
+]
+],
+"ust_puan": 55.625,
+"rsi": 49.29228602414607,
+"adx": 26.90647736454694,
+"hacim_k": 7.369103461507926,
+"mum": "2026-11-24T10:00:00",
+"ekstra": {}
+},
+{
+"kod": "EGGUB",
+"ad": "EGGUB",
+"para": "₺",
+"piyasa": "bist",
+"tf": "4S",
+"yon": 1,
+"kurulum": "KIRILIM",
+"kurulum_ad": "Hacimli kırılım",
+"aciklama": "Fiyat son 20 mumun zirvesini ortalamanın üzerindeki hacimle aştı ve mumun üst bölgesinde kapattı.",
+"plan": {
+"giris": 95.94999694824219,
+"bolge": [
+94.5,
+95.94999694824219
+],
+"stop": 91.40708612141243,
+"risk": 4.542910826829754,
+"atr": 4.1238851714500875,
+"hedef": [
+{
+"fiyat": 101.4500020345052,
+"etiket": "pivot R2",
+"r": 1.2106786366531357
+},
+{
+"fiyat": 105.88761453461281,
+"etiket": "önceki tepe (23.09.2026)",
+"r": 2.1875000336085253
+},
+{
+"fiyat": 112.88761453461281,
+"etiket": "önceki tepe (14.09.2026)",
+"r": 3.7283623280341707
+}
+],
+"engel": {
+"fiyat": 99.7820553621591,
+"etiket": "direnç (27 temas)",
+"r": 0.8435249028630158
+},
+"uzak": false,
+"seviye": 94.5
+},
+"puan": 56.5,
+"gecmis": {
+"n": 5,
+"p1": 0.4,
+"p2": 0.4,
+"ort_R": -0.06017639611178618,
+"kazanc": 0.4
+},
+"piyasa_gecmis": {
+"n": 1171,
+"p1": 0.49701110162254486,
+"p2": 0.24508966695132364,
+"ort_R": -0.001058342560559823,
+"kazanc": 0.4987190435525192
+},
+"p1_harman": 0.47275832621690866,
+"beklenen_R": -0.01583785594836641,
+"teyit": [
+[
+"Günlük GÜÇLÜ AL (82)",
+true
+],
+[
+"4 saatlik puanı 90",
+true
+],
+[
+"Hacim 4,6x",
+true
+],
+[
+"RSI 68",
+true
+],
+[
+"ADX 31",
+true
+]
+],
+"risk": [
+"99,78 seviyesinde direnç (27 temas) H1'den önce engel (0,8R)",
+"Bu varlıkta bu kurulumun geçmiş ortalaması negatif (−0,06R)"
+],
+"balina": [
+[
+"Balina alımı",
+1,
+"23.11.2026: hacim 20 dönem medyanının 4,7 katı; büyük alıcı girişi."
+],
+[
+"Balina alımı",
+1,
+"24.11.2026: hacim 20 dönem medyanının 4,6 katı; büyük alıcı girişi."
+]
+],
+"ust_puan": 81.8092105263158,
+"rsi": 67.52845677840622,
+"adx": 30.772521922370338,
+"hacim_k": 4.645418793815188,
+"mum": "2026-11-24T10:00:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "GMTAS",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 60.7
+},
+{
+"kod": "EGGUB",
+"yon": 1,
+"kurulum": "Hacimli kırılım",
+"puan": 56.5
+},
+{
+"kod": "BAHKM",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 44.0
+},
+{
+"kod": "SAFKR",
+"yon": 1,
+"kurulum": "Likidite avı dönüşü",
+"puan": 31.1
+},
+{
+"kod": "AGESA",
+"yon": 1,
+"kurulum": "Likidite avı dönüşü",
+"puan": 24.9
+},
+{
+"kod": "OZSUB",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 23.2
+}
+],
+"grafik": {
+"GMTAS": "grafik/4S_GMTAS.png",
+"EGGUB": "grafik/4S_EGGUB.png"
+}
+},
+"G": {
+"zaman": "2026-11-24T12:53:22.833426+00:00",
+"mum": "2026-11-24T00:00:00",
+"taranan": 335,
+"firsatlar": [
+{
+"kod": "EGGUB",
+"ad": "Ege Gübre",
+"para": "₺",
+"piyasa": "bist",
+"tf": "G",
+"yon": 1,
+"kurulum": "KIRILIM",
+"kurulum_ad": "Hacimli kırılım",
+"aciklama": "Fiyat son 20 mumun zirvesini ortalamanın üzerindeki hacimle aştı ve mumun üst bölgesinde kapattı.",
+"plan": {
+"giris": 95.9000015258789,
+"bolge": [
+94.5,
+95.9000015258789
+],
+"stop": 90.71653984337416,
+"risk": 5.183461682504742,
+"atr": 5.044613542167773,
+"hedef": [
+{
+"fiyat": 101.63332875569661,
+"etiket": "pivot R2",
+"r": 1.1060807585727646
+},
+{
+"fiyat": 106.56666056315103,
+"etiket": "pivot R3",
+"r": 2.0578253859335573
+},
+{
+"fiyat": 112.79554169754104,
+"etiket": "önceki tepe (14.09.2026)",
+"r": 3.259509032098778
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": 94.5
+},
+"puan": 70.6,
+"gecmis": {
+"n": 35,
+"p1": 0.6857142857142857,
+"p2": 0.34285714285714286,
+"ort_R": 0.4166755506449556,
+"kazanc": 0.6857142857142857
+},
+"piyasa_gecmis": {
+"n": 7725,
+"p1": 0.6181229773462783,
+"p2": 0.355210355987055,
+"ort_R": 0.3209144241038334,
+"kazanc": 0.623948220064725
+},
+"p1_harman": 0.6654368932038836,
+"beklenen_R": 0.38794721268261895,
+"teyit": [
+[
+"Haftalık NÖTR (43)",
+false
+],
+[
+"Günlük puanı 79",
+true
+],
+[
+"Hacim 3,2x",
+true
+],
+[
+"RSI 64",
+true
+],
+[
+"ADX 25",
+true
+],
+[
+"RS 89",
+true
+]
+],
+"risk": [],
+"balina": [
+[
+"Balina satışı",
+-1,
+"18.11.2026: hacim 20 dönem medyanının 7,5 katı; büyük satıcı çıkışı."
+],
+[
+"Balina satışı",
+-1,
+"19.11.2026: hacim 20 dönem medyanının 4,0 katı; büyük satıcı çıkışı."
+],
+[
+"Balina alımı",
+1,
+"20.11.2026: hacim 20 dönem medyanının 3,3 katı; büyük alıcı girişi."
+],
+[
+"Balina alımı",
+1,
+"23.11.2026: hacim 20 dönem medyanının 3,5 katı; büyük alıcı girişi."
+],
+[
+"Balina alımı",
+1,
+"24.11.2026: hacim 20 dönem medyanının 3,2 katı; büyük alıcı girişi."
+]
+],
+"ust_puan": 43.4375,
+"rsi": 64.15597997657724,
+"adx": 25.06371773143135,
+"hacim_k": 3.1597876691291766,
+"mum": "2026-11-24T00:00:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "EGGUB",
+"yon": 1,
+"kurulum": "Hacimli kırılım",
+"puan": 70.6
+},
+{
+"kod": "BAHKM",
+"yon": 1,
+"kurulum": "Yükselen üçgen – yukarı kırılım",
+"puan": 44.8
+},
+{
+"kod": "SKTAS",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım",
+"puan": 32.5
+},
+{
+"kod": "ALKLC",
+"yon": 1,
+"kurulum": "Düşen kanal – yukarı kırılım",
+"puan": 30.5
+},
+{
+"kod": "ALGYO",
+"yon": 1,
+"kurulum": "Simetrik üçgen – yukarı kırılım",
+"puan": 24.7
+},
+{
+"kod": "IEYHO",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 20.7
+}
+],
+"grafik": {
+"EGGUB": "grafik/G_EGGUB.png"
+}
+},
+"H": {
+"zaman": "2026-11-24T12:53:27.156074+00:00",
+"mum": "2026-11-27T00:00:00",
+"taranan": 315,
+"firsatlar": [],
+"adaylar": [
+{
+"kod": "EGGUB",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 49.2
+},
+{
+"kod": "TAVHL",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Alçalan üçgen – yukarı kırılım",
+"puan": 48.5
+},
+{
+"kod": "BALSU",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 42.9
+},
+{
+"kod": "FRIGO",
+"yon": 1,
+"kurulum": "Alçalan üçgen – yukarı kırılım",
+"puan": 40.4
+},
+{
+"kod": "KARTN",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım",
+"puan": 39.8
+},
+{
+"kod": "AKFIS",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 38.3
+},
+{
+"kod": "TATEN",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 36.9
+},
+{
+"kod": "HKTM",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım",
+"puan": 31.3
+}
+],
+"grafik": {}
+},
+"A": {
+"zaman": "2026-11-24T12:53:29.705861+00:00",
+"mum": "2026-11-30T00:00:00",
+"taranan": 274,
+"firsatlar": [
+{
+"kod": "TAVHL",
+"ad": "TAV Havalimanları",
+"para": "₺",
+"piyasa": "bist",
+"tf": "A",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme",
+"aciklama": "Alçalan tepeleri birleştiren çizginin üzerine çıkıldı.",
+"plan": {
+"giris": 289.5,
+"bolge": [
+277.0216408492904,
+293.65945305023655
+],
+"stop": 229.14966999547602,
+"risk": 60.35033000452398,
+"atr": 41.59453050236529,
+"hedef": [
+{
+"fiyat": 350.4042264541783,
+"etiket": "direnç (2 temas)",
+"r": 1.0091780185727697
+},
+{
+"fiyat": 459.7340306645221,
+"etiket": "Fib uzantı %127,2",
+"r": 2.8207638740626773
+},
+{
+"fiyat": 581.2761098307926,
+"etiket": "Fib uzantı %161,8",
+"r": 4.8347061202303365
+}
+],
+"engel": {
+"fiyat": 340.7814057369194,
+"etiket": "önceki tepe (30.04.2026)",
+"r": 0.849728671460044
+},
+"uzak": false,
+"seviye": null
+},
+"puan": 58.5,
+"gecmis": {
+"n": 5,
+"p1": 0.6,
+"p2": 0.0,
+"ort_R": 0.37058971040094246,
+"kazanc": 0.6
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.525,
+"beklenen_R": 0.4676474276002356,
+"teyit": [
+[
+"Haftalık GÜÇLÜ AL (81)",
+true
+],
+[
+"Aylık puanı 64",
+true
+],
+[
+"Hacim 1,0x",
+false
+],
+[
+"RSI 58",
+true
+],
+[
+"ADX 34",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 93",
+true
+]
+],
+"risk": [
+"340,78 seviyesinde önceki tepe (30.04.2026) H1'den önce engel (0,8R)"
+],
+"balina": [],
+"ust_puan": 80.77083333333334,
+"rsi": 57.87035995211482,
+"adx": 33.98650834086172,
+"hacim_k": 0.9680832744795257,
+"mum": "2026-11-30T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "GARAN",
+"ad": "Garanti BBVA",
+"para": "₺",
+"piyasa": "bist",
+"tf": "A",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Alçalan üçgen – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme",
+"aciklama": "Yatay destek + alçalan tepeler; genellikle aşağı kırılır.",
+"plan": {
+"giris": 144.5,
+"bolge": [
+138.57321608139532,
+146.4755946395349
+],
+"stop": 111.87321913315313,
+"risk": 32.62678086684687,
+"atr": 19.75594639534897,
+"hedef": [
+{
+"fiyat": 186.32900506372283,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.2820451160790625
+},
+{
+"fiyat": 206.13402185848045,
+"etiket": "Fib uzantı %127,2",
+"r": 1.8890623046758737
+},
+{
+"fiyat": 260.86486599339935,
+"etiket": "Fib uzantı %161,8",
+"r": 3.5665445042922226
+}
+],
+"engel": {
+"fiyat": 161.1330237371596,
+"etiket": "direnç (1 temas)",
+"r": 0.5097966546267807
+},
+"uzak": false,
+"seviye": null
+},
+"puan": 55.3,
+"gecmis": {
+"n": 4,
+"p1": 0.25,
+"p2": 0.0,
+"ort_R": 0.5570525309629888,
+"kazanc": 0.75
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.4473684210526316,
+"beklenen_R": 0.5120110591501029,
+"teyit": [
+[
+"Haftalık GÜÇLÜ AL (94)",
+true
+],
+[
+"Aylık puanı 69",
+true
+],
+[
+"Hacim 0,8x",
+false
+],
+[
+"RSI 60",
+true
+],
+[
+"ADX 30",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 95",
+true
+]
+],
+"risk": [
+"161,13 seviyesinde direnç (1 temas) H1'den önce engel (0,5R)"
+],
+"balina": [],
+"ust_puan": 94.27083333333334,
+"rsi": 59.68556770168996,
+"adx": 30.229667892395344,
+"hacim_k": 0.8050260435781726,
+"mum": "2026-11-30T00:00:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "TAVHL",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme",
+"puan": 58.5
+},
+{
+"kod": "GARAN",
+"yon": 1,
+"kurulum": "Alçalan üçgen – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme",
+"puan": 55.3
+},
+{
+"kod": "AKSA",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 53.5
+},
+{
+"kod": "THYAO",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 48.6
+},
+{
+"kod": "PGSUS",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 30.4
+},
+{
+"kod": "EGGUB",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 27.3
+}
+],
+"grafik": {
+"TAVHL": "grafik/A_TAVHL.png",
+"GARAN": "grafik/A_GARAN.png"
+}
+}
+}

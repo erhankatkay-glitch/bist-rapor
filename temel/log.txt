@@ -1,0 +1,28 @@
+NVDA.US verileri çekiliyor...
+Otomatik emsal grubu: Teknoloji (XLK büyükleri) → AAPL.US, MSFT.US, AVGO.US, AMD.US, MU.US, PLTR.US
+Emsal verisi: AAPL.US
+Emsal verisi: MSFT.US
+Emsal verisi: AVGO.US
+Emsal verisi: AMD.US
+Emsal verisi: MU.US
+Emsal verisi: PLTR.US
+Analiz ve değerleme yapılıyor...
+PDF oluşturuluyor...
+Tamamlandı: cikti/temel/NVDA_Arastirma_Raporu_20261124.pdf | Adil değer 200,46 $ | Potansiyel %33,1 | Skor 3.76
+NVDA.US adil 200.45546657253513 pot 0.33055967738709957 skor 3.76 emsal 0 $ S&P 500
+THYAO verileri çekiliyor...
+Otomatik emsal grubu: Havacılık → PGSUS, TAVHL, CLEBI
+Emsal verisi: PGSUS
+Emsal verisi: TAVHL
+Emsal verisi: CLEBI
+Analiz ve değerleme yapılıyor...
+PDF oluşturuluyor...
+Tamamlandı: cikti/temel/THYAO_Arastirma_Raporu_20261124.pdf | Adil değer 347,73 TL | Potansiyel %8,6 | Skor 3.04
+THYAO adil 347.72599270839237 pot 0.08579544951878959 skor 3.04 emsal 0 TL BIST 100
+[('THYAO', 100.0, 400.0), ('NVDA.US', 10.0, 250.0), ('BTC/USDT', 0.1, 90000.0)]
+💼 THYAO: ⚠️ ters sinyal: Yükselen kama · maliyete göre -%19,9 (maliyet 400,00) · fiyat 320,25 (-%0,2)
+💼 NVDA (Nvidia): ⚠️ sert düşüş -%8,7 · maliyete göre -%39,7 (maliyet 250,00) · fiyat 150,66 (-%8,7)
+💼 BTC/USDT: ⚠️ maliyete göre -%33,9 (maliyet 90.000,00) · fiyat 59.482,35 (-%2,9)
+💼 <b>THYAO</b>: ⚠️ ters sinyal: Yükselen kama · maliyete göre -%19,9 (maliyet 400,00) · fiyat 320,25 (-%0,2)
+💼 <b>NVDA (Nvidia)</b>: ⚠️ sert düşüş -%8,7 · maliyete göre -%39,7 (maliyet 250,00) · fiyat 150,66 (-%8,7)
+💼 <b>BTC/USDT</b>: ⚠️ maliyete göre -%33,9 (maliyet 90.000,00) · fiyat 59.485,10 (-%2,9)

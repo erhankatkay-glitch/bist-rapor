@@ -1,0 +1,6 @@
+Emtia: 16 varlık saatlik veri
+emtia 4S: 16 varlık, 3 aday, 0 fırsat (0 sn)
+
+real	0m5.264s
+user	0m2.917s
+sys	0m0.232s

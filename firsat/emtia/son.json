@@ -1,0 +1,285 @@
+{
+"G": {
+"zaman": "2026-11-24T12:50:20.173735+00:00",
+"mum": "2026-11-24T00:00:00",
+"taranan": 16,
+"firsatlar": [
+{
+"kod": "DOGALGAZ",
+"ad": "Doğal Gaz",
+"para": "$",
+"piyasa": "emtia",
+"tf": "G",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili dip – teyit + Trend içi geri çekilme",
+"aciklama": "Fiyat aynı desteği iki kez kıramadı.",
+"plan": {
+"giris": 3.6110000610351562,
+"bolge": [
+3.5498795552105107,
+3.6313735629767048
+],
+"stop": 3.038879398807923,
+"risk": 0.5721206622272335,
+"atr": 0.20373501941548458,
+"hedef": [
+{
+"fiyat": 4.32048613023758,
+"etiket": "Fib uzantı %161,8",
+"r": 1.2400986645726693
+},
+{
+"fiyat": 5.1356266353875535,
+"etiket": "direnç (3 temas)",
+"r": 2.664868925406595
+},
+{
+"fiyat": 5.57976935165909,
+"etiket": "direnç (14 temas)",
+"r": 3.4411784447001548
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 58.3,
+"gecmis": {
+"n": 20,
+"p1": 0.3,
+"p2": 0.0,
+"ort_R": 0.08810174986899214,
+"kazanc": 0.55
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.38571428571428573,
+"beklenen_R": 0.2646295713537098,
+"teyit": [
+[
+"Haftalık AL (70)",
+true
+],
+[
+"Günlük puanı 88",
+true
+],
+[
+"Hacim 0,2x",
+false
+],
+[
+"RSI 64",
+true
+],
+[
+"ADX 28",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 93",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 70.125,
+"rsi": 63.612062713008086,
+"adx": 27.83655395891032,
+"hacim_k": 0.16448209674139241,
+"mum": "2026-11-24T00:00:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "DOGALGAZ",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Trend içi geri çekilme",
+"puan": 58.3
+},
+{
+"kod": "PAMUK",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 40.9
+},
+{
+"kod": "MISIR",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım + Pozitif uyumsuzluklu dönüş",
+"puan": 37.5
+},
+{
+"kod": "SOYA",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım",
+"puan": 36.3
+},
+{
+"kod": "KAKAO",
+"yon": 1,
+"kurulum": "Pozitif uyumsuzluklu dönüş",
+"puan": 13.3
+}
+],
+"grafik": {
+"DOGALGAZ": "grafik/G_DOGALGAZ.png"
+}
+},
+"H": {
+"zaman": "2026-11-24T12:50:20.952749+00:00",
+"mum": "2026-11-27T00:00:00",
+"taranan": 16,
+"firsatlar": [
+{
+"kod": "PAMUK",
+"ad": "Pamuk",
+"para": "$",
+"piyasa": "emtia",
+"tf": "H",
+"yon": 1,
+"kurulum": "GERI",
+"kurulum_ad": "Trend içi geri çekilme",
+"aciklama": "Yükselen trendde EMA20 bölgesine gelen geri çekilme alıcıyla karşılandı; önceki mumun tepesi aşıldı.",
+"plan": {
+"giris": 81.20999908447266,
+"bolge": [
+80.02619094362112,
+81.60460179808983
+],
+"stop": 73.66619033326955,
+"risk": 7.543808751203102,
+"atr": 3.946027136171778,
+"hedef": [
+{
+"fiyat": 91.75539881226173,
+"etiket": "önceki tepe (04.09.2026)",
+"r": 1.3978880000248248
+},
+{
+"fiyat": 100.70168218994141,
+"etiket": "Fib uzantı %127,2",
+"r": 2.583798681582454
+},
+{
+"fiyat": 106.85539728638282,
+"etiket": "direnç (1 temas)",
+"r": 3.399529209674117
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 59.8,
+"gecmis": {
+"n": 7,
+"p1": 0.42857142857142855,
+"p2": 0.14285714285714285,
+"ort_R": 0.6946081329198296,
+"kazanc": 0.7142857142857143
+},
+"piyasa_gecmis": {
+"n": 216,
+"p1": 0.4074074074074074,
+"p2": 0.23148148148148148,
+"ort_R": 0.06622807787777582,
+"kazanc": 0.49537037037037035
+},
+"p1_harman": 0.41414141414141414,
+"beklenen_R": 0.2661671863002475,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (79)",
+true
+],
+[
+"Haftalık puanı 60",
+true
+],
+[
+"Hacim 53,7x",
+true
+],
+[
+"RSI 54",
+true
+],
+[
+"ADX 22",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 74",
+true
+]
+],
+"risk": [],
+"balina": [
+[
+"Balina satışı",
+-1,
+"30.10.2026: hacim 20 dönem medyanının 1088,3 katı; büyük satıcı çıkışı."
+],
+[
+"Balina alımı",
+1,
+"06.11.2026: hacim 20 dönem medyanının 1289,1 katı; büyük alıcı girişi."
+],
+[
+"Balina satışı",
+-1,
+"20.11.2026: hacim 20 dönem medyanının 563,3 katı; büyük satıcı çıkışı."
+],
+[
+"Balina alımı",
+1,
+"27.11.2026: hacim 20 dönem medyanının 53,7 katı; büyük alıcı girişi."
+]
+],
+"ust_puan": 79.27083333333334,
+"rsi": 54.41740867371437,
+"adx": 22.383313533837562,
+"hacim_k": 53.7248322147651,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "PAMUK",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 59.8
+},
+{
+"kod": "MISIR",
+"yon": 1,
+"kurulum": "Ters omuz-baş-omuz (TOBO) – teyit",
+"puan": 18.9
+}
+],
+"grafik": {
+"PAMUK": "grafik/H_PAMUK.png"
+}
+},
+"A": {
+"zaman": "2026-11-24T12:50:21.337315+00:00",
+"mum": null,
+"taranan": 16,
+"firsatlar": [],
+"adaylar": [],
+"grafik": {}
+}
+}

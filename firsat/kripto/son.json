@@ -1,0 +1,952 @@
+{
+"4S": {
+"zaman": "2026-11-24T12:50:31.161394+00:00",
+"mum": "2026-11-24T08:00:00",
+"taranan": 77,
+"firsatlar": [
+{
+"kod": "XLM/USDT",
+"ad": "XLM",
+"para": "$",
+"piyasa": "kripto",
+"tf": "4S",
+"yon": -1,
+"kurulum": "GERI",
+"kurulum_ad": "Düşüş trendinde tepki satışı",
+"aciklama": "Düşen trendde EMA20 bölgesine gelen tepki satıcıyla karşılandı; önceki mumun dibi kırıldı.",
+"plan": {
+"giris": 0.1271,
+"bolge": [
+0.1267564832942402,
+0.1281305501172794
+],
+"stop": 0.1334305501172794,
+"risk": 0.006330550117279399,
+"atr": 0.0034351670575979965,
+"hedef": [
+{
+"fiyat": 0.1201435167057598,
+"etiket": "destek (1 temas)",
+"r": 1.0988750053889136
+},
+{
+"fiyat": 0.10584640000000001,
+"etiket": "Fib uzantı %127,2",
+"r": 3.357306964838291
+},
+{
+"fiyat": 0.0880966,
+"etiket": "Fib uzantı %161,8",
+"r": 6.161139123366106
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 75.3,
+"gecmis": {
+"n": 39,
+"p1": 0.6410256410256411,
+"p2": 0.07692307692307693,
+"ort_R": 0.30486768825645794,
+"kazanc": 0.6923076923076923
+},
+"piyasa_gecmis": {
+"n": 1781,
+"p1": 0.5075800112296462,
+"p2": 0.24199887703537337,
+"ort_R": 0.08550450650185801,
+"kazanc": 0.5418304323413813
+},
+"p1_harman": 0.6039574105267536,
+"beklenen_R": 0.24393347110240238,
+"teyit": [
+[
+"Günlük GÜÇLÜ SAT (25)",
+true
+],
+[
+"4 saatlik puanı 13",
+true
+],
+[
+"Hacim 1,4x",
+false
+],
+[
+"RSI 43",
+true
+],
+[
+"ADX 24",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+]
+],
+"risk": [
+"Canlı işlem akışında büyük oyuncular ters yönde"
+],
+"balina": [],
+"ust_puan": 24.583333333333336,
+"rsi": 42.60132705067987,
+"adx": 23.9444383941632,
+"hacim_k": 1.3899302041906576,
+"mum": "2026-11-24T08:00:00",
+"ekstra": {
+"balina_canli": "canlı akış: son 1000 işlemde (~100 dk) 6 büyük işlem (≥10 bin $); büyük alış 52 bin $ / satış 25 bin $ → net alış"
+}
+},
+{
+"kod": "DOGE/USDT",
+"ad": "DOGE",
+"para": "$",
+"piyasa": "kripto",
+"tf": "4S",
+"yon": -1,
+"kurulum": "GERI",
+"kurulum_ad": "Düşüş trendinde tepki satışı",
+"aciklama": "Düşen trendde EMA20 bölgesine gelen tepki satıcıyla karşılandı; önceki mumun dibi kırıldı.",
+"plan": {
+"giris": 0.05594,
+"bolge": [
+0.05578793740404145,
+0.05639618778787564
+],
+"stop": 0.057656187787875644,
+"risk": 0.0017161877878756476,
+"atr": 0.0015206259595854797,
+"hedef": [
+{
+"fiyat": 0.05403666666666666,
+"etiket": "pivot S3",
+"r": 1.1090472422539146
+},
+{
+"fiyat": 0.05092206259595855,
+"etiket": "destek (1 temas)",
+"r": 2.9238859753528548
+},
+{
+"fiyat": 0.0492058748080829,
+"etiket": "3,9R hedefi",
+"r": 3.9238859753528548
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 66.2,
+"gecmis": {
+"n": 38,
+"p1": 0.6052631578947368,
+"p2": 0.13157894736842105,
+"ort_R": 0.2778961177551624,
+"kazanc": 0.6578947368421053
+},
+"piyasa_gecmis": {
+"n": 1781,
+"p1": 0.5075800112296462,
+"p2": 0.24199887703537337,
+"ort_R": 0.08550450650185801,
+"kazanc": 0.5418304323413813
+},
+"p1_harman": 0.5776169843102773,
+"beklenen_R": 0.22344566174007624,
+"teyit": [
+[
+"Günlük GÜÇLÜ SAT (15)",
+true
+],
+[
+"4 saatlik puanı 39",
+true
+],
+[
+"Hacim 0,9x",
+false
+],
+[
+"RSI 48",
+true
+],
+[
+"ADX 32",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 15.374999999999993,
+"rsi": 48.35486517845512,
+"adx": 31.720207716495253,
+"hacim_k": 0.9419961637054182,
+"mum": "2026-11-24T08:00:00",
+"ekstra": {
+"balina_canli": "canlı akış: son 1000 işlemde (~17 dk) 10 büyük işlem (≥10 bin $); büyük alış 40 bin $ / satış 213 bin $ → net satış"
+}
+},
+{
+"kod": "SOXLB/USDT",
+"ad": "SOXLB",
+"para": "$",
+"piyasa": "kripto",
+"tf": "4S",
+"yon": -1,
+"kurulum": "GERI",
+"kurulum_ad": "Düşüş trendinde tepki satışı",
+"aciklama": "Düşen trendde EMA20 bölgesine gelen tepki satıcıyla karşılandı; önceki mumun dibi kırıldı.",
+"plan": {
+"giris": 38.85,
+"bolge": [
+38.55354459057702,
+39.73936622826895
+],
+"stop": 45.73936622826895,
+"risk": 6.889366228268948,
+"atr": 2.9645540942298205,
+"hedef": [
+{
+"fiyat": 30.68333333333333,
+"etiket": "pivot S3",
+"r": 1.1854017330587845
+},
+{
+"fiyat": 17.4024,
+"etiket": "Fib uzantı %127,2",
+"r": 3.1131455767287637
+},
+{
+"fiyat": 1.5555999999999948,
+"etiket": "Fib uzantı %161,8",
+"r": 5.413328129802553
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 66.0,
+"gecmis": {
+"n": 17,
+"p1": 0.5294117647058824,
+"p2": 0.11764705882352941,
+"ort_R": 0.14174791492417202,
+"kazanc": 0.5294117647058824
+},
+"piyasa_gecmis": {
+"n": 1781,
+"p1": 0.5075800112296462,
+"p2": 0.24199887703537337,
+"ort_R": 0.08550450650185801,
+"kazanc": 0.5418304323413813
+},
+"p1_harman": 0.5191781302638967,
+"beklenen_R": 0.11538381722621233,
+"teyit": [
+[
+"Günlük SAT (28)",
+true
+],
+[
+"4 saatlik puanı 36",
+true
+],
+[
+"Hacim 2,5x",
+true
+],
+[
+"RSI 48",
+true
+],
+[
+"ADX 33",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 28.465909090909086,
+"rsi": 48.28014241843269,
+"adx": 32.539953966155075,
+"hacim_k": 2.4854086278857523,
+"mum": "2026-11-24T08:00:00",
+"ekstra": {
+"balina_canli": "canlı akış: son 1000 işlemde (~18 dk) 4 büyük işlem (≥10 bin $); büyük alış 12 bin $ / satış 47 bin $ → net satış"
+}
+},
+{
+"kod": "WLD/USDT",
+"ad": "WLD",
+"para": "$",
+"piyasa": "kripto",
+"tf": "4S",
+"yon": -1,
+"kurulum": "GERI",
+"kurulum_ad": "Düşüş trendinde tepki satışı",
+"aciklama": "Düşen trendde EMA20 bölgesine gelen tepki satıcıyla karşılandı; önceki mumun dibi kırıldı.",
+"plan": {
+"giris": 0.2368,
+"bolge": [
+0.23591490817158417,
+0.23945527548524756
+],
+"stop": 0.24855527548524756,
+"risk": 0.011755275485247546,
+"atr": 0.008850918284158526,
+"hedef": [
+{
+"fiyat": 0.22290000000000001,
+"etiket": "pivot S3",
+"r": 1.1824478309712096
+},
+{
+"fiyat": 0.21018509182841585,
+"etiket": "destek (1 temas)",
+"r": 2.2640820459703326
+},
+{
+"fiyat": 0.15688560000000001,
+"etiket": "Fib uzantı %127,2",
+"r": 6.798173305278105
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 63.2,
+"gecmis": {
+"n": 22,
+"p1": 0.7272727272727273,
+"p2": 0.36363636363636365,
+"ort_R": 0.6132242769874717,
+"kazanc": 0.7272727272727273
+},
+"piyasa_gecmis": {
+"n": 1781,
+"p1": 0.5075800112296462,
+"p2": 0.24199887703537337,
+"ort_R": 0.08550450650185801,
+"kazanc": 0.5418304323413813
+},
+"p1_harman": 0.6382081126606675,
+"beklenen_R": 0.39928382949330404,
+"teyit": [
+[
+"Günlük NÖTR (49)",
+true
+],
+[
+"4 saatlik puanı 22",
+true
+],
+[
+"Hacim 1,2x",
+false
+],
+[
+"RSI 47",
+true
+],
+[
+"ADX 30",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 49.166666666666664,
+"rsi": 46.59953046842381,
+"adx": 29.730864292271704,
+"hacim_k": 1.2100025760077995,
+"mum": "2026-11-24T08:00:00",
+"ekstra": {
+"balina_canli": "canlı akış: son 1000 işlemde (~48 dk) 7 büyük işlem (≥10 bin $); büyük alış 0 bin $ / satış 184 bin $ → net satış"
+}
+},
+{
+"kod": "XSOXL/USDT@OKX",
+"ad": "XSOXL",
+"para": "$",
+"piyasa": "kripto",
+"tf": "4S",
+"yon": -1,
+"kurulum": "GERI",
+"kurulum_ad": "Düşüş trendinde tepki satışı",
+"aciklama": "Düşen trendde EMA20 bölgesine gelen tepki satıcıyla karşılandı; önceki mumun dibi kırıldı.",
+"plan": {
+"giris": 38.91,
+"bolge": [
+38.620173650297495,
+39.7794790491075
+],
+"stop": 45.74947904910751,
+"risk": 6.83947904910751,
+"atr": 2.8982634970250047,
+"hedef": [
+{
+"fiyat": 31.0598263497025,
+"etiket": "destek (1 temas)",
+"r": 1.1477736233904938
+},
+{
+"fiyat": 18.059439999999995,
+"etiket": "Fib uzantı %127,2",
+"r": 3.0485596710352976
+},
+{
+"fiyat": 1.8908599999999929,
+"etiket": "Fib uzantı %161,8",
+"r": 5.4125672049292515
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 62.9,
+"gecmis": {
+"n": 14,
+"p1": 0.5,
+"p2": 0.07142857142857142,
+"ort_R": 0.07634729884450017,
+"kazanc": 0.5
+},
+"piyasa_gecmis": {
+"n": 1781,
+"p1": 0.5075800112296462,
+"p2": 0.24199887703537337,
+"ort_R": 0.08550450650185801,
+"kazanc": 0.5418304323413813
+},
+"p1_harman": 0.5039206954636102,
+"beklenen_R": 0.08108378556382319,
+"teyit": [
+[
+"Günlük SAT (32)",
+true
+],
+[
+"4 saatlik puanı 33",
+true
+],
+[
+"Hacim 2,3x",
+true
+],
+[
+"RSI 48",
+true
+],
+[
+"ADX 32",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+]
+],
+"risk": [
+"Canlı işlem akışında büyük oyuncular ters yönde"
+],
+"balina": [],
+"ust_puan": 31.874999999999996,
+"rsi": 48.19012311604628,
+"adx": 32.41553537990173,
+"hacim_k": 2.341733586481786,
+"mum": "2026-11-24T08:00:00",
+"ekstra": {
+"balina_canli": "canlı akış: son 500 işlemde (~4 dk) 0 büyük işlem (≥10 bin $); büyük alış 0 bin $ / satış 0 bin $ → net alış"
+}
+}
+],
+"adaylar": [
+{
+"kod": "XLM/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 75.3
+},
+{
+"kod": "DOGE/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 66.2
+},
+{
+"kod": "SOXLB/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 66.0
+},
+{
+"kod": "WLD/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 63.2
+},
+{
+"kod": "XSOXL/USDT@OKX",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 62.9
+},
+{
+"kod": "HBAR/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 61.9
+},
+{
+"kod": "PENGU/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 61.3
+},
+{
+"kod": "ENA/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 59.6
+},
+{
+"kod": "U/USDT",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 58.4
+},
+{
+"kod": "TAO/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 58.1
+},
+{
+"kod": "PUMP/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 58.0
+},
+{
+"kod": "XRP/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 55.1
+},
+{
+"kod": "SNXXB/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 53.5
+},
+{
+"kod": "ONDO/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 49.9
+},
+{
+"kod": "HYPE/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 49.6
+},
+{
+"kod": "ZRO/USDT",
+"yon": -1,
+"kurulum": "Hacimli aşağı kırılım",
+"puan": 49.3
+},
+{
+"kod": "SUI/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 47.1
+},
+{
+"kod": "TRUMP/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 46.6
+},
+{
+"kod": "CRCLB/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 43.8
+},
+{
+"kod": "SOL/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 41.7
+}
+],
+"grafik": {
+"XLM/USDT": "grafik/4S_XLM-USDT.png",
+"DOGE/USDT": "grafik/4S_DOGE-USDT.png",
+"SOXLB/USDT": "grafik/4S_SOXLB-USDT.png",
+"WLD/USDT": "grafik/4S_WLD-USDT.png",
+"XSOXL/USDT@OKX": "grafik/4S_XSOXL-USDT_OKX.png"
+}
+},
+"G": {
+"zaman": "2026-11-24T12:50:47.828303+00:00",
+"mum": "2026-11-23T00:00:00",
+"taranan": 73,
+"firsatlar": [],
+"adaylar": [
+{
+"kod": "LISTA/USDT",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Hacimli kırılım",
+"puan": 54.3
+},
+{
+"kod": "XSOXL/USDT@OKX",
+"yon": 1,
+"kurulum": "Düşen kanal – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 43.1
+},
+{
+"kod": "INTCB/USDT",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım",
+"puan": 42.4
+},
+{
+"kod": "SOXLB/USDT",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 39.8
+},
+{
+"kod": "NVDAB/USDT",
+"yon": 1,
+"kurulum": "Düşen kanal – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 29.0
+},
+{
+"kod": "PROM/USDT",
+"yon": -1,
+"kurulum": "Tepe likidite avı dönüşü",
+"puan": 23.5
+},
+{
+"kod": "XNVDA/USDT@OKX",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 18.9
+},
+{
+"kod": "QNT/USDT",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım",
+"puan": 14.9
+},
+{
+"kod": "GOOGLB/USDT",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım",
+"puan": 13.9
+},
+{
+"kod": "XRP/USDT",
+"yon": 1,
+"kurulum": "Pozitif uyumsuzluklu dönüş",
+"puan": 9.3
+},
+{
+"kod": "TRX/USDT",
+"yon": 1,
+"kurulum": "Pozitif uyumsuzluklu dönüş",
+"puan": 9.0
+},
+{
+"kod": "SOL/USDT",
+"yon": 1,
+"kurulum": "Pozitif uyumsuzluklu dönüş",
+"puan": 3.8
+}
+],
+"grafik": {}
+},
+"H": {
+"zaman": "2026-11-24T12:58:21.137183+00:00",
+"mum": "2026-11-29T00:00:00",
+"taranan": 50,
+"firsatlar": [],
+"adaylar": [
+{
+"kod": "ARB/USDT",
+"yon": -1,
+"kurulum": "SuperTrend sat dönüşü",
+"puan": 38.0
+}
+],
+"grafik": {}
+},
+"A": {
+"zaman": "2026-11-24T12:58:24.212965+00:00",
+"mum": "2026-11-30T00:00:00",
+"taranan": 37,
+"firsatlar": [
+{
+"kod": "XLM/USDT",
+"ad": "XLM (XLM/USDT, Binance)",
+"para": "$",
+"piyasa": "kripto",
+"tf": "A",
+"yon": -1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili tepe – teyit + SuperTrend sat dönüşü",
+"aciklama": "Fiyat aynı direnci iki kez aşamadı.",
+"plan": {
+"giris": 0.1302,
+"bolge": [
+0.1209540108588705,
+0.15793796742338853
+],
+"stop": 0.32593796742338854,
+"risk": 0.19573796742338853,
+"atr": 0.09245989141129504,
+"hedef": [
+{
+"fiyat": -0.16340695113508277,
+"etiket": "1,5R hedefi",
+"r": 1.5
+},
+{
+"fiyat": -0.3591449185584713,
+"etiket": "2,5R hedefi",
+"r": 2.5
+},
+{
+"fiyat": -0.5548828859818599,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": {
+"fiyat": 0.0794459891411295,
+"etiket": "önceki dip (31.12.2022)",
+"r": 0.2592956876326793
+},
+"uzak": false,
+"seviye": null
+},
+"puan": 60.9,
+"gecmis": {
+"n": 0
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.5,
+"beklenen_R": 0.0,
+"teyit": [
+[
+"Haftalık GÜÇLÜ SAT (24)",
+true
+],
+[
+"Aylık puanı 16",
+true
+],
+[
+"Hacim 0,6x",
+false
+],
+[
+"RSI 43",
+true
+],
+[
+"ADX 27",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 61",
+false
+]
+],
+"risk": [
+"0,07945 seviyesinde önceki dip (31.12.2022) H1'den önce engel (0,3R)",
+"Canlı işlem akışında büyük oyuncular ters yönde"
+],
+"balina": [],
+"ust_puan": 23.60576923076923,
+"rsi": 43.47538489497328,
+"adx": 27.45315855333826,
+"hacim_k": 0.607530780383534,
+"mum": "2026-11-30T00:00:00",
+"ekstra": {
+"balina_canli": "canlı akış: son 1000 işlemde (~105 dk) 6 büyük işlem (≥10 bin $); büyük alış 58 bin $ / satış 25 bin $ → net alış",
+"turev": "açık pozisyon 7g −%7,2 · vadeli agresif alış %49 · son tasfiyeler: long 0 bin $ / short 0 bin $"
+}
+},
+{
+"kod": "FET/USDT",
+"ad": "FET (FET/USDT, Binance)",
+"para": "$",
+"piyasa": "kripto",
+"tf": "A",
+"yon": -1,
+"kurulum": "FORM",
+"kurulum_ad": "Ayı bayrağı – kırılım",
+"aciklama": "Sert hareket sonrası dar dinlenme; trend yönünde devam ihtimali.",
+"plan": {
+"giris": 0.1086,
+"bolge": [
+0.08407328028465888,
+0.18218015914602337
+],
+"stop": 0.8444015914602339,
+"risk": 0.7358015914602338,
+"atr": 0.24526719715341128,
+"hedef": [
+{
+"fiyat": -0.9075,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.3809429223759906
+},
+{
+"fiyat": -1.7309039786505847,
+"etiket": "2,5R hedefi",
+"r": 2.5
+},
+{
+"fiyat": -2.4667055701108183,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 60.2,
+"gecmis": {
+"n": 1,
+"p1": 0.0,
+"p2": 0.0,
+"ort_R": 0.07191508663573423,
+"kazanc": 1.0
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.46875,
+"beklenen_R": 0.47324469291473337,
+"teyit": [
+[
+"Haftalık GÜÇLÜ SAT (19)",
+true
+],
+[
+"Aylık puanı 7",
+true
+],
+[
+"Hacim 0,8x",
+false
+],
+[
+"RSI 40",
+true
+],
+[
+"ADX 13",
+false
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"RS 25",
+true
+]
+],
+"risk": [
+"Canlı işlem akışında büyük oyuncular ters yönde"
+],
+"balina": [],
+"ust_puan": 18.609068627450974,
+"rsi": 40.216691412144506,
+"adx": 13.166739989360437,
+"hacim_k": 0.7928288091989604,
+"mum": "2026-11-30T00:00:00",
+"ekstra": {
+"balina_canli": "canlı akış: son 1000 işlemde (~38 dk) 1 büyük işlem (≥10 bin $); büyük alış 11 bin $ / satış 0 bin $ → net alış",
+"turev": "açık pozisyon 7g +%0,3 · vadeli agresif alış %49 · son tasfiyeler: long 0 bin $ / short 0 bin $"
+}
+}
+],
+"adaylar": [
+{
+"kod": "XLM/USDT",
+"yon": -1,
+"kurulum": "İkili tepe – teyit + SuperTrend sat dönüşü",
+"puan": 60.9
+},
+{
+"kod": "FET/USDT",
+"yon": -1,
+"kurulum": "Ayı bayrağı – kırılım",
+"puan": 60.2
+},
+{
+"kod": "BCH/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 46.7
+},
+{
+"kod": "LINK/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 46.0
+},
+{
+"kod": "LTC/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 35.3
+},
+{
+"kod": "TRX/USDT",
+"yon": -1,
+"kurulum": "İkili tepe – teyit + Yükselen kama – aşağı kırılım",
+"puan": 33.5
+}
+],
+"grafik": {
+"XLM/USDT": "grafik/A_XLM-USDT.png",
+"FET/USDT": "grafik/A_FET-USDT.png"
+}
+}
+}

@@ -1,0 +1,93 @@
+{
+ "piyasa": "abd",
+ "baslik": "Kapanış Teknik Bülteni – ABD Borsaları",
+ "uretim": "24.11.2026 18:27",
+ "kapanis": "2026-11-24",
+ "adet": 1915,
+ "hata": 2,
+ "grafikler": [
+  {
+   "kod": "SP500",
+   "ad": "S&P 500",
+   "etiket": "SAT",
+   "puan": 28.3,
+   "dosya": "grafik/SP500.png",
+   "yorum": "S&P 500 teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) nötr görünümde. Öne çıkan: İkili tepe – TEYİT (boyun çizgisi kırıldı); Sabah yıldızı. En yakın destek 6.713,02, direnç 7.306,00."
+  },
+  {
+   "kod": "NVDA.US",
+   "ad": "NVIDIA Corporation",
+   "etiket": "GÜÇLÜ SAT",
+   "puan": 20.0,
+   "dosya": "grafik/NVDA.US.png",
+   "yorum": "NVIDIA Corporation teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) sat görünümde. Öne çıkan: Üç kara karga. En yakın destek 151,42."
+  },
+  {
+   "kod": "AAPL.US",
+   "ad": "Apple Inc.",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 82.6,
+   "dosya": "grafik/AAPL.US.png",
+   "yorum": "Apple Inc. teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: Sabah yıldızı; İkili tepe – oluşumda. En yakın destek 335,99, direnç 360,83."
+  },
+  {
+   "kod": "MSFT.US",
+   "ad": "Microsoft Corporation",
+   "etiket": "NÖTR",
+   "puan": 42.4,
+   "dosya": "grafik/MSFT.US.png",
+   "yorum": "Microsoft Corporation teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) sat, uzun vadede (aylık) al görünümde. Öne çıkan: SuperTrend sat sinyaline döndü; Ichimoku Tenkan/Kijun al kesişimi. En yakın destek 223,37, direnç 502,64."
+  },
+  {
+   "kod": "TSLA.US",
+   "ad": "Tesla, Inc.",
+   "etiket": "AL",
+   "puan": 61.5,
+   "dosya": "grafik/TSLA.US.png",
+   "yorum": "Tesla, Inc. teknik olarak kısa vadede (günlük) al, orta vadede (haftalık) al, uzun vadede (aylık) al görünümde. Öne çıkan: İkili tepe – oluşumda; İkili dip – oluşumda. En yakın destek 278,80, direnç 493,68."
+  },
+  {
+   "kod": "MBGL.US",
+   "ad": "Mobility Global Inc. Common Stock",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 97.7,
+   "dosya": "grafik/MBGL.US.png",
+   "yorum": "Mobility Global Inc. Common Stock teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Ters omuz-baş-omuz (TOBO) – TEYİT (boyun çizgisi kırıldı); Çekiç. En yakın destek 21,94, direnç 24,86."
+  },
+  {
+   "kod": "TENB.US",
+   "ad": "Tenable Holdings, Inc.",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 89.9,
+   "dosya": "grafik/TENB.US.png",
+   "yorum": "Tenable Holdings, Inc. teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: Simetrik üçgen – YUKARI KIRILIM; Kayan yıldız. En yakın destek 37,19, direnç 62,99."
+  },
+  {
+   "kod": "GILD.US",
+   "ad": "Gilead Sciences, Inc.",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 89.7,
+   "dosya": "grafik/GILD.US.png",
+   "yorum": "Gilead Sciences, Inc. teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Alçalan üçgen – YUKARI KIRILIM. En yakın destek 171,80."
+  },
+  {
+   "kod": "BBIO.US",
+   "ad": "BridgeBio Pharma, Inc.",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 89.7,
+   "dosya": "grafik/BBIO.US.png",
+   "yorum": "BridgeBio Pharma, Inc. teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); İkili tepe – oluşumda. En yakın destek 79,28, direnç 85,42."
+  }
+ ],
+ "raporlar": [
+  "rapor/NVDA.US_Teknik.pdf",
+  "rapor/AAPL.US_Teknik.pdf",
+  "rapor/MSFT.US_Teknik.pdf",
+  "rapor/TSLA.US_Teknik.pdf"
+ ],
+ "endeks": {
+  "ad": "S&P 500",
+  "etiket": "SAT",
+  "puan": 28.3
+ }
+}

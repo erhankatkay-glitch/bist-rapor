@@ -1,0 +1,99 @@
+{
+ "piyasa": "kripto_tl",
+ "baslik": "Kapanış Teknik Bülteni – Kripto TL Pariteleri",
+ "uretim": "24.11.2026 15:58",
+ "kapanis": "2026-11-23",
+ "adet": 332,
+ "hata": 0,
+ "grafikler": [
+  {
+   "kod": "BTC/TRY",
+   "ad": "Bitcoin (BTC/TRY, Binance)",
+   "etiket": "SAT",
+   "puan": 40.8,
+   "dosya": "grafik/BTC-TRY.png",
+   "yorum": "Bitcoin (BTC/TRY, Binance) teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) nötr, uzun vadede (aylık) nötr görünümde. Öne çıkan: İkili tepe – TEYİT (boyun çizgisi kırıldı); Boğa haramisi. En yakın destek 2.123.349, direnç 3.510.122."
+  },
+  {
+   "kod": "ETH/TRY",
+   "ad": "Ethereum (ETH/TRY, Binance)",
+   "etiket": "GÜÇLÜ SAT",
+   "puan": 23.6,
+   "dosya": "grafik/ETH-TRY.png",
+   "yorum": "Ethereum (ETH/TRY, Binance) teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) sat, uzun vadede (aylık) güçlü sat görünümde. Öne çıkan: İkili tepe – TEYİT (boyun çizgisi kırıldı); Gizli negatif uyumsuzluk (RSI). En yakın destek 52.411,30, direnç 145.226."
+  },
+  {
+   "kod": "VVV/TRY@OKX",
+   "ad": "VVV (VVV/TRY, OKX)",
+   "etiket": "AL",
+   "puan": 73.3,
+   "dosya": "grafik/VVV-TRY_OKX.png",
+   "yorum": "VVV (VVV/TRY, OKX) teknik olarak kısa vadede (günlük) al görünümde. Öne çıkan: Sabah yıldızı; Pozitif uyumsuzluk (MACD). En yakın destek 1.298,20, direnç 1.376,30."
+  },
+  {
+   "kod": "OPG/TRY",
+   "ad": "OPG (OPG/TRY, Binance)",
+   "etiket": "AL",
+   "puan": 72.5,
+   "dosya": "grafik/OPG-TRY.png",
+   "yorum": "OPG (OPG/TRY, Binance) teknik olarak kısa vadede (günlük) al görünümde. Öne çıkan: Yutan boğa; İkili dip – oluşumda. En yakın destek 6,51, direnç 7,41."
+  },
+  {
+   "kod": "FF/TRY",
+   "ad": "FF (FF/TRY, Binance)",
+   "etiket": "AL",
+   "puan": 68.6,
+   "dosya": "grafik/FF-TRY.png",
+   "yorum": "FF (FF/TRY, Binance) teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al görünümde. Öne çıkan: Düşen kanal – YUKARI KIRILIM; Pozitif uyumsuzluk (RSI). En yakın destek 4,08, direnç 7,85."
+  },
+  {
+   "kod": "DODO/TRY",
+   "ad": "DODO (DODO/TRY, Binance)",
+   "etiket": "AL",
+   "puan": 67.9,
+   "dosya": "grafik/DODO-TRY.png",
+   "yorum": "DODO (DODO/TRY, Binance) teknik olarak kısa vadede (günlük) al, orta vadede (haftalık) al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Negatif uyumsuzluk (RSI). En yakın destek 2,00, direnç 2,22."
+  },
+  {
+   "kod": "NIGHT/TRY",
+   "ad": "NIGHT (NIGHT/TRY, Binance)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 84.5,
+   "dosya": "grafik/NIGHT-TRY.png",
+   "yorum": "NIGHT (NIGHT/TRY, Binance) teknik olarak kısa vadede (günlük) al, orta vadede (haftalık) güçlü al görünümde. Öne çıkan: Delen çizgi; MACD al kesişimi. En yakın destek 1,51, direnç 2,62."
+  },
+  {
+   "kod": "KITE/TRY",
+   "ad": "KITE (KITE/TRY, Binance)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 80.3,
+   "dosya": "grafik/KITE-TRY.png",
+   "yorum": "KITE (KITE/TRY, Binance) teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al görünümde. Öne çıkan: Yükselen kama – içinde; Yükselen trend çizgisi kırıldı – KIRILIM. En yakın destek 6,38, direnç 8,30."
+  },
+  {
+   "kod": "MMT/TRY",
+   "ad": "MMT (MMT/TRY, Binance)",
+   "etiket": "AL",
+   "puan": 73.7,
+   "dosya": "grafik/MMT-TRY.png",
+   "yorum": "MMT (MMT/TRY, Binance) teknik olarak kısa vadede (günlük) al, orta vadede (haftalık) al görünümde. Öne çıkan: Altın kesişim (SMA50 > SMA200); Yutan ayı. En yakın destek 7,00, direnç 11,71."
+  },
+  {
+   "kod": "SENT/TRY",
+   "ad": "SENT (SENT/TRY, Binance)",
+   "etiket": "AL",
+   "puan": 73.6,
+   "dosya": "grafik/SENT-TRY.png",
+   "yorum": "SENT (SENT/TRY, Binance) teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al görünümde. Öne çıkan: EMA20 EMA50'yi yukarı kesti; SuperTrend al sinyaline döndü. En yakın destek 0,7744, direnç 1,24."
+  }
+ ],
+ "raporlar": [
+  "rapor/BTC-TRY_Teknik.pdf",
+  "rapor/ETH-TRY_Teknik.pdf"
+ ],
+ "endeks": {
+  "ad": "Bitcoin (BTC/TRY, Binance)",
+  "etiket": "SAT",
+  "puan": 40.8
+ }
+}

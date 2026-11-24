@@ -1,0 +1,92 @@
+{
+ "piyasa": "kripto",
+ "baslik": "Kapanış Teknik Bülteni – Kripto (USDT)",
+ "uretim": "24.11.2026 15:56",
+ "kapanis": "2026-11-23",
+ "adet": 794,
+ "hata": 0,
+ "grafikler": [
+  {
+   "kod": "BTC/USDT",
+   "ad": "Bitcoin (BTC/USDT, Binance)",
+   "etiket": "SAT",
+   "puan": 27.7,
+   "dosya": "grafik/BTC-USDT.png",
+   "yorum": "Bitcoin (BTC/USDT, Binance) teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) sat görünümde. Öne çıkan: İkili tepe – TEYİT (boyun çizgisi kırıldı); Çekiç. En yakın destek 37.144,59, direnç 108.533."
+  },
+  {
+   "kod": "ETH/USDT",
+   "ad": "Ethereum (ETH/USDT, Binance)",
+   "etiket": "SAT",
+   "puan": 25.0,
+   "dosya": "grafik/ETH-USDT.png",
+   "yorum": "Ethereum (ETH/USDT, Binance) teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) sat, uzun vadede (aylık) sat görünümde. Öne çıkan: Gizli negatif uyumsuzluk (RSI); Gizli negatif uyumsuzluk (MACD). En yakın destek 1.004,56, direnç 2.328,98."
+  },
+  {
+   "kod": "SOL/USDT",
+   "ad": "Solana (SOL/USDT, Binance)",
+   "etiket": "SAT",
+   "puan": 30.8,
+   "dosya": "grafik/SOL-USDT.png",
+   "yorum": "Solana (SOL/USDT, Binance) teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) sat, uzun vadede (aylık) güçlü sat görünümde. Öne çıkan: Çekiç; İkili dip – oluşumda. En yakın destek 59,27, direnç 122,88."
+  },
+  {
+   "kod": "XOKTA/USDT@OKX",
+   "ad": "XOKTA (XOKTA/USDT, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 85.4,
+   "dosya": "grafik/XOKTA-USDT_OKX.png",
+   "yorum": "XOKTA (XOKTA/USDT, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Simetrik üçgen – YUKARI KIRILIM; SuperTrend al sinyaline döndü. En yakın destek 178,98, direnç 213,58."
+  },
+  {
+   "kod": "KITE/USDT",
+   "ad": "KITE (KITE/USDT, Binance)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 82.2,
+   "dosya": "grafik/KITE-USDT.png",
+   "yorum": "KITE (KITE/USDT, Binance) teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al görünümde. Öne çıkan: Yükselen üçgen – YUKARI KIRILIM; Yükselen trend çizgisi kırıldı – KIRILIM. En yakın destek 0,1164, direnç 0,1434."
+  },
+  {
+   "kod": "XBSP/USDT@OKX",
+   "ad": "XBSP (XBSP/USDT, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 81.6,
+   "dosya": "grafik/XBSP-USDT_OKX.png",
+   "yorum": "XBSP (XBSP/USDT, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Ters omuz-baş-omuz (TOBO) – TEYİT (boyun çizgisi kırıldı). En yakın destek 39,87, direnç 47,25."
+  },
+  {
+   "kod": "XSONY/USDT@OKX",
+   "ad": "XSONY (XSONY/USDT, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 81.3,
+   "dosya": "grafik/XSONY-USDT_OKX.png",
+   "yorum": "XSONY (XSONY/USDT, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Yapı kırılımı yukarı (BOS). En yakın destek 27,43, direnç 28,37."
+  },
+  {
+   "kod": "XGME/USDT@OKX",
+   "ad": "XGME (XGME/USDT, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 96.6,
+   "dosya": "grafik/XGME-USDT_OKX.png",
+   "yorum": "XGME (XGME/USDT, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Yükselen kanal – içinde; SuperTrend al sinyaline döndü. En yakın destek 25,68, direnç 27,51."
+  },
+  {
+   "kod": "GMEB/USDT",
+   "ad": "GMEB (GMEB/USDT, Binance)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 96.6,
+   "dosya": "grafik/GMEB-USDT.png",
+   "yorum": "GMEB (GMEB/USDT, Binance) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Yükselen kanal – içinde; SuperTrend al sinyaline döndü. En yakın destek 25,68, direnç 27,56."
+  }
+ ],
+ "raporlar": [
+  "rapor/BTC-USDT_Teknik.pdf",
+  "rapor/ETH-USDT_Teknik.pdf",
+  "rapor/SOL-USDT_Teknik.pdf"
+ ],
+ "endeks": {
+  "ad": "Bitcoin (BTC/USDT, Binance)",
+  "etiket": "SAT",
+  "puan": 27.7
+ }
+}
