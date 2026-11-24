@@ -1,0 +1,15 @@
+# Kapanış bülteninde ayrıca grafik + ayrıntılı teknik PDF üretilecek varlıklar (her satıra bir kod)
+# BIST
+THYAO
+ASELS
+KCHOL
+AKBNK
+# Kripto
+BTC
+ETH
+SOL
+# Emtia
+ALTIN
+GRAMALTIN
+GUMUS
+BRENT

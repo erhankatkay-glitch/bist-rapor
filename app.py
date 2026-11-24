@@ -11,6 +11,9 @@ import tasarim as ts
 import bist_rapor as br
 import bist_varlik as V
 import bist_evren as EV
+import bist_teknik as TK
+import bist_teknik_rapor as TKR
+import io
 ts = importlib.reload(ts)
 bv = importlib.reload(bv)
 isy = importlib.reload(isy)  # alt modüller de güncellensin
@@ -18,6 +21,8 @@ mk = importlib.reload(mk)
 br = importlib.reload(br)
 V = importlib.reload(V)
 EV = importlib.reload(EV)
+TK = importlib.reload(TK)
+TKR = importlib.reload(TKR)
 DURUM_EMOJI = {"iyi": "🟢", "orta": "🟡", "zayif": "🔴", "yok": "⚪"}
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
 
@@ -35,7 +40,7 @@ div.stButton > button, div.stDownloadButton > button {width: 100%; height: 3rem;
 st.markdown("## 📊 BIST Hisse Araştırma")
 if st.button("🔄 Verileri yenile (önbelleği temizle)", key="yenile"):
     st.cache_data.clear()
-    for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin"):
+    for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin", "tk_sonuc"):
         st.session_state.pop(k_, None)
     st.rerun()
 
@@ -162,7 +167,7 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                  })
 
 
-tab_r, tab_v, tab_p, tab_t, tab_b, tab_k, tab_w = st.tabs(["📄 Hisse", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "👶 Bebek", "⚖️ Karşılaştır", "⭐ Takip"])
+tab_r, tab_x, tab_v, tab_p, tab_t, tab_b, tab_k, tab_w = st.tabs(["📄 Hisse", "📐 Teknik", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "👶 Bebek", "⚖️ Karşılaştır", "⭐ Takip"])
 
 # ================= RAPOR =================
 with tab_r:
@@ -253,6 +258,107 @@ with tab_r:
                 st.dataframe(dfv, hide_index=True, use_container_width=True,
                              column_config={"Değer (TL)": st.column_config.NumberColumn(format="%.2f"),
                                             "Ağırlık": st.column_config.NumberColumn(format="%.2f")})
+
+# ================= TEKNİK ANALİZ =================
+REPO = "erhankatkay-glitch/bist-rapor"
+ETK_RENK = {"GÜÇLÜ AL": "#16A34A", "AL": "#22C55E", "NÖTR": "#D97706", "SAT": "#EF4444", "GÜÇLÜ SAT": "#DC2626"}
+
+@st.cache_data(ttl=15 * 60, show_spinner=False, max_entries=40)
+def teknik_analiz(kod, zaman, surum):
+    s = TK.analiz(kod)
+    klasor = tempfile.mkdtemp(); yol = os.path.join(klasor, f"{s['kod']}_Teknik_{dt.date.today():%Y%m%d}.pdf")
+    TKR.teknik_pdf(s, yol)
+    with open(yol, "rb") as f: pdf = f.read()
+    graf = {tf: TKR.g_teknik(a, f"{s['kod']} · {TK.TF_AD[tf]} · {a['etiket']}", dpi=130).getvalue() for tf, a in s["tf"].items() if a}
+    tfo = {tf: {"etiket": a["etiket"], "puan": a["puan"], "sayim": a["oy"]["sayim"], "sinyal": [(x[0], x[1], x[2]) for x in a["sinyal"]],
+                "destek": a["sr"]["destek"], "direnc": a["sr"]["direnc"], "yapi": a["pa"]["yapi"], "ma": a["oy"]["ma_etiket"],
+                "osc": a["oy"]["osc_etiket"], "pivot": a["pivot"]["Klasik"]} for tf, a in s["tf"].items() if a}
+    g = s["tf"].get("G") or {}
+    return {"kod": s["kod"], "ad": s["ad"], "etiket": s["etiket"], "puan": s["puan"], "yorum": s["yorum"], "pdf": pdf,
+            "dosya": os.path.basename(yol), "graf": graf, "tf": tfo, "para": s["para"], "fiyat": g.get("fiyat"), "degisim": g.get("degisim"),
+            "fiyat_zamani": ts.zaman_metni(s.get("fiyat_zamani"))}
+
+@st.cache_data(ttl=10 * 60, show_spinner=False)
+def bulten_oku(piyasa, zaman):
+    import requests
+    taban = f"https://raw.githubusercontent.com/{REPO}/bulten/{piyasa}/"; q = f"?t={zaman}"
+    m = requests.get(taban + "meta.json" + q, timeout=20)
+    if m.status_code != 200: return None
+    meta = m.json(); al = lambda yol: requests.get(taban + yol + q, timeout=60).content
+    ozet = pd.read_csv(io.BytesIO(al("ozet.csv")))
+    return {"meta": meta, "pdf": al("bulten.pdf"), "ozet": ozet,
+            "graf": {g_["kod"]: al(g_["dosya"]) for g_ in meta.get("grafikler", [])[:10]},
+            "rapor": {os.path.basename(r_): al(r_) for r_ in meta.get("raporlar", [])}}
+
+with tab_x:
+    st.caption("Günlük, haftalık ve aylık kapanışlara göre 30'a yakın gösterge, mum formasyonları, grafik formasyonları "
+               "(ikili tepe/dip, OBO/TOBO, üçgen, kama, bayrak, kanal), price action, Fibonacci, pivot ve uyumsuzluk analizi.")
+    tk_tur = st.radio("Varlık türü", ["Hisse", "Emtia", "Kripto"], horizontal=True, key="tk_tur")
+    if tk_tur == "Hisse":
+        tk_kod = hisse_sec("Hisse (endeks için XU100 yazabilirsiniz)", "tk_kod")
+    else:
+        tt = "emtia" if tk_tur == "Emtia" else "kripto"
+        tk_s = st.selectbox("Varlık", [f"{k} — {v[1]}" for k, v in V.VARLIKLAR.items() if v[2] == tt], index=None, key="tk_v",
+                            placeholder="Seçin")
+        tk_kod = tk_s.split(" — ")[0] if tk_s else ""
+    if st.button("📐 Teknik analiz yap", type="primary", disabled=not tk_kod, key="tk_btn"):
+        try:
+            with st.status(f"{tk_kod} teknik analizi yapılıyor… (15–40 sn)") as s_:
+                st.session_state.tk_sonuc = teknik_analiz(tk_kod, ZAMAN, br.SURUM)
+                s_.update(label="Hazır ✓", state="complete", expanded=False)
+        except Exception as e:
+            st.error(f"Teknik analiz yapılamadı: {e}")
+    if "tk_sonuc" in st.session_state:
+        r = st.session_state.tk_sonuc
+        st.markdown(f"### {r['ad']} ({r['kod']})")
+        st.caption(f"🕒 Son fiyat verisi: {r['fiyat_zamani']} · Fiyat {TK.sayi(r['fiyat'])} {r['para']} ({br.yz(r['degisim'])})")
+        kart(st, "GENEL TEKNİK GÖRÜNÜM", r["etiket"], f"Puan {r['puan']:.0f}/100 (günlük %30, haftalık %40, aylık %30)", ETK_RENK.get(r["etiket"], "#14294B"))
+        cols = st.columns(3)
+        for c_, tf in zip(cols, ("G", "H", "A")):
+            x = r["tf"].get(tf)
+            if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"], "#14294B"))
+        st.info("**Kısaca:** " + r["yorum"].replace("<b>", "**").replace("</b>", "**"))
+        st.download_button("⬇️ Teknik PDF raporu", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="tk_dl")
+        sek = st.tabs([TK.TF_AD[t] for t in ("G", "H", "A") if t in r["tf"]])
+        for sk, tf in zip(sek, [t for t in ("G", "H", "A") if t in r["tf"]]):
+            with sk:
+                x = r["tf"][tf]
+                if tf in r["graf"]: st.image(r["graf"][tf], use_container_width=True)
+                st.markdown(f"**Ortalamalar:** {x['ma']} · **Osilatörler:** {x['osc']} · **Yapı:** {x['yapi']}")
+                d_ = " · ".join(TK.sayi(v) for v, _ in x["destek"][:3]) or "–"; r_ = " · ".join(TK.sayi(v) for v, _ in x["direnc"][:3]) or "–"
+                st.markdown(f"🟢 **Destek:** {d_}  \n🔴 **Direnç:** {r_}  \n⚖️ **Pivot:** P {TK.sayi(x['pivot']['P'])} · R1 {TK.sayi(x['pivot']['R1'])} · S1 {TK.sayi(x['pivot']['S1'])}")
+                for ad_, y_, ac in x["sinyal"]:
+                    st.markdown(f"{'🟢' if y_ > 0 else '🔴' if y_ < 0 else '🟡'} **{ad_}**  \n<span style='font-size:0.85rem;color:#6B7280'>{ac}</span>", unsafe_allow_html=True)
+                if not x["sinyal"]: st.caption("Bu zaman diliminde belirgin bir formasyon veya sinyal yok.")
+
+    st.divider()
+    st.markdown("#### 📬 Kapanış bültenleri")
+    st.caption("Otomatik üretilir: BIST 19:07, emtia 02:07, kripto 04:07 (TSİ) — kapanıştan yaklaşık 1 saat sonra. Tüm varlıklar taranır.")
+    b_p = st.radio("Bülten", ["BIST", "Kripto", "Emtia"], horizontal=True, key="bul_p")
+    try:
+        B = bulten_oku({"BIST": "bist", "Kripto": "kripto", "Emtia": "emtia"}[b_p], ZAMAN)
+    except Exception as e:
+        B = None; st.caption(f"Bülten okunamadı: {e}")
+    if not B:
+        st.info("Bu piyasa için henüz bülten yok. İlk bülten bir sonraki kapanıştan sonra burada görünecek.")
+    else:
+        mt = B["meta"]
+        st.markdown(f"**{mt['baslik']}** · kapanış {mt['kapanis']} · üretim {mt['uretim']} · {mt['adet']} varlık")
+        if mt.get("endeks"): st.caption(f"{mt['endeks']['ad']}: {mt['endeks']['etiket']} ({mt['endeks']['puan']:.0f}/100)")
+        st.download_button("⬇️ Bülten PDF", data=B["pdf"], file_name=f"{mt['piyasa']}_bulten_{mt['kapanis']}.pdf", mime="application/pdf", key="bul_dl")
+        oz = B["ozet"].sort_values("Teknik puan", ascending=False)
+        st.dataframe(oz[["Kod", "Teknik puan", "Genel", "Günlük", "Haftalık", "Aylık", "RSI", "Formasyon +", "Formasyon −"]].head(25),
+                     hide_index=True, use_container_width=True,
+                     column_config={"Teknik puan": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.0f"),
+                                    "RSI": st.column_config.NumberColumn(format="%.0f")})
+        with st.expander("Grafikler"):
+            for g_ in mt.get("grafikler", []):
+                if g_["kod"] in B["graf"]:
+                    st.image(B["graf"][g_["kod"]], use_container_width=True); st.caption(g_["yorum"])
+        if B["rapor"]:
+            with st.expander("Takip listesi teknik raporları"):
+                for ad_, b_ in B["rapor"].items():
+                    st.download_button(f"⬇️ {ad_}", data=b_, file_name=ad_, mime="application/pdf", key=f"bul_{ad_}")
 
 # ================= EMTİA & KRİPTO =================
 @st.cache_data(ttl=3 * 3600, show_spinner=False, max_entries=60)

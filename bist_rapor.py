@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-14"
+SURUM = "2026.11.24-15"
 
 import bist_veri as BV
 
