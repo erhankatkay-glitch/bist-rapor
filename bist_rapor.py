@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-13"
+SURUM = "2026.11.24-14"
 
 import bist_veri as BV
 
@@ -180,8 +180,8 @@ def _naive(x):
 # ---------------------------------------------------------------------
 def kur_cek():
     import yfinance as yf
-    h = yf.Ticker("TRY=X").history(period="5y")["Close"].dropna()
-    return _naive(h)
+    h = _naive(yf.Ticker("TRY=X").history(period="5y")["Close"].dropna())
+    return seri_canli(h, "TRY=X")
 
 def dolar_analizi(h, fx):
     if fx is None or len(fx) < 30:
@@ -195,7 +195,7 @@ def dolar_analizi(h, fx):
     def ret(gun):
         s_ = u[u.index <= son - pd.Timedelta(days=gun)]
         return float(u.iloc[-1] / s_.iloc[-1] - 1) if len(s_) else None
-    o["r"] = {"1G": p / float(k.iloc[-2]) - 1 if len(k) > 1 else None, "1A": ret(30), "3A": ret(91), "6A": ret(182), "1Y": ret(365), "3Y": ret(365 * 3)}
+    o["r"] = {"1G": float(u.iloc[-1] / u.iloc[-2] - 1) if len(u) > 1 else None, "1A": ret(30), "3A": ret(91), "6A": ret(182), "1Y": ret(365), "3Y": ret(365 * 3)}
     yb = u[u.index < pd.Timestamp(son.year, 1, 1)]
     o["r"]["YBB"] = float(u.iloc[-1] / yb.iloc[-1] - 1) if len(yb) else None
     fy = f[f.index <= son - pd.Timedelta(days=365)]
@@ -395,7 +395,10 @@ def veri_cek(kod, hafif=False):
         info = t.info or {}
     except Exception:
         info = {}
-    d = {"kod": kod, "info": info, "hist": _naive(hist),
+    hist = _naive(hist); d_zaman = hist.index[-1]
+    if not hafif:
+        hist, d_zaman = canli_guncelle(hist, kod + ".IS")
+    d = {"kod": kod, "info": info, "hist": hist, "fiyat_zamani": d_zaman,
          "gelir": g("income_stmt"), "bilanco": g("balance_sheet"), "nakit": g("cashflow"),
          "q_gelir": g("quarterly_income_stmt"), "q_bilanco": g("quarterly_balance_sheet"),
          "q_nakit": g("quarterly_cashflow")}
@@ -482,10 +485,60 @@ def kur_cevir(d, fx):
         d[k] = df
     return d
 
+def canli_guncelle(h, sembol):
+    """Günlük fiyat serisinin son satırını gün içi (1–5 dk) veriyle günceller.
+    Yahoo BIST verisi ~15 dk gecikmelidir. (seri, son_fiyat_zamanı) döndürür."""
+    zaman = h.index[-1] if len(h) else None
+    try:
+        import yfinance as yf
+        g = None
+        for per, ara in (("1d", "1m"), ("5d", "5m")):
+            g = yf.Ticker(sembol).history(period=per, interval=ara, auto_adjust=False)
+            if g is not None and not g.empty: break
+        if g is None or g.empty: return h, zaman
+        g = g.dropna(subset=["Close"]); z0 = g.index[-1]
+        try: zaman = z0.tz_convert("Europe/Istanbul").tz_localize(None)
+        except Exception: zaman = z0
+        g = _naive(g); gun = g.index[-1].normalize(); bugun = g[g.index.normalize() == gun]
+        h = h.copy(); son = float(bugun["Close"].iloc[-1])
+        if gun in h.index:
+            h.loc[gun, "Close"] = son
+            if "High" in h: h.loc[gun, "High"] = max(float(h.loc[gun, "High"]), float(bugun["High"].max()))
+            if "Low" in h: h.loc[gun, "Low"] = min(float(h.loc[gun, "Low"]), float(bugun["Low"].min()))
+        elif len(h) == 0 or gun > h.index[-1]:
+            yeni = {c: np.nan for c in h.columns}
+            yeni.update({"Open": float(bugun["Open"].iloc[0]), "High": float(bugun["High"].max()), "Low": float(bugun["Low"].min()),
+                         "Close": son, "Volume": float(bugun["Volume"].sum()) if "Volume" in bugun else 0.0})
+            for c in ("Adj Close",):
+                if c in h.columns: yeni[c] = son
+            for c in ("Dividends", "Stock Splits"):
+                if c in h.columns: yeni[c] = 0.0
+            h.loc[gun] = pd.Series(yeni)
+    except Exception:
+        pass
+    return h, zaman
+
+def seri_canli(s, sembol):
+    """Tek sütunlu kapanış serisini (kur, endeks) gün içi veriyle günceller."""
+    h, _ = canli_guncelle(pd.DataFrame({"Close": s}), sembol)
+    return h["Close"]
+
+def beklenen_donem(bugun=None):
+    """Yasal süreye göre bugün itibarıyla açıklanmış olması gereken en son mali tablo dönemi.
+    (Yaklaşık: 1. ve 3. çeyrek +60 gün, 2. çeyrek ve yıl sonu +70 gün.)"""
+    bugun = pd.Timestamp(bugun or dt.date.today())
+    for yil in (bugun.year, bugun.year - 1, bugun.year - 2):
+        for ay, ek in ((12, 70), (9, 60), (6, 70), (3, 60)):
+            son = pd.Timestamp(yil, ay, 1) + pd.offsets.MonthEnd(0)
+            if son + pd.Timedelta(days=ek) <= bugun:
+                return son
+    return None
+
 def endeks_cek():
     import yfinance as yf
     h = yf.Ticker("XU100.IS").history(period="5y")
-    return _naive(h) if h is not None and not h.empty else None
+    if h is None or h.empty: return None
+    return canli_guncelle(_naive(h), "XU100.IS")[0]
 
 # =====================================================================
 # METRİKLER
@@ -504,6 +557,7 @@ def metrikler(d, endeks=None):
          "sektor": info.get("sector") or "–", "sanayi": info.get("industry") or "–"}
     m["finansal"] = finansal_mi(info, d["kod"]); m["kur_notu"] = d.get("kur_notu")
     m["kaynak"] = d.get("kaynak", "Yahoo Finance"); m["kaynak_hata"] = d.get("kaynak_hata")
+    m["fiyat_zamani"] = d.get("fiyat_zamani")
     kap = h["Close"].dropna(); p = float(kap.iloc[-1]); m["fiyat"] = p
     m["tarih"] = kap.index[-1]
 
@@ -679,6 +733,13 @@ def metrikler(d, endeks=None):
                  "eksik": eksik}
     puan_v = 100 - 12 * len(eksik) - (15 if gun is not None and gun > 200 else 0) - (10 if m["veri"]["ceyrek"] < 4 else 0)
     m["veri"]["puan"] = max(puan_v, 0)
+    bk = beklenen_donem(); m["veri"]["beklenen"] = bk; m["veri"]["eski"] = None
+    if sb is not None and bk is not None and sb < bk - pd.Timedelta(days=5):
+        m["veri"]["eski"] = (f"Son mali tablo dönemi {sb:%m/%Y}; yasal süreye göre {bk:%m/%Y} dönemi açıklanmış olmalıydı. "
+                             "Şirket geç açıklamış ya da veri kaynağı henüz güncellenmemiş olabilir; KAP'tan kontrol edin.")
+        m["veri"]["puan"] = max(m["veri"]["puan"] - 10, 0)
+    if "Yahoo" in str(m.get("kaynak")):
+        m["veri"]["eski"] = ((m["veri"]["eski"] or "") + " Mali tablolar Yahoo'dan alındı; Yahoo BIST finansallarını gecikmeli güncelleyebilir.").strip()
 
     # --- Fiyat, risk, teknik ---
     m.update(fiyat_analizi(h, endeks))
@@ -758,7 +819,7 @@ def fiyat_analizi(h, endeks):
     def ret(gun):
         t0 = son - pd.Timedelta(days=gun); s = k[k.index <= t0]
         return p / float(s.iloc[-1]) - 1 if len(s) else None
-    o["r"] = {"1A": ret(30), "3A": ret(91), "6A": ret(182), "1Y": ret(365), "3Y": ret(365*3)}
+    o["r"] = {"1G": p / float(k.iloc[-2]) - 1 if len(k) > 1 else None, "1A": ret(30), "3A": ret(91), "6A": ret(182), "1Y": ret(365), "3Y": ret(365*3)}
     ybb = k[k.index < pd.Timestamp(son.year, 1, 1)]
     o["r"]["YBB"] = p / float(ybb.iloc[-1]) - 1 if len(ybb) else None
     o["r_endeks"] = {}
@@ -1596,7 +1657,9 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     # ---------------- SAYFA 1: PRO ÖZET ----------------
     E += TS.pro_kapak(m["ad"], f"BIST: {m['kod']}  ·  {m['sektor']}  ·  {m['tarih']:%d.%m.%Y}  ·  Kaynak: {str(m.get('kaynak', 'Yahoo')).split(' (')[0]}",
                       f"{tl(m['fiyat'])} ₺", m["r"].get("1G"), W,
-                      rozet=f"MODEL GÖRÜŞÜ: {m['gorus'].upper()}" if m.get("gorus") not in (None, "–") else None)
+                      rozet=f"MODEL GÖRÜŞÜ: {m['gorus'].upper()}" if m.get("gorus") not in (None, "–") else None,
+                      guncel=f"Fiyat: {TS.zaman_metni(m.get('fiyat_zamani') or m['tarih'])} (~15 dk gecikmeli)  ·  Son mali tablo: "
+                             + (f"{m['veri']['son_donem']:%m/%Y}" if (m.get("veri") or {}).get("son_donem") is not None else "–"))
     dahil = [y[1] for y in m["yontemler"] if y[6] and y[1]]
     PW = (W - 10) / 2
     sol = TS.AdilDegerGostergesi(m["fiyat"], m["adil"], min(dahil) if dahil else None, max(dahil) if dahil else None,
@@ -1604,6 +1667,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     sag = TS.SkorGostergesi(m["genel_skor"], m["skor_etiket"] or "", m["saglik"] or {}, gen=PW, yuk=150)
     E.append(TS.yan_yana(sol, sag, W)); E.append(Spacer(1, 8))
     E.append(bilgi_kutusu("Kısaca:", sade_ozet(m), W)); E.append(Spacer(1, 4))
+    if (m.get("veri") or {}).get("eski"):
+        E.append(bilgi_kutusu("Veri uyarısı:", m["veri"]["eski"], W, "sari")); E.append(Spacer(1, 2))
     E.append(Paragraph("Temel göstergeler", ST["h2"]))
     ml = [("Piyasa değeri", f"{tl(m['piy_deg'])} ₺"), ("Dolar bazında fiyat", f"${ond(m['usd']['fiyat_usd'], 2)}" if m.get("usd") else "–"),
           ("F/K", kat(m["fk"])), ("PD/DD", kat(m["pddd"])),
@@ -1635,7 +1700,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     E.append(Spacer(1, 4))
     E.append(Paragraph("Kısa yorumlar", ST["h2"]))
     for bas, metin in genel_degerlendirme(m)[:4]:
-        E.append(Paragraph(f"<b>{bas}:</b> {metin}", ST["p"]))
+        E.append(Paragraph(f"<b>{bas}:</b> {TS.esc(metin)}", ST["p"]))
 
     # ---------------- SAYFA 2: DEĞERLEME ----------------
     E.append(CondPageBreak(12 * cm)); E.append(Bolum(1, "Değerleme: Hisse ne kadar eder?", W))
@@ -1904,7 +1969,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         E.append(CondPageBreak(6 * cm)); E.append(Paragraph(f"Haber Akışı (son 30 gün) – genel ton: {hb['ozet']}", ST["h2"]))
         v = [["Tarih", "Başlık", "Kaynak", "Ton"]]
         for x in hb["liste"]:
-            v.append([f"{x['tarih']:%d.%m}" if x["tarih"] else "–", Paragraph(x["baslik"][:140], ST["hucre"]), x["kaynak"][:22],
+            v.append([f"{x['tarih']:%d.%m}" if x["tarih"] else "–", Paragraph(TS.esc(x["baslik"][:140]), ST["hucre"]), x["kaynak"][:22],
                       "+" if x["ton"] > 0 else "−" if x["ton"] < 0 else "·"])
         E.append(tablo(v, [W * .09, W * .63, W * .2, W * .08], hizala_sol=(0, 1, 2), font=7.2))
         E.append(Paragraph("Kaynak: Google Haberler. Ton, başlıktaki olumlu/olumsuz kelimelere dayalı basit bir sınıflandırmadır.", ST["kucuk"]))
@@ -1924,7 +1989,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     E.append(PageBreak()); E.append(Bolum(8, "Genel değerlendirme ve özet", W))
     E.append(bilgi_kutusu("Kısaca:", sade_ozet(m), W))
     for bas, metin in genel_degerlendirme(m):
-        E.append(KeepTogether([Paragraph(bas, ST["h2"]), Paragraph(metin, ST["p"])]))
+        E.append(KeepTogether([Paragraph(bas, ST["h2"]), Paragraph(TS.esc(metin), ST["p"])]))
     E.append(PageBreak()); E.append(Bolum(9, "Sözlük: Terimler ne anlama geliyor?", W))
     E.append(tablo([["Terim", "Sade anlatım"]] + [[a, Paragraph(b, ST["hucre"])] for a, b in SOZLUK_HISSE],
                    [W * .28, W * .72], hizala_sol=(0, 1), font=7.8))
@@ -2055,7 +2120,9 @@ def ozet_satir(m):
             "1Y $": ((m.get("usd") or {}).get("r") or {}).get("1Y"), "Güven": m.get("guven"),
             "Sektör": next((g_ for g_, l_ in SEKTOR_GRUPLARI.items() if m["kod"] in l_), m.get("sektor") or "Diğer"),
             "Yabancı %": (m.get("yabanci") or {}).get("oran"),
-            "Yabancı Δ1A": (m.get("yabanci") or {}).get("d20")}
+            "Yabancı Δ1A": (m.get("yabanci") or {}).get("d20"),
+            "Reel büyüme": reel(m.get("ciro_b")), "Çeyrek büyüme (reel)": reel(m.get("ceyrek_ciro_b")),
+            "Piyasa değeri": m.get("piy_deg")}
 
 def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None, fx_fn=None, **param):
     """Birden çok hisseyi tarar, özet tablo döndürür. Emsaller tarama içindeki aynı sektör hisseleridir."""

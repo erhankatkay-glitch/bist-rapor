@@ -10,12 +10,14 @@ import bist_makro as mk
 import tasarim as ts
 import bist_rapor as br
 import bist_varlik as V
+import bist_evren as EV
 ts = importlib.reload(ts)
 bv = importlib.reload(bv)
 isy = importlib.reload(isy)  # alt modüller de güncellensin
 mk = importlib.reload(mk)
 br = importlib.reload(br)
 V = importlib.reload(V)
+EV = importlib.reload(EV)
 DURUM_EMOJI = {"iyi": "🟢", "orta": "🟡", "zayif": "🔴", "yok": "⚪"}
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
 
@@ -31,6 +33,11 @@ div.stButton > button, div.stDownloadButton > button {width: 100%; height: 3rem;
 </style>""", unsafe_allow_html=True)
 
 st.markdown("## 📊 BIST Hisse Araştırma")
+if st.button("🔄 Verileri yenile (önbelleği temizle)", key="yenile"):
+    st.cache_data.clear()
+    for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin"):
+        st.session_state.pop(k_, None)
+    st.rerun()
 
 # ---------------- Makro veriler ----------------
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -67,6 +74,9 @@ with st.expander("⚙️ Varsayımlar"):
         st.session_state["evds_key"] = yeni_k
 PRM = dict(rf=rf, enflasyon=enf, erp=erp, terminal_g=g)
 GUN = dt.date.today().isoformat()
+_s = dt.datetime.now()
+ZAMAN = _s.strftime("%Y%m%d%H") + str(_s.minute // 15)   # fiyatlı analizler en fazla 15 dk önbellekte kalır
+SAAT2 = _s.strftime("%Y%m%d") + str(_s.hour // 2)        # taramalar en fazla 2 saat
 
 
 def hisse_sec(etiket, key):
@@ -117,6 +127,8 @@ def analiz(kod, emsal, prm, gun, surum):
         "tek": br.tek_bakista(m), "sade": br.sade_ozet(m),
         "usd": {k: v for k, v in (m.get("usd") or {}).items() if k != "seri"} if m.get("usd") else None,
         "yabanci": (m.get("yabanci") or {}).get("oran"),
+        "fiyat_zamani": ts.zaman_metni(m.get("fiyat_zamani") or m["tarih"]), "veri_eski": (m.get("veri") or {}).get("eski"),
+        "uretim": dt.datetime.now(dt.timezone(dt.timedelta(hours=3))).strftime("%d.%m.%Y %H:%M"),
     }
 
 
@@ -150,7 +162,7 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                  })
 
 
-tab_r, tab_v, tab_p, tab_t, tab_k, tab_w = st.tabs(["📄 Hisse", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "⚖️ Karşılaştır", "⭐ Takip"])
+tab_r, tab_v, tab_p, tab_t, tab_b, tab_k, tab_w = st.tabs(["📄 Hisse", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "👶 Bebek", "⚖️ Karşılaştır", "⭐ Takip"])
 
 # ================= RAPOR =================
 with tab_r:
@@ -160,7 +172,7 @@ with tab_r:
     if st.button("📄 Rapor Oluştur", type="primary", disabled=not kod, key="r_btn"):
         try:
             with st.status(f"{kod} analiz ediliyor… (30–60 sn)") as s:
-                st.session_state.sonuc = analiz(kod, emsal, tuple(PRM.items()), GUN, br.SURUM)
+                st.session_state.sonuc = analiz(kod, emsal, tuple(PRM.items()), ZAMAN, br.SURUM)
                 s.update(label="Rapor hazır ✓", state="complete", expanded=False)
         except Exception as e:
             st.error(f"Rapor oluşturulamadı: {e}\n\nKodu kontrol edin veya biraz sonra tekrar deneyin.")
@@ -169,6 +181,8 @@ with tab_r:
         r = st.session_state.sonuc; o = r["ozet"]
         st.markdown(f"### {o['Şirket']} ({o['Kod']})")
         st.caption("📚 Finansal veri kaynağı: " + (r.get("kaynak") or "Yahoo Finance"))
+        st.caption(f"🕒 Fiyat zamanı: {r.get('fiyat_zamani')} (Yahoo, ~15 dk gecikmeli) · Rapor üretimi: {r.get('uretim')}")
+        if r.get("veri_eski"): st.warning("Veri uyarısı: " + r["veri_eski"])
         if r.get("kaynak_hata"): st.caption("⚠️ " + r["kaynak_hata"])
         if r.get("kur_notu"): st.caption("ⓘ " + r["kur_notu"])
         c1, c2 = st.columns(2)
@@ -264,7 +278,8 @@ def varlik_analiz(kod, prm, saat, surum):
             "genel": V.genel_degerlendirme(m), "graf": graf, "korku": {k: v for k, v in (m.get("korku") or {}).items() if k != "seri"} or None,
             "cg": m.get("cg"), "global": m.get("global"), "turev": m.get("turev"), "sharpe": m.get("sharpe"),
             "adil": m.get("adil"), "pot": m.get("potansiyel"), "etiket": (m.get("deger") or {}).get("etiket"),
-            "saglik": m.get("saglik")}
+            "saglik": m.get("saglik"), "fiyat_zamani": ts.zaman_metni(m.get("fiyat_zamani")),
+            "uretim": dt.datetime.now(dt.timezone(dt.timedelta(hours=3))).strftime("%d.%m.%Y %H:%M")}
 
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
 def varlik_tarama(gun, surum):
@@ -279,13 +294,14 @@ with tab_v:
     if st.button("📄 Analiz Et", type="primary", disabled=not v_kod, key="v_btn"):
         try:
             with st.status(f"{v_sec} analiz ediliyor…") as s:
-                st.session_state.v_sonuc = varlik_analiz(v_kod, tuple(PRM.items()), dt.datetime.now().strftime("%Y%m%d%H"), br.SURUM)
+                st.session_state.v_sonuc = varlik_analiz(v_kod, tuple(PRM.items()), ZAMAN, br.SURUM)
                 s.update(label="Hazır ✓", state="complete", expanded=False)
         except Exception as e:
             st.error(f"Analiz yapılamadı: {e}")
     if "v_sonuc" in st.session_state:
         r = st.session_state.v_sonuc; sym = "$" if r["para"] == "USD" else "₺"
         st.markdown(f"### {r['ad']}")
+        st.caption(f"🕒 Fiyat zamanı: {r.get('fiyat_zamani')} TSİ · Rapor üretimi: {r.get('uretim')}")
         renk = {"iyi": "#16A34A", "orta": "#D97706", "zayif": "#DC2626"}[V.durum_gorunum(r["gorunum"])]
         c1, c2 = st.columns(2)
         kart(c1, "SON FİYAT", f"{br.tl(r['fiyat'])} {sym}", f"≈ {br.tl(r['fiyat_tl'])} ₺" if r["para"] == "USD" else "")
@@ -310,7 +326,7 @@ with tab_v:
     with st.expander("📊 Tüm emtia ve kriptoları karşılaştır"):
         if st.button("Karşılaştırmayı oluştur (1–2 dk)", key="v_tara"):
             with st.spinner("Varlıklar taranıyor…"):
-                st.session_state.v_tablo = varlik_tarama(GUN, br.SURUM)
+                st.session_state.v_tablo = varlik_tarama(SAAT2, br.SURUM)
         if "v_tablo" in st.session_state:
             sat, hat = st.session_state.v_tablo
             if sat:
@@ -336,7 +352,7 @@ def _degisim_metni(v):
 with tab_p:
     st.markdown("#### 📈 Makro panel")
     try:
-        PV = piyasa_verisi(dt.datetime.now().strftime("%Y%m%d%H"))
+        PV = piyasa_verisi(ZAMAN)
     except Exception as e:
         PV = {}; st.caption(f"Piyasa verisi alınamadı: {e}")
     sira = ["USD/TRY", "EUR/TRY", "Gram altın", "BIST 100", "BIST 100 ($)", "Brent petrol", "Ons altın", "ABD 10Y faiz"]
@@ -365,13 +381,18 @@ with tab_p:
         _df = pd.read_csv(tarama_dosya)
         P_SATIR = _df.drop(columns=["tarih"]).to_dict("records")
         st.caption(f"Son tarama: {_df['tarih'].iloc[0]} · {len(_df)} hisse")
+        try:
+            if (pd.Timestamp.today() - pd.Timestamp(str(_df["tarih"].iloc[0])[:10])).days > 3:
+                st.warning("Otomatik tarama 3 günden eski. Güncel liste için aşağıdaki Tarayıcı sekmesini kullanın veya GitHub Actions'ı kontrol edin.")
+        except Exception:
+            pass
     elif "p_tarama" in st.session_state:
         P_SATIR = st.session_state.p_tarama
     else:
         st.info("İlk otomatik tarama bir sonraki iş günü sabahı hazır olacak. İsterseniz şimdi elle başlatabilirsiniz (5–10 dakika).")
         if st.button("🌍 Tüm piyasayı şimdi tara", key="p_btn"):
             with st.spinner(f"{len(bv.SIRKETLER)} hisse taranıyor… Ekranı kapatmayın."):
-                st.session_state.p_tarama = tarama(tuple(sorted(bv.SIRKETLER)), tuple(PRM.items()), GUN, br.SURUM)[0]
+                st.session_state.p_tarama = tarama(tuple(sorted(bv.SIRKETLER)), tuple(PRM.items()), SAAT2, br.SURUM)[0]
             st.rerun()
     if P_SATIR:
         for baslik, liste in br.kategoriler(P_SATIR).items():
@@ -420,7 +441,7 @@ with tab_p:
 # ================= TARAYICI =================
 with tab_t:
     st.caption("Seçtiğiniz gruptaki hisseleri tarar; sağlık skoru ve potansiyele göre sıralar. "
-               "Hisse sayısına göre 1–5 dakika sürebilir; sonuç 6 saat saklanır.")
+               "Hisse sayısına göre 1–5 dakika sürebilir; sonuç en fazla 2 saat saklanır.")
     gruplar = {"Büyük hisseler (30)": bv.BUYUK_HISSELER}
     gruplar.update({f"Sektör: {k}": v for k, v in br.SEKTOR_GRUPLARI.items()})
     gruplar[f"Tüm liste ({len(bv.SIRKETLER)} hisse – yavaş)"] = sorted(bv.SIRKETLER)
@@ -429,7 +450,7 @@ with tab_t:
     if st.button("🔎 Taramayı Başlat", type="primary", key="t_btn"):
         with st.spinner(f"{len(gruplar[secim])} hisse taranıyor… Ekranı kapatmayın."):
             try:
-                satirlar, hatalar = tarama(tuple(gruplar[secim]), tuple(PRM.items()), GUN, br.SURUM)
+                satirlar, hatalar = tarama(tuple(gruplar[secim]), tuple(PRM.items()), SAAT2, br.SURUM)
                 st.session_state.tarama = (secim, satirlar, hatalar)
             except Exception as e:
                 st.error(f"Tarama yapılamadı: {e}")
@@ -439,6 +460,74 @@ with tab_t:
         tablo_goster(satirlar, sirala)
         if hatalar:
             st.caption("Veri alınamayanlar: " + ", ".join(hatalar))
+
+# ================= BEBEK ŞİRKETLER =================
+@st.cache_data(ttl=6 * 3600, show_spinner=False)
+def evren_cek(gun, surum):
+    try:
+        return EV.tum_hisseler(), None
+    except Exception as e:
+        return pd.DataFrame({"Kod": sorted(bv.SIRKETLER), "Ad": [bv.SIRKETLER[k] for k in sorted(bv.SIRKETLER)]}), str(e)[:150]
+
+@st.cache_data(ttl=24 * 3600, show_spinner=False)
+def ilk_cek(kodlar, gun, surum):
+    return EV.ilk_islemler(list(kodlar))
+
+with tab_b:
+    st.caption("Bebek şirketler: borsaya yeni gelmiş (yeni halka arz) ve/veya küçük ölçekli şirketler. Tüm BIST taranır, "
+               "sonra bilanço ve büyümelerine göre kendi aralarında puanlanır. Bu hisseler genellikle daha oynak ve risklidir.")
+    tur_b = st.radio("Ne arıyorsunuz?", ["Yeni halka arzlar", "Küçük şirketler", "Yeni VE küçük"], horizontal=True, key="b_tur")
+    c1, c2 = st.columns(2)
+    maks_yil = c1.slider("Borsada en fazla (yıl)", 0.5, 5.0, 3.0, 0.5, key="b_yil", disabled=tur_b == "Küçük şirketler")
+    maks_pd = c2.number_input("Piyasa değeri en fazla (milyar TL)", 1.0, 200.0, 10.0, 1.0, key="b_pd", disabled=tur_b == "Yeni halka arzlar")
+    if st.button("👶 Bebek şirketleri bul", type="primary", key="b_btn"):
+        with st.spinner("Tüm BIST listesi ve ilk işlem tarihleri alınıyor… (ilk seferde 1–2 dk)"):
+            evren, ev_hata = evren_cek(GUN, br.SURUM)
+            ilk = ilk_cek(tuple(evren["Kod"]), GUN, br.SURUM)
+            liste = EV.bebekler(evren, ilk, maks_yil=None if tur_b == "Küçük şirketler" else maks_yil,
+                                maks_pd_mr=None if tur_b == "Yeni halka arzlar" else maks_pd)
+            st.session_state.bebek = (liste, ev_hata, len(evren)); st.session_state.pop("bebek_derin", None)
+    if "bebek" in st.session_state:
+        liste, ev_hata, n_ev = st.session_state.bebek
+        if ev_hata: st.warning(f"İş Yatırım tam hisse listesi alınamadı, {n_ev} hisselik yedek liste kullanıldı ({ev_hata}).")
+        st.markdown(f"**{len(liste)} şirket bulundu** ({n_ev} hisse içinden)")
+        if liste:
+            dfb = pd.DataFrame(liste)
+            for c in ("İlk işlemden getiri", "Zirveden uzaklık"):
+                dfb[c] = dfb[c].apply(lambda x: None if x is None or pd.isna(x) else round(x * 100, 1))
+            st.dataframe(dfb, hide_index=True, use_container_width=True,
+                         column_config={"Halka açıklık %": st.column_config.NumberColumn(format="%.1f"),
+                                        "İlk işlemden getiri": st.column_config.NumberColumn("İlk işlemden getiri %", format="%.1f"),
+                                        "Zirveden uzaklık": st.column_config.NumberColumn("Zirveden %", format="%.1f")})
+            st.caption("İlk işlem: Yahoo'daki ilk aylık fiyat (bedelsiz/bölünme düzeltilmiş). Halka arz fiyatı değil, ilk işlem ayının açılışıdır.")
+            n_derin = min(len(liste), 80)
+            if st.button(f"🔬 Derin analiz: bilanço, büyüme ve bebek skoru ({n_derin} şirket, 2–6 dk)", key="b_derin"):
+                with st.spinner("Şirketlerin finansalları taranıyor… Ekranı kapatmayın."):
+                    kodlar = tuple(x["Kod"] for x in liste[:n_derin])
+                    sat, hat = tarama(kodlar, tuple(PRM.items()), SAAT2, br.SURUM)
+                    sat = EV.bebek_skoru([dict(x) for x in sat])
+                    ek = {x["Kod"]: x for x in liste}
+                    for x in sat:
+                        x.update({k: v for k, v in ek.get(x["Kod"], {}).items() if k not in x})
+                        x["Risk notu"] = EV.risk_notlari(x)
+                    st.session_state.bebek_derin = (sat, hat)
+        if "bebek_derin" in st.session_state:
+            sat, hat = st.session_state.bebek_derin
+            if sat:
+                dfd = pd.DataFrame(sat).sort_values("Bebek skoru", ascending=False, na_position="last")
+                for c in ("Reel büyüme", "Çeyrek büyüme (reel)", "Potansiyel", "ROE"):
+                    if c in dfd: dfd[c] = dfd[c].apply(lambda x: None if x is None or pd.isna(x) else round(x * 100, 1))
+                kol = [c for c in ["Kod", "Şirket", "Bebek skoru", "Neden", "Sağlık skoru", "Reel büyüme", "Çeyrek büyüme (reel)",
+                                   "Potansiyel", "ROE", "F/K", "Para akışı", "Borsadaki süre (ay)", "Risk notu"] if c in dfd]
+                st.markdown("**🏆 Bebek skoru sıralaması**")
+                st.dataframe(dfd[kol], hide_index=True, use_container_width=True,
+                             column_config={"Bebek skoru": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.0f"),
+                                            "Sağlık skoru": st.column_config.NumberColumn(format="%.2f"),
+                                            "F/K": st.column_config.NumberColumn(format="%.1f")})
+                st.caption("Bebek skoru: reel hasılat büyümesi (%30), sağlık skoru (%30), değerleme potansiyeli (%15), son çeyrek büyümesi (%15) "
+                           "ve para akışının (%10) bebek şirketler içindeki yüzdelik sırasıdır. Detay için kodu 📄 Hisse sekmesine yazıp tam rapor alın. "
+                           "Yatırım tavsiyesi değildir.")
+            if hat: st.caption("Verisi alınamayanlar: " + ", ".join(hat))
 
 # ================= KARŞILAŞTIR =================
 with tab_k:
@@ -454,7 +543,7 @@ with tab_k:
         with st.status("Hisseler analiz ediliyor…") as s:
             for k in kodlar:
                 try:
-                    sonuc[k] = analiz(k, "", tuple(PRM.items()), GUN, br.SURUM)
+                    sonuc[k] = analiz(k, "", tuple(PRM.items()), ZAMAN, br.SURUM)
                 except Exception as e:
                     st.warning(f"{k}: {e}")
             s.update(label="Hazır ✓", state="complete", expanded=False)
@@ -502,7 +591,7 @@ with tab_w:
             sutun[i % 4].button(f"✖ {k}", key=f"rm_{k}", on_click=_cikar, args=(k,))
         if st.button("🔄 Listeyi Güncelle", type="primary", key="w_tara"):
             with st.spinner("Takip listesi taranıyor…"):
-                st.session_state.takip = tarama(tuple(liste), tuple(PRM.items()), GUN, br.SURUM)
+                st.session_state.takip = tarama(tuple(liste), tuple(PRM.items()), SAAT2, br.SURUM)
         if "takip" in st.session_state:
             tablo_goster(st.session_state.takip[0], "Potansiyel")
     else:

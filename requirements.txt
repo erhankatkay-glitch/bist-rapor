@@ -6,3 +6,4 @@ pandas>=2.0
 numpy>=1.26
 requests>=2.31
 tcmb>=0.5
+lxml

@@ -149,7 +149,7 @@ def bilgi_kutusu(baslik, metin, W, tur="ana"):
     koyu, acik = {"ana": (R["ana"], R["ana_acik"]), "turkuaz": (R["turkuaz"], R["turkuaz_acik"]),
                   "sari": (R["sari"], R["sari_acik"]), "yesil": (R["yesil"], R["yesil_acik"]),
                   "kirmizi": (R["kirmizi"], R["kirmizi_acik"])}[tur]
-    p = Paragraph(f'<font name="DVB" color="{koyu.hexval().replace("0x", "#")}">{baslik}</font>&nbsp;&nbsp;{metin}', ST["kutu"])
+    p = Paragraph(f'<font name="DVB" color="{koyu.hexval().replace("0x", "#")}">{baslik}</font>&nbsp;&nbsp;{esc(metin)}', ST["kutu"])
     t = Table([[p]], colWidths=[W])
     t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), acik), ("LEFTPADDING", (0, 0), (-1, -1), 10),
                            ("RIGHTPADDING", (0, 0), (-1, -1), 10), ("TOPPADDING", (0, 0), (-1, -1), 7),
@@ -169,7 +169,7 @@ def trafik_listesi(satirlar, W):
                                   _st("r", alignment=1))]], colWidths=[40])
         rozet.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), acik), ("ROUNDEDCORNERS", [6, 6, 6, 6]),
                                    ("TOPPADDING", (0, 0), (-1, -1), 2), ("BOTTOMPADDING", (0, 0), (-1, -1), 3)]))
-        veri.append([rozet, Paragraph(f'<font name="DVB">{soru}</font><br/>{cevap}', _st("tl", fontSize=8.6, leading=11.8))])
+        veri.append([rozet, Paragraph(f'<font name="DVB">{soru}</font><br/>{esc(cevap)}', _st("tl", fontSize=8.6, leading=11.8))])
     t = Table(veri, colWidths=[48, W - 48])
     t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LINEBELOW", (0, 0), (-1, -2), 0.5, R["cizgi"]),
                            ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
@@ -256,6 +256,11 @@ SOZLUK_HISSE = [
 # =====================================================================
 HEX.update({"altin": "#F59E0B", "altin_acik": "#FEF3C7", "gece": "#0B1220", "gece2": "#111A2E"})
 R.update({k: colors.HexColor(HEX[k]) for k in ("altin", "altin_acik", "gece", "gece2")})
+
+import re as _re
+def esc(x):
+    """Paragraph içinde çıplak & işaretlerini kaçışlar (S&P 500 gibi)."""
+    return _re.sub(r"&(?!amp;|lt;|gt;|nbsp;|quot;|#)", "&amp;", str(x))
 
 def _hex(c):
     return c.hexval().replace("0x", "#")
@@ -410,7 +415,7 @@ def sinyal_listesi(guclu, zayif, W, n=5):
         koyu = R["yesil"] if yon > 0 else R["kirmizi"]
         satir = [[Paragraph(f'<font name="DVB" color="{_hex(koyu)}">{bas}</font>', ST["hucreB"]), ""]]
         for x in liste[:n]:
-            satir.append([_Ikon(yon), Paragraph(x, _st("sg", fontSize=8.2, leading=11))])
+            satir.append([_Ikon(yon), Paragraph(esc(x), _st("sg", fontSize=8.2, leading=11))])
         if not liste:
             satir.append(["", Paragraph(f'<font color="{HEX["soluk"]}">Belirgin bir sinyal yok.</font>', _st("sg", fontSize=8.2, leading=11))])
         t = Table(satir, colWidths=[18, W / 2 - 26])
@@ -448,12 +453,19 @@ def yan_yana(sol, sag, W, bosluk=10):
     t.hAlign = "LEFT"; return t
 
 
-def pro_kapak(ad, alt_satir, fiyat_metni, degisim, W, rozet=None):
+def zaman_metni(z):
+    if z is None: return "–"
+    z = __import__("pandas").Timestamp(z)
+    return f"{z:%d.%m.%Y}" if (z.hour, z.minute) == (0, 0) else f"{z:%d.%m.%Y %H:%M}"
+
+def pro_kapak(ad, alt_satir, fiyat_metni, degisim, W, rozet=None, guncel=None):
     """Koyu bant içinde: solda ad ve alt bilgi, sağda büyük fiyat ve günlük değişim."""
     renk = HEX["yesil"] if (degisim or 0) > 0 else HEX["kirmizi"] if (degisim or 0) < 0 else "#CBD5E1"
     ok = "↑" if (degisim or 0) > 0 else "↓" if (degisim or 0) < 0 else ""
     sol = [Paragraph(f'<font name="DVX" size="21" color="#FFFFFF">{ad}</font>', _st("pk", leading=26)),
            Spacer(1, 3), Paragraph(f'<font color="#94A3B8">{alt_satir}</font>', _st("pa", fontSize=8.6, leading=11.5))]
+    if guncel:
+        sol.append(Paragraph(f'<font color="{HEX["altin"]}">•</font> <font color="#CBD5E1">{guncel}</font>', _st("pg", fontSize=7.4, leading=10)))
     if rozet:
         rw = pdfmetrics.stringWidth(rozet, "DVB", 7.6) + 18
         rz = Table([[Paragraph(f'<font name="DVB" size="7.6" color="{HEX["gece"]}">{rozet}</font>', _st("pr", alignment=1, leading=10))]], colWidths=[rw])

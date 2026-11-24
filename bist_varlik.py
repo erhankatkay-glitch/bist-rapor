@@ -98,7 +98,7 @@ def coingecko(cg_id):
             "atl_tarih": (md.get("atl_date") or {}).get("usd"), "d24": yz_("price_change_percentage_24h"),
             "d7": yz_("price_change_percentage_7d"), "d30": yz_("price_change_percentage_30d"), "d1y": yz_("price_change_percentage_1y"),
             "kategori": [c for c in (j.get("categories") or []) if c][:3], "baslangic": j.get("genesis_date"),
-            "algoritma": j.get("hashing_algorithm"), "oy": (j.get("sentiment_votes_up_percentage") or 0) / 100 or None}
+            "algoritma": j.get("hashing_algorithm"), "fiyat": g("current_price"), "guncelleme": md.get("last_updated"), "oy": (j.get("sentiment_votes_up_percentage") or 0) / 100 or None}
 
 def kripto_global():
     """CoinGecko /global: toplam piyasa değeri ve dominanslar."""
@@ -218,6 +218,7 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
     if kod == "GRAMALTIN":
         try: o = fiyat_fn("GC=F", "10y")
         except Exception: o = fiyat_fn("GC=F")
+        if fiyat_fn is fiyat_cek: o, _ = br.canli_guncelle(o, "GC=F")
         f = fx.reindex(o.index, method="ffill")
         h = o[["Open", "High", "Low", "Close"]].mul(f, axis=0) / 31.1035
         h["Volume"] = o.get("Volume", 0); h = h.dropna(subset=["Close"]); para = "TL"
@@ -225,8 +226,11 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
         try: h = fiyat_fn(yahoo, "max" if tur == "kripto" else "10y")
         except Exception: h = fiyat_fn(yahoo)
         para = "USD"
+    zaman = h.index[-1]
+    if fiyat_fn is fiyat_cek:
+        h, zaman = br.canli_guncelle(h, yahoo or "GC=F") if kod != "GRAMALTIN" else (h, zaman)
     k = h["Close"].dropna()
-    m = {"kod": kod, "ad": ad, "tur": tur, "para": para, "fiyat": float(k.iloc[-1]), "tarih": k.index[-1], "hist": h}
+    m = {"kod": kod, "ad": ad, "fiyat_zamani": zaman, "tur": tur, "para": para, "fiyat": float(k.iloc[-1]), "tarih": k.index[-1], "hist": h}
     f_al = fx.reindex(k.index, method="ffill")
     if para == "USD":
         m["seri_tl"] = (k * f_al).dropna(); m["fiyat_tl"] = float(m["seri_tl"].iloc[-1]); m["seri_usd"] = k
@@ -613,7 +617,9 @@ def pdf_olustur(m, dosya):
     alt = f"{tur_ad}  ·  {m['kod']}" + (f"  ·  Piyasa değeri sırası #{cg['sira']}" if cg.get("sira") else "") + \
           f"  ·  {m['tarih']:%d.%m.%Y}  ·  Fiyatlar: {'ABD doları' if m['para'] == 'USD' else 'Türk lirası'}"
     E += TS.pro_kapak(m["ad"], alt, f"{tl(m['fiyat'])} {sym}", m["r_usd"].get("1G") if m["para"] == "USD" else m["r_tl"].get("1G"), W,
-                      rozet=f"GENEL GÖRÜNÜM: {m['gorunum']}")
+                      rozet=f"GENEL GÖRÜNÜM: {m['gorunum']}",
+                      guncel=f"Fiyat: {TS.zaman_metni(m.get('fiyat_zamani'))} (TSİ)"
+                             + (f"  ·  Piyasa verisi: {str(cg.get('guncelleme') or '')[:16].replace('T', ' ')} UTC" if cg.get("guncelleme") else ""))
     adil_b = "Model değer bandı" if kr else "Ortalamalara göre konum"
     nyon = len(dg.get("yontemler") or [])
     sol = TS.AdilDegerGostergesi(m["fiyat"], dg.get("adil"), dg.get("dusuk"), dg.get("yuksek"), sym, bant=dg.get("bant", 0.25), gen=PW, yuk=150,
@@ -794,13 +800,13 @@ def pdf_olustur(m, dosya):
     hb = m.get("haber") or {}
     if hb.get("liste"):
         bolum(f"Haberler (genel ton: {kucuk(hb['ozet'])})", 6)
-        v = [["Tarih", "Başlık", "Kaynak"]] + [[f"{x['tarih']:%d.%m}" if x["tarih"] else "–", Paragraph(("↑ " if x["ton"] > 0 else "↓ " if x["ton"] < 0 else "") + x["baslik"][:140], ST["hucre"]), x["kaynak"][:22]] for x in hb["liste"]]
+        v = [["Tarih", "Başlık", "Kaynak"]] + [[f"{x['tarih']:%d.%m}" if x["tarih"] else "–", Paragraph(("↑ " if x["ton"] > 0 else "↓ " if x["ton"] < 0 else "") + TS.esc(x["baslik"][:140]), ST["hucre"]), x["kaynak"][:22]] for x in hb["liste"]]
         E.append(TS.tablo(v, [W * .1, W * .68, W * .22], hizala_sol=(0, 1, 2), font=7.4))
 
     # ---------- Genel değerlendirme
     E.append(PageBreak()); n += 1; E.append(Bolum(n, "Genel değerlendirme", W))
     for bas, metin in genel_degerlendirme(m):
-        E.append(KeepTogether([Paragraph(bas, ST["h2"]), Paragraph(metin, ST["p"])]))
+        E.append(KeepTogether([Paragraph(bas, ST["h2"]), Paragraph(TS.esc(metin), ST["p"])]))
     E.append(Spacer(1, 8)); n += 1; E.append(Bolum(n, "Sözlük ve uyarılar", W))
     E.append(TS.tablo([["Terim", "Sade anlatım"]] + [[a, Paragraph(b, ST["hucre"])] for a, b in SOZLUK_VARLIK + (SOZLUK_KRIPTO if kr else [])],
                       [W * .28, W * .72], hizala_sol=(0, 1), font=7.6))
