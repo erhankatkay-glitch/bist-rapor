@@ -1,8 +1,11 @@
-name: Alarm kontrolü ve Telegram temizliği
+name: Alarm, haber etkisi ve Telegram temizliği
 
 on:
   schedule:
     - cron: "*/30 * * * *"   # 30 dakikada bir: alarmlar + zamanı gelen Telegram mesajlarını sil
+  push:
+    branches: [main]
+    paths: ["haber.py", "alarm.py"]   # bu dosyalar güncellenince hemen bir tur çalışsın
   workflow_dispatch: {}
 
 permissions:
@@ -35,6 +38,9 @@ jobs:
           mkdir -p alarm_cikti && cp onceki/alarm/*.json alarm_cikti/ 2>/dev/null || true
       - name: Alarmları kontrol et
         run: python alarm.py
+      - name: Haber etkisi taraması
+        if: always()
+        run: python haber.py
       - name: Telegram'da zamanı gelen mesajları sil
         if: always()
         run: python tg.py temizle

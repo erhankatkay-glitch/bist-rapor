@@ -18,6 +18,7 @@ import analist as AN
 import bist_teknik as TK
 import bist_teknik_rapor as TKR
 import firsat as FR
+import haber as HB
 import io
 ts = importlib.reload(ts)
 bv = importlib.reload(bv)
@@ -33,6 +34,7 @@ AN = importlib.reload(AN)
 TK = importlib.reload(TK)
 TKR = importlib.reload(TKR)
 FR = importlib.reload(FR)
+HB = importlib.reload(HB)
 DURUM_EMOJI = {"iyi": "🟢", "orta": "🟡", "zayif": "🔴", "yok": "⚪"}
 ETK_RENK = {"GÜÇLÜ AL": "#16A34A", "AL": "#22C55E", "NÖTR": "#D97706", "SAT": "#EF4444", "GÜÇLÜ SAT": "#DC2626"}
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
@@ -303,8 +305,8 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                  })
 
 
-tab_r, tab_x, tab_f, tab_v, tab_p, tab_t, tab_b, tab_pf, tab_al, tab_k, tab_w = st.tabs(
-    ["📄 Hisse", "📐 Teknik", "🎯 Fırsatlar", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "👶 Bebek", "💼 Portföy", "🔔 Alarm", "⚖️ Karşılaştır", "⭐ Takip"])
+tab_r, tab_x, tab_f, tab_h, tab_v, tab_p, tab_t, tab_b, tab_pf, tab_al, tab_k, tab_w = st.tabs(
+    ["📄 Hisse", "📐 Teknik", "🎯 Fırsatlar", "📰 Haberler", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "👶 Bebek", "💼 Portföy", "🔔 Alarm", "⚖️ Karşılaştır", "⭐ Takip"])
 
 # ================= RAPOR =================
 with tab_r:
@@ -675,6 +677,43 @@ with tab_f:
             "- **Balina:** Hacmin 20 mumluk medyanın 3 katını aşıp yönün net olduğu mumlar (kriptoda gerçek agresif alış/satış oranıyla), "
             "yüksek hacimli emilim fitilleri, fiyat yatayken tek yönlü hacim akışı (sessiz birikim/dağıtım); kriptoda ayrıca canlı büyük işlemler.\n"
             "- **Kripto SAT:** Vadeli/kaldıraçlı işlem içindir; spot piyasada açığa satış yapılamaz.")
+
+# ================= HABERLER =================
+@st.cache_data(ttl=600, show_spinner=False)
+def haber_oku(zaman):
+    import requests
+    taban = f"https://raw.githubusercontent.com/{REPO}/bulten/haber/"; q = f"?t={zaman}"
+    out = {}
+    for d in ("son", "takvim"):
+        try:
+            r = requests.get(taban + d + ".json" + q, timeout=20); out[d] = r.json() if r.status_code == 200 else None
+        except Exception:
+            out[d] = None
+    return out
+
+
+with tab_h:
+    st.caption("Piyasayı etkileyebilecek haberler 30 dakikada bir taranır: türü ve yönü sınıflandırılır, etkilenecek varlıklar "
+               "gerekçesiyle gösterilir, haberden bu yana fiyat/hacim tepkisi ve teknik durum eklenir. Kural tabanlı ön değerlendirmedir.")
+    HD = haber_oku(ZAMAN)
+    tkv = (HD.get("takvim") or {}).get("liste") or []
+    simdi_ = pd.Timestamp.now(tz="Europe/Istanbul")
+    yaklasan = [e for e in tkv if pd.Timestamp(e["zaman"]) >= simdi_ - pd.Timedelta(hours=2)]
+    if yaklasan:
+        with st.expander(f"🗓 Bu haftanın önemli verileri ({len(yaklasan)})", expanded=False):
+            for e in yaklasan[:20]:
+                t_ = pd.Timestamp(e["zaman"])
+                st.markdown(f"- `{t_:%d.%m %H:%M}` **{HB.ULKE_AD.get(e['ulke'], e['ulke'])}** – {e['baslik']}"
+                            + (f" (beklenti {e['beklenti']}, önceki {e['onceki']})" if e.get("beklenti") else ""))
+    son_h = HD.get("son") or []
+    if not son_h:
+        st.info("Henüz analiz edilmiş haber yok. İlk tarama alarm kontrolüyle birlikte yapılır.")
+    tur_sec = st.multiselect("Haber türü", sorted({x["tur"] for x in son_h}), key="hb_tur")
+    for a in son_h[:60]:
+        if tur_sec and a["tur"] not in tur_sec: continue
+        with st.container(border=True):
+            st.markdown(_md(HB.mesaj(a)))
+            if a.get("link"): st.markdown(f"[Habere git]({a['link']})")
 
 with tab_v:
     st.caption("Altın, gümüş, petrol, tarım ürünleri ve önde gelen kripto paralar. Bilançosu olmayan bu varlıklar için analiz "

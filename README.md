@@ -43,3 +43,12 @@ Telegram, botların kendi mesajlarını yalnızca 48 saat içinde silmesine izin
 3. Tarayıcıda `https://api.telegram.org/bot<TOKEN>/getUpdates` adresini açın; `"chat":{"id":…}` içindeki sayı **chat ID**'nizdir.
 4. GitHub'da depo → **Settings → Secrets and variables → Actions → New repository secret**: `TELEGRAM_TOKEN` ve `TELEGRAM_CHAT_ID`.
 5. Test: Actions → *Alarm kontrolü ve Telegram temizliği* → **Run workflow**. Ya da yerelde `python tg.py dene`.
+
+## 📰 Haber etkisi
+
+30 dakikada bir (alarm kontrolüyle birlikte) Google Haberler taranır. TCMB/Fed faiz kararları, Türkiye ve ABD enflasyonu, ABD istihdamı,
+kredi notu, dolar/TL, petrol ve OPEC, jeopolitik gelişmeler, kripto ETF/kurumsal talep ve hack/düzenleme haberleri ile
+KAP kaynaklı şirket haberleri (sipariş, temettü, bedelsiz, geri alım, ceza) sınıflandırılır.
+Her önemli haber için etkilenecek varlıklar beklenen yön ve gerekçesiyle, haberden bu yana fiyat/hacim tepkisi
+("fiyatlandı / henüz tepki yok / ters yönde"), son bültendeki teknik durum ve zamanla biriken geçmiş benzer haber istatistiği verilir.
+Her sabah 07:00'den sonra ABD/Euro/Çin önemli veri takvimi gönderilir. Mesajlar sessizdir; haberler 12, takvim 20 saat sonra silinir.
