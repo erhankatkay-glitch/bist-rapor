@@ -2,7 +2,9 @@
 """BIST Hisse Araştırma – mobil uyumlu web uygulaması (Streamlit)."""
 import os, tempfile, datetime as dt
 import streamlit as st
+import importlib
 import bist_rapor as br
+br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
 
 st.set_page_config(page_title="BIST Rapor", page_icon="📊", layout="centered",
                    initial_sidebar_state="collapsed")
@@ -40,7 +42,7 @@ with st.expander("⚙️ Gelişmiş ayarlar"):
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def uret(kod, emsal, rf, enf, erp, g, gun):
+def uret(kod, emsal, rf, enf, erp, g, gun, surum):
     """Aynı gün aynı parametrelerle tekrar istenirse önbellekten döner."""
     klasor = tempfile.mkdtemp()
     dosya, m = br.rapor(kod, emsal, log=lambda x: None, klasor=klasor, detay=True,
@@ -48,7 +50,7 @@ def uret(kod, emsal, rf, enf, erp, g, gun):
     with open(dosya, "rb") as f:
         pdf = f.read()
     ozet = {k: m.get(k) for k in ("ad", "fiyat", "adil", "potansiyel", "gorus", "genel_skor", "skor_etiket",
-                                   "fk", "pddd", "roe", "teknik_ozet", "guven")}
+                                   "fk", "pddd", "roe", "teknik_ozet", "guven", "kur_notu")}
     ozet["guclu"], ozet["zayif"] = m["guclu"][:4], m["zayif"][:4]
     return os.path.basename(dosya), pdf, ozet
 
@@ -62,7 +64,7 @@ def kart(col, etiket, deger, alt="", renk="#14294B"):
 if st.button("📄 Rapor Oluştur", type="primary", disabled=not kod):
     try:
         with st.status(f"{kod} analiz ediliyor… (30–60 sn)", expanded=False) as s:
-            ad, pdf, o = uret(kod, emsal, rf, enf, erp, g, dt.date.today().isoformat())
+            ad, pdf, o = uret(kod, emsal, rf, enf, erp, g, dt.date.today().isoformat(), br.SURUM)
             s.update(label="Rapor hazır ✔", state="complete")
         st.session_state.sonuc = (ad, pdf, o)
         if kod not in st.session_state.son:
@@ -73,6 +75,8 @@ if st.button("📄 Rapor Oluştur", type="primary", disabled=not kod):
 if "sonuc" in st.session_state:
     ad, pdf, o = st.session_state.sonuc
     st.markdown(f"### {o['ad']}")
+    if o.get("kur_notu"):
+        st.caption("ⓘ " + o["kur_notu"])
     pt = o["potansiyel"]
     renk = "#1E8E5A" if pt and pt > 0.15 else "#C0392B" if pt and pt < -0.15 else "#D9A21B"
     c1, c2 = st.columns(2)
@@ -90,4 +94,4 @@ if "sonuc" in st.session_state:
         st.markdown("**Dikkat edilmesi gerekenler**\n" + "\n".join(f"- 🔴 {x}" for x in o["zayif"]))
 
 st.divider()
-st.caption("Veri: Yahoo Finance (gecikmeli olabilir). Otomatik model çıktısıdır, yatırım tavsiyesi değildir.")
+st.caption(f"Veri: Yahoo Finance (gecikmeli olabilir). Otomatik model çıktısıdır, yatırım tavsiyesi değildir. · Sürüm {br.SURUM}")

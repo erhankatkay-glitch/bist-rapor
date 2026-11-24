@@ -32,6 +32,11 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
+SURUM = "2026.11.24-2"
+
+# Finansallarını döviz cinsinden raporlayan bilinen şirketler (Yahoo bilgi vermezse yedek)
+DOVIZ_RAPORLAYAN = {"THYAO": "USD", "PGSUS": "USD", "TAVHL": "EUR"}
+
 # BIST sektör emsal grupları (EMSALLER boş bırakılırsa buradan seçilir)
 SEKTOR_GRUPLARI = {
     "Bankacılık": ["AKBNK", "GARAN", "YKBNK", "ISCTR", "HALKB", "VAKBN", "TSKB", "ALBRK"],
@@ -207,7 +212,7 @@ def veri_cek(kod, hafif=False):
         d["temettu"] = _naive(t.dividends) if not hafif else pd.Series(dtype=float)
     except Exception:
         d["temettu"] = pd.Series(dtype=float)
-    fin_pb = (info.get("financialCurrency") or "").upper()
+    fin_pb = (info.get("financialCurrency") or DOVIZ_RAPORLAYAN.get(kod, "")).upper()
     pb = (info.get("currency") or "TRY").upper()
     d["kur_notu"] = None
     if fin_pb and fin_pb != pb:
