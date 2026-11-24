@@ -231,8 +231,8 @@ def ust_bant(pv=None):
 
 # ----------------------------------------------------------------------------- canlı saat + alt gezinme (JS)
 NAV_STIL = """
-#kk-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:max(10px,env(safe-area-inset-bottom));z-index:99990;
-  width:min(94vw,680px);display:flex;justify-content:space-around;align-items:stretch;padding:8px 6px 7px;border-radius:22px;
+#kk-nav{position:fixed;left:8px;right:84px;max-width:640px;bottom:max(10px,env(safe-area-inset-bottom));z-index:99990;
+  /* sağ alttaki Streamlit düğmesine yer bırakılır (yanlışlıkla dokunulmasın) */display:flex;justify-content:space-around;align-items:stretch;padding:8px 6px 7px;border-radius:22px;
   background:linear-gradient(180deg,rgba(26,27,30,.94),rgba(12,13,15,.97));border:1px solid rgba(255,255,255,.10);
   box-shadow:0 16px 40px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   font-family:'Inter',-apple-system,sans-serif}
