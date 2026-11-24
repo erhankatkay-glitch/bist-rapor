@@ -418,15 +418,9 @@ def bulten_pdf(baslik, satirlar, analizler, dosya, endeks=None, sym="₺", ekler
             if not a: continue
             E.append(KeepTogether([_img(g_teknik(a, f"{s['kod']} · {s['ad']} · {s['etiket']} (puan {s['puan']:.0f})", kompakt=True, dpi=120), W, 3.0 / 7.5 * 0.97),
                                    Paragraph(TS.esc(AN.teknik_ozet(s)), ST["kucuk"]), Spacer(1, 6)]))
-    if len(df):
-        E.append(PageBreak()); E.append(Bolum(2, "Tüm liste", W))
-        v = [["Kod", "Puan", "RS", "Genel", "Günlük", "Haftalık", "Aylık", "RSI", "Yapı"]]
-        for _, r in df.sort_values("Teknik puan", ascending=False).iterrows():
-            v.append([r["Kod"], f"{r['Teknik puan']:.0f}", f"{int(r['RS'])}" if "RS" in r and pd.notna(r.get("RS")) else "–", r["Genel"], r["Günlük"], r["Haftalık"], r["Aylık"],
-                      f"{r['RSI']:.0f}" if pd.notna(r["RSI"]) else "–", str(r["Yapı"]).split(" (")[0]])
-        E.append(TS.tablo(v, [W * .14, W * .06, W * .06, W * .12, W * .12, W * .12, W * .12, W * .06, W * .2], font=6.4))
+    # "Tüm liste" bölümü kaldırıldı: tam tablo uygulamanın Teknik sekmesinde (ozet.csv) duruyor
     E.append(Spacer(1, 6))
     E.append(Paragraph("Bu bülten kapanış fiyatlarıyla otomatik üretilmiştir; formasyonlar algoritmik tespit edilir ve hatalı olabilir. "
-                       "Yatırım tavsiyesi değildir.", ST["kucuk"]))
+                       "Gösterge bazlı analizdir, yatırım tavsiyesi değildir. Tüm varlıkların tam listesi uygulamanın Teknik sekmesindedir.", ST["kucuk"]))
     doc.build(E, onFirstPage=sayfa, onLaterPages=sayfa)
     return dosya
