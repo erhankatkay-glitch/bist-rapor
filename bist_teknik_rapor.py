@@ -328,7 +328,8 @@ def kategoriler(satirlar, n=12):
     df = df.sort_values("Teknik puan", ascending=False)
     K = {}
     K["En güçlü teknik görünüm"] = df.head(n)
-    K["Yukarı kırılımlar ve formasyon teyitleri"] = df[df["Kırılım"]].head(n)
+    dg = df["Değişim"].fillna(0) if "Değişim" in df else 0
+    K["Yukarı kırılımlar ve formasyon teyitleri"] = df[df["Kırılım"] & (dg >= 0)].head(n)
     K["Boğa mum formasyonları (son kapanış)"] = df[df["Mum +"].astype(str).str.len() > 0].head(n)
     K["Altın kesişim / pozitif uyumsuzluk"] = df[df.get("Sinyal +", df["Kesişim/Uyumsuzluk"]).astype(str).str.contains("Altın kesişim|Pozitif uyumsuzluk|al kesişimi|yukarı kesti|al sinyaline")].head(n)
     if "Balina" in df:
@@ -337,7 +338,7 @@ def kategoriler(satirlar, n=12):
         K["Balina satışı / dağıtım izleri"] = df[b.str.contains("satışı|Satış emilimi|dağıtım")].sort_values("Teknik puan").head(n)
     K["Aşırı satım (RSI < 30)"] = df[df["RSI"] < 30].sort_values("RSI").head(n)
     K["Aşırı alım (RSI > 70)"] = df[df["RSI"] > 70].sort_values("RSI", ascending=False).head(n)
-    K["Aşağı kırılımlar"] = df[df["Kırılım −"]].sort_values("Teknik puan").head(n)
+    K["Aşağı kırılımlar"] = df[df["Kırılım −"] & (dg <= 0)].sort_values("Teknik puan").head(n)
     K["Ayı mum formasyonları (son kapanış)"] = df[df["Mum −"].astype(str).str.len() > 0].sort_values("Teknik puan").head(n)
     K["En zayıf teknik görünüm"] = df.sort_values("Teknik puan").head(n)
     return {k: v for k, v in K.items() if len(v)}

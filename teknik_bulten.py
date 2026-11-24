@@ -217,7 +217,9 @@ def _yaz(piyasa, analizler, endeks, ref, klasor, hata=None):
     meta = {"piyasa": piyasa, "baslik": BASLIK[piyasa], "uretim": dt.datetime.now(TSI).strftime("%d.%m.%Y %H:%M"),
             "kapanis": str(max((s["fiyat_zamani"] for s in analizler), default="")).split(" ")[0], "adet": len(analizler),
             "hata": len(hata), "grafikler": gorsel, "raporlar": [f"rapor/{_dosya(k)}_Teknik.pdf" for k in tk if k in by],
-            "endeks": {"ad": endeks["ad"], "etiket": endeks["etiket"], "puan": round(endeks["puan"], 1)} if endeks else None}
+            "endeks": {"ad": endeks["ad"], "etiket": endeks["etiket"], "puan": round(endeks["puan"], 1),
+                       "fiyat": (endeks["tf"].get("G") or {}).get("fiyat"), "degisim": (endeks["tf"].get("G") or {}).get("degisim"),
+                       "para": endeks.get("para")} if endeks else None}
     json.dump(meta, open(os.path.join(hedef, "meta.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print("Yazıldı:", hedef)
     return meta, satir
@@ -260,9 +262,10 @@ def telegram_gonder(piyasa, meta, satir, klasor="cikti", bot=None):
         satirlar.append(f"{ik} {e['ad']}: <b>{e['etiket']}</b> ({e['puan']:.0f}/100)")
     if len(df):
         bl = [f"🏆 <b>En güçlü</b>\n" + ", ".join(f"<b>{r.Kod}</b> ({r['Teknik puan']:.0f})" for _, r in df.nlargest(6, "Teknik puan").iterrows())]
-        k = df[df["Kırılım"]]
+        dg = df["Değişim"].fillna(0) if "Değişim" in df else 0
+        k = df[df["Kırılım"] & (dg >= 0)]
         if len(k): bl.append("🚀 <b>Yukarı kırılım</b>\n" + kod(k.nlargest(8, "Teknik puan")["Kod"]))
-        k = df[df["Kırılım −"]]
+        k = df[df["Kırılım −"] & (dg <= 0)]
         if len(k): bl.append("⚠️ <b>Aşağı kırılım</b>\n" + kod(k.nsmallest(8, "Teknik puan")["Kod"]))
         if "Balina" in df:
             b = df["Balina"].fillna("").astype(str)
@@ -276,12 +279,23 @@ def telegram_gonder(piyasa, meta, satir, klasor="cikti", bot=None):
     satirlar.append("📎 Tam liste, grafikler ve raporlar ekteki PDF'te ve uygulamanın Teknik sekmesinde.")
     anahtar = f"bulten:{piyasa}"
     metin = "\n".join(satirlar)
-    if piyasa == "abd": metin = metin.replace(".US,", ",").replace(".US (", " (").replace(".US\n", "\n")
-    ids = bot.mesaj(metin, anahtar, 30, yerine=True)
+    if piyasa == "abd": metin = metin.replace(".US</b>", "</b>")
+    ad = {"bist": "BIST", "abd": "ABD", "kripto": "Kripto", "kripto_tl": "Kripto TL", "emtia": "Emtia"}.get(piyasa, piyasa)
+    ids = []
+    try:   # görsel kapanış kartı + kısa açıklama; kart çizilemezse metin
+        import kart as KT
+        yol = os.path.join(klasor, piyasa, "kapanis_karti.png"); os.makedirs(os.path.dirname(yol), exist_ok=True)
+        KT.bulten_karti(meta, satir, yol, ad)
+        alt = f"📊 <b>{tg.buyuk(ad)} · KAPANIŞ ÖZETİ</b> · {meta['kapanis']}\n{KT.piyasa_yorumu(pd.DataFrame(satir), meta)}"
+        bot.sil_anahtar(anahtar)
+        ids = bot.foto(yol, alt[:1000], anahtar, 30)
+    except Exception as ex:
+        print("Bülten kartı çizilemedi:", ex, file=sys.stderr)
+    if not ids: ids = bot.mesaj(metin, anahtar, 30, yerine=True)
     try:
         yol = os.path.join(klasor, piyasa, "bulten.pdf")
         if ids and os.path.exists(yol):
-            bot.belge(yol, f"{piyasa}_bulten_{meta['kapanis']}.pdf", meta["baslik"], anahtar, 30)
+            bot.belge(yol, f"{piyasa}_bulten_{meta['kapanis']}.pdf", f"{ad} kapanış bülteni (PDF)", anahtar, 30)
     except Exception as ex:
         print("Bülten PDF'i gönderilemedi:", ex, file=sys.stderr)
     return bot

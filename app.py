@@ -42,15 +42,35 @@ br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
 st.set_page_config(page_title="BIST Rapor", page_icon="📊", layout="centered", initial_sidebar_state="collapsed")
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+html, body, .stApp, .stMarkdown, button, input, textarea, select {font-family: 'Inter', -apple-system, sans-serif !important;}
 #MainMenu, footer, header {visibility: hidden;}
-.block-container {padding-top: 1rem; padding-bottom: 2rem; max-width: 640px;}
-div.stButton > button, div.stDownloadButton > button {width: 100%; height: 3rem; font-size: 1.02rem; font-weight: 600; border-radius: 12px;}
-.kart {background:#F1F4F9; border-left:4px solid #14294B; border-radius:10px; padding:10px 12px; margin-bottom:8px;}
-.kart .e {font-size:0.72rem; color:#6B7280;} .kart .d {font-size:1.2rem; font-weight:700;} .kart .a {font-size:0.72rem; color:#6B7280;}
-.stTabs [data-baseweb="tab"] {font-size: 0.95rem; padding: 6px 10px;}
+.block-container {padding-top: 0.8rem; padding-bottom: 2rem; max-width: 680px;}
+.ust-bant {background: linear-gradient(135deg, #0B1220 0%, #14294B 100%); border-radius: 18px; padding: 16px 18px 14px;
+           margin-bottom: 14px; border-bottom: 3px solid #F59E0B; box-shadow: 0 8px 24px rgba(11,18,32,.18);}
+.ust-bant .b {color: #F59E0B; font-size: .68rem; font-weight: 800; letter-spacing: .14em;}
+.ust-bant .t {color: #FFFFFF; font-size: 1.32rem; font-weight: 800; margin-top: 2px; letter-spacing: -.01em;}
+.ust-bant .a {color: #94A3B8; font-size: .8rem; margin-top: 2px;}
+div.stButton > button, div.stDownloadButton > button {width: 100%; height: 3rem; font-size: 1.0rem; font-weight: 700; border-radius: 12px;}
+div.stButton > button[kind="primary"], div.stDownloadButton > button[kind="primary"] {background: linear-gradient(135deg, #14294B, #1E3A8A);
+           border: none; box-shadow: 0 4px 14px rgba(20,41,75,.28);}
+.kart {background: #FFFFFF; border: 1px solid #E5E7EB; border-left: 4px solid #14294B; border-radius: 14px; padding: 11px 14px; margin-bottom: 10px;
+       box-shadow: 0 1px 2px rgba(15,23,42,.05), 0 6px 16px rgba(15,23,42,.05);}
+.kart .e {font-size: .66rem; color: #64748B; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;}
+.kart .d {font-size: 1.32rem; font-weight: 800; letter-spacing: -.01em; margin: 2px 0;}
+.kart .a {font-size: .74rem; color: #64748B;}
+.stTabs [data-baseweb="tab-list"] {gap: 6px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; padding-bottom: 4px;}
+.stTabs [data-baseweb="tab"] {background: #F1F5F9; border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: .86rem; white-space: nowrap; height: auto;}
+.stTabs [aria-selected="true"] {background: #14294B !important; color: #FFFFFF !important;}
+.stTabs [aria-selected="true"] p {color: #FFFFFF !important;}
+.stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {display: none;}
+[data-testid="stExpander"] details {border-radius: 12px;}
+[data-testid="stImage"] img {border-radius: 14px;}
 </style>""", unsafe_allow_html=True)
 
-st.markdown("## 📊 BIST Hisse Araştırma")
+st.markdown('<div class="ust-bant"><div class="b">PİYASA ARAŞTIRMA MERKEZİ</div>'
+            '<div class="t">BIST · ABD · Kripto · Emtia</div>'
+            '<div class="a">Temel analiz · teknik fırsatlar · haber etkisi · portföy uyarıları</div></div>', unsafe_allow_html=True)
 if st.button("🔄 Verileri yenile (önbelleği temizle)", key="yenile"):
     st.cache_data.clear()
     for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin", "tk_sonuc", "pf"):
@@ -500,7 +520,8 @@ def bulten_oku(piyasa, zaman):
     if m.status_code != 200: return None
     meta = m.json(); al = lambda yol: requests.get(taban + yol + q, timeout=60).content
     ozet = pd.read_csv(io.BytesIO(al("ozet.csv")))
-    return {"meta": meta, "pdf": al("bulten.pdf"), "ozet": ozet,
+    kr_ = requests.get(taban + "kapanis_karti.png" + q, timeout=30)
+    return {"meta": meta, "pdf": al("bulten.pdf"), "ozet": ozet, "kart": kr_.content if kr_.status_code == 200 else None,
             "graf": {g_["kod"]: al(g_["dosya"]) for g_ in meta.get("grafikler", [])[:10]},
             "rapor": {os.path.basename(r_): al(r_) for r_ in meta.get("raporlar", [])}}
 
@@ -575,6 +596,7 @@ with tab_x:
         mt = B["meta"]
         st.markdown(f"**{mt['baslik']}** · kapanış {mt['kapanis']} · üretim {mt['uretim']} · {mt['adet']} varlık")
         if mt.get("endeks"): st.caption(f"{mt['endeks']['ad']}: {mt['endeks']['etiket']} ({mt['endeks']['puan']:.0f}/100)")
+        if B.get("kart"): st.image(B["kart"], use_container_width=True)
         st.download_button("⬇️ Bülten PDF", data=B["pdf"], file_name=f"{mt['piyasa']}_bulten_{mt['kapanis']}.pdf", mime="application/pdf", key="bul_dl")
         oz = B["ozet"].sort_values("Teknik puan", ascending=False)
         st.dataframe(oz[["Kod", "Teknik puan", "Genel", "Günlük", "Haftalık", "Aylık", "RSI", "Formasyon +", "Formasyon −"]].head(25),
@@ -673,10 +695,14 @@ with tab_f:
                 st.write("Bu turda eşiği (puan ≥ 55, risk/ödül ≥ 2R) geçen yeni kurulum çıkmadı.")
             for f in x["firsatlar"]:
                 with st.container(border=True):
-                    try: st.markdown(_md(FR.firsat_metni(f)))
-                    except Exception as ex: st.write(f.get("kod"), ex)
-                    if (tf, f["kod"]) in FD["graf"]: st.image(FD["graf"][(tf, f["kod"])], use_container_width=True)
-                    with st.expander("Kurulum açıklaması"):
+                    if (tf, f["kod"]) in FD["graf"]:
+                        st.image(FD["graf"][(tf, f["kod"])], use_container_width=True)
+                    else:
+                        try: st.markdown(_md(FR.firsat_metni(f)))
+                        except Exception as ex: st.write(f.get("kod"), ex)
+                    with st.expander("Kurulum açıklaması ve tüm ayrıntılar"):
+                        try: st.markdown(_md(FR.firsat_metni(f)))
+                        except Exception: pass
                         st.write(f.get("aciklama", ""))
                         for b in f.get("balina", []): st.markdown(f"🐋 **{b[0]}** — {b[2]}")
             if x.get("adaylar"):
