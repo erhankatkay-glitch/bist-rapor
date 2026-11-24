@@ -1,0 +1,60 @@
+name: Veri kaynağı testi
+on:
+  workflow_dispatch: {}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: |
+          python - <<'PY'
+          import json, re, requests, datetime as dt
+          UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36", "Accept": "application/json, text/plain, */*"}
+          def g(ad, url, **kw):
+              try:
+                  r = requests.request(kw.pop("method", "GET"), url, headers={**UA, **kw.pop("headers", {})}, timeout=25, **kw)
+                  t = r.text
+                  print(f"[{ad}] {r.status_code} {r.headers.get('content-type','')[:40]} len={len(t)} :: {t[:300]!r}")
+                  return r
+              except Exception as e:
+                  print(f"[{ad}] HATA {e!r}"[:300])
+          bugun = dt.date.today(); once = bugun - dt.timedelta(days=7)
+          body = {"fromDate": str(once), "toDate": str(bugun), "memberType": "IGS", "mkkMemberOidList": [], "inactiveMkkMemberOidList": [],
+                  "disclosureClass": "", "subjectList": [], "isLate": "", "mainSector": "", "sector": "", "subSector": "", "marketOid": "",
+                  "index": "", "bdkReview": "", "bdkMemberOidList": [], "year": "", "term": "", "ruleType": "", "period": "", "fromSrc": "N",
+                  "srcCategory": "", "discIndex": []}
+          g("kap_bycriteria", "https://www.kap.org.tr/tr/api/disclosure/members/byCriteria", method="POST", json=body)
+          g("kap_memberquery", "https://www.kap.org.tr/tr/api/memberDisclosureQuery", method="POST", json=body)
+          g("kap_disclosures", "https://www.kap.org.tr/tr/api/disclosures")
+          g("kap_lastdisc", "https://www.kap.org.tr/tr/api/disclosure/list/main")
+          g("kap_members", "https://www.kap.org.tr/tr/api/kapmembers/IGS/A")
+          r = g("kap_bistsirketler", "https://www.kap.org.tr/tr/bist-sirketler")
+          if r is not None:
+              print("  THYAO in html:", "THYAO" in r.text, "| oid samples:", re.findall(r"/tr/sirket-bilgileri/ozet/([0-9a-f\-]{10,})", r.text)[:3])
+              print("  api paths:", sorted(set(re.findall(r'"(/tr/api/[A-Za-z0-9/_\-]+)', r.text)))[:40])
+          r = g("bist_paypiyasasi", "https://borsaistanbul.com/veriler/pay-piyasasi-verileri")
+          if r is not None:
+              print("  links:", sorted(set(re.findall(r'href="([^"]+\.(?:csv|zip|xlsx|xls|txt))"', r.text)))[:40])
+              print("  datum:", sorted(set(re.findall(r'(/datum/[^"\' ]+)', r.text)))[:40])
+          for u in ("https://data-api.binance.vision/api/v3/depth?symbol=BTCTRY&limit=500", "https://data-api.binance.vision/api/v3/aggTrades?symbol=BTCUSDT&limit=5",
+                    "https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=2",
+                    "https://www.okx.com/api/v5/rubik/stat/contracts/open-interest-volume?ccy=BTC&period=1D",
+                    "https://www.okx.com/api/v5/rubik/stat/taker-volume?ccy=BTC&instType=CONTRACTS&period=1D",
+                    "https://www.okx.com/api/v5/public/liquidation-orders?instType=SWAP&uly=BTC-USDT&state=filled&limit=5",
+                    "https://www.okx.com/api/v5/market/books?instId=BTC-USDT&sz=400",
+                    "https://stablecoins.llama.fi/stablecoincharts/all", "https://api.llama.fi/v2/historicalChainTvl",
+                    "https://api.llama.fi/summary/fees/uniswap?dataType=dailyFees", "https://api.llama.fi/protocols",
+                    "https://mempool.space/api/v1/fees/recommended"):
+              g(u.split("/")[2] + u.split("?")[0][-30:], u)
+          import yfinance as yf
+          h = yf.Ticker("THYAO.IS").history(period="60d", interval="60m"); print("[yahoo_60m]", len(h), h.index[-1] if len(h) else None)
+          h = yf.Ticker("THYAO.IS").history(period="5d", interval="15m"); print("[yahoo_15m]", len(h))
+          try:
+              e = yf.Ticker("THYAO.IS").get_earnings_dates(limit=12); print("[yahoo_earnings]", None if e is None else len(e))
+          except Exception as ex: print("[yahoo_earnings] HATA", ex)
+          PY
