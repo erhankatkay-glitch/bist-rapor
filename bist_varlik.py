@@ -11,6 +11,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 import matplotlib.pyplot as plt
 
 import tasarim as TS
+import analist as AN
 from tasarim import ST, Bolum, kart_izgarasi, bilgi_kutusu, trafik_listesi, kapak, sayfa_cizici
 import bist_rapor as br
 from bist_rapor import tl, yz, kat, ond, puan, ort, kucuk, reel, _png, _img, PARAM
@@ -626,7 +627,8 @@ def pdf_olustur(m, dosya):
                                  baslik=adil_b, alt_not=f"{nyon} bant modelinin ortalaması · güven: {kucuk(dg.get('guven', '–'))}")
     sag = TS.SkorGostergesi(m["genel_skor"], m["gorunum"], m["saglik"], gen=PW, yuk=150, baslik="Skor kartı")
     E.append(TS.yan_yana(sol, sag, W)); E.append(Spacer(1, 8))
-    E.append(bilgi_kutusu("Kısaca:", sade_ozet(m), W)); E.append(Spacer(1, 4))
+    _gor = AN.varlik_gorus(m)[0]
+    E.append(TS.ozet_paneli("Yatırım özeti", AN.varlik_baslik(m), _gor, AN.varlik_ozeti(m, kisa=True), W)); E.append(Spacer(1, 4))
     E.append(Paragraph("Temel göstergeler", ST["h2"]))
     if kr:
         ml = [("Piyasa değeri", f"${tl(cg.get('piy_deg'))}" if cg.get("piy_deg") else "–"),
@@ -652,18 +654,24 @@ def pdf_olustur(m, dosya):
     else:
         r2 = TS.AralikCubugu("Tüm veri (dip – zirve)", m["dip_tum"], m["zirve_tum"], m["fiyat"], gen=PW, sembol=sym, ort=dg.get("adil"), ort_etiket="Model")
     E.append(TS.yan_yana(r1, r2, W)); E.append(Spacer(1, 6))
-    E.append(Paragraph("Öne çıkan sinyaller", ST["h2"])); E.append(TS.sinyal_listesi(m["guclu"], m["zayif"], W, n=4))
 
-    # ---------- SAYFA 2: tek bakışta
-    E.append(PageBreak()); E.append(Paragraph("Tek bakışta", ST["h2"])); E.append(trafik_listesi(tek_bakista(m), W))
+    # ---------- SAYFA 2: yönetici özeti
+    E.append(PageBreak())
+    E.append(TS.ozet_paneli("Yönetici özeti", AN.varlik_baslik(m), _gor, AN.varlik_ozeti(m), W,
+                            alt_bilgi="Genel görünüm; skor kartı (%70) ve uzun vadeli değer bandına göre konumun (%30) birleşimidir."))
+    E.append(Paragraph("Yatırım tezi", ST["h2"])); _p, _n = AN.varlik_tezi(m); E.append(TS.tez_tablosu(_p, _n, W))
+    _k, _r = AN.varlik_katalizor_risk(m)
+    E.append(KeepTogether([Paragraph("Katalizörler ve riskler", ST["h2"]), TS.iki_liste("İzlenecek katalizörler", _k, "Başlıca riskler", _r, W)]))
+    E.append(KeepTogether([Paragraph("Temel göstergeler karnesi", ST["h2"]), trafik_listesi(AN.karne_etiketle(tek_bakista(m)), W)]))
+    E.append(KeepTogether([Paragraph("Analist notları", ST["h2"]), TS.sinyal_listesi(m["guclu"], m["zayif"], W, n=6)]))
     n = 0
     def bolum(baslik, gerek=8):
         nonlocal n; n += 1; E.append(CondPageBreak(gerek * cm)); E.append(Bolum(n, baslik, W))
 
     # ---------- Değerleme
     if dg.get("adil"):
-        bolum("Değerleme: Fiyat hangi bantta?" if kr else "Konum: Fiyat ortalamalarına göre nerede?", 12)
-        E.append(bilgi_kutusu("Kısaca:", f"Bilançosu olmayan {'kripto paralar' if kr else 'emtialar'} için 'adil değer' yerine uzun vadeli fiyat bantları kullanılır. "
+        bolum("Değerleme: Uzun vadeli fiyat bantları" if kr else "Konum: Uzun vadeli ortalamalara göre fiyat", 12)
+        E.append(bilgi_kutusu("Analist yorumu:", f"Bilançosu olmayan {'kripto paralar' if kr else 'emtialar'} için 'adil değer' yerine uzun vadeli fiyat bantları kullanılır. "
                               f"Bantların ortası <b>{tl(dg['adil'])} {sym}</b>; fiyat buna göre <b>{yz(dg['pot'])}</b> farkla <b>{kucuk(dg['etiket'])}</b>.", W))
         E.append(Spacer(1, 4))
         v = [["Model", f"Değer ({sym})", "Fark", "Ağırlık", "Açıklama"]]
@@ -696,7 +704,7 @@ def pdf_olustur(m, dosya):
             sat.append(f"Piyasa değeri FDV'nin {yz(o, 0)}'i: " + ("arzın neredeyse tamamı dolaşımda." if o > 0.9 else "kilitli/basılacak tokenlar ileride satış baskısı yaratabilir."))
         if cg.get("hacim") and cg.get("piy_deg"):
             t_ = cg["hacim"] / cg["piy_deg"]; sat.append(f"Günlük hacim piyasa değerinin {yz(t_, 1)}'i: " + ("likidite güçlü." if t_ > 0.05 else "likidite yeterli." if t_ > 0.02 else "likidite zayıf; büyük işlemler fiyatı oynatabilir."))
-        E.append(bilgi_kutusu("Kısaca:", " ".join(sat) or "Arz verisi sınırlı.", W))
+        E.append(bilgi_kutusu("Analist yorumu:", " ".join(sat) or "Arz verisi sınırlı.", W))
         E.append(Spacer(1, 4))
         v = [["Gösterge", "Değer"], ["Piyasa değeri sırası", f"#{cg.get('sira') or '–'}"], ["Piyasa değeri", f"${tl(cg.get('piy_deg'))}"],
              ["Tam seyreltilmiş değer (FDV)", f"${tl(cg.get('fdv'))}" if cg.get("fdv") else "–"], ["24 saatlik hacim", f"${tl(cg.get('hacim'))}"],
@@ -735,9 +743,9 @@ def pdf_olustur(m, dosya):
         if not tv: E.append(Paragraph("Türev verisi bu sunucudan alınamadı (borsa API'si erişimi kısıtlamış olabilir).", ST["kucuk"]))
 
     # ---------- Fiyat ve trend
-    bolum("Fiyat ve trend", 10)
+    bolum("Fiyat performansı ve trend", 10)
     sv = m.get("seviye") or {}
-    E.append(bilgi_kutusu("Kısaca:", f"Fiyat 200 günlük ortalamanın {'üzerinde' if m['ma200'] and m['fiyat'] > m['ma200'] else 'altında'}. "
+    E.append(bilgi_kutusu("Analist yorumu:", f"Fiyat 200 günlük ortalamanın {'üzerinde' if m['ma200'] and m['fiyat'] > m['ma200'] else 'altında'}. "
                           + (f"En yakın destek {tl(sv['destek'][0][0])}, en yakın direnç {tl(sv['direnc'][0][0])} {sym}." if sv.get("destek") and sv.get("direnc") else ""), W))
     E.append(Spacer(1, 4)); E.append(_img(br.g_fiyat(m["hist"], None, m["kod"], sv), W, 5.6 / 7.5))
     per = [["Dönem", "1G", "1H", "1A", "3A", "6A", "YBB", "1Y", "3Y"],
@@ -753,9 +761,9 @@ def pdf_olustur(m, dosya):
     E.append(Spacer(1, 6)); E.append(_img(g_tl_usd(m), W, 2.4 / 7.5))
 
     # ---------- Skor kartı
-    bolum("Skor kartı: Göstergeler ne diyor?", 10)
+    bolum("Skor kartı: Kategori bazında değerlendirme", 10)
     sr = sorted(m["saglik"].items(), key=lambda x: x[1])
-    E.append(bilgi_kutusu("Kısaca:", f"Varlık {len(sr)} alanda 1–5 arası puanlandı. En güçlü alan <b>{kucuk(sr[-1][0])}</b>, en zayıf alan <b>{kucuk(sr[0][0])}</b>.", W))
+    E.append(bilgi_kutusu("Analist yorumu:", f"Varlık {len(sr)} alanda 1–5 arası puanlandı. En güçlü alan <b>{kucuk(sr[-1][0])}</b>, en zayıf alan <b>{kucuk(sr[0][0])}</b>.", W))
     E.append(Spacer(1, 4)); E.append(_img(br.g_saglik(m, "Skor kartı – Kategoriler (1–5)"), W * 0.92, (0.42 * len(m["saglik"]) + 0.5) / 7.5))
     for kat_, liste in m["saglik_detay"].items():
         v = [[f"{kat_}  –  {ond(m['saglik'][kat_], 2)}/5", "Değer", "Puan"]] + [[a, b_, ond(p_, 0)] for a, b_, p_ in liste]
@@ -778,7 +786,7 @@ def pdf_olustur(m, dosya):
 
     # ---------- Para akışı
     if m.get("akis"):
-        bolum("Para akışı: Alıcılar mı satıcılar mı?", 10)
+        bolum("Para akışı ve hacim analizi", 10)
         for x in br.akis_yorumlari(m): E.append(Paragraph("• " + x, ST["madde"]))
         ga = br.g_akis(m["hist"], m)
         if ga: E += [Spacer(1, 4), _img(ga, W, (1.55 * 2 + 0.4) / 7.5)]
@@ -804,10 +812,12 @@ def pdf_olustur(m, dosya):
         E.append(TS.tablo(v, [W * .1, W * .68, W * .22], hizala_sol=(0, 1, 2), font=7.4))
 
     # ---------- Genel değerlendirme
-    E.append(PageBreak()); n += 1; E.append(Bolum(n, "Genel değerlendirme", W))
+    E.append(PageBreak()); n += 1; E.append(Bolum(n, "Sonuç ve analist değerlendirmesi", W))
+    E.append(TS.ozet_paneli("Sonuç", AN.varlik_baslik(m), _gor, AN.varlik_ozeti(m), W))
+    E.append(Paragraph("Başlıklar itibarıyla değerlendirme", ST["h2"]))
     for bas, metin in genel_degerlendirme(m):
         E.append(KeepTogether([Paragraph(bas, ST["h2"]), Paragraph(TS.esc(metin), ST["p"])]))
-    E.append(Spacer(1, 8)); n += 1; E.append(Bolum(n, "Sözlük ve uyarılar", W))
+    E.append(Spacer(1, 8)); n += 1; E.append(Bolum(n, "Terimler sözlüğü ve uyarılar", W))
     E.append(TS.tablo([["Terim", "Sade anlatım"]] + [[a, Paragraph(b, ST["hucre"])] for a, b in SOZLUK_VARLIK + (SOZLUK_KRIPTO if kr else [])],
                       [W * .28, W * .72], hizala_sol=(0, 1), font=7.6))
     E.append(Spacer(1, 6))

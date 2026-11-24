@@ -16,6 +16,7 @@ from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table, Tab
 import tasarim as TS
 from tasarim import ST, Bolum, bilgi_kutusu, sayfa_cizici, kart_izgarasi
 import bist_teknik as T
+import analist as AN
 
 C = TS.GRAFIK; R = TS.R; HEX = TS.HEX
 YESIL, KIRMIZI = HEX["yesil"], HEX["kirmizi"]
@@ -228,7 +229,7 @@ def teknik_pdf(s, dosya):
                       f"{_f(g['fiyat'])} {sym}", g.get("degisim"), W, rozet=f"TEKNİK GÖRÜNÜM: {s['etiket']}",
                       guncel=f"Son kapanış verisi: {TS.zaman_metni(s.get('fiyat_zamani'))}  ·  Rapor: {dt.datetime.now(dt.timezone(dt.timedelta(hours=3))):%d.%m.%Y %H:%M} TSİ")
     E.append(gosterge_satiri(s, W)); E.append(Spacer(1, 8))
-    E.append(bilgi_kutusu("Kısaca:", s["yorum"], W)); E.append(Spacer(1, 4))
+    E.append(TS.ozet_paneli("Teknik görünüm özeti", AN.teknik_baslik(s), s["etiket"], AN.teknik_ozet(s), W)); E.append(Spacer(1, 4))
     # Önemli seviyeler
     E.append(Paragraph("Önemli seviyeler", ST["h2"]))
     satir = [["", "Günlük", "Haftalık", "Aylık"]]
@@ -246,14 +247,18 @@ def teknik_pdf(s, dosya):
     satir.append(["Piyasa yapısı"] + [hucre(t, lambda a: a["pa"]["yapi"].split(" (")[0]) for t in "GHA"])
     E.append(TS.tablo(satir, [W * .28, W * .24, W * .24, W * .24], font=7.6))
     E.append(Spacer(1, 6))
-    E.append(Paragraph("Öne çıkan sinyaller (günlük + haftalık)", ST["h2"]))
+    _sn = AN.teknik_senaryo(s)
+    if _sn:
+        E.append(KeepTogether([Paragraph("İşlem senaryoları (günlük)", ST["h2"]),
+                               TS.senaryo_kartlari([(b_, f"Hedef {h_}", "", f"Tetikleyici: {t_}. {i_}.") for b_, t_, h_, i_ in _sn], W)]))
+    _baslik_sinyal = Paragraph("Öne çıkan sinyaller (günlük + haftalık)", ST["h2"])
     tum = []
     for tf in ("G", "H"):
         a = s["tf"].get(tf)
         if a: tum += [(f"[{T.TF_AD[tf][0]}] " + x[0].split(": ", 1)[-1], x[1], x[3]) for x in a["sinyal"]]
     pos = [x[0] for x in sorted([x for x in tum if x[1] > 0], key=lambda x: -x[2])]
     neg = [x[0] for x in sorted([x for x in tum if x[1] < 0], key=lambda x: -x[2])]
-    E.append(TS.sinyal_listesi(pos, neg, W, n=5))
+    E.append(KeepTogether([_baslik_sinyal, TS.sinyal_listesi(pos, neg, W, n=5)]))
 
     # Her zaman dilimi
     for n, tf in enumerate(("G", "H", "A"), 1):
@@ -340,9 +345,15 @@ def bulten_pdf(baslik, satirlar, analizler, dosya, endeks=None, sym="₺"):
                                 ("Yukarı kırılım", str(int(df["Kırılım"].sum())), "formasyon / yapı"),
                                 ("Ort. teknik puan", f"{df['Teknik puan'].mean():.0f}", "0–100")], W, sutun=4))
         E.append(Spacer(1, 6))
+    if len(df):
+        _al = int(df["Genel"].isin(["AL", "GÜÇLÜ AL"]).sum()); _sat = int(df["Genel"].isin(["SAT", "GÜÇLÜ SAT"]).sum())
+        _et = "OLUMLU" if _al > 1.5 * _sat else "OLUMSUZ" if _sat > 1.5 * _al else "NÖTR"
+        _bas = {"OLUMLU": "Geniş tabanlı alım iştahı; teknik görünüm olumlu", "OLUMSUZ": "Satış baskısı geniş tabana yayılmış; temkinli duruş",
+                "NÖTR": "Seçici piyasa; teknik sinyaller dengeli"}[_et]
+        E.append(TS.ozet_paneli("Piyasa yorumu", _bas, _et, AN.bulten_yorumu(baslik, satirlar, endeks), W)); E.append(Spacer(1, 4))
     if endeks:
         E.append(Paragraph(f"{endeks['ad']} teknik görünümü", ST["h2"])); E.append(gosterge_satiri(endeks, W)); E.append(Spacer(1, 4))
-        E.append(bilgi_kutusu("Kısaca:", endeks["yorum"], W))
+        E.append(TS.ozet_paneli("Endeks görünümü", AN.teknik_baslik(endeks), endeks["etiket"], AN.teknik_ozet(endeks), W))
     K = kategoriler(satirlar)
     for ad, d in K.items():
         v = [["Kod", "Puan", "G / H / A", "Fiyat", "Değ.", "Öne çıkan"]]
@@ -357,7 +368,7 @@ def bulten_pdf(baslik, satirlar, analizler, dosya, endeks=None, sym="₺"):
             a = s["tf"].get("G")
             if not a: continue
             E.append(KeepTogether([_img(g_teknik(a, f"{s['kod']} · {s['ad']} · {s['etiket']} (puan {s['puan']:.0f})", kompakt=True, dpi=120), W, 3.0 / 7.5 * 0.97),
-                                   Paragraph(TS.esc(s["yorum"]), ST["kucuk"]), Spacer(1, 6)]))
+                                   Paragraph(TS.esc(AN.teknik_ozet(s)), ST["kucuk"]), Spacer(1, 6)]))
     if len(df):
         E.append(PageBreak()); E.append(Bolum(2, "Tüm liste", W))
         v = [["Kod", "Puan", "Genel", "Günlük", "Haftalık", "Aylık", "RSI", "Yapı"]]

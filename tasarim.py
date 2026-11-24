@@ -159,18 +159,19 @@ def bilgi_kutusu(baslik, metin, W, tur="ana"):
     return t
 
 
-def trafik_listesi(satirlar, W):
-    """Tek bakışta listesi: [(soru, cevap, durum)] → renkli nokta + soru + sade cevap."""
+def trafik_listesi(satirlar, W, etiketler=None):
+    """Karne listesi: [(alan, değerlendirme, durum)] → durum rozeti + alan + değerlendirme."""
     veri = []
+    etiketler = etiketler or {"iyi": "OLUMLU", "orta": "NÖTR", "zayif": "OLUMSUZ"}
     for soru, cevap, durum in satirlar:
         koyu, acik = durum_rengi(durum)
-        etiket = {"iyi": "İYİ", "orta": "ORTA", "zayif": "ZAYIF"}.get(durum, "–")
-        rozet = Table([[Paragraph(f'<font name="DVB" size="7" color="{koyu.hexval().replace("0x", "#")}">{etiket}</font>',
-                                  _st("r", alignment=1))]], colWidths=[40])
+        etiket = etiketler.get(durum, "–")
+        rozet = Table([[Paragraph(f'<font name="DVB" size="6.6" color="{koyu.hexval().replace("0x", "#")}">{etiket}</font>',
+                                  _st("r", alignment=1))]], colWidths=[50])
         rozet.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), acik), ("ROUNDEDCORNERS", [6, 6, 6, 6]),
                                    ("TOPPADDING", (0, 0), (-1, -1), 2), ("BOTTOMPADDING", (0, 0), (-1, -1), 3)]))
         veri.append([rozet, Paragraph(f'<font name="DVB">{soru}</font><br/>{esc(cevap)}', _st("tl", fontSize=8.6, leading=11.8))])
-    t = Table(veri, colWidths=[48, W - 48])
+    t = Table(veri, colWidths=[58, W - 58])
     t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LINEBELOW", (0, 0), (-1, -2), 0.5, R["cizgi"]),
                            ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
                            ("LEFTPADDING", (0, 0), (0, -1), 0)]))
@@ -479,3 +480,92 @@ def pro_kapak(ad, alt_satir, fiyat_metni, degisim, W, rozet=None, guncel=None):
     t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
     t.hAlign = "LEFT"
     return [Spacer(1, 2), t, Spacer(1, 30)]
+
+
+
+# =====================================================================
+# KURUMSAL ARAŞTIRMA BİLEŞENLERİ
+# =====================================================================
+GORUS_RENK = {"OLUMLU": ("yesil", "yesil_acik"), "ILIMLI OLUMLU": ("yesil", "yesil_acik"), "NÖTR": ("sari", "sari_acik"),
+              "TEMKİNLİ": ("turuncu", "sari_acik"), "OLUMSUZ": ("kirmizi", "kirmizi_acik"),
+              "GÜÇLÜ AL": ("yesil", "yesil_acik"), "AL": ("yesil", "yesil_acik"), "SAT": ("kirmizi", "kirmizi_acik"),
+              "GÜÇLÜ SAT": ("kirmizi", "kirmizi_acik"), "GÜÇLÜ POZİTİF": ("yesil", "yesil_acik"), "POZİTİF": ("yesil", "yesil_acik"),
+              "NEGATİF": ("kirmizi", "kirmizi_acik"), "GÜÇLÜ NEGATİF": ("kirmizi", "kirmizi_acik")}
+
+
+def ozet_paneli(etiket, baslik, gorus, metin, W, alt_bilgi=None):
+    """Yatırım özeti paneli: üst etiket, başlık tezi, görüş rozeti ve yönetici özeti paragrafı."""
+    k, a = GORUS_RENK.get(gorus, ("sari", "sari_acik")); koyu = HEX.get(k, HEX["sari"]); acik = R[a]
+    rw = pdfmetrics.stringWidth(gorus, "DVB", 7.6) + 16
+    rozet = Table([[Paragraph(f'<font name="DVB" size="7.6" color="{koyu}">{gorus}</font>', _st("gz", alignment=1, leading=9.5))]], colWidths=[rw])
+    rozet.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), acik), ("ROUNDEDCORNERS", [6, 6, 6, 6]),
+                               ("TOPPADDING", (0, 0), (-1, -1), 2.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5)]))
+    ust = Table([[Paragraph(f'<font name="DVB" size="7.2" color="{HEX["altin"]}">{etiket.upper()}</font>', _st("oe", leading=9)),
+                  Paragraph(f'<font size="7" color="{HEX["soluk"]}">GENEL GÖRÜNÜM</font>', _st("og", alignment=2, leading=9)), rozet]],
+                colWidths=[W - 24 - rw - 70, 66, rw + 4])
+    ust.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    icerik = [ust, Spacer(1, 4), Paragraph(f'<font name="DVX" size="12.5" color="{HEX["murekkep"]}">{esc(baslik)}</font>', _st("ob", leading=16)),
+              Spacer(1, 5), Paragraph(esc(metin), _st("om", fontSize=8.9, leading=13, alignment=4, textColor=R["metin"]))]
+    if alt_bilgi:
+        icerik += [Spacer(1, 4), Paragraph(f'<font color="{HEX["soluk"]}">{alt_bilgi}</font>', _st("oa", fontSize=7, leading=9))]
+    t = Table([[icerik]], colWidths=[W])
+    t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")), ("LINEBEFORE", (0, 0), (0, -1), 3, R["altin"]),
+                           ("BOX", (0, 0), (-1, -1), 0.6, R["cizgi"]), ("LEFTPADDING", (0, 0), (-1, -1), 12), ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+                           ("TOPPADDING", (0, 0), (-1, -1), 9), ("BOTTOMPADDING", (0, 0), (-1, -1), 10)]))
+    t.hAlign = "LEFT"; return t
+
+
+def tez_tablosu(olumlu, olumsuz, W, b1="Yatırım tezini destekleyenler", b2="Riskler ve izlenecekler"):
+    """İki sütunlu yatırım tezi: her madde kalın başlık + açıklama."""
+    def sutun(liste, bas, renk):
+        s = [[Paragraph(f'<font name="DVB" color="{renk}">{bas}</font>', _st("tzb", fontSize=9, leading=12))]]
+        for i, (lead, txt) in enumerate(liste, 1):
+            s.append([Paragraph(f'<font name="DVB" color="{HEX["murekkep"]}">{i}. {lead}.</font> {esc(txt)}', _st("tzm", fontSize=8.2, leading=11.4))])
+        if not liste:
+            s.append([Paragraph(f'<font color="{HEX["soluk"]}">Bu başlıkta öne çıkan bir unsur bulunmuyor.</font>', _st("tzm", fontSize=8.2, leading=11.4))])
+        t = Table(s, colWidths=[W / 2 - 10])
+        t.setStyle(TableStyle([("LINEBELOW", (0, 0), (-1, 0), 1.2, colors.HexColor(renk)), ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                               ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 4), ("VALIGN", (0, 0), (-1, -1), "TOP")]))
+        return t
+    t = Table([[sutun(olumlu, b1, HEX["yesil"]), sutun(olumsuz, b2, HEX["kirmizi"])]], colWidths=[W / 2 + 10, W / 2 - 10])
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (0, 0), 20)]))
+    t.hAlign = "LEFT"; return t
+
+
+def senaryo_kartlari(liste, W):
+    """[(başlık, değer, potansiyel, açıklama)] → yan yana senaryo kartları."""
+    if not liste: return Spacer(1, 0)
+    hucre = []; gw = (W - 10 * (len(liste) - 1)) / len(liste)
+    for bas, deger, pot, ac in liste:
+        renk = (HEX["yesil"] if ("Olumlu" in bas or "Yükseliş" in bas) else
+                HEX["kirmizi"] if ("Olumsuz" in bas or "Düşüş" in bas) else HEX["ana"])
+        ic = [Paragraph(f'<font name="DVB" size="7.4" color="{renk}">{bas.upper()}</font>', _st("sk1", leading=9)), Spacer(1, 2),
+              Paragraph(f'<font name="DVX" size="14" color="{HEX["murekkep"]}">{deger}</font>&nbsp;&nbsp;<font name="DVB" size="9" color="{renk}">{pot}</font>', _st("sk2", leading=18)),
+              Spacer(1, 2), Paragraph(esc(ac), _st("sk3", fontSize=7.8, leading=10.6, textColor=R["metin"]))]
+        k = Table([[ic]], colWidths=[gw])
+        k.setStyle(TableStyle([("BOX", (0, 0), (-1, -1), 0.6, R["cizgi"]), ("LINEABOVE", (0, 0), (-1, 0), 2.5, colors.HexColor(renk)),
+                               ("LEFTPADDING", (0, 0), (-1, -1), 9), ("RIGHTPADDING", (0, 0), (-1, -1), 9), ("TOPPADDING", (0, 0), (-1, -1), 7),
+                               ("BOTTOMPADDING", (0, 0), (-1, -1), 8)]))
+        hucre.append(k)
+    t = Table([hucre], colWidths=[gw + (10 if i < len(liste) - 1 else 0) for i in range(len(liste))])
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    t.hAlign = "LEFT"; return t
+
+
+def iki_liste(b1, l1, b2, l2, W):
+    """Katalizörler / riskler gibi iki sütunlu madde listesi."""
+    def sutun(bas, l, renk):
+        s = [[Paragraph(f'<font name="DVB" color="{renk}">{bas}</font>', _st("ilb", fontSize=9, leading=12))]]
+        for x in l or ["–"]:
+            s.append([Paragraph(f'<font color="{renk}">•</font>&nbsp; {esc(bas_buyuk_(x))}', _st("ilm", fontSize=8.2, leading=11.2))])
+        t = Table(s, colWidths=[W / 2 - 10])
+        t.setStyle(TableStyle([("LINEBELOW", (0, 0), (-1, 0), 1.2, colors.HexColor(renk)), ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                               ("TOPPADDING", (0, 0), (-1, -1), 2.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5)]))
+        return t
+    t = Table([[sutun(b1, l1, HEX["ana"]), sutun(b2, l2, HEX["turuncu"])]], colWidths=[W / 2 + 10, W / 2 - 10])
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (0, 0), 20)]))
+    t.hAlign = "LEFT"; return t
+
+
+def bas_buyuk_(s):
+    return s[:1].upper() + s[1:] if s else s

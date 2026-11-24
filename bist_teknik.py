@@ -659,8 +659,8 @@ def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A")):
     import bist_varlik as V, bist_veri as bv
     kod = kod.upper().strip().replace(".IS", "")
     h, tur = gunluk_veri(kod, fiyat_fn)
-    ad = V.VARLIKLAR[kod][1] if kod in V.VARLIKLAR else bv.SIRKETLER.get(kod, kod)
-    sonuc = {"kod": kod, "ad": ad, "tur": tur, "para": "₺" if tur in ("hisse", "endeks") or kod == "GRAMALTIN" else "$",
+    ad = V.VARLIKLAR[kod][1] if kod in V.VARLIKLAR else {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka"}.get(kod, bv.SIRKETLER.get(kod, kod))
+    sonuc = {"kod": kod, "ad": ad, "tur": tur, "para": "₺" if tur == "hisse" or kod == "GRAMALTIN" else "" if tur == "endeks" else "$",
              "tf": {}, "fiyat_zamani": h.index[-1]}
     for tf in tfler:
         sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(h, tf, tur), tf)

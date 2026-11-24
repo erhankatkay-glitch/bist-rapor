@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-15"
+SURUM = "2026.11.24-16"
 
 import bist_veri as BV
 
@@ -67,6 +67,7 @@ SEKTOR_GRUPLARI = {
 # STİL
 # =====================================================================
 import tasarim as TS
+import analist as AN
 from tasarim import ST, Bolum, kart_izgarasi, bilgi_kutusu, trafik_listesi, kapak, sayfa_cizici, SOZLUK_HISSE
 LAC, MAVI, ACIK = TS.R["murekkep"], TS.R["ana"], TS.R["zemin"]
 YESIL, KIRMIZI, SARI = TS.R["yesil"], TS.R["kirmizi"], TS.R["sari"]
@@ -1655,7 +1656,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     gor_durum = "iyi" if pt and pt > 0.15 else "zayif" if pt and pt < -0.15 else "orta"
 
     # ---------------- SAYFA 1: PRO ÖZET ----------------
-    E += TS.pro_kapak(m["ad"], f"BIST: {m['kod']}  ·  {m['sektor']}  ·  {m['tarih']:%d.%m.%Y}  ·  Kaynak: {str(m.get('kaynak', 'Yahoo')).split(' (')[0]}",
+    _sek = AN.sektor_adi(m)[1]
+    E += TS.pro_kapak(m["ad"], f"BIST: {m['kod']}  ·  {_sek[:1].upper() + _sek[1:] if _sek else 'Hisse'}  ·  {m['tarih']:%d.%m.%Y}  ·  Kaynak: {str(m.get('kaynak', 'Yahoo')).split(' (')[0]}",
                       f"{tl(m['fiyat'])} ₺", m["r"].get("1G"), W,
                       rozet=f"MODEL GÖRÜŞÜ: {m['gorus'].upper()}" if m.get("gorus") not in (None, "–") else None,
                       guncel=f"Fiyat: {TS.zaman_metni(m.get('fiyat_zamani') or m['tarih'])} (~15 dk gecikmeli)  ·  Son mali tablo: "
@@ -1666,7 +1668,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
                                  "₺", gen=PW, yuk=150, alt_not=f"{len(dahil)} yöntemin ortalaması · güven: {kucuk(m['guven'])}")
     sag = TS.SkorGostergesi(m["genel_skor"], m["skor_etiket"] or "", m["saglik"] or {}, gen=PW, yuk=150)
     E.append(TS.yan_yana(sol, sag, W)); E.append(Spacer(1, 8))
-    E.append(bilgi_kutusu("Kısaca:", sade_ozet(m), W)); E.append(Spacer(1, 4))
+    _gor = AN.gorus(m)[0]
+    E.append(TS.ozet_paneli("Yatırım özeti", AN.baslik_tezi(m), _gor, AN.yonetici_ozeti(m, kisa=True), W)); E.append(Spacer(1, 4))
     if (m.get("veri") or {}).get("eski"):
         E.append(bilgi_kutusu("Veri uyarısı:", m["veri"]["eski"], W, "sari")); E.append(Spacer(1, 2))
     E.append(Paragraph("Temel göstergeler", ST["h2"]))
@@ -1685,26 +1688,27 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         r2 = TS.AralikCubugu("Model değer aralığı", min(dahil + [m["fiyat"]]) if dahil else None, max(dahil + [m["fiyat"]]) if dahil else None,
                              m["fiyat"], gen=PW, ort=m["adil"], sembol="₺", ort_etiket="Adil")
     E.append(TS.yan_yana(r1, r2, W)); E.append(Spacer(1, 6))
-    E.append(Paragraph("Öne çıkan sinyaller", ST["h2"]))
-    E.append(TS.sinyal_listesi(m["guclu"], m["zayif"], W, n=4))
 
-    # ---------------- SAYFA 1b: TEK BAKIŞTA ----------------
-    E.append(PageBreak()); E.append(Paragraph("Tek bakışta", ST["h2"]))
-    E.append(trafik_listesi(tek_bakista(m), W))
-    E.append(Spacer(1, 6))
-    E.append(kart_izgarasi([
-        ("Son fiyat", f"{tl(m['fiyat'])} ₺", f"52H {tl(m['dip52'])}–{tl(m['zirve52'])}"),
-        ("Adil değer", f"{tl(m['adil'])} ₺" if m["adil"] else "–", f"Güven: {kucuk(m['guven'])}", MAVI),
-        ("Potansiyel", yz(pt), kucuk(m["gorus"]), pr),
-        ("Sağlık skoru", f"{ond(m['genel_skor'], 1)} / 5" if m["genel_skor"] else "–", kucuk(m["skor_etiket"]), puan_renk(m["genel_skor"] or 0))], W, sutun=4))
-    E.append(Spacer(1, 4))
-    E.append(Paragraph("Kısa yorumlar", ST["h2"]))
-    for bas, metin in genel_degerlendirme(m)[:4]:
-        E.append(Paragraph(f"<b>{bas}:</b> {TS.esc(metin)}", ST["p"]))
+    # ---------------- SAYFA 1b: YATIRIM ÖZETİ ----------------
+    E.append(PageBreak())
+    E.append(TS.ozet_paneli("Yönetici özeti", AN.baslik_tezi(m), _gor, AN.yonetici_ozeti(m), W,
+                            alt_bilgi="Genel görünüm; değerleme (%45), finansal sağlık (%35) ve fiyat momentumu/para akışının (%20) birleşimidir."))
+    E.append(Paragraph("Yatırım tezi", ST["h2"]))
+    _p, _n = AN.yatirim_tezi(m)
+    E.append(TS.tez_tablosu(_p, _n, W))
+    _sc = AN.senaryolar(m)
+    if _sc:
+        _baz = [("Baz senaryo", f"{tl(m['adil'])} TL" if m.get("adil") else "–", yz(pt) if pt is not None else "",
+                 "Birleşik adil değer: değerleme yöntemlerinin ağırlıklı sonucu.")]
+        E.append(KeepTogether([Paragraph("Senaryo analizi", ST["h2"]), TS.senaryo_kartlari([_sc[1], _baz[0], _sc[0]], W)]))
+    E.append(KeepTogether([Paragraph("Katalizörler ve riskler", ST["h2"]),
+                           TS.iki_liste("İzlenecek katalizörler", AN.katalizorler(m), "Başlıca riskler", AN.riskler(m), W)]))
+    E.append(KeepTogether([Paragraph("Temel göstergeler karnesi", ST["h2"]), trafik_listesi(AN.karne(m), W)]))
+    E.append(KeepTogether([Paragraph("Analist notları", ST["h2"]), TS.sinyal_listesi(m["guclu"], m["zayif"], W, n=6)]))
 
     # ---------------- SAYFA 2: DEĞERLEME ----------------
-    E.append(CondPageBreak(12 * cm)); E.append(Bolum(1, "Değerleme: Hisse ne kadar eder?", W))
-    E.append(bilgi_kutusu("Kısaca:", kisaca(m, "degerleme"), W)); E.append(Spacer(1, 6))
+    E.append(CondPageBreak(12 * cm)); E.append(Bolum(1, "Değerleme: Adil değer analizi", W))
+    E.append(bilgi_kutusu("Analist yorumu:", AN.bolum_girisi(m, "degerleme"), W)); E.append(Spacer(1, 6))
     E.append(Paragraph("Adil değer, şirketin yapısına uygun yöntemlerin ağırlıklı ortalaması ile ağırlıklı medyanının ortalamasıdır. "
                        "Fiyatın %40'ının altında veya 2,5 katının üzerinde sonuç veren yöntemler aykırı sayılıp hariç tutulur (*). "
                        f"Temkinli yaklaşım gereği potansiyel {yz(PARAM['MIN_POTANSIYEL'], 0)} ile +{yz(PARAM['MAKS_POTANSIYEL'], 0)} arasında sınırlanır"
@@ -1773,8 +1777,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
                            "gerekçeli PD/DD (ROE–Ke yaklaşımı), emsal çarpanları ve temettü modeli kullanılmıştır.", ST["p"]))
 
     # ---------------- SAYFA 3: FİNANSAL SAĞLIK ----------------
-    E.append(CondPageBreak(9 * cm)); E.append(Bolum(2, "Finansal sağlık: Şirket ne kadar sağlam?", W))
-    E.append(bilgi_kutusu("Kısaca:", kisaca(m, "saglik"), W)); E.append(Spacer(1, 4))
+    E.append(CondPageBreak(9 * cm)); E.append(Bolum(2, "Finansal sağlık değerlendirmesi", W))
+    E.append(bilgi_kutusu("Analist yorumu:", AN.bolum_girisi(m, "saglik"), W)); E.append(Spacer(1, 4))
     if m["saglik"]:
         E.append(_img(g_saglik(m), W * 0.92, (0.42 * len(m["saglik"]) + 0.5) / 7.5))
     E.append(Paragraph(f"Her metrik 1 (zayıf) – 5 (güçlü) arası puanlanır. Büyüme metrikleri %{ond(PARAM['ENFLASYON']*100, 2)} "
@@ -1821,8 +1825,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
                                          "bu oranlar için bankanın KAP'taki faaliyet raporuna bakın.", ST["kucuk"])]))
 
     # ---------------- SAYFA 4: FİNANSAL TABLOLAR ----------------
-    E.append(CondPageBreak(12 * cm)); E.append(Bolum(3, "Finansal tablolar: Satış, kâr ve nakit", W))
-    E.append(bilgi_kutusu("Kısaca:", kisaca(m, "tablolar"), W))
+    E.append(CondPageBreak(12 * cm)); E.append(Bolum(3, "Finansal performans: Gelir, kârlılık ve nakit akışı", W))
+    E.append(bilgi_kutusu("Analist yorumu:", AN.bolum_girisi(m, "tablolar"), W))
     S = m["S"]; c = S["Hasılat"]
     if c is not None:
         idx = list(c.index[:4]); T = m["T"]
@@ -1860,8 +1864,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     if cg: E += [Spacer(1, 4), _img(cg, W, 2.4 / 7.5)]
 
     # ---------------- SAYFA 5: EMSAL ----------------
-    E.append(CondPageBreak(11 * cm)); E.append(Bolum(4, "Benzer şirketlerle karşılaştırma", W))
-    E.append(bilgi_kutusu("Kısaca:", kisaca(m, "emsal"), W)); E.append(Spacer(1, 4))
+    E.append(CondPageBreak(11 * cm)); E.append(Bolum(4, "Göreli değerleme: Emsal karşılaştırması", W))
+    E.append(bilgi_kutusu("Analist yorumu:", AN.bolum_girisi(m, "emsal"), W)); E.append(Spacer(1, 4))
     if emsaller:
         E.append(Paragraph(f"Emsal grubu: {', '.join(e['kod'] for e in emsaller)}. Çarpanlar son 12 aylık verilerle hesaplanmıştır.", ST["kucuk"]))
         v = [["Hisse", "Piy. Değ.", "F/K", "PD/DD", "FD/FAVÖK", "ROE", "Net Marj", "Reel Büy.", "1Y Getiri"]]
@@ -1887,8 +1891,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         E.append(Paragraph("Emsal verisi alınamadı. EMSALLER alanına aynı sektörden hisse kodları girerek bu bölümü doldurabilirsiniz.", ST["p"]))
 
     # ---------------- SAYFA 6: FİYAT, RİSK, TEKNİK ----------------
-    E.append(CondPageBreak(17 * cm)); E.append(Bolum(5, "Fiyat, risk ve teknik görünüm", W))
-    E.append(bilgi_kutusu("Kısaca:", kisaca(m, "fiyat"), W)); E.append(Spacer(1, 4))
+    E.append(CondPageBreak(17 * cm)); E.append(Bolum(5, "Fiyat performansı, risk ve teknik görünüm", W))
+    E.append(bilgi_kutusu("Analist yorumu:", AN.bolum_girisi(m, "fiyat"), W)); E.append(Spacer(1, 4))
     E.append(_img(g_fiyat(d["hist"], endeks, m["kod"], m.get("seviye")), W, 5.6 / 7.5))
     per = [["Dönem"] + list(m["r"].keys()), [m["kod"]] + [yz(x) for x in m["r"].values()]]
     if m["r_endeks"]:
@@ -1933,7 +1937,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
 
     # ---------------- SAYFA 7: TEMETTÜ + METODOLOJİ ----------------
     E.append(CondPageBreak(10 * cm)); E.append(Bolum(6, "Para akışı ve yabancı yatırımcı", W))
-    E.append(bilgi_kutusu("Kısaca:", kisaca(m, "akis"), W))
+    E.append(bilgi_kutusu("Analist yorumu:", AN.bolum_girisi(m, "akis"), W))
     E.append(Spacer(1, 3)); E.append(bilgi_kutusu("Bu ne demek?", "Hisse yükselirken hacim yüksekse alıcıların, düşerken hacim yüksekse "
              "satıcıların baskın olduğu düşünülür. CMF ve OBV bu dengeyi ölçer: pozitif değer para girişine, negatif değer çıkışa işaret eder.", W, "turkuaz"))
     E.append(Spacer(1, 4))
@@ -1973,8 +1977,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
                       "+" if x["ton"] > 0 else "−" if x["ton"] < 0 else "·"])
         E.append(tablo(v, [W * .09, W * .63, W * .2, W * .08], hizala_sol=(0, 1, 2), font=7.2))
         E.append(Paragraph("Kaynak: Google Haberler. Ton, başlıktaki olumlu/olumsuz kelimelere dayalı basit bir sınıflandırmadır.", ST["kucuk"]))
-    E.append(CondPageBreak(9 * cm)); E.append(Bolum(7, "Temettü", W))
-    E.append(bilgi_kutusu("Kısaca:", kisaca(m, "temettu"), W)); E.append(Spacer(1, 4))
+    E.append(CondPageBreak(9 * cm)); E.append(Bolum(7, "Temettü politikası", W))
+    E.append(bilgi_kutusu("Analist yorumu:", AN.bolum_girisi(m, "temettu"), W)); E.append(Spacer(1, 4))
     gt = g_temettu(m)
     if gt:
         ty = m["temettu_yillik"]; yillar = [y for y in ty.index if ty[y] > 0]
@@ -1986,14 +1990,15 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         E += [Spacer(1, 6), _img(gt, W, 2.2 / 7.5)]
     else:
         E.append(Paragraph("Şirketin kayıtlı nakit temettü geçmişi bulunamadı.", ST["p"]))
-    E.append(PageBreak()); E.append(Bolum(8, "Genel değerlendirme ve özet", W))
-    E.append(bilgi_kutusu("Kısaca:", sade_ozet(m), W))
+    E.append(PageBreak()); E.append(Bolum(8, "Sonuç ve analist değerlendirmesi", W))
+    E.append(TS.ozet_paneli("Sonuç", AN.baslik_tezi(m), _gor, AN.yonetici_ozeti(m), W))
+    E.append(Paragraph("Başlıklar itibarıyla değerlendirme", ST["h2"]))
     for bas, metin in genel_degerlendirme(m):
         E.append(KeepTogether([Paragraph(bas, ST["h2"]), Paragraph(TS.esc(metin), ST["p"])]))
-    E.append(PageBreak()); E.append(Bolum(9, "Sözlük: Terimler ne anlama geliyor?", W))
+    E.append(PageBreak()); E.append(Bolum(9, "Terimler sözlüğü", W))
     E.append(tablo([["Terim", "Sade anlatım"]] + [[a, Paragraph(b, ST["hucre"])] for a, b in SOZLUK_HISSE],
                    [W * .28, W * .72], hizala_sol=(0, 1), font=7.8))
-    E.append(Spacer(1, 10)); E.append(Bolum(10, "Yöntem ve önemli uyarılar", W))
+    E.append(Spacer(1, 10)); E.append(Bolum(10, "Metodoloji ve önemli uyarılar", W))
     met = [
         f"<b>Veri:</b> Mali tablolar öncelikle İş Yatırım'ın KAP finansallarından derlediği tablolardan, alınamazsa Yahoo Finance'ten çekilir; fiyat, temettü ve analist verileri Yahoo Finance kaynaklıdır. Gecikme veya eksiklik olabilir. "
         "TMS 29 (enflasyon muhasebesi) kapsamında yeniden düzenlenen tablolar ile nominal tablolar arasında yıllar arası kıyaslama sapmaları olabilir.",

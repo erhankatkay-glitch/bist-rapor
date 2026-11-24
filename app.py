@@ -11,6 +11,7 @@ import tasarim as ts
 import bist_rapor as br
 import bist_varlik as V
 import bist_evren as EV
+import analist as AN
 import bist_teknik as TK
 import bist_teknik_rapor as TKR
 import io
@@ -21,6 +22,7 @@ mk = importlib.reload(mk)
 br = importlib.reload(br)
 V = importlib.reload(V)
 EV = importlib.reload(EV)
+AN = importlib.reload(AN)
 TK = importlib.reload(TK)
 TKR = importlib.reload(TKR)
 DURUM_EMOJI = {"iyi": "🟢", "orta": "🟡", "zayif": "🔴", "yok": "⚪"}
@@ -100,6 +102,27 @@ def kart(col, etiket, deger, alt="", renk="#14294B"):
                  f'<div class="d" style="color:{renk}">{deger}</div><div class="a">{alt}</div></div>', unsafe_allow_html=True)
 
 
+def ozet_goster(baslik, gorus, kisa, tam, tez, katalizor, risk, senaryo=None):
+    """Kurumsal rapor tarzı yatırım özeti (uygulama ekranı)."""
+    renk = {"OLUMLU": "#16A34A", "ILIMLI OLUMLU": "#22C55E", "NÖTR": "#D97706", "TEMKİNLİ": "#EA580C", "OLUMSUZ": "#DC2626",
+            "GÜÇLÜ AL": "#16A34A", "AL": "#22C55E", "SAT": "#EF4444", "GÜÇLÜ SAT": "#DC2626"}.get(gorus, "#D97706")
+    md = lambda s: s.replace("<b>", "**").replace("</b>", "**")
+    st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#F8FAFC;border-radius:10px;padding:10px 12px;margin:6px 0">'
+                f'<div style="font-size:0.7rem;color:#F59E0B;font-weight:700">YATIRIM ÖZETİ · GENEL GÖRÜNÜM '
+                f'<span style="color:{renk}">{gorus}</span></div>'
+                f'<div style="font-size:1.02rem;font-weight:800;color:#0F172A;margin:4px 0 6px">{baslik}</div>'
+                f'<div style="font-size:0.88rem;color:#334155">{kisa}</div></div>', unsafe_allow_html=True)
+    with st.expander("📑 Yönetici özeti, yatırım tezi ve senaryolar", expanded=False):
+        st.markdown(md(tam))
+        pos, neg = tez
+        if pos: st.markdown("**Yatırım tezini destekleyenler**\n" + "\n".join(f"{i}. **{a_}.** {b_}" for i, (a_, b_) in enumerate(pos, 1)))
+        if neg: st.markdown("**Riskler ve izlenecekler**\n" + "\n".join(f"{i}. **{a_}.** {b_}" for i, (a_, b_) in enumerate(neg, 1)))
+        for b_, d_, p_, ac in senaryo or []:
+            st.markdown(f"**{b_}: {d_}** ({p_}) — {ac}")
+        if katalizor: st.markdown("**İzlenecek katalizörler**\n" + "\n".join(f"- {AN.bas_buyuk(x)}" for x in katalizor))
+        if risk: st.markdown("**Başlıca riskler**\n" + "\n".join(f"- {AN.bas_buyuk(x)}" for x in risk))
+
+
 def renk_pot(p):
     return "#1E8E5A" if p is not None and p > 0.15 else "#C0392B" if p is not None and p < -0.15 else "#D9A21B"
 
@@ -129,7 +152,9 @@ def analiz(kod, emsal, prm, gun, surum):
         "saglik": m["saglik"],
         "akis_ozet": (m.get("akis") or {}).get("ozet"), "akis_yorum": br.akis_yorumlari(m),
         "genel": br.genel_degerlendirme(m), "haber": m.get("haber"), "seviye": m.get("seviye"),
-        "tek": br.tek_bakista(m), "sade": br.sade_ozet(m),
+        "tek": AN.karne(m), "sade": br.sade_ozet(m),
+        "baslik": AN.baslik_tezi(m), "gorus": AN.gorus(m)[0], "ozet_kisa": AN.yonetici_ozeti(m, kisa=True), "ozet_tam": AN.yonetici_ozeti(m),
+        "tez": AN.yatirim_tezi(m), "katalizor": AN.katalizorler(m), "risk": AN.riskler(m), "senaryo": AN.senaryolar(m),
         "usd": {k: v for k, v in (m.get("usd") or {}).items() if k != "seri"} if m.get("usd") else None,
         "yabanci": (m.get("yabanci") or {}).get("oran"),
         "fiyat_zamani": ts.zaman_metni(m.get("fiyat_zamani") or m["tarih"]), "veri_eski": (m.get("veri") or {}).get("eski"),
@@ -236,17 +261,17 @@ with tab_r:
                 kart(c1, "DOLAR FİYAT", f"${br.ond(u['fiyat_usd'], 2)}", f"Kur {br.ond(u['kur'], 2)}", "#2F6DB5")
                 kart(c2, "1Y GETİRİ ($)", br.yz(u["r"].get("1Y")), f"TL reel: {br.yz(br.reel(o['1Y getiri']))}",
                      "#1E8E5A" if (u["r"].get("1Y") or 0) > 0 else "#C0392B")
-            if r.get("sade"):
-                st.info("**Kısaca:** " + r["sade"].replace("<b>", "**").replace("</b>", "**"))
+            if r.get("baslik"):
+                ozet_goster(r["baslik"], r["gorus"], r["ozet_kisa"], r["ozet_tam"], r["tez"], r["katalizor"], r["risk"], r.get("senaryo"))
             if r.get("tek"):
-                st.markdown("**Tek bakışta**")
+                st.markdown("**Temel göstergeler karnesi**")
                 for soru, cevap, durum in r["tek"]:
                     st.markdown(f"{DURUM_EMOJI.get(durum, '⚪')} **{soru}**  \n{cevap}")
-            with st.expander("🧾 Genel değerlendirme (tüm raporun özeti)", expanded=False):
+            with st.expander("🧾 Başlıklar itibarıyla değerlendirme", expanded=False):
                 for bas, metin in r.get("genel") or []:
                     st.markdown(f"**{bas}.** {metin}")
-            if r["guclu"]: st.markdown("**Güçlü yönler**\n" + "\n".join(f"- 🟢 {x}" for x in r["guclu"]))
-            if r["zayif"]: st.markdown("**Dikkat edilmesi gerekenler**\n" + "\n".join(f"- 🔴 {x}" for x in r["zayif"]))
+            if r["guclu"]: st.markdown("**Analist notları – olumlu**\n" + "\n".join(f"- 🟢 {x}" for x in r["guclu"]))
+            if r["zayif"]: st.markdown("**Analist notları – dikkat**\n" + "\n".join(f"- 🔴 {x}" for x in r["zayif"]))
         with a2:
             gr = r["grafik"]
             for ad_ in ("saglik", "fiyat", "goreli", "finansal"):
@@ -274,7 +299,8 @@ def teknik_analiz(kod, zaman, surum):
                 "destek": a["sr"]["destek"], "direnc": a["sr"]["direnc"], "yapi": a["pa"]["yapi"], "ma": a["oy"]["ma_etiket"],
                 "osc": a["oy"]["osc_etiket"], "pivot": a["pivot"]["Klasik"]} for tf, a in s["tf"].items() if a}
     g = s["tf"].get("G") or {}
-    return {"kod": s["kod"], "ad": s["ad"], "etiket": s["etiket"], "puan": s["puan"], "yorum": s["yorum"], "pdf": pdf,
+    return {"kod": s["kod"], "ad": s["ad"], "etiket": s["etiket"], "puan": s["puan"], "yorum": AN.teknik_ozet(s), "baslik": AN.teknik_baslik(s),
+            "senaryo": AN.teknik_senaryo(s), "pdf": pdf,
             "dosya": os.path.basename(yol), "graf": graf, "tf": tfo, "para": s["para"], "fiyat": g.get("fiyat"), "degisim": g.get("degisim"),
             "fiyat_zamani": ts.zaman_metni(s.get("fiyat_zamani"))}
 
@@ -317,7 +343,12 @@ with tab_x:
         for c_, tf in zip(cols, ("G", "H", "A")):
             x = r["tf"].get(tf)
             if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"], "#14294B"))
-        st.info("**Kısaca:** " + r["yorum"].replace("<b>", "**").replace("</b>", "**"))
+        st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#F8FAFC;border-radius:10px;padding:10px 12px;margin:6px 0">'
+                    f'<div style="font-size:0.7rem;color:#F59E0B;font-weight:700">TEKNİK GÖRÜNÜM ÖZETİ</div>'
+                    f'<div style="font-size:1.0rem;font-weight:800;color:#0F172A;margin:4px 0 6px">{r["baslik"]}</div>'
+                    f'<div style="font-size:0.88rem;color:#334155">{r["yorum"]}</div></div>', unsafe_allow_html=True)
+        for b_, t_, h_, i_ in r.get("senaryo") or []:
+            st.markdown(f"{'🟢' if 'Yükseliş' in b_ else '🔴'} **{b_}:** {t_} → hedef **{h_}** · {i_}")
         st.download_button("⬇️ Teknik PDF raporu", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="tk_dl")
         sek = st.tabs([TK.TF_AD[t] for t in ("G", "H", "A") if t in r["tf"]])
         for sk, tf in zip(sek, [t for t in ("G", "H", "A") if t in r["tf"]]):
@@ -380,7 +411,9 @@ def varlik_analiz(kod, prm, saat, surum):
     return {"pdf": pdf, "dosya": os.path.basename(dosya), "ad": m["ad"], "kod": m["kod"], "para": m["para"], "tur": m["tur"],
             "fiyat": m["fiyat"], "fiyat_tl": m["fiyat_tl"], "skor": m["genel_skor"], "gorunum": m["gorunum"],
             "r_usd": m["r_usd"], "r_tl": m["r_tl"], "r_reel": m["r_reel"], "vol": m["vol"], "mayer": m["mayer"],
-            "zirveden": m["zirveden"], "tek": V.tek_bakista(m), "sade": V.sade_ozet(m), "guclu": m["guclu"], "zayif": m["zayif"],
+            "zirveden": m["zirveden"], "tek": AN.karne_etiketle(V.tek_bakista(m)), "sade": V.sade_ozet(m),
+            "baslik": AN.varlik_baslik(m), "gorus_v": AN.varlik_gorus(m)[0], "ozet_kisa": AN.varlik_ozeti(m, kisa=True), "ozet_tam": AN.varlik_ozeti(m),
+            "tez": AN.varlik_tezi(m), "kr": AN.varlik_katalizor_risk(m), "guclu": m["guclu"], "zayif": m["zayif"],
             "genel": V.genel_degerlendirme(m), "graf": graf, "korku": {k: v for k, v in (m.get("korku") or {}).items() if k != "seri"} or None,
             "cg": m.get("cg"), "global": m.get("global"), "turev": m.get("turev"), "sharpe": m.get("sharpe"),
             "adil": m.get("adil"), "pot": m.get("potansiyel"), "etiket": (m.get("deger") or {}).get("etiket"),
@@ -416,13 +449,13 @@ with tab_v:
         kart(c1, "1 YIL ($)", br.yz(r["r_usd"].get("1Y")), f"TL reel: {br.yz(r['r_reel'])}", "#16A34A" if (r["r_usd"].get("1Y") or 0) > 0 else "#DC2626")
         kart(c2, "VOLATİLİTE", br.yz(r["vol"]), f"Zirveden: {br.yz(r['zirveden'])}")
         st.download_button("⬇️ PDF Raporu İndir", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="v_dl")
-        st.info("**Kısaca:** " + r["sade"].replace("<b>", "**").replace("</b>", "**"))
-        b1, b2, b3 = st.tabs(["Tek bakışta", "Grafikler", "Değerlendirme"])
+        ozet_goster(r["baslik"], r["gorus_v"], r["ozet_kisa"], r["ozet_tam"], r["tez"], r["kr"][0], r["kr"][1])
+        b1, b2, b3 = st.tabs(["Göstergeler karnesi", "Grafikler", "Değerlendirme"])
         with b1:
             for soru, cevap, durum in r["tek"]:
                 st.markdown(f"{DURUM_EMOJI.get(durum, '⚪')} **{soru}**  \n{cevap}")
-            if r["guclu"]: st.markdown("**Olumlu**\n" + "\n".join(f"- 🟢 {x}" for x in r["guclu"]))
-            if r["zayif"]: st.markdown("**Dikkat**\n" + "\n".join(f"- 🔴 {x}" for x in r["zayif"]))
+            if r["guclu"]: st.markdown("**Analist notları – olumlu**\n" + "\n".join(f"- 🟢 {x}" for x in r["guclu"]))
+            if r["zayif"]: st.markdown("**Analist notları – dikkat**\n" + "\n".join(f"- 🔴 {x}" for x in r["zayif"]))
         with b2:
             for ad_ in ("logbant", "mayer", "fiyat", "korku", "tlusd", "mevsim", "akis"):
                 if ad_ in r["graf"]: st.image(r["graf"][ad_], use_container_width=True)
