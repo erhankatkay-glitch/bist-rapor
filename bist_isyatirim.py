@@ -19,7 +19,10 @@ _TR = str.maketrans("çğıöşüÇĞİÖŞÜâîû", "cgiosucgiosuaiu")
 def _norm(s):
     s = (s or "").translate(_TR).lower()
     s = re.sub(r"[^a-z0-9]+", " ", s)
-    return " ".join(s.split())
+    s = " ".join(s.split())
+    # Banka tablolarındaki "XVI.", "2.1.3", "A)" gibi numaralandırmaları at
+    s = re.sub(r"^(?:(?:[ivxlc]{1,6}|\d{1,3}|[a-h])\s)+", "", s)
+    return s
 
 # anahtar: (desenler, akış mı?, toplama mı?)
 KALEMLER = {
@@ -28,18 +31,20 @@ KALEMLER = {
     "nakit": (["nakit ve nakit benzerleri", "cash and cash equivalents"], False, False),
     "kv_fin_yat": (["finansal yatirimlar", "financial investments"], False, False),
     "stok": (["stoklar", "inventories"], False, False),
-    "varlik": (["toplam varliklar", "total assets", "aktif toplami", "toplam aktifler"], False, False),
+    "varlik": (["toplam varliklar", "total assets", "aktif toplami", "toplam aktifler", "aktifler toplami",
+                "varliklar toplami", "toplam aktif", "aktif toplam"], False, False),
     "kvy": (["kisa vadeli yukumlulukler", "short term liabilities", "current liabilities"], False, False),
     "uvy": (["uzun vadeli yukumlulukler", "long term liabilities", "non current liabilities"], False, False),
     "fin_borc": (["finansal borclar", "financial liabilities", "financial loans", "borrowings"], False, True),
     "ozk_ana": (["ana ortakliga ait ozkaynaklar", "equity attributable to equity holders of the parent",
                  "ana ortakliga ait ozsermaye"], False, False),
-    "ozk": (["ozkaynaklar", "shareholders equity", "total equity", "ozsermaye"], False, False),
+    "ozk": (["ozkaynaklar", "shareholders equity", "total equity", "ozsermaye", "ozkaynaklar toplami",
+             "toplam ozkaynaklar", "equity"], False, False),
     "azinlik": (["kontrol gucu olmayan paylar", "azinlik paylari", "minority interest", "non controlling interests"], False, False),
     "gecmis": (["gecmis yillar kar zararlari", "gecmis yillar karlari", "retained earnings"], False, False),
     "sermaye": (["odenmis sermaye", "paid in capital", "share capital"], False, False),
-    "krediler": (["krediler", "loans"], False, False),
-    "mevduat": (["mevduat", "deposits"], False, False),
+    "krediler": (["krediler", "loans", "krediler net", "toplam krediler"], False, False),
+    "mevduat": (["mevduat", "deposits", "toplanan fonlar", "mevduat toplami"], False, False),
     # ---- Gelir tablosu (akış, kümülatif) ----
     "ciro": (["satis gelirleri", "hasilat", "net satislar", "sales", "revenue", "net sales"], True, False),
     "brut": (["brut kar zarar", "ticari faaliyetlerden brut kar zarar", "gross profit"], True, False),
@@ -49,7 +54,8 @@ KALEMLER = {
                     "surdurulen faaliyetler vergi oncesi kar zarar", "profit before tax"], True, False),
     "vergi": (["surdurulen faaliyetler vergi geliri gideri", "donem vergi geliri gideri", "tax expense"], True, False),
     "net": (["donem kari zarari", "net donem kari zarari", "donem net kari zarari", "net profit",
-             "profit for the period"], True, False),
+             "profit for the period", "net donem kari", "donem net kari", "surdurulen faaliyetler donem net k z",
+             "net kar zarar", "net income"], True, False),
     "net_ana": (["ana ortaklik paylari", "ana ortakliga ait net kar", "attributable to equity holders of the parent",
                  "equity holders of the parent"], True, False),
     "fin_gider": (["finansman giderleri", "esas faaliyet disi finansal giderler", "financial expenses",
@@ -250,9 +256,11 @@ def finansallar(kod, oturum=None, bugun=None):
     for k in ("bilanco", "q_bilanco"):
         if "Ordinary Shares Number" in sonuc[k].index and grup == "UFRS":
             sonuc[k] = sonuc[k].drop(index="Ordinary Shares Number")
+    ornek = " | ".join(str(k[2])[:28] for k in list(satirlar)[:40])
     zorunlu = {"Total Assets", "Stockholders Equity"}
-    if not zorunlu.issubset(set(sonuc["q_bilanco"].index) | set(sonuc["bilanco"].index)):
-        raise ValueError("İş Yatırım verisinde ana bilanço kalemleri eşleştirilemedi")
+    eksik = zorunlu - (set(sonuc["q_bilanco"].index) | set(sonuc["bilanco"].index))
+    if eksik:
+        raise ValueError(f"{grup}: {', '.join(sorted(eksik))} eşleşmedi. Kalemler: {ornek}")
     if "Net Income" not in sonuc["gelir"].index and "Net Income Common Stockholders" not in sonuc["gelir"].index:
-        raise ValueError("İş Yatırım verisinde net kâr eşleştirilemedi")
+        raise ValueError(f"{grup}: net kâr eşleşmedi. Kalemler: {ornek}")
     return sonuc

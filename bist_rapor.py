@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-4"
+SURUM = "2026.11.24-5"
 
 import bist_veri as BV
 
@@ -248,7 +248,7 @@ def veri_cek(kod, hafif=False):
         d["kur_notu"] = None
         return d
     except Exception as ex:
-        d["kaynak_hata"] = f"İş Yatırım verisi alınamadı ({type(ex).__name__}: {str(ex)[:120]}); Yahoo kullanıldı."
+        d["kaynak_hata"] = f"İş Yatırım verisi alınamadı ({type(ex).__name__}: {str(ex)[:1500]}); Yahoo kullanıldı."
     # 2) Yedek: Yahoo (gerekirse kur çevrimi)
     fin_pb = (info.get("financialCurrency") or DOVIZ_RAPORLAYAN.get(kod, "")).upper()
     pb = (info.get("currency") or "TRY").upper()
