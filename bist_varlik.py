@@ -64,6 +64,17 @@ SOZLUK_VARLIK = [
     ("Reel getiri", "Enflasyondan arındırılmış getiri; paranın gerçekte değer kazanıp kazanmadığını gösterir."),
 ]
 
+SOZLUK_KRIPTO = [
+    ("FDV (tam seyreltilmiş değer)", "Tüm arz basılmış olsaydı oluşacak piyasa değeri. Piyasa değeri FDV'den çok küçükse ileride yeni token arzı fiyatı baskılayabilir."),
+    ("Log-regresyon / güç yasası", "Fiyatın tüm geçmişine logaritmik ölçekte çizilen eğilim çizgisi. Uzun vadeli 'normal' fiyatı ve aşırı ısınma/birikim bantlarını gösterir."),
+    ("200 haftalık ortalama", "Yaklaşık 4 yıllık ortalama fiyat; Bitcoin'de tarihsel olarak döngü diplerine yakın seviyedir."),
+    ("Fonlama oranı", "Vadeli (perpetual) kontratlarda alıcı ile satıcı arasında periyodik ödenen ücret. Pozitif ve yüksekse alıcılar kalabalıktır."),
+    ("Açık pozisyon", "Kapanmamış vadeli kontratların toplam büyüklüğü; kaldıracın piyasadaki seviyesini gösterir."),
+    ("Bitcoin dominansı", "Bitcoin'in toplam kripto piyasa değeri içindeki payı. Düşüşü genellikle altcoinlere para akışına işaret eder."),
+    ("Hash oranı", "Bitcoin ağını güvence altına alan toplam işlem gücü; madenci sağlığının göstergesidir."),
+    ("Sharpe / Sortino", "Risk başına getiri ölçüleri. Sortino yalnızca aşağı yönlü dalgalanmayı risk sayar."),
+]
+
 # ------------------------------------------------------------------ veri
 def fiyat_cek(yahoo, sure="5y"):
     import yfinance as yf
@@ -79,16 +90,71 @@ def coingecko(cg_id):
                      headers={"User-Agent": "Mozilla/5.0"}, timeout=12)
     r.raise_for_status(); j = r.json(); md = j.get("market_data", {})
     g = lambda k: (md.get(k) or {}).get("usd") if isinstance(md.get(k), dict) else md.get(k)
+    yz_ = lambda k: (md.get(k) / 100) if md.get(k) is not None else None
     return {"sira": j.get("market_cap_rank"), "piy_deg": g("market_cap"), "hacim": g("total_volume"),
-            "dolasim": md.get("circulating_supply"), "maks": md.get("max_supply"), "ath": g("ath"),
-            "ath_tarih": (md.get("ath_date") or {}).get("usd"), "ath_fark": (md.get("ath_change_percentage") or {}).get("usd")}
+            "fdv": g("fully_diluted_valuation"), "dolasim": md.get("circulating_supply"), "toplam": md.get("total_supply"),
+            "maks": md.get("max_supply"), "ath": g("ath"), "ath_tarih": (md.get("ath_date") or {}).get("usd"),
+            "ath_fark": (md.get("ath_change_percentage") or {}).get("usd"), "atl": g("atl"),
+            "atl_tarih": (md.get("atl_date") or {}).get("usd"), "d24": yz_("price_change_percentage_24h"),
+            "d7": yz_("price_change_percentage_7d"), "d30": yz_("price_change_percentage_30d"), "d1y": yz_("price_change_percentage_1y"),
+            "kategori": [c for c in (j.get("categories") or []) if c][:3], "baslangic": j.get("genesis_date"),
+            "algoritma": j.get("hashing_algorithm"), "oy": (j.get("sentiment_votes_up_percentage") or 0) / 100 or None}
+
+def kripto_global():
+    """CoinGecko /global: toplam piyasa değeri ve dominanslar."""
+    import requests
+    r = requests.get("https://api.coingecko.com/api/v3/global", headers={"User-Agent": "Mozilla/5.0"}, timeout=12)
+    r.raise_for_status(); d = r.json()["data"]; p = d.get("market_cap_percentage", {})
+    return {"toplam": d["total_market_cap"].get("usd"), "hacim": d["total_volume"].get("usd"),
+            "btc_dom": (p.get("btc") or 0) / 100, "eth_dom": (p.get("eth") or 0) / 100,
+            "stable_dom": ((p.get("usdt") or 0) + (p.get("usdc") or 0)) / 100,
+            "d24": (d.get("market_cap_change_percentage_24h_usd") or 0) / 100, "coin_sayi": d.get("active_cryptocurrencies")}
 
 def korku_endeksi():
     import requests
-    r = requests.get("https://api.alternative.me/fng/", params={"limit": 30}, timeout=10)
+    r = requests.get("https://api.alternative.me/fng/", params={"limit": 365}, timeout=10)
     r.raise_for_status(); d = r.json()["data"]
+    seri = pd.Series([int(x["value"]) for x in d], index=pd.to_datetime([int(x["timestamp"]) for x in d], unit="s")).sort_index()
     return {"deger": int(d[0]["value"]), "sinif": d[0]["value_classification"],
-            "ort30": float(np.mean([int(x["value"]) for x in d]))}
+            "ort30": float(seri.iloc[-30:].mean()), "ort90": float(seri.iloc[-90:].mean()), "seri": seri}
+
+def turev_verisi(sembol):
+    """OKX herkese açık API: fonlama oranı, açık pozisyon, long/short oranı (anahtar gerekmez)."""
+    import requests
+    inst = f"{sembol}-USDT-SWAP"; B = "https://www.okx.com/api/v5"; o = {}
+    def al(yol, **p):
+        r = requests.get(B + yol, params=p, timeout=8); r.raise_for_status(); j = r.json()
+        if str(j.get("code")) != "0": raise ValueError(j.get("msg"))
+        return j["data"]
+    d = al("/public/funding-rate", instId=inst)[0]; o["fonlama"] = float(d["fundingRate"])
+    try:
+        hist = al("/public/funding-rate-history", instId=inst, limit=90)
+        f = [float(x["realizedRate"] if x.get("realizedRate") else x["fundingRate"]) for x in hist]
+        o["fonlama_7g"] = float(np.mean(f[:21])); o["fonlama_30g"] = float(np.mean(f[:90]))
+    except Exception:
+        o["fonlama_7g"] = o["fonlama_30g"] = None
+    try:
+        d = al("/public/open-interest", instType="SWAP", instId=inst)[0]
+        o["oi_usd"] = float(d["oiUsd"]) if d.get("oiUsd") else None; o["oi_coin"] = float(d.get("oiCcy") or 0) or None
+    except Exception:
+        o["oi_usd"] = o["oi_coin"] = None
+    try:
+        d = al("/rubik/stat/contracts/long-short-account-ratio", ccy=sembol, period="1D")
+        o["ls"] = float(d[0][1]); o["ls_7g"] = float(np.mean([float(x[1]) for x in d[:7]]))
+    except Exception:
+        o["ls"] = o["ls_7g"] = None
+    o["yillik"] = o["fonlama"] * 3 * 365
+    return o
+
+def hash_orani():
+    """blockchain.info: Bitcoin ağ hash oranı (madenci sağlığı)."""
+    import requests
+    r = requests.get("https://api.blockchain.info/charts/hash-rate", params={"timespan": "1year", "format": "json", "sampled": "true"}, timeout=10)
+    r.raise_for_status(); v = r.json()["values"]
+    s = pd.Series([x["y"] for x in v], index=pd.to_datetime([x["x"] for x in v], unit="s")).resample("D").mean().interpolate()
+    ma30, ma60 = s.rolling(30).mean(), s.rolling(60).mean()
+    return {"son": float(s.iloc[-1]), "d1y": float(s.iloc[-1] / s.iloc[0] - 1), "ribbon": bool(ma30.iloc[-1] >= ma60.iloc[-1]),
+            "seri": s}
 
 KORKU_TR = {"Extreme Fear": "Aşırı korku", "Fear": "Korku", "Neutral": "Nötr", "Greed": "Açgözlülük", "Extreme Greed": "Aşırı açgözlülük"}
 
@@ -101,17 +167,64 @@ def mevsimsellik(k):
     g = df.groupby("ay")["r"]
     return pd.DataFrame({"ort": g.mean(), "pozitif": g.apply(lambda x: (x > 0).mean()), "n": g.size()}).reindex(range(1, 13))
 
-def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=None, kiyas_fn=None):
+def degerleme_bantlari(k, kripto, kod):
+    """Bilançosu olmayan varlıklar için fiyat bantlarına dayalı 'model değer' tahmini."""
+    o = {"yontemler": [], "lr": None}; p = float(k.iloc[-1])
+    ma200 = k.rolling(200).mean()
+    if len(k) >= 200:
+        o["ma200"] = float(ma200.iloc[-1])
+        mayer = (k / ma200).dropna()
+        o["mayer_seri"] = mayer
+        o["yontemler"].append(("200 günlük ortalama (Mayer = 1)", o["ma200"], 0.30,
+                               "Fiyatın uzun vadeli denge noktası kabul edilen 200 günlük ortalama."))
+    w = k.resample("W").last()
+    if len(w) >= 200:
+        w200 = w.rolling(200).mean(); o["ma200w"] = float(w200.iloc[-1])
+        oran = (w / w200).dropna()
+        if len(oran) >= 52:
+            med = float(oran.median()); o["w200_oran"] = med
+            o["yontemler"].append(("200 haftalık trend", o["ma200w"] * med, 0.30,
+                                   f"200 haftalık ortalama × tarihsel medyan oran ({ond(med, 2)}). Döngü tabanını ve normalini gösterir."))
+    else:
+        o["ma200w"] = None
+    if kripto and len(k) >= 3 * 365:
+        t0 = pd.Timestamp("2009-01-03") if kod == "BTC" else k.index[0] - pd.Timedelta(days=60)
+        gun = np.array((k.index - t0).days, dtype=float); y = np.log10(k.values)
+        b, a = np.polyfit(np.log10(gun), y, 1)
+        uyum = a + b * np.log10(gun); art = y - uyum; sd = float(art.std())
+        gun_s = float((k.index[-1] - t0).days); adil = 10 ** (a + b * np.log10(gun_s))
+        o["lr"] = {"a": a, "b": b, "sd": sd, "t0": t0, "adil": adil, "z": float(art[-1] / sd) if sd else None,
+                   "alt": adil * 10 ** (-sd), "ust": adil * 10 ** sd, "alt2": adil * 10 ** (-2 * sd), "ust2": adil * 10 ** (2 * sd),
+                   "yil": len(k) / 365}
+        o["yontemler"].append(("Log-regresyon (güç yasası)", adil, 0.40 if len(k) >= 5 * 365 else 0.25,
+                               f"Tüm geçmiş fiyatın zamanla log-log ilişkisinden bulunan eğilim değeri ({len(k) / 365:.0f} yıllık veri)."))
+    if not o["yontemler"]:
+        o["adil"] = None; return o
+    agr = sum(x[2] for x in o["yontemler"])
+    o["adil"] = float(10 ** (sum(math.log10(x[1]) * x[2] for x in o["yontemler"]) / agr))
+    o["dusuk"] = min(x[1] for x in o["yontemler"]); o["yuksek"] = max(x[1] for x in o["yontemler"])
+    o["pot"] = o["adil"] / p - 1
+    o["bant"] = 0.25 if kripto else 0.10
+    o["etiket"] = ("UCUZ BÖLGEDE" if o["pot"] > o["bant"] else "PAHALI BÖLGEDE" if o["pot"] < -o["bant"] else "MAKUL BÖLGEDE")
+    o["guven"] = "YÜKSEK" if len(o["yontemler"]) >= 3 and len(k) >= 5 * 365 else "ORTA" if len(o["yontemler"]) >= 2 else "DÜŞÜK"
+    return o
+
+def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=None, kiyas_fn=None,
+           global_fn=None, turev_fn=None, hash_fn=None, detay=True):
     kod = kod.upper()
     yahoo, ad, tur, cg_id, sorgu = VARLIKLAR[kod]
     fiyat_fn = fiyat_fn or fiyat_cek
     fx = (fx_fn or br.kur_cek)()
     if kod == "GRAMALTIN":
-        o = fiyat_fn("GC=F"); f = fx.reindex(o.index, method="ffill")
+        try: o = fiyat_fn("GC=F", "10y")
+        except Exception: o = fiyat_fn("GC=F")
+        f = fx.reindex(o.index, method="ffill")
         h = o[["Open", "High", "Low", "Close"]].mul(f, axis=0) / 31.1035
         h["Volume"] = o.get("Volume", 0); h = h.dropna(subset=["Close"]); para = "TL"
     else:
-        h = fiyat_fn(yahoo); para = "USD"
+        try: h = fiyat_fn(yahoo, "max" if tur == "kripto" else "10y")
+        except Exception: h = fiyat_fn(yahoo)
+        para = "USD"
     k = h["Close"].dropna()
     m = {"kod": kod, "ad": ad, "tur": tur, "para": para, "fiyat": float(k.iloc[-1]), "tarih": k.index[-1], "hist": h}
     f_al = fx.reindex(k.index, method="ffill")
@@ -121,7 +234,7 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
         m["seri_tl"] = k; m["fiyat_tl"] = float(k.iloc[-1]); m["seri_usd"] = (k / f_al).dropna()
     m["kur"] = float(fx.iloc[-1])
     def getiri(s):
-        son = s.index[-1]; out = {}
+        son = s.index[-1]; out = {"1G": float(s.iloc[-1] / s.iloc[-2] - 1) if len(s) > 1 else None}
         for e, g_ in (("1H", 7), ("1A", 30), ("3A", 91), ("6A", 182), ("1Y", 365), ("3Y", 1095)):
             x = s[s.index <= son - pd.Timedelta(days=g_)]
             out[e] = float(s.iloc[-1] / x.iloc[-1] - 1) if len(x) else None
@@ -145,6 +258,13 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
     son3 = k.iloc[-3 * yil_gun:]
     m["max_dd"] = float((son3 / son3.cummax() - 1).min())
     m["zirve"] = float(son3.max()); m["zirveden"] = m["fiyat"] / m["zirve"] - 1
+    m["zirve_tum"] = float(k.max()); m["dip_tum"] = float(k.min())
+    r1 = m["r_usd"].get("1Y"); g1 = gunluk.iloc[-yil_gun:]
+    asagi = g1[g1 < 0].std() * math.sqrt(yil_gun) if (g1 < 0).sum() > 10 else None
+    m["sharpe"] = (r1 - 0.04) / m["vol"] if r1 is not None and m["vol"] else None
+    m["sortino"] = (r1 - 0.04) / asagi if r1 is not None and asagi else None
+    m["deger"] = degerleme_bantlari(k, tur == "kripto", kod)
+    m["adil"] = m["deger"].get("adil"); m["potansiyel"] = m["deger"].get("pot")
     m["dip52"], m["zirve52"] = float(k.iloc[-yil_gun:].min()), float(k.iloc[-yil_gun:].max())
     m["seviye"] = br.seviyeler(h)
     try:
@@ -155,6 +275,9 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
     m["mevsim"] = mevsimsellik(k)
     # korelasyonlar ve göreli güç
     kiyas = {"S&P 500": "^GSPC", "Altın": "GC=F", "Dolar endeksi": "DX-Y.NYB", "Bitcoin": "BTC-USD"}
+    if tur == "kripto": kiyas["Ethereum"] = "ETH-USD"
+    ref = "Bitcoin" if tur == "kripto" and kod != "BTC" else "S&P 500"
+    m["beta"] = None; m["ethbtc"] = None; seriler = {}
     kiyas_fn = kiyas_fn or (lambda y: fiyat_fn(y, "2y")["Close"] if fiyat_fn is fiyat_cek else fiyat_fn(y)["Close"])
     kor, gor = {}, {}
     for ad_, y in kiyas.items():
@@ -163,21 +286,40 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
         try:
             b = kiyas_fn(y).dropna()
             j = pd.concat([k.pct_change(), b.pct_change()], axis=1, join="inner").dropna().iloc[-252:]
-            if len(j) > 60: kor[ad_] = float(j.corr().iloc[0, 1])
+            if len(j) > 60:
+                kor[ad_] = float(j.corr().iloc[0, 1])
+                if ad_ == ref: m["beta"] = float(j.cov().iloc[0, 1] / j.iloc[:, 1].var())
+            seriler[ad_] = b
             b6 = b[b.index <= b.index[-1] - pd.Timedelta(days=182)]
             if len(b6) and m["r_usd"].get("6A") is not None: gor[ad_] = m["r_usd"]["6A"] - float(b.iloc[-1] / b6.iloc[-1] - 1)
         except Exception:
             continue
     m["korelasyon"], m["goreli"] = kor, gor
-    ref = "Bitcoin" if tur == "kripto" and kod != "BTC" else "S&P 500"
+    if tur == "kripto":
+        try:
+            e_ = k if kod == "ETH" else seriler.get("Ethereum"); b_ = k if kod == "BTC" else seriler.get("Bitcoin")
+            if e_ is not None and b_ is not None:
+                eb = (e_ / b_.reindex(e_.index, method="ffill")).dropna()
+                x = eb[eb.index <= eb.index[-1] - pd.Timedelta(days=90)]
+                m["ethbtc"] = {"deger": float(eb.iloc[-1]), "d90": float(eb.iloc[-1] / x.iloc[-1] - 1) if len(x) else None}
+        except Exception:
+            pass
     m["goreli_ref"] = ref; m["goreli_6a"] = gor.get(ref)
     # kripto / emtia özel
-    m["cg"] = m["korku"] = None
+    m["cg"] = m["korku"] = m["global"] = m["turev"] = m["hash"] = None
     if tur == "kripto":
         try: m["cg"] = (cg_fn or coingecko)(cg_id)
         except Exception: m["cg"] = None
         try: m["korku"] = (korku_fn or korku_endeksi)()
         except Exception: m["korku"] = None
+        try: m["global"] = (global_fn or kripto_global)()
+        except Exception: m["global"] = None
+        if detay:
+            try: m["turev"] = (turev_fn or turev_verisi)(kod)
+            except Exception: m["turev"] = None
+            if kod == "BTC":
+                try: m["hash"] = (hash_fn or hash_orani)()
+                except Exception: m["hash"] = None
     m["oran"] = None
     if kod in ("ALTIN", "GUMUS"):
         try:
@@ -210,13 +352,30 @@ def skorla(m):
                      ("6 aylık getiri ($)", yz(m["r_usd"].get("6A")), puan(m["r_usd"].get("6A"), [-0.2, -0.05, 0.1, 0.25])),
                      ("RSI (14)", ond(rsi, 0), float(rsi_p)),
                      ("MACD", "Pozitif" if m["macd_poz"] else "Negatif", 4.0 if m["macd_poz"] else 2.0)],
-        "Risk (düşük risk = yüksek puan)": [("Yıllık volatilite", yz(m["vol"]), puan(m["vol"], v_esik, ters=True)),
-                                            ("3 yıllık en büyük düşüş", yz(m["max_dd"]), puan(m["max_dd"], [-0.7, -0.5, -0.3, -0.15]))],
+        "Risk (düşük = iyi)": [("Yıllık volatilite", yz(m["vol"]), puan(m["vol"], v_esik, ters=True)),
+                                            ("3 yıllık en büyük düşüş", yz(m["max_dd"]), puan(m["max_dd"], [-0.7, -0.5, -0.3, -0.15])),
+                                            ("Sharpe oranı (1 yıl)", ond(m.get("sharpe"), 2), puan(m.get("sharpe"), [-0.5, 0, 0.5, 1.0]))],
         "Para akışı": [("Chaikin para akışı", ond(a.get("cmf"), 2), puan(a.get("cmf"), [-0.15, -0.05, 0.05, 0.15])),
                        ("OBV eğimi", ond(a.get("obv_egim"), 2), puan(a.get("obv_egim"), [-0.3, -0.1, 0.1, 0.3])),
                        ("Yükselen/düşen gün hacmi", kat(a.get("hacim_oran_ud")), puan(a.get("hacim_oran_ud"), [0.7, 0.9, 1.1, 1.4]))] if a else [],
         "Göreli güç": [(f"6 ay, {m['goreli_ref']}'a göre", yz(m["goreli_6a"]), puan(m["goreli_6a"], [-0.2, -0.05, 0.05, 0.2]))],
     }
+    if kr:
+        dg = m.get("deger") or {}; lr = dg.get("lr") or {}; cg = m.get("cg") or {}; kk = m.get("korku") or {}; tv = m.get("turev") or {}
+        D = {"Değerleme (bantlar)": [
+                 ("Model değere göre potansiyel", yz(dg.get("pot")), puan(dg.get("pot"), [-0.3, -0.1, 0.1, 0.3])),
+                 ("Mayer çarpanı", ond(m["mayer"], 2), puan(m["mayer"], [0.8, 1.0, 1.3, 1.8], ters=True)),
+                 ("Log-regresyon sapması (σ)", ond(lr.get("z"), 2), puan(lr.get("z"), [-1.0, -0.3, 0.5, 1.2], ters=True))],
+             **{k_: v for k_, v in D.items() if k_ in ("Trend", "Momentum", "Risk (düşük = iyi)")},
+             "Likidite ve arz": [
+                 ("Hacim / piyasa değeri", yz(br.bol(cg.get("hacim"), cg.get("piy_deg"))), puan(br.bol(cg.get("hacim"), cg.get("piy_deg")), [0.01, 0.025, 0.05, 0.1])),
+                 ("Piyasa değeri / FDV", yz(br.bol(cg.get("piy_deg"), cg.get("fdv"))), puan(br.bol(cg.get("piy_deg"), cg.get("fdv")), [0.5, 0.7, 0.85, 0.97])),
+                 ("Piyasa değeri sırası", str(cg.get("sira") or "–"), puan(cg.get("sira"), [3, 10, 20, 50], ters=True))],
+             "Duyarlılık ve akış": [
+                 ("Korku & Açgözlülük (ters)", str(kk.get("deger") or "–"), puan(kk.get("deger"), [25, 45, 60, 75], ters=True)),
+                 ("Fonlama oranı (yıllık)", yz(tv.get("yillik")), puan(tv.get("yillik"), [0.0, 0.08, 0.15, 0.3], ters=True)),
+                 *D["Para akışı"][:2]],
+             "Göreli güç": D["Göreli güç"]}
     D = {k_: [x for x in v if x[2] is not None] for k_, v in D.items()}
     m["saglik_detay"] = {k_: v for k_, v in D.items() if v}
     m["saglik"] = {k_: ort([x[2] for x in v]) for k_, v in m["saglik_detay"].items()}
@@ -229,7 +388,11 @@ def durum_gorunum(g):
     return "iyi" if "POZİTİF" in g else "zayif" if "NEGATİF" in g else "orta"
 
 def tek_bakista(m):
-    S = []; enf = PARAM["ENFLASYON"]
+    S = []; enf = PARAM["ENFLASYON"]; dg = m.get("deger") or {}
+    if dg.get("adil"):
+        sym = "$" if m["para"] == "USD" else "₺"
+        S.append(("Fiyat bantlara göre ucuz mu, pahalı mı?", f"Model değer bandının ortası {tl(dg['adil'])} {sym}; fiyata göre {yz(dg['pot'])} fark var "
+                  f"({kucuk(dg['etiket'])}).", "iyi" if dg["pot"] > dg["bant"] else "zayif" if dg["pot"] < -dg["bant"] else "orta"))
     if m["ma200"]:
         ust = m["fiyat"] > m["ma200"]
         S.append(("Ana eğilim ne yönde?", ("Fiyat 200 günlük ortalamasının üzerinde; uzun vadeli eğilim yukarı." if ust else
@@ -263,6 +426,26 @@ def tek_bakista(m):
         if not pd.isna(r_["ort"]):
             S.append(("Mevsimsel olarak bu ay nasıl?", f"Geçmiş yıllarda {AYLAR[ay - 1]} ayında ortalama {yz(r_['ort'])} değişim; yılların {yz(r_['pozitif'], 0)}'inde yükseliş.",
                       "iyi" if r_["ort"] > 0.01 else "zayif" if r_["ort"] < -0.01 else "orta"))
+    cg = m.get("cg") or {}
+    if cg.get("piy_deg") and cg.get("fdv"):
+        o = cg["piy_deg"] / cg["fdv"]
+        S.append(("Yeni arz baskısı var mı?", f"Arzın yaklaşık {yz(o, 0)}'i piyasada. " + ("Seyrelme riski düşük." if o > 0.9 else
+                  "Kilitli/basılacak arz orta düzeyde; zamanla satış baskısı yaratabilir." if o > 0.6 else
+                  "Arzın önemli bölümü henüz piyasada değil; ileride ciddi seyrelme riski var."), "iyi" if o > 0.9 else "orta" if o > 0.6 else "zayif"))
+    tv = m.get("turev") or {}
+    if tv.get("yillik") is not None:
+        f = tv["yillik"]
+        S.append(("Kaldıraçlı işlemciler ne yapıyor?", f"Vadeli işlemlerde fonlama oranı yıllık {yz(f)}. " +
+                  ("Uzun pozisyonlar çok kalabalık; ani tasfiye riski var." if f > 0.3 else "Hafif iyimser, normal seviyede." if f > 0 else
+                   "Kısa pozisyonlar ağır basıyor; kalabalık açığa satış ani yükselişleri tetikleyebilir."),
+                  "zayif" if f > 0.3 else "iyi" if f < 0 else "orta"))
+    gl = m.get("global") or {}
+    if gl.get("btc_dom") and m["tur"] == "kripto":
+        eb = (m.get("ethbtc") or {}).get("d90")
+        alt = eb is not None and eb > 0.05 and gl["btc_dom"] < 0.55
+        S.append(("Piyasada para nereye akıyor?", f"Bitcoin dominansı {yz(gl['btc_dom'], 1)}" + (f", ETH/BTC son 90 günde {yz(eb)}" if eb is not None else "") + ". " +
+                  ("Altcoinlere doğru bir kayma var (altcoin sezonu belirtisi)." if alt else "Para ağırlıkla Bitcoin'de; altcoinler için ortam daha zor." if gl["btc_dom"] > 0.55 else "Belirgin bir rotasyon yok."),
+                  "iyi" if (alt or m["kod"] == "BTC" and gl["btc_dom"] > 0.55) else "orta"))
     if m.get("korku"):
         kd = m["korku"]["deger"]
         S.append(("Kripto piyasasının havası nasıl?", f"Korku ve Açgözlülük Endeksi {kd} ({KORKU_TR.get(m['korku']['sinif'], m['korku']['sinif'])}). " +
@@ -297,13 +480,32 @@ def ipuclari(m):
     if m["r_reel"] is not None:
         (g if m["r_reel"] > 0 else z).append(f"TL bazında 1 yıllık reel getiri {yz(m['r_reel'])}.")
     if m.get("oran"): g.append(m["oran"]["yorum"])
+    dg = m.get("deger") or {}; lr = dg.get("lr") or {}
+    if dg.get("pot") is not None and dg["pot"] > dg["bant"]: g.append(f"Fiyat model değer bandının {yz(dg['pot'], 0)} altında (ucuz bölge).")
+    if dg.get("pot") is not None and dg["pot"] < -dg["bant"]: z.append(f"Fiyat model değer bandının {yz(-dg['pot'], 0)} üzerinde (pahalı bölge).")
+    if lr.get("z") is not None and lr["z"] > 1.2: z.append(f"Uzun vadeli log-regresyon eğiliminin {ond(lr['z'], 1)}σ üzerinde; döngü zirvesi riskine dikkat.")
+    if lr.get("z") is not None and lr["z"] < -0.8: g.append(f"Uzun vadeli eğilimin {ond(-lr['z'], 1)}σ altında; tarihsel olarak birikim bölgesi.")
+    cg = m.get("cg") or {}
+    if cg.get("piy_deg") and cg.get("fdv") and cg["piy_deg"] / cg["fdv"] < 0.6: z.append(f"Arzın yalnızca {yz(cg['piy_deg'] / cg['fdv'], 0)}'i dolaşımda; seyrelme riski.")
+    if cg.get("maks") and cg.get("dolasim") and cg["dolasim"] / cg["maks"] > 0.9: g.append(f"Arzın {yz(cg['dolasim'] / cg['maks'], 0)}'i basılmış; sınırlı ve öngörülebilir arz.")
+    tv = m.get("turev") or {}
+    if tv.get("yillik") is not None and tv["yillik"] > 0.3: z.append(f"Fonlama oranı yüksek (yıllık {yz(tv['yillik'], 0)}); kaldıraçlı alıcılar kalabalık.")
+    if tv.get("yillik") is not None and tv["yillik"] < 0: g.append("Fonlama oranı negatif; piyasa aşırı karamsar, ani yükseliş (short squeeze) riski.")
+    hs = m.get("hash") or {}
+    if hs: (g if hs["ribbon"] else z).append("Ağ hash oranı " + ("yükselişte; madenciler güçlü." if hs["ribbon"] else "zayıflıyor (madenci kapitülasyonu sinyali)."))
+    kk = m.get("korku") or {}
+    if kk.get("deger") is not None and kk["deger"] <= 25: g.append(f"Korku endeksi {kk['deger']} (aşırı korku); tarihsel olarak alım fırsatı dönemleri.")
+    if kk.get("deger") is not None and kk["deger"] >= 75: z.append(f"Korku endeksi {kk['deger']} (aşırı açgözlülük); düzeltme riski.")
     hb = m.get("haber") or {}
     if hb.get("ozet") == "OLUMLU": g.append("Son haberlerin tonu olumlu.")
     if hb.get("ozet") == "OLUMSUZ": z.append("Son haberlerin tonu olumsuz.")
-    m["guclu"], m["zayif"] = g[:5], z[:5]
+    m["guclu"], m["zayif"] = g[:6], z[:6]
 
 def genel_degerlendirme(m):
-    B = []
+    B = []; dg = m.get("deger") or {}
+    if dg.get("adil"):
+        B.append(("Değerleme", "Model değer bandı ortası " + tl(dg["adil"]) + " (" + ", ".join(a.split(" (")[0] + ": " + tl(d) for a, d, *_ in dg["yontemler"]) + "). "
+                  f"Fiyata göre fark {yz(dg['pot'])}, {kucuk(dg['etiket'])}; güven {kucuk(dg['guven'])}."))
     B.append(("Trend", f"Fiyat {tl(m['fiyat'])} {'$' if m['para'] == 'USD' else '₺'}; 200 günlük ortalama {tl(m['ma200'])}, Mayer çarpanı {ond(m['mayer'], 2)}. "
               f"Trend puanı {ond(m['saglik'].get('Trend'), 1)}/5."))
     B.append(("Momentum", f"3 ay {yz(m['r_usd'].get('3A'))}, 6 ay {yz(m['r_usd'].get('6A'))}, RSI {ond(m['rsi'], 0)}, MACD {'pozitif' if m['macd_poz'] else 'negatif'}."))
@@ -317,6 +519,10 @@ def genel_degerlendirme(m):
     if m["korelasyon"]:
         en = max(m["korelasyon"].items(), key=lambda x: abs(x[1]))
         B.append(("Korelasyon", f"Son 1 yılda en güçlü ilişki {en[0]} ile ({ond(en[1], 2)}). " + ", ".join(f"{k}: {ond(v, 2)}" for k, v in m["korelasyon"].items()) + "."))
+    tv = m.get("turev") or {}
+    if tv:
+        B.append(("Türev piyasalar", f"Fonlama oranı yıllık {yz(tv.get('yillik'))}" + (f", açık pozisyon ${tl(tv['oi_usd'])}" if tv.get("oi_usd") else "")
+                  + (f", hesap bazında long/short oranı {ond(tv['ls'], 2)}" if tv.get("ls") else "") + "."))
     if m.get("cg"):
         c_ = m["cg"]
         B.append(("Kripto piyasa verisi", f"Piyasa değeri sırası {c_.get('sira')}, piyasa değeri ${tl(c_.get('piy_deg'))}; tüm zamanların zirvesinin {yz(abs((c_.get('ath_fark') or 0) / 100), 0)} altında."))
@@ -353,53 +559,185 @@ def g_tl_usd(m):
     ax.set_title("3 yıllık performans: Dolar ve TL bazında (başlangıç = 100)", loc="left")
     return _png(fig)
 
+def g_logbant(m):
+    """Logaritmik fiyat + güç yasası eğilimi ve ±1σ/±2σ bantları + 200 haftalık ortalama."""
+    dg = m.get("deger") or {}; lr = dg.get("lr"); k = m["seri_usd"] if m["para"] == "USD" else m["hist"]["Close"]
+    if not lr: return None
+    k = k.dropna(); gun = np.array((k.index - lr["t0"]).days, dtype=float)
+    uy = 10 ** (lr["a"] + lr["b"] * np.log10(gun)); sd = lr["sd"]
+    fig, ax = plt.subplots(figsize=(7.5, 3.3))
+    ax.fill_between(k.index, uy * 10 ** (-2 * sd), uy * 10 ** (2 * sd), color=C["acik"], alpha=0.25, lw=0, label="±2σ bandı")
+    ax.fill_between(k.index, uy * 10 ** (-sd), uy * 10 ** sd, color=C["acik"], alpha=0.55, lw=0, label="±1σ bandı")
+    ax.plot(k.index, uy, color=C["mavi"], lw=1.1, ls="--", label="Eğilim (adil)")
+    w = k.resample("W").last(); w200 = w.rolling(200).mean()
+    if w200.notna().sum() > 10: ax.plot(w200.index, w200, color=C["tur"], lw=1.1, label="200 haftalık ort.")
+    ax.plot(k.index, k, color=C["lac"], lw=1.0, label="Fiyat")
+    ax.set_yscale("log"); ax.legend(fontsize=6.5, ncol=5, loc="upper left", frameon=False)
+    ax.set_title("Uzun vadeli değer bantları (log ölçek)", loc="left")
+    return _png(fig)
+
+def g_mayer(m):
+    ms = (m.get("deger") or {}).get("mayer_seri")
+    if ms is None or len(ms) < 100: return None
+    ms = ms.iloc[-4 * 365:]
+    fig, ax = plt.subplots(figsize=(7.5, 2.3))
+    ax.axhspan(0, 0.8, color=C["yesil"], alpha=0.10); ax.axhspan(2.4, max(2.6, ms.max() * 1.05), color=C["kirmizi"], alpha=0.10)
+    ax.plot(ms.index, ms, color=C["lac"], lw=1.1)
+    for y_, r_ in ((0.8, C["yesil"]), (1.0, C["gri"]), (2.4, C["kirmizi"])): ax.axhline(y_, color=r_, lw=0.8, ls="--")
+    ax.set_ylim(max(0, ms.min() * 0.9), max(2.6, ms.max() * 1.05))
+    ax.set_title("Mayer çarpanı (fiyat / 200G ort.) · 0,8 altı tarihsel ucuz, 2,4 üstü aşırı ısınma", loc="left")
+    return _png(fig)
+
+def g_korku(m):
+    s_ = (m.get("korku") or {}).get("seri")
+    if s_ is None or len(s_) < 20: return None
+    fig, ax = plt.subplots(figsize=(7.5, 2.1))
+    for a_, b_, r_ in ((0, 25, C["kirmizi"]), (25, 45, C["tur"]), (45, 55, C["gri"]), (55, 75, C["yesil"]), (75, 100, C["yesil"])):
+        ax.axhspan(a_, b_, color=r_, alpha=0.07 if b_ != 100 else 0.14)
+    ax.plot(s_.index, s_, color=C["lac"], lw=1.1); ax.plot(s_.index, s_.rolling(30).mean(), color=C["mavi"], lw=1.0, ls="--")
+    ax.set_ylim(0, 100); ax.set_title("Korku & Açgözlülük Endeksi (1 yıl) · 25 altı aşırı korku, 75 üstü aşırı açgözlülük", loc="left")
+    return _png(fig)
+
 # ------------------------------------------------------------------ PDF
 def pdf_olustur(m, dosya):
-    W = A4[0] - 3.0 * cm
-    ipuclari(m)
-    tur_ad = "Kripto Para Raporu" if m["tur"] == "kripto" else "Emtia Raporu"
+    W = A4[0] - 3.0 * cm; PW = (W - 10) / 2
+    ipuclari(m); kr = m["tur"] == "kripto"
+    tur_ad = "Kripto Para Raporu" if kr else "Emtia Raporu"
     sayfa = sayfa_cizici(m["kod"], tur_ad, f"{dt.date.today():%d.%m.%Y}", kapak_yuk=4.7 * cm)
     doc = SimpleDocTemplate(dosya, pagesize=A4, leftMargin=1.5 * cm, rightMargin=1.5 * cm, topMargin=1.6 * cm,
                             bottomMargin=1.4 * cm, title=f"{m['ad']} {tur_ad}")
-    E = []; sym = "$" if m["para"] == "USD" else "₺"
-    E += kapak(m["ad"], f"{tur_ad}  ·  {m['tarih']:%d.%m.%Y}  ·  Fiyatlar: {'ABD doları' if m['para'] == 'USD' else 'Türk lirası'}",
-               f"Genel görünüm: {m['gorunum']}", durum_gorunum(m["gorunum"]), W)
-    pr = lambda x: TS.R["yesil"] if (x or 0) > 0 else TS.R["kirmizi"] if (x or 0) < 0 else TS.R["murekkep"]
-    kartlar = [("Son fiyat", f"{tl(m['fiyat'])} {sym}", f"≈ {tl(m['fiyat_tl'])} ₺" if m["para"] == "USD" else f"≈ ${tl(m['fiyat'] / m['kur'])}"),
-               ("Genel skor", f"{ond(m['genel_skor'], 1)} / 5", kucuk(m["gorunum"]), TS.durum_rengi(durum_gorunum(m["gorunum"]))[0]),
-               ("1 yıl ($)", yz(m["r_usd"].get("1Y")), f"TL: {yz(m['r_tl'].get('1Y'))}", pr(m["r_usd"].get("1Y"))),
-               ("Yılbaşından beri", yz(m["r_usd"].get("YBB")), "dolar bazında", pr(m["r_usd"].get("YBB"))),
-               ("Volatilite", yz(m["vol"]), "yıllık oynaklık"),
-               ("Zirveden uzaklık", yz(m["zirveden"]), "son 3 yıl", pr(m["zirveden"] + 0.0001 if m["zirveden"] > -0.05 else -1)),
-               ("Mayer çarpanı", ond(m["mayer"], 2), "fiyat / 200G ortalama"),
-               ("RSI", ond(m["rsi"], 0), "aşırı alım >70, satım <30")]
-    if m.get("cg") and m["cg"].get("piy_deg"):
-        kartlar[6] = ("Piyasa değeri", f"${tl(m['cg']['piy_deg'])}", f"sıra: {m['cg'].get('sira')}")
-    if m.get("oran"):
-        kartlar[6] = ("Altın/Gümüş oranı", ond(m["oran"]["deger"], 1), f"5Y ort. {ond(m['oran']['ort5y'], 1)}")
-    E.append(kart_izgarasi(kartlar, W)); E.append(Spacer(1, 4))
-    E.append(bilgi_kutusu("Kısaca:", sade_ozet(m), W))
-    E.append(Paragraph("Tek bakışta", ST["h2"])); E.append(trafik_listesi(tek_bakista(m), W))
-    E.append(Paragraph("Öne çıkanlar", ST["h2"]))
-    gl = [Paragraph(f'<font color="#16A34A"><b>↑</b></font>&nbsp; {x}', ST["madde"]) for x in m["guclu"]] or [Paragraph("–", ST["madde"])]
-    zl = [Paragraph(f'<font color="#DC2626"><b>↓</b></font>&nbsp; {x}', ST["madde"]) for x in m["zayif"]] or [Paragraph("–", ST["madde"])]
-    n = max(len(gl), len(zl)); gl += [""] * (n - len(gl)); zl += [""] * (n - len(zl))
-    t = Table([[Paragraph('<font name="DVB" color="#16A34A">Olumlu</font>', ST["hucreB"]),
-                Paragraph('<font name="DVB" color="#DC2626">Dikkat</font>', ST["hucreB"])]] + list(zip(gl, zl)), colWidths=[W / 2, W / 2])
-    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LINEBELOW", (0, 0), (0, 0), 1.2, TS.R["yesil"]),
-                           ("LINEBELOW", (1, 0), (1, 0), 1.2, TS.R["kirmizi"]), ("LEFTPADDING", (0, 0), (-1, -1), 2)]))
-    E.append(t)
+    E = []; sym = "$" if m["para"] == "USD" else "₺"; dg = m.get("deger") or {}; cg = m.get("cg") or {}
+    gl = m.get("global") or {}; tv = m.get("turev") or {}; kk = m.get("korku") or {}
 
-    # 1 Fiyat ve trend
-    E.append(PageBreak()); E.append(Bolum(1, "Fiyat ve trend", W))
+    # ---------- SAYFA 1
+    alt = f"{tur_ad}  ·  {m['kod']}" + (f"  ·  Piyasa değeri sırası #{cg['sira']}" if cg.get("sira") else "") + \
+          f"  ·  {m['tarih']:%d.%m.%Y}  ·  Fiyatlar: {'ABD doları' if m['para'] == 'USD' else 'Türk lirası'}"
+    E += TS.pro_kapak(m["ad"], alt, f"{tl(m['fiyat'])} {sym}", m["r_usd"].get("1G") if m["para"] == "USD" else m["r_tl"].get("1G"), W,
+                      rozet=f"GENEL GÖRÜNÜM: {m['gorunum']}")
+    adil_b = "Model değer bandı" if kr else "Ortalamalara göre konum"
+    nyon = len(dg.get("yontemler") or [])
+    sol = TS.AdilDegerGostergesi(m["fiyat"], dg.get("adil"), dg.get("dusuk"), dg.get("yuksek"), sym, bant=dg.get("bant", 0.25), gen=PW, yuk=150,
+                                 baslik=adil_b, alt_not=f"{nyon} bant modelinin ortalaması · güven: {kucuk(dg.get('guven', '–'))}")
+    sag = TS.SkorGostergesi(m["genel_skor"], m["gorunum"], m["saglik"], gen=PW, yuk=150, baslik="Skor kartı")
+    E.append(TS.yan_yana(sol, sag, W)); E.append(Spacer(1, 8))
+    E.append(bilgi_kutusu("Kısaca:", sade_ozet(m), W)); E.append(Spacer(1, 4))
+    E.append(Paragraph("Temel göstergeler", ST["h2"]))
+    if kr:
+        ml = [("Piyasa değeri", f"${tl(cg.get('piy_deg'))}" if cg.get("piy_deg") else "–"),
+              ("24 saatlik hacim", f"${tl(cg.get('hacim'))}" if cg.get("hacim") else "–"),
+              ("Tam seyreltilmiş değer (FDV)", f"${tl(cg.get('fdv'))}" if cg.get("fdv") else "–"),
+              ("Piyasa değeri / FDV", yz(br.bol(cg.get("piy_deg"), cg.get("fdv")), 0)),
+              ("Fiyat (TL)", f"{tl(m['fiyat_tl'])} ₺"), ("1 yıllık getiri ($)", yz(m["r_usd"].get("1Y"))),
+              ("Yılbaşından beri ($)", yz(m["r_usd"].get("YBB"))), ("Yıllık volatilite", yz(m["vol"], 0)),
+              ("Sharpe / Sortino", f"{ond(m.get('sharpe'), 2)} / {ond(m.get('sortino'), 2)}"),
+              (f"Beta ({m['goreli_ref']})", ond(m.get("beta"), 2)),
+              ("Bitcoin dominansı", yz(gl.get("btc_dom"), 1)), ("Korku & Açgözlülük", f"{kk['deger']} · {KORKU_TR.get(kk['sinif'], kk['sinif'])}" if kk else "–")]
+    else:
+        ml = [("Fiyat (TL)", f"{tl(m['fiyat_tl'])} ₺"), ("1 yıllık getiri ($)", yz(m["r_usd"].get("1Y"))),
+              ("Yılbaşından beri ($)", yz(m["r_usd"].get("YBB"))), ("1 yıl TL reel getiri", yz(m["r_reel"])),
+              ("Yıllık volatilite", yz(m["vol"], 0)), ("Sharpe / Sortino", f"{ond(m.get('sharpe'), 2)} / {ond(m.get('sortino'), 2)}"),
+              ("Mayer çarpanı", ond(m["mayer"], 2)), ("RSI (14)", ond(m["rsi"], 0)),
+              ("Zirveden uzaklık (3Y)", yz(m["zirveden"])), (f"Beta ({m['goreli_ref']})", ond(m.get("beta"), 2))]
+        if m.get("oran"): ml.append((m["oran"]["ad"], ond(m["oran"]["deger"], 1)))
+    E.append(TS.metrik_listesi(ml, W)); E.append(Spacer(1, 8))
+    r1 = TS.AralikCubugu("52 haftalık aralık", m["dip52"], m["zirve52"], m["fiyat"], gen=PW, sembol=sym)
+    if cg.get("ath") and cg.get("atl"):
+        r2 = TS.AralikCubugu("Tüm zamanlar (dip – zirve)", cg["atl"], cg["ath"], m["fiyat"], gen=PW, sembol=sym, ort=dg.get("adil"), ort_etiket="Model")
+    else:
+        r2 = TS.AralikCubugu("Tüm veri (dip – zirve)", m["dip_tum"], m["zirve_tum"], m["fiyat"], gen=PW, sembol=sym, ort=dg.get("adil"), ort_etiket="Model")
+    E.append(TS.yan_yana(r1, r2, W)); E.append(Spacer(1, 6))
+    E.append(Paragraph("Öne çıkan sinyaller", ST["h2"])); E.append(TS.sinyal_listesi(m["guclu"], m["zayif"], W, n=4))
+
+    # ---------- SAYFA 2: tek bakışta
+    E.append(PageBreak()); E.append(Paragraph("Tek bakışta", ST["h2"])); E.append(trafik_listesi(tek_bakista(m), W))
+    n = 0
+    def bolum(baslik, gerek=8):
+        nonlocal n; n += 1; E.append(CondPageBreak(gerek * cm)); E.append(Bolum(n, baslik, W))
+
+    # ---------- Değerleme
+    if dg.get("adil"):
+        bolum("Değerleme: Fiyat hangi bantta?" if kr else "Konum: Fiyat ortalamalarına göre nerede?", 12)
+        E.append(bilgi_kutusu("Kısaca:", f"Bilançosu olmayan {'kripto paralar' if kr else 'emtialar'} için 'adil değer' yerine uzun vadeli fiyat bantları kullanılır. "
+                              f"Bantların ortası <b>{tl(dg['adil'])} {sym}</b>; fiyat buna göre <b>{yz(dg['pot'])}</b> farkla <b>{kucuk(dg['etiket'])}</b>.", W))
+        E.append(Spacer(1, 4))
+        v = [["Model", f"Değer ({sym})", "Fark", "Ağırlık", "Açıklama"]]
+        tw = sum(x[2] for x in dg["yontemler"])
+        for ad_, d_, w_, ac in dg["yontemler"]:
+            v.append([Paragraph(ad_, ST["hucre"]), tl(d_), yz(d_ / m["fiyat"] - 1), yz(w_ / tw, 0), Paragraph(ac, ST["hucre"])])
+        v.append(["Model değer (geometrik ort.)", tl(dg["adil"]), yz(dg["pot"]), "%100", Paragraph(f"Güven: <b>{kucuk(dg['guven'])}</b>", ST["hucre"])])
+        E.append(TS.tablo(v, [W * .24, W * .13, W * .1, W * .09, W * .44], kalin_son=True, font=7.5, hizala_sol=(0, 4)))
+        lr = dg.get("lr")
+        if lr:
+            E.append(Spacer(1, 4))
+            bt = [["Log-regresyon bandı", f"Fiyat ({sym})", "Fiyata uzaklık"], ["Aşırı ısınma (+2σ)", tl(lr["ust2"]), yz(lr["ust2"] / m["fiyat"] - 1)],
+                  ["Üst bant (+1σ)", tl(lr["ust"]), yz(lr["ust"] / m["fiyat"] - 1)], ["Eğilim (adil)", tl(lr["adil"]), yz(lr["adil"] / m["fiyat"] - 1)],
+                  ["Alt bant (−1σ)", tl(lr["alt"]), yz(lr["alt"] / m["fiyat"] - 1)], ["Birikim bölgesi (−2σ)", tl(lr["alt2"]), yz(lr["alt2"] / m["fiyat"] - 1)]]
+            E.append(TS.yan_yana(TS.tablo(bt, [PW * .48, PW * .27, PW * .25], font=7.4),
+                                 Paragraph(f"Fiyat, uzun vadeli eğilimin <b>{ond(lr['z'], 2)} standart sapma</b> {'üzerinde' if (lr['z'] or 0) > 0 else 'altında'}. "
+                                           "Tarihsel olarak +1σ üstü dönemler aşırı ısınmaya, −1σ altı dönemler birikim fırsatlarına denk gelmiştir. "
+                                           f"Model {lr['yil']:.0f} yıllık veriye dayanır; genç projelerde güvenilirliği düşüktür.", ST["kucuk"]), W))
+            g = g_logbant(m)
+            if g: E += [Spacer(1, 6), _img(g, W, 3.3 / 7.5)]
+        gm = g_mayer(m)
+        if gm: E += [Spacer(1, 4), _img(gm, W, 2.3 / 7.5)]
+
+    # ---------- Kripto: arz ve piyasa yapısı
+    if kr and (cg or gl):
+        bolum("Arz ve piyasa yapısı (tokenomik)", 9)
+        sat = []
+        if cg.get("piy_deg") and cg.get("fdv"):
+            o = cg["piy_deg"] / cg["fdv"]
+            sat.append(f"Piyasa değeri FDV'nin {yz(o, 0)}'i: " + ("arzın neredeyse tamamı dolaşımda." if o > 0.9 else "kilitli/basılacak tokenlar ileride satış baskısı yaratabilir."))
+        if cg.get("hacim") and cg.get("piy_deg"):
+            t_ = cg["hacim"] / cg["piy_deg"]; sat.append(f"Günlük hacim piyasa değerinin {yz(t_, 1)}'i: " + ("likidite güçlü." if t_ > 0.05 else "likidite yeterli." if t_ > 0.02 else "likidite zayıf; büyük işlemler fiyatı oynatabilir."))
+        E.append(bilgi_kutusu("Kısaca:", " ".join(sat) or "Arz verisi sınırlı.", W))
+        E.append(Spacer(1, 4))
+        v = [["Gösterge", "Değer"], ["Piyasa değeri sırası", f"#{cg.get('sira') or '–'}"], ["Piyasa değeri", f"${tl(cg.get('piy_deg'))}"],
+             ["Tam seyreltilmiş değer (FDV)", f"${tl(cg.get('fdv'))}" if cg.get("fdv") else "–"], ["24 saatlik hacim", f"${tl(cg.get('hacim'))}"],
+             ["Dolaşımdaki arz", tl(cg.get("dolasim"), 0)], ["Toplam arz", tl(cg.get("toplam"), 0) if cg.get("toplam") else "–"],
+             ["Maksimum arz", tl(cg.get("maks"), 0) if cg.get("maks") else "Sınırsız"],
+             ["Tüm zamanların zirvesi", f"${tl(cg.get('ath'))} · {str(cg.get('ath_tarih') or '')[:10]}"],
+             ["Tüm zamanların dibi", f"${tl(cg.get('atl'))} · {str(cg.get('atl_tarih') or '')[:10]}" if cg.get("atl") else "–"]]
+        if cg.get("kategori"): v.append(["Kategori", ", ".join(cg["kategori"])[:48]])
+        if cg.get("algoritma"): v.append(["Konsensüs / algoritma", str(cg["algoritma"])])
+        v2 = [["Genel kripto piyasası", "Değer"], ["Toplam piyasa değeri", f"${tl(gl.get('toplam'))}" if gl else "–"],
+              ["24 saatlik değişim", yz(gl.get("d24"))], ["Bitcoin dominansı", yz(gl.get("btc_dom"), 1)], ["Ethereum dominansı", yz(gl.get("eth_dom"), 1)],
+              ["Stablecoin payı", yz(gl.get("stable_dom"), 1)], ["ETH/BTC (90 gün)", yz((m.get("ethbtc") or {}).get("d90"))],
+              ["Fiyat değişimi 7g / 30g", f"{yz(cg.get('d7'))} / {yz(cg.get('d30'))}"]]
+        E.append(TS.yan_yana(TS.tablo(v, [PW * .55, PW * .45], font=7.3), TS.tablo(v2, [PW * .6, PW * .4], font=7.3), W))
+        if cg.get("dolasim") and (cg.get("maks") or cg.get("toplam")):
+            E += [Spacer(1, 8), TS.AralikCubugu("Basılmış arz oranı", 0, cg.get("maks") or cg["toplam"], cg["dolasim"], gen=W * 0.6, deger_etiket="Dolaşımda")]
+
+    # ---------- Duyarlılık ve türevler
+    if kr and (kk or tv or m.get("hash")):
+        bolum("Duyarlılık, türevler ve ağ", 9)
+        E.append(bilgi_kutusu("Bu ne demek?", "Fonlama oranı, vadeli işlemlerde alıcıların satıcılara ödediği ücrettir; çok yüksekse kaldıraçlı alıcılar "
+                              "kalabalıktır ve ani tasfiye riski artar. Long/short oranı 1'in üzerindeyse hesapların çoğu yükselişe oynuyor demektir. "
+                              "Korku endeksi aşırı uçlarda genellikle tersine çalışır.", W, "turkuaz"))
+        v = [["Gösterge", "Değer", "Yorum"]]
+        if kk: v.append(["Korku & Açgözlülük", f"{kk['deger']} ({KORKU_TR.get(kk['sinif'], kk['sinif'])})",
+                         Paragraph(f"30 gün ort. {ond(kk.get('ort30'), 0)}" + (f", 90 gün ort. {ond(kk.get('ort90'), 0)}" if kk.get("ort90") else ""), ST["hucre"])])
+        if tv:
+            v.append(["Fonlama oranı (8 saatlik)", yz(tv.get("fonlama"), 4), Paragraph(f"Yıllık karşılığı {yz(tv.get('yillik'))}; 7 gün ort. {yz(tv.get('fonlama_7g'), 4)}", ST["hucre"])])
+            if tv.get("oi_usd") or tv.get("oi_coin"): v.append(["Açık pozisyon (OKX)", f"${tl(tv['oi_usd'])}" if tv.get("oi_usd") else tl(tv["oi_coin"]), Paragraph("Tek borsa verisidir; yön göstergesi olarak kullanın.", ST["hucre"])])
+            if tv.get("ls"): v.append(["Long/short hesap oranı", ond(tv["ls"], 2), Paragraph(f"7 gün ort. {ond(tv.get('ls_7g'), 2)}; 2'nin üzeri kalabalık uzun pozisyon.", ST["hucre"])])
+        hs = m.get("hash") or {}
+        if hs: v.append(["Ağ hash oranı", f"{hs['son'] / 1e6:,.0f} EH/s".replace(",", "."), Paragraph(f"1 yılda {yz(hs['d1y'])}; hash ribbon {'olumlu' if hs['ribbon'] else 'olumsuz (kapitülasyon)'}.", ST["hucre"])])
+        if len(v) > 1: E += [Spacer(1, 4), TS.tablo(v, [W * .28, W * .2, W * .52], font=7.5, hizala_sol=(0, 2))]
+        g = g_korku(m)
+        if g: E += [Spacer(1, 6), _img(g, W, 2.1 / 7.5)]
+        if not tv: E.append(Paragraph("Türev verisi bu sunucudan alınamadı (borsa API'si erişimi kısıtlamış olabilir).", ST["kucuk"]))
+
+    # ---------- Fiyat ve trend
+    bolum("Fiyat ve trend", 10)
     sv = m.get("seviye") or {}
     E.append(bilgi_kutusu("Kısaca:", f"Fiyat 200 günlük ortalamanın {'üzerinde' if m['ma200'] and m['fiyat'] > m['ma200'] else 'altında'}. "
                           + (f"En yakın destek {tl(sv['destek'][0][0])}, en yakın direnç {tl(sv['direnc'][0][0])} {sym}." if sv.get("destek") and sv.get("direnc") else ""), W))
     E.append(Spacer(1, 4)); E.append(_img(br.g_fiyat(m["hist"], None, m["kod"], sv), W, 5.6 / 7.5))
-    per = [["Dönem", "1H", "1A", "3A", "6A", "YBB", "1Y", "3Y"],
-           ["Dolar bazlı"] + [yz(m["r_usd"].get(k_)) for k_ in ("1H", "1A", "3A", "6A", "YBB", "1Y", "3Y")],
-           ["TL bazlı"] + [yz(m["r_tl"].get(k_)) for k_ in ("1H", "1A", "3A", "6A", "YBB", "1Y", "3Y")]]
-    E += [Spacer(1, 4), tablo_ := TS.tablo(per, [W * .16] + [W * .12] * 7, font=7.6)]
+    per = [["Dönem", "1G", "1H", "1A", "3A", "6A", "YBB", "1Y", "3Y"],
+           ["Dolar bazlı"] + [yz(m["r_usd"].get(k_)) for k_ in ("1G", "1H", "1A", "3A", "6A", "YBB", "1Y", "3Y")],
+           ["TL bazlı"] + [yz(m["r_tl"].get(k_)) for k_ in ("1G", "1H", "1A", "3A", "6A", "YBB", "1Y", "3Y")]]
+    E += [Spacer(1, 4), TS.tablo(per, [W * .16] + [W * .105] * 8, font=7.4)]
     if sv:
         v = [["Seviye", f"Fiyat ({sym})", "Uzaklık", "Güç"]]
         for lv, n_ in reversed(sv["direnc"]): v.append(["Direnç", tl(lv), yz(lv / m["fiyat"] - 1), "•" * min(n_, 5)])
@@ -408,8 +746,8 @@ def pdf_olustur(m, dosya):
         E.append(KeepTogether([Paragraph("Destek ve direnç seviyeleri", ST["h2"]), TS.tablo(v, [W * .2, W * .2, W * .15, W * .15], font=7.6)]))
     E.append(Spacer(1, 6)); E.append(_img(g_tl_usd(m), W, 2.4 / 7.5))
 
-    # 2 Skor kartı
-    E.append(CondPageBreak(10 * cm)); E.append(Bolum(2, "Skor kartı: Göstergeler ne diyor?", W))
+    # ---------- Skor kartı
+    bolum("Skor kartı: Göstergeler ne diyor?", 10)
     sr = sorted(m["saglik"].items(), key=lambda x: x[1])
     E.append(bilgi_kutusu("Kısaca:", f"Varlık {len(sr)} alanda 1–5 arası puanlandı. En güçlü alan <b>{kucuk(sr[-1][0])}</b>, en zayıf alan <b>{kucuk(sr[0][0])}</b>.", W))
     E.append(Spacer(1, 4)); E.append(_img(br.g_saglik(m, "Skor kartı – Kategoriler (1–5)"), W * 0.92, (0.42 * len(m["saglik"]) + 0.5) / 7.5))
@@ -420,67 +758,56 @@ def pdf_olustur(m, dosya):
         t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), a_), ("TEXTCOLOR", (0, 0), (-1, 0), k_)]))
         E.append(KeepTogether([t, Spacer(1, 5)]))
 
-    # 3 Risk ve korelasyon
-    E.append(CondPageBreak(9 * cm)); E.append(Bolum(3, "Risk ve diğer piyasalarla ilişki", W))
-    E.append(bilgi_kutusu("Bu ne demek?", "Korelasyon +1'e yakınsa iki varlık birlikte hareket eder; 0'a yakınsa ilişkisizdir; "
-                          "eksi değer ters yönlü hareketi gösterir. Portföy çeşitlendirmesi için düşük korelasyonlu varlıklar tercih edilir.", W, "turkuaz"))
+    # ---------- Risk
+    bolum("Risk ve diğer piyasalarla ilişki", 9)
+    E.append(bilgi_kutusu("Bu ne demek?", "Sharpe oranı, alınan her birim riske karşılık elde edilen getiriyi ölçer (1'in üzeri iyi). Sortino yalnızca aşağı yönlü "
+                          "oynaklığı dikkate alır. Beta, karşılaştırılan varlık %1 hareket ettiğinde bu varlığın ortalama ne kadar hareket ettiğini gösterir. "
+                          "Korelasyon +1'e yakınsa birlikte hareket ederler.", W, "turkuaz"))
     v = [["Gösterge", "Değer"], ["Yıllık volatilite", yz(m["vol"])], ["3 yıllık en büyük düşüş", yz(m["max_dd"])],
+         ["Sharpe (1 yıl)", ond(m.get("sharpe"), 2)], ["Sortino (1 yıl)", ond(m.get("sortino"), 2)], [f"Beta ({m['goreli_ref']})", ond(m.get("beta"), 2)],
          ["Son 3 yılın zirvesi", f"{tl(m['zirve'])} {sym}"], ["Zirveden uzaklık", yz(m["zirveden"])],
-         ["52 haftalık aralık", f"{tl(m['dip52'])} – {tl(m['zirve52'])} {sym}"]]
+         ["52 haftalık aralık", f"{tl(m['dip52'])} – {tl(m['zirve52'])}"]]
     kv = [["Korelasyon (1 yıl, günlük)", "Değer"]] + [[k_, ond(x, 2)] for k_, x in m["korelasyon"].items()]
-    t = Table([[TS.tablo(v, [W * .3, W * .18], font=7.6), TS.tablo(kv, [W * .3, W * .16], font=7.6)]], colWidths=[W * .5, W * .5])
-    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)])); E += [Spacer(1, 4), t]
+    E += [Spacer(1, 4), TS.yan_yana(TS.tablo(v, [PW * .6, PW * .4], font=7.6), TS.tablo(kv, [PW * .65, PW * .35], font=7.6), W)]
 
-    # 4 Para akışı
+    # ---------- Para akışı
     if m.get("akis"):
-        E.append(CondPageBreak(10 * cm)); E.append(Bolum(4, "Para akışı: Alıcılar mı satıcılar mı?", W))
+        bolum("Para akışı: Alıcılar mı satıcılar mı?", 10)
         for x in br.akis_yorumlari(m): E.append(Paragraph("• " + x, ST["madde"]))
         ga = br.g_akis(m["hist"], m)
         if ga: E += [Spacer(1, 4), _img(ga, W, (1.55 * 2 + 0.4) / 7.5)]
 
-    # 5 Mevsimsellik
+    # ---------- Mevsimsellik
     gm = g_mevsim(m)
     if gm:
-        E.append(CondPageBreak(8 * cm)); E.append(Bolum(5, "Mevsimsellik", W))
+        bolum("Mevsimsellik", 8)
         E.append(bilgi_kutusu("Bu ne demek?", "Geçmiş yıllarda her ay ortalama ne kadar değişim olduğunu gösterir. Çerçeveli çubuk içinde "
                               "bulunduğumuz aydır. Geçmiş eğilimler geleceği garanti etmez.", W, "turkuaz"))
         E += [Spacer(1, 4), _img(gm, W, 2.4 / 7.5)]
 
-    # 6 Özel veriler
-    if m.get("cg") or m.get("korku") or m.get("oran"):
-        E.append(CondPageBreak(7 * cm)); E.append(Bolum(6, "Kripto piyasa verileri" if m["tur"] == "kripto" else "Emtia oranları", W))
-        v = [["Gösterge", "Değer"]]
-        if m.get("cg"):
-            c_ = m["cg"]
-            v += [["Piyasa değeri sırası", str(c_.get("sira") or "–")], ["Piyasa değeri", f"${tl(c_.get('piy_deg'))}"],
-                  ["24 saatlik işlem hacmi", f"${tl(c_.get('hacim'))}"], ["Dolaşımdaki arz", tl(c_.get("dolasim"), 0)],
-                  ["Maksimum arz", tl(c_.get("maks"), 0) if c_.get("maks") else "Sınırsız"],
-                  ["Tüm zamanların zirvesi", f"${tl(c_.get('ath'))} ({str(c_.get('ath_tarih') or '')[:10]})"],
-                  ["Zirveye uzaklık", yz((c_.get("ath_fark") or 0) / 100)]]
-        if m.get("korku"):
-            v += [["Korku ve Açgözlülük Endeksi", f"{m['korku']['deger']} – {KORKU_TR.get(m['korku']['sinif'], m['korku']['sinif'])}"],
-                  ["30 günlük ortalama", ond(m["korku"]["ort30"], 0)]]
-        if m.get("oran"):
-            v += [[m["oran"]["ad"], ond(m["oran"]["deger"], 1)], ["5 yıllık ortalama", ond(m["oran"]["ort5y"], 1)]]
-        E.append(TS.tablo(v, [W * .45, W * .3], font=7.6))
-        if m.get("oran"): E.append(Spacer(1, 3)); E.append(bilgi_kutusu("Yorum:", m["oran"]["yorum"], W, "turkuaz"))
+    if m.get("oran"):
+        bolum("Emtia oranları", 5)
+        E.append(TS.tablo([["Gösterge", "Değer"], [m["oran"]["ad"], ond(m["oran"]["deger"], 1)], ["5 yıllık ortalama", ond(m["oran"]["ort5y"], 1)]], [W * .45, W * .3], font=7.6))
+        E.append(Spacer(1, 3)); E.append(bilgi_kutusu("Yorum:", m["oran"]["yorum"], W, "turkuaz"))
 
-    # 7 Haberler
+    # ---------- Haberler
     hb = m.get("haber") or {}
     if hb.get("liste"):
-        E.append(CondPageBreak(6 * cm)); E.append(Bolum(7, f"Haberler (genel ton: {kucuk(hb['ozet'])})", W))
+        bolum(f"Haberler (genel ton: {kucuk(hb['ozet'])})", 6)
         v = [["Tarih", "Başlık", "Kaynak"]] + [[f"{x['tarih']:%d.%m}" if x["tarih"] else "–", Paragraph(("↑ " if x["ton"] > 0 else "↓ " if x["ton"] < 0 else "") + x["baslik"][:140], ST["hucre"]), x["kaynak"][:22]] for x in hb["liste"]]
         E.append(TS.tablo(v, [W * .1, W * .68, W * .22], hizala_sol=(0, 1, 2), font=7.4))
 
-    # 8 Genel değerlendirme
-    E.append(PageBreak()); E.append(Bolum(8, "Genel değerlendirme", W))
+    # ---------- Genel değerlendirme
+    E.append(PageBreak()); n += 1; E.append(Bolum(n, "Genel değerlendirme", W))
     for bas, metin in genel_degerlendirme(m):
         E.append(KeepTogether([Paragraph(bas, ST["h2"]), Paragraph(metin, ST["p"])]))
-    E.append(Spacer(1, 8)); E.append(Bolum(9, "Sözlük ve uyarılar", W))
-    E.append(TS.tablo([["Terim", "Sade anlatım"]] + [[a, Paragraph(b, ST["hucre"])] for a, b in SOZLUK_VARLIK], [W * .28, W * .72], hizala_sol=(0, 1), font=7.6))
+    E.append(Spacer(1, 8)); n += 1; E.append(Bolum(n, "Sözlük ve uyarılar", W))
+    E.append(TS.tablo([["Terim", "Sade anlatım"]] + [[a, Paragraph(b, ST["hucre"])] for a, b in SOZLUK_VARLIK + (SOZLUK_KRIPTO if kr else [])],
+                      [W * .28, W * .72], hizala_sol=(0, 1), font=7.6))
     E.append(Spacer(1, 6))
-    E.append(Paragraph("Veriler: Yahoo Finance (fiyat), CoinGecko ve alternative.me (kripto), Google Haberler. Emtia fiyatları vadeli işlem "
-                       "kontratlarına dayanır. Bu rapor otomatik bir model çıktısıdır; yatırım danışmanlığı kapsamında değildir.", ST["kucuk"]))
+    E.append(Paragraph("Veriler: Yahoo Finance (fiyat), CoinGecko (piyasa ve arz), alternative.me (korku endeksi), OKX herkese açık API (türevler), "
+                       "blockchain.info (hash oranı), Google Haberler. Emtia fiyatları vadeli işlem kontratlarına dayanır. Değer bantları istatistiksel "
+                       "modellerdir, gerçek değer garantisi vermez. Bu rapor otomatik bir model çıktısıdır; yatırım danışmanlığı kapsamında değildir.", ST["kucuk"]))
     doc.build(E, onFirstPage=sayfa, onLaterPages=sayfa)
     return dosya
 
@@ -507,6 +834,11 @@ def tara(kodlar=None, **kw):
         kk = (kw.pop("korku_fn", None) or korku_endeksi)(); kw["korku_fn"] = lambda: kk
     except Exception:
         kw["korku_fn"] = lambda: None
+    try:
+        gg = (kw.pop("global_fn", None) or kripto_global)(); kw["global_fn"] = lambda: gg
+    except Exception:
+        kw["global_fn"] = lambda: None
+    kw["detay"] = False
     for k in (kodlar or list(VARLIKLAR)):
         try:
             m = analiz(k, fiyat_fn=fiyat_fn, haber_fn=lambda *a: {"liste": [], "ton": 0, "ozet": "–"}, **kw)
@@ -514,6 +846,7 @@ def tara(kodlar=None, **kw):
                           "Skor": m["genel_skor"], "Görünüm": m["gorunum"], "1A $": m["r_usd"].get("1A"),
                           "YBB $": m["r_usd"].get("YBB"), "1Y $": m["r_usd"].get("1Y"), "1Y TL reel": m["r_reel"],
                           "Volatilite": m["vol"], "Mayer": m["mayer"], "RSI": m["rsi"],
+                          "Model değer": m.get("adil"), "Bant farkı": m.get("potansiyel"), "Sharpe": m.get("sharpe"),
                           "Para akışı": (m.get("akis") or {}).get("ozet")})
         except Exception as ex:
             hata[k] = str(ex)[:100]

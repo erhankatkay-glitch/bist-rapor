@@ -250,7 +250,8 @@ def varlik_analiz(kod, prm, saat, surum):
         pdf = f.read()
     graf = {}
     for ad_, fn in (("fiyat", lambda: br.g_fiyat(m["hist"], None, m["kod"], m.get("seviye"))), ("tlusd", lambda: V.g_tl_usd(m)),
-                    ("mevsim", lambda: V.g_mevsim(m)), ("akis", lambda: br.g_akis(m["hist"], m))):
+                    ("mevsim", lambda: V.g_mevsim(m)), ("akis", lambda: br.g_akis(m["hist"], m)),
+                    ("logbant", lambda: V.g_logbant(m)), ("mayer", lambda: V.g_mayer(m)), ("korku", lambda: V.g_korku(m))):
         try:
             b_ = fn()
             if b_: graf[ad_] = b_.getvalue()
@@ -260,7 +261,10 @@ def varlik_analiz(kod, prm, saat, surum):
             "fiyat": m["fiyat"], "fiyat_tl": m["fiyat_tl"], "skor": m["genel_skor"], "gorunum": m["gorunum"],
             "r_usd": m["r_usd"], "r_tl": m["r_tl"], "r_reel": m["r_reel"], "vol": m["vol"], "mayer": m["mayer"],
             "zirveden": m["zirveden"], "tek": V.tek_bakista(m), "sade": V.sade_ozet(m), "guclu": m["guclu"], "zayif": m["zayif"],
-            "genel": V.genel_degerlendirme(m), "graf": graf, "korku": m.get("korku"), "cg": m.get("cg")}
+            "genel": V.genel_degerlendirme(m), "graf": graf, "korku": {k: v for k, v in (m.get("korku") or {}).items() if k != "seri"} or None,
+            "cg": m.get("cg"), "global": m.get("global"), "turev": m.get("turev"), "sharpe": m.get("sharpe"),
+            "adil": m.get("adil"), "pot": m.get("potansiyel"), "etiket": (m.get("deger") or {}).get("etiket"),
+            "saglik": m.get("saglik")}
 
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
 def varlik_tarama(gun, surum):
@@ -298,7 +302,7 @@ with tab_v:
             if r["guclu"]: st.markdown("**Olumlu**\n" + "\n".join(f"- 🟢 {x}" for x in r["guclu"]))
             if r["zayif"]: st.markdown("**Dikkat**\n" + "\n".join(f"- 🔴 {x}" for x in r["zayif"]))
         with b2:
-            for ad_ in ("fiyat", "tlusd", "mevsim", "akis"):
+            for ad_ in ("logbant", "mayer", "fiyat", "korku", "tlusd", "mevsim", "akis"):
                 if ad_ in r["graf"]: st.image(r["graf"][ad_], use_container_width=True)
         with b3:
             for bas, metin in r["genel"]:
@@ -313,11 +317,13 @@ with tab_v:
                 dfv = pd.DataFrame(sat).sort_values("Skor", ascending=False)
                 for c in ("1A $", "YBB $", "1Y $", "1Y TL reel", "Volatilite"):
                     dfv[c] = dfv[c].apply(lambda x: None if x is None or pd.isna(x) else round(x * 100, 1))
-                st.dataframe(dfv[["Kod", "Ad", "Skor", "Görünüm", "1A $", "YBB $", "1Y $", "1Y TL reel", "Volatilite", "RSI", "Para akışı"]],
+                dfv["Bant farkı"] = dfv["Bant farkı"].apply(lambda x: None if x is None or pd.isna(x) else round(x * 100, 1))
+                st.dataframe(dfv[["Kod", "Ad", "Skor", "Görünüm", "Bant farkı", "1A $", "YBB $", "1Y $", "1Y TL reel", "Volatilite", "Sharpe", "RSI", "Para akışı"]],
                              hide_index=True, use_container_width=True,
                              column_config={"Skor": st.column_config.ProgressColumn(min_value=0, max_value=5, format="%.1f"),
-                                            "RSI": st.column_config.NumberColumn(format="%.0f")})
-                st.caption("Getiri ve volatilite sütunları yüzde olarak gösterilir. Sıralama teknik model çıktısıdır, tavsiye değildir.")
+                                            "RSI": st.column_config.NumberColumn(format="%.0f"),
+                                            "Sharpe": st.column_config.NumberColumn(format="%.2f")})
+                st.caption("Bant farkı: model değer bandının ortasına uzaklık (pozitif = ucuz bölge). Getiri ve volatilite sütunları yüzde olarak gösterilir. Sıralama teknik model çıktısıdır, tavsiye değildir.")
             if hat: st.caption("Alınamayanlar: " + ", ".join(hat))
 
 # ================= PİYASA =================

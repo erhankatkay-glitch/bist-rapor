@@ -199,10 +199,13 @@ def sayfa_cizici(kod, baslik, tarih, kapak_yuk=0):
     def ciz(c, doc):
         c.saveState(); W_, H_ = A4
         if doc.page == 1 and kapak_yuk:
-            c.setFillColor(R["murekkep"]); c.rect(0, H_ - kapak_yuk, W_, kapak_yuk, fill=1, stroke=0)
-            c.setFillColor(R["ana"]); c.rect(0, H_ - kapak_yuk, W_, 3, fill=1, stroke=0)
+            c.setFillColor(R["gece"]); c.rect(0, H_ - kapak_yuk, W_, kapak_yuk, fill=1, stroke=0)
+            c.setFillColor(R["gece2"]); c.rect(W_ * 0.62, H_ - kapak_yuk, W_ * 0.38, kapak_yuk, fill=1, stroke=0)
+            c.setFillColor(R["altin"]); c.rect(0, H_ - kapak_yuk, W_, 2.5, fill=1, stroke=0)
+            c.setFillColor(R["altin"]); c.setFont("DVB", 7); c.drawString(1.5 * cm, H_ - 0.75 * cm, baslik.upper())
+            c.setFillColor(colors.HexColor("#94A3B8")); c.setFont("DV", 7); c.drawRightString(W_ - 1.5 * cm, H_ - 0.75 * cm, tarih)
         else:
-            c.setFillColor(R["ana"]); c.roundRect(1.5 * cm, H_ - 1.02 * cm, 4, 10, 1.5, fill=1, stroke=0)
+            c.setFillColor(R["altin"]); c.roundRect(1.5 * cm, H_ - 1.02 * cm, 4, 10, 1.5, fill=1, stroke=0)
             c.setFillColor(R["murekkep"]); c.setFont("DVB", 8.5); c.drawString(1.5 * cm + 9, H_ - 1.0 * cm, kod)
             c.setFillColor(R["soluk"]); c.setFont("DV", 8)
             c.drawString(1.5 * cm + 9 + pdfmetrics.stringWidth(kod, "DVB", 8.5) + 8, H_ - 1.0 * cm, baslik)
@@ -246,3 +249,221 @@ SOZLUK_HISSE = [
     ("Piotroski F-skoru", "Şirketin temellerinin iyileşip iyileşmediğini ölçen 0–9 arası puan."),
     ("Altman Z skoru", "Şirketin finansal sıkıntı riskini ölçer. Yüksek değer daha güvenlidir."),
 ]
+
+
+# =====================================================================
+# PRO TARZI BİLEŞENLER
+# =====================================================================
+HEX.update({"altin": "#F59E0B", "altin_acik": "#FEF3C7", "gece": "#0B1220", "gece2": "#111A2E"})
+R.update({k: colors.HexColor(HEX[k]) for k in ("altin", "altin_acik", "gece", "gece2")})
+
+def _hex(c):
+    return c.hexval().replace("0x", "#")
+
+def _sayi(x, d=2):
+    if x is None: return "–"
+    for e, ek in ((1e12, " tr"), (1e9, " mr"), (1e6, " mn")):
+        if abs(x) >= e: return f"{x / e:,.1f}".replace(",", "X").replace(".", ",").replace("X", ".") + ek
+    return f"{x:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+def _yuzde(x, d=1):
+    if x is None: return "–"
+    return ("+" if x > 0 else "-" if x < 0 else "") + "%" + f"{abs(x) * 100:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+class Panel(Flowable):
+    """Başlıklı, yuvarlak köşeli panel çerçevesi; içerik alt sınıfta çizilir."""
+    def __init__(self, baslik, gen, yuk):
+        super().__init__(); self.baslik, self.gen, self.yuk = baslik, gen, yuk
+    def wrap(self, *a):
+        return self.gen, self.yuk
+    def cerceve(self):
+        c = self.canv
+        c.setFillColor(colors.white); c.setStrokeColor(R["cizgi"]); c.setLineWidth(0.8)
+        c.roundRect(0, 0, self.gen, self.yuk, 9, stroke=1, fill=1)
+        c.setFillColor(R["altin"]); c.roundRect(12, self.yuk - 19, 3, 11, 1.5, stroke=0, fill=1)
+        c.setFillColor(R["murekkep"]); c.setFont("DVB", 8.6); c.drawString(20, self.yuk - 17, self.baslik.upper())
+
+
+class AdilDegerGostergesi(Panel):
+    """Adil değer kartı: büyük değer, potansiyel ve ucuz/makul/pahalı bölgeli ölçek."""
+    def __init__(self, fiyat, adil, dusuk, yuksek, sembol="₺", bant=0.15, gen=250, yuk=150, baslik="Adil değer",
+                 etiketler=("Ucuz", "Makul", "Pahalı"), alt_not=""):
+        super().__init__(baslik, gen, yuk)
+        self.f, self.a, self.dsk, self.yks, self.s, self.b, self.et, self.alt = fiyat, adil, dusuk, yuksek, sembol, bant, etiketler, alt_not
+    def draw(self):
+        self.cerceve(); c = self.canv
+        if not self.a:
+            c.setFont("DV", 9); c.setFillColor(R["soluk"]); c.drawString(14, self.yuk / 2, "Yeterli veri yok"); return
+        pot = self.a / self.f - 1
+        durum = "iyi" if pot > self.b else "zayif" if pot < -self.b else "orta"
+        koyu, acik = durum_rengi(durum)
+        c.setFillColor(R["murekkep"]); c.setFont("DVX", 22); c.drawString(14, self.yuk - 48, f"{_sayi(self.a)} {self.s}")
+        c.setFont("DV", 8); c.setFillColor(R["soluk"]); c.drawString(14, self.yuk - 61, f"Son fiyat {_sayi(self.f)} {self.s}")
+        etiket = self.et[0] if durum == "iyi" else self.et[2] if durum == "zayif" else self.et[1]
+        rz = f"{_yuzde(pot)}  {etiket.upper()}"; gw = pdfmetrics.stringWidth(rz, "DVB", 8.5) + 16
+        c.setFillColor(acik); c.roundRect(self.gen - gw - 12, self.yuk - 48, gw, 17, 8, stroke=0, fill=1)
+        c.setFillColor(koyu); c.setFont("DVB", 8.5); c.drawString(self.gen - gw - 4, self.yuk - 42.5, rz)
+        # ölçek
+        x0, x1, yb = 16, self.gen - 16, 44
+        lo = min(self.f, self.a) * (1 - self.b) * 0.80
+        hi = max(self.f, self.a) * (1 + self.b) * 1.15
+        X = lambda v: x0 + min(max((v - lo) / (hi - lo), 0), 1) * (x1 - x0)
+        z1, z2 = X(self.a * (1 - self.b)), X(self.a * (1 + self.b))
+        for xa, xb, renk in ((x0, z1, R["yesil_acik"]), (z1, z2, R["sari_acik"]), (z2, x1, R["kirmizi_acik"])):
+            c.setFillColor(renk); c.rect(xa, yb, max(xb - xa, 0), 9, stroke=0, fill=1)
+        c.setFont("DV", 6.3)
+        for (xa, xb), et, renk in (((x0, z1), self.et[0], R["yesil"]), ((z1, z2), self.et[1], R["sari"]), ((z2, x1), self.et[2], R["kirmizi"])):
+            if xb - xa > 26: c.setFillColor(renk); c.drawCentredString((xa + xb) / 2, yb - 10, et)
+        if self.dsk and self.yks:
+            c.setStrokeColor(R["ana"]); c.setLineWidth(1.4); c.setLineCap(1)
+            c.line(X(self.dsk), yb + 4.5, X(self.yks), yb + 4.5)
+            for v_ in (self.dsk, self.yks): c.line(X(v_), yb + 2, X(v_), yb + 7)
+        c.setStrokeColor(R["murekkep"]); c.setLineWidth(1.4); c.line(X(self.a), yb - 2, X(self.a), yb + 11)
+        # Fiyat işareti
+        xf = X(self.f); c.setFillColor(koyu)
+        p = c.beginPath(); p.moveTo(xf, yb + 10); p.lineTo(xf - 5, yb + 19); p.lineTo(xf + 5, yb + 19); p.close(); c.drawPath(p, stroke=0, fill=1)
+        c.setFont("DVB", 6.5); c.drawCentredString(xf, yb + 22, "Fiyat")
+        if abs(X(self.a) - xf) > 24:
+            c.setFillColor(R["murekkep"]); c.drawCentredString(X(self.a), yb + 14, "Adil")
+        if self.alt:
+            c.setFont("DV", 6.4); c.setFillColor(R["soluk"]); c.drawString(14, 9, self.alt[:110])
+
+
+class SkorGostergesi(Panel):
+    """Sağlık skoru kartı: büyük skor + etiket + 5 dilimli çubuk + kategori çubukları."""
+    def __init__(self, skor, etiket, kategoriler, gen=250, yuk=150, baslik="Finansal sağlık"):
+        super().__init__(baslik, gen, yuk); self.s, self.e, self.k = skor, etiket, kategoriler
+    def draw(self):
+        self.cerceve(); c = self.canv
+        if self.s is None:
+            c.setFont("DV", 9); c.setFillColor(R["soluk"]); c.drawString(14, self.yuk / 2, "Yeterli veri yok"); return
+        koyu, acik = durum_rengi(puan_durum(self.s))
+        metin = f"{self.s:.2f}".replace(".", ",")
+        c.setFillColor(R["murekkep"]); c.setFont("DVX", 22); c.drawString(14, self.yuk - 48, metin)
+        w = pdfmetrics.stringWidth(metin, "DVX", 22)
+        c.setFont("DV", 9); c.setFillColor(R["soluk"]); c.drawString(16 + w, self.yuk - 48, "/ 5")
+        gw = pdfmetrics.stringWidth(self.e, "DVB", 8.5) + 16
+        c.setFillColor(acik); c.roundRect(self.gen - gw - 12, self.yuk - 48, gw, 17, 8, stroke=0, fill=1)
+        c.setFillColor(koyu); c.setFont("DVB", 8.5); c.drawString(self.gen - gw - 4, self.yuk - 42.5, self.e)
+        # 5 dilim
+        x0, y0, sw = 14, self.yuk - 63, (self.gen - 28 - 8) / 5
+        for i in range(5):
+            dolu = self.s >= i + 1 or (self.s > i and self.s - i >= 0.5)
+            c.setFillColor(koyu if dolu else R["zemin2"]); c.roundRect(x0 + i * (sw + 2), y0, sw, 5, 2.5, stroke=0, fill=1)
+        # kategoriler
+        n = len(self.k); y = y0 - 14; satir = min(13, (y0 - 14) / max(n, 1))
+        for ad, v in list(self.k.items())[:7]:
+            c.setFont("DV", 7.4); c.setFillColor(R["metin"]); c.drawString(14, y, ad[:24])
+            bx, bw = self.gen * 0.50, self.gen * 0.36
+            c.setFillColor(R["zemin2"]); c.roundRect(bx, y, bw, 5, 2.5, stroke=0, fill=1)
+            k2, _ = durum_rengi(puan_durum(v)); c.setFillColor(k2)
+            c.roundRect(bx, y, bw * max(min(v / 5, 1), 0.04), 5, 2.5, stroke=0, fill=1)
+            c.setFont("DVB", 7.2); c.setFillColor(R["murekkep"]); c.drawRightString(self.gen - 12, y, f"{v:.1f}".replace(".", ","))
+            y -= satir
+
+
+class AralikCubugu(Flowable):
+    """Düşük–yüksek aralığında bir değerin konumu (52 hafta, analist hedefleri, ATL–ATH)."""
+    def __init__(self, baslik, dusuk, yuksek, deger, gen=250, ort=None, sembol="", deger_etiket="Fiyat", ort_etiket="Ort."):
+        super().__init__(); self.b, self.lo, self.hi, self.v, self.gen, self.o, self.s = baslik, dusuk, yuksek, deger, gen, ort, sembol
+        self.ve, self.oe = deger_etiket, ort_etiket
+    def wrap(self, *a):
+        return self.gen, 50
+    def draw(self):
+        c = self.canv; c.translate(0, 6)
+        c.setFont("DVB", 7.6); c.setFillColor(R["murekkep"]); c.drawString(0, 34, self.b.upper())
+        if None in (self.lo, self.hi, self.v) or self.hi <= self.lo:
+            c.setFont("DV", 7.5); c.setFillColor(R["soluk"]); c.drawString(0, 16, "Veri yok"); return
+        x0, x1, y = 0, self.gen, 16
+        X = lambda v: x0 + min(max((v - self.lo) / (self.hi - self.lo), 0), 1) * (x1 - x0)
+        c.setStrokeColor(R["cizgi"]); c.setLineWidth(4); c.setLineCap(1); c.line(x0 + 2, y, x1 - 2, y)
+        c.setStrokeColor(R["ana"]); c.line(x0 + 2, y, X(self.v), y)
+        if self.o is not None:
+            c.setStrokeColor(R["murekkep"]); c.setLineWidth(1); c.line(X(self.o), y - 5, X(self.o), y + 5)
+            c.setFont("DV", 6.2); c.setFillColor(R["murekkep"]); c.drawCentredString(X(self.o), y + 7, f"{self.oe} {_sayi(self.o)}")
+        c.setFillColor(colors.white); c.setStrokeColor(R["ana"]); c.setLineWidth(1.6); c.circle(X(self.v), y, 4, stroke=1, fill=1)
+        c.setFont("DV", 6.8); c.setFillColor(R["soluk"])
+        c.drawString(x0, 3, f"{_sayi(self.lo)} {self.s}"); c.drawRightString(x1, 3, f"{_sayi(self.hi)} {self.s}")
+        c.setFont("DVB", 6.8); c.setFillColor(R["ana"])
+        c.drawCentredString(min(max(X(self.v), 28), x1 - 28), -6, f"{self.ve} {_sayi(self.v)}")
+
+
+class _Ikon(Flowable):
+    def __init__(self, yon):
+        super().__init__(); self.yon = yon
+    def wrap(self, *a):
+        return 14, 14
+    def draw(self):
+        c = self.canv; koyu, acik = (R["yesil"], R["yesil_acik"]) if self.yon > 0 else (R["kirmizi"], R["kirmizi_acik"])
+        c.setFillColor(acik); c.circle(7, 7, 7, stroke=0, fill=1)
+        c.setFillColor(koyu); p = c.beginPath()
+        if self.yon > 0: p.moveTo(7, 11); p.lineTo(3.5, 5); p.lineTo(10.5, 5)
+        else: p.moveTo(7, 3); p.lineTo(3.5, 9); p.lineTo(10.5, 9)
+        p.close(); c.drawPath(p, stroke=0, fill=1)
+
+
+def sinyal_listesi(guclu, zayif, W, n=5):
+    """Pro ipuçları tarzı iki sütunlu sinyal listesi."""
+    sutun = []
+    for liste, yon, bas in ((guclu, 1, "Olumlu sinyaller"), (zayif, -1, "Dikkat gerektirenler")):
+        koyu = R["yesil"] if yon > 0 else R["kirmizi"]
+        satir = [[Paragraph(f'<font name="DVB" color="{_hex(koyu)}">{bas}</font>', ST["hucreB"]), ""]]
+        for x in liste[:n]:
+            satir.append([_Ikon(yon), Paragraph(x, _st("sg", fontSize=8.2, leading=11))])
+        if not liste:
+            satir.append(["", Paragraph(f'<font color="{HEX["soluk"]}">Belirgin bir sinyal yok.</font>', _st("sg", fontSize=8.2, leading=11))])
+        t = Table(satir, colWidths=[18, W / 2 - 26])
+        t.setStyle(TableStyle([("SPAN", (0, 0), (1, 0)), ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                               ("LEFTPADDING", (0, 0), (-1, -1), 0), ("TOPPADDING", (0, 0), (-1, -1), 2.5),
+                               ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5), ("LINEBELOW", (0, 0), (-1, 0), 1, koyu)]))
+        sutun.append(t)
+    t = Table([sutun], colWidths=[W / 2, W / 2]); t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
+    t.hAlign = "LEFT"; return t
+
+
+def metrik_listesi(ciftler, W, sutun=2):
+    """'Temel göstergeler' listesi: etiket solda, değer sağda; ince ayırıcılar."""
+    hucre = []
+    for etiket, deger in ciftler:
+        hucre += [Paragraph(f'<font color="{HEX["soluk"]}">{etiket}</font>', _st("ml", fontSize=8, leading=10)),
+                  Paragraph(f'<font name="DVB">{deger}</font>', _st("mv", fontSize=8.4, leading=10, alignment=2))]
+    n = 2 * sutun; satir = [hucre[i:i + n] for i in range(0, len(hucre), n)]
+    if satir and len(satir[-1]) < n: satir[-1] += [""] * (n - len(satir[-1]))
+    g = (W - (sutun - 1) * 14) / sutun
+    cw = []
+    for i in range(sutun): cw += [g * 0.58, g * 0.42 + (14 if i < sutun - 1 else 0)]
+    t = Table(satir, colWidths=cw)
+    st_ = [("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+           ("LEFTPADDING", (0, 0), (-1, -1), 0)]
+    for i in range(sutun):
+        st_ += [("LINEBELOW", (2 * i, 0), (2 * i + 1, -1), 0.5, R["cizgi"]), ("RIGHTPADDING", (2 * i + 1, 0), (2 * i + 1, -1), 14 if i < sutun - 1 else 0)]
+    t.setStyle(TableStyle(st_)); t.hAlign = "LEFT"; return t
+
+
+def yan_yana(sol, sag, W, bosluk=10):
+    t = Table([[sol, sag]], colWidths=[(W - bosluk) / 2 + bosluk, (W - bosluk) / 2])
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                           ("RIGHTPADDING", (0, 0), (0, -1), bosluk), ("RIGHTPADDING", (1, 0), (1, -1), 0)]))
+    t.hAlign = "LEFT"; return t
+
+
+def pro_kapak(ad, alt_satir, fiyat_metni, degisim, W, rozet=None):
+    """Koyu bant içinde: solda ad ve alt bilgi, sağda büyük fiyat ve günlük değişim."""
+    renk = HEX["yesil"] if (degisim or 0) > 0 else HEX["kirmizi"] if (degisim or 0) < 0 else "#CBD5E1"
+    ok = "↑" if (degisim or 0) > 0 else "↓" if (degisim or 0) < 0 else ""
+    sol = [Paragraph(f'<font name="DVX" size="21" color="#FFFFFF">{ad}</font>', _st("pk", leading=26)),
+           Spacer(1, 3), Paragraph(f'<font color="#94A3B8">{alt_satir}</font>', _st("pa", fontSize=8.6, leading=11.5))]
+    if rozet:
+        rw = pdfmetrics.stringWidth(rozet, "DVB", 7.6) + 18
+        rz = Table([[Paragraph(f'<font name="DVB" size="7.6" color="{HEX["gece"]}">{rozet}</font>', _st("pr", alignment=1, leading=10))]], colWidths=[rw])
+        rz.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), R["altin"]), ("ROUNDEDCORNERS", [7, 7, 7, 7]),
+                                ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
+        rz.hAlign = "LEFT"; sol += [Spacer(1, 7), rz]
+    sag = [Paragraph(f'<font name="DVX" size="20" color="#FFFFFF">{fiyat_metni}</font>', _st("pf", alignment=2, leading=24)),
+           Paragraph((f'<font name="DVB" color="{renk}">{ok} {_yuzde(degisim, 2)}</font><font color="#94A3B8"> son gün</font>'
+                      if degisim is not None else '<font color="#94A3B8">son fiyat</font>'), _st("pd", alignment=2, fontSize=9, leading=12))]
+    t = Table([[sol, sag]], colWidths=[W * 0.64, W * 0.36])
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
+    t.hAlign = "LEFT"
+    return [Spacer(1, 2), t, Spacer(1, 30)]

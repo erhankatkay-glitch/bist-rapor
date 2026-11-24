@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-12"
+SURUM = "2026.11.24-13"
 
 import bist_veri as BV
 
@@ -195,7 +195,7 @@ def dolar_analizi(h, fx):
     def ret(gun):
         s_ = u[u.index <= son - pd.Timedelta(days=gun)]
         return float(u.iloc[-1] / s_.iloc[-1] - 1) if len(s_) else None
-    o["r"] = {"1A": ret(30), "3A": ret(91), "6A": ret(182), "1Y": ret(365), "3Y": ret(365 * 3)}
+    o["r"] = {"1G": p / float(k.iloc[-2]) - 1 if len(k) > 1 else None, "1A": ret(30), "3A": ret(91), "6A": ret(182), "1Y": ret(365), "3Y": ret(365 * 3)}
     yb = u[u.index < pd.Timestamp(son.year, 1, 1)]
     o["r"]["YBB"] = float(u.iloc[-1] / yb.iloc[-1] - 1) if len(yb) else None
     fy = f[f.index <= son - pd.Timedelta(days=365)]
@@ -1593,38 +1593,52 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     pt = m["potansiyel"]; pr = YESIL if pt and pt > 0.15 else KIRMIZI if pt and pt < -0.15 else SARI
     gor_durum = "iyi" if pt and pt > 0.15 else "zayif" if pt and pt < -0.15 else "orta"
 
-    # ---------------- SAYFA 1: TEK BAKIŞTA ----------------
-    E += kapak(m["ad"], f"BIST: {m['kod']}  ·  {m['sektor']}  ·  {m['tarih']:%d.%m.%Y}  ·  Kaynak: {str(m.get('kaynak', 'Yahoo')).split(' (')[0]}",
-               f"Model görüşü: {m['gorus']}" if m.get("gorus") not in (None, "–") else "Model görüşü yok", gor_durum, W)
-    kartlar = [
-        ("Son fiyat", f"{tl(m['fiyat'])} ₺", f"≈ ${ond(m['usd']['fiyat_usd'], 2)}" if m.get("usd") else f"52H {tl(m['dip52'])}–{tl(m['zirve52'])}"),
+    # ---------------- SAYFA 1: PRO ÖZET ----------------
+    E += TS.pro_kapak(m["ad"], f"BIST: {m['kod']}  ·  {m['sektor']}  ·  {m['tarih']:%d.%m.%Y}  ·  Kaynak: {str(m.get('kaynak', 'Yahoo')).split(' (')[0]}",
+                      f"{tl(m['fiyat'])} ₺", m["r"].get("1G"), W,
+                      rozet=f"MODEL GÖRÜŞÜ: {m['gorus'].upper()}" if m.get("gorus") not in (None, "–") else None)
+    dahil = [y[1] for y in m["yontemler"] if y[6] and y[1]]
+    PW = (W - 10) / 2
+    sol = TS.AdilDegerGostergesi(m["fiyat"], m["adil"], min(dahil) if dahil else None, max(dahil) if dahil else None,
+                                 "₺", gen=PW, yuk=150, alt_not=f"{len(dahil)} yöntemin ortalaması · güven: {kucuk(m['guven'])}")
+    sag = TS.SkorGostergesi(m["genel_skor"], m["skor_etiket"] or "", m["saglik"] or {}, gen=PW, yuk=150)
+    E.append(TS.yan_yana(sol, sag, W)); E.append(Spacer(1, 8))
+    E.append(bilgi_kutusu("Kısaca:", sade_ozet(m), W)); E.append(Spacer(1, 4))
+    E.append(Paragraph("Temel göstergeler", ST["h2"]))
+    ml = [("Piyasa değeri", f"{tl(m['piy_deg'])} ₺"), ("Dolar bazında fiyat", f"${ond(m['usd']['fiyat_usd'], 2)}" if m.get("usd") else "–"),
+          ("F/K", kat(m["fk"])), ("PD/DD", kat(m["pddd"])),
+          ("Özkaynak kârlılığı (ROE)", yz(m["roe"])), ("Temettü verimi", yz(m["temettu_verim"])),
+          ("1 yıllık getiri", yz(m["r"].get("1Y"))), ("BIST 100'e göre (1Y)", yz((1 + m["r"]["1Y"]) / (1 + m["r_endeks"]["1Y"]) - 1)
+                                                    if m["r"].get("1Y") is not None and m["r_endeks"].get("1Y") is not None else "–"),
+          ("Beta", ond(m.get("beta"), 2)), ("Teknik görünüm", m.get("teknik_ozet") or "–")]
+    E.append(TS.metrik_listesi(ml, W)); E.append(Spacer(1, 8))
+    r1 = TS.AralikCubugu("52 haftalık aralık", m["dip52"], m["zirve52"], m["fiyat"], gen=PW, sembol="₺")
+    if m.get("hedef_analist"):
+        r2 = TS.AralikCubugu(f"Analist hedefleri ({m.get('analist_sayi') or '?'} analist)", min(m["hedef_dusuk"] or m["hedef_analist"], m["fiyat"]),
+                             max(m["hedef_yuksek"] or m["hedef_analist"], m["fiyat"]), m["fiyat"], gen=PW, ort=m["hedef_analist"], sembol="₺", ort_etiket="Ort.")
+    else:
+        r2 = TS.AralikCubugu("Model değer aralığı", min(dahil + [m["fiyat"]]) if dahil else None, max(dahil + [m["fiyat"]]) if dahil else None,
+                             m["fiyat"], gen=PW, ort=m["adil"], sembol="₺", ort_etiket="Adil")
+    E.append(TS.yan_yana(r1, r2, W)); E.append(Spacer(1, 6))
+    E.append(Paragraph("Öne çıkan sinyaller", ST["h2"]))
+    E.append(TS.sinyal_listesi(m["guclu"], m["zayif"], W, n=4))
+
+    # ---------------- SAYFA 1b: TEK BAKIŞTA ----------------
+    E.append(PageBreak()); E.append(Paragraph("Tek bakışta", ST["h2"]))
+    E.append(trafik_listesi(tek_bakista(m), W))
+    E.append(Spacer(1, 6))
+    E.append(kart_izgarasi([
+        ("Son fiyat", f"{tl(m['fiyat'])} ₺", f"52H {tl(m['dip52'])}–{tl(m['zirve52'])}"),
         ("Adil değer", f"{tl(m['adil'])} ₺" if m["adil"] else "–", f"Güven: {kucuk(m['guven'])}", MAVI),
         ("Potansiyel", yz(pt), kucuk(m["gorus"]), pr),
-        ("Sağlık skoru", f"{ond(m['genel_skor'], 1)} / 5" if m["genel_skor"] else "–", kucuk(m["skor_etiket"]), puan_renk(m["genel_skor"] or 0)),
-        ("Piyasa değeri", f"{tl(m['piy_deg'])} ₺", f"≈ ${tl(m['piy_deg'] / m['usd']['kur'])}" if m.get("usd") else ""),
-        ("F/K · PD/DD", f"{kat(m['fk'])} · {kat(m['pddd'])}", "kâra ve özkaynağa göre fiyat"),
-        ("Özkaynak kârlılığı", yz(m["roe"]), f"enflasyon %{ond(PARAM['ENFLASYON'] * 100, 0)}",
-         YESIL if (m["roe"] or 0) > PARAM["ENFLASYON"] else KIRMIZI),
-        ("Temettü verimi", yz(m["temettu_verim"]), f"Teknik: {kucuk(m['teknik_ozet'])}"),
-    ]
-    E.append(kart_izgarasi(kartlar, W, sutun=4))
-    E.append(Spacer(1, 4)); E.append(bilgi_kutusu("Kısaca:", sade_ozet(m), W))
-    E.append(Paragraph("Tek bakışta", ST["h2"]))
-    E.append(trafik_listesi(tek_bakista(m), W))
-    E.append(Paragraph("Öne çıkanlar", ST["h2"]))
-    gl = [Paragraph(f'<font color="#16A34A"><b>↑</b></font>&nbsp; {x}', ST["madde"]) for x in m["guclu"][:5]] or [Paragraph("–", ST["madde"])]
-    zl = [Paragraph(f'<font color="#DC2626"><b>↓</b></font>&nbsp; {x}', ST["madde"]) for x in m["zayif"][:5]] or [Paragraph("–", ST["madde"])]
-    n = max(len(gl), len(zl)); gl += [""] * (n - len(gl)); zl += [""] * (n - len(zl))
-    t = Table([[Paragraph('<font name="DVB" color="#16A34A">Güçlü yönler</font>', ST["hucreB"]),
-                Paragraph('<font name="DVB" color="#DC2626">Dikkat edilmesi gerekenler</font>', ST["hucreB"])]] +
-              list(zip(gl, zl)), colWidths=[W / 2, W / 2])
-    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LINEBELOW", (0, 0), (0, 0), 1.2, YESIL),
-                           ("LINEBELOW", (1, 0), (1, 0), 1.2, KIRMIZI), ("TOPPADDING", (0, 0), (-1, -1), 2),
-                           ("BOTTOMPADDING", (0, 0), (-1, -1), 2), ("LEFTPADDING", (0, 0), (-1, -1), 2)]))
-    E.append(t)
+        ("Sağlık skoru", f"{ond(m['genel_skor'], 1)} / 5" if m["genel_skor"] else "–", kucuk(m["skor_etiket"]), puan_renk(m["genel_skor"] or 0))], W, sutun=4))
+    E.append(Spacer(1, 4))
+    E.append(Paragraph("Kısa yorumlar", ST["h2"]))
+    for bas, metin in genel_degerlendirme(m)[:4]:
+        E.append(Paragraph(f"<b>{bas}:</b> {metin}", ST["p"]))
 
     # ---------------- SAYFA 2: DEĞERLEME ----------------
-    E.append(PageBreak()); E.append(Bolum(1, "Değerleme: Hisse ne kadar eder?", W))
+    E.append(CondPageBreak(12 * cm)); E.append(Bolum(1, "Değerleme: Hisse ne kadar eder?", W))
     E.append(bilgi_kutusu("Kısaca:", kisaca(m, "degerleme"), W)); E.append(Spacer(1, 6))
     E.append(Paragraph("Adil değer, şirketin yapısına uygun yöntemlerin ağırlıklı ortalaması ile ağırlıklı medyanının ortalamasıdır. "
                        "Fiyatın %40'ının altında veya 2,5 katının üzerinde sonuç veren yöntemler aykırı sayılıp hariç tutulur (*). "
