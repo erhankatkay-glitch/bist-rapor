@@ -277,3 +277,25 @@ def finansallar(kod, oturum=None, bugun=None):
     if "Net Income" not in sonuc["gelir"].index and "Net Income Common Stockholders" not in sonuc["gelir"].index:
         raise ValueError(f"{grup}: net kâr eşleşmedi. Kalemler: {ornek}")
     return sonuc
+
+
+# ---------------------------------------------------------------------------
+# Yabancı oranı (şirket kartındaki "Yabancı Oranı (%)" güncel değeri)
+# ---------------------------------------------------------------------------
+KART_URL = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/sirket-karti.aspx"
+
+def yabanci_orani(kod, oturum=None, zaman_asimi=15):
+    """Hissenin güncel yabancı oranını (%) döndürür; bulunamazsa istisna fırlatır."""
+    import requests, html as _html
+    s = oturum or requests.Session()
+    r = s.get(KART_URL, params={"hisse": kod.upper()}, headers=BASLIK, timeout=zaman_asimi)
+    r.raise_for_status()
+    metin = _html.unescape(re.sub(r"<[^>]+>", " ", r.text))
+    metin = " ".join(metin.split())
+    m = re.search(r"Yabanc[ıi] Oran[ıi]\s*\(%\)\s*([0-9]{1,3}(?:[.,][0-9]+)?)", metin)
+    if not m:
+        raise ValueError("Yabancı oranı sayfada bulunamadı")
+    v = float(m.group(1).replace(",", "."))
+    if not 0 <= v <= 100:
+        raise ValueError(f"Yabancı oranı geçersiz: {v}")
+    return v

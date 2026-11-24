@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-7"
+SURUM = "2026.11.24-8"
 
 import bist_veri as BV
 
@@ -192,6 +192,102 @@ def _naive(x):
 # =====================================================================
 # VERİ
 # =====================================================================
+YABANCI_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raporlar", "yabanci_oran.csv")
+
+def yabanci_gecmis(kod):
+    """Sabah otomasyonunun kaydettiği günlük yabancı oranı geçmişi (Series, tarih index)."""
+    try:
+        df = pd.read_csv(YABANCI_CSV, parse_dates=["tarih"])
+        s_ = df[df["kod"] == kod].drop_duplicates("tarih", keep="last").set_index("tarih")["oran"].sort_index()
+        return s_ if len(s_) else None
+    except Exception:
+        return None
+
+def para_akisi(h):
+    """Fiyat-hacim tabanlı para akışı göstergeleri."""
+    k = h["Close"].astype(float); v = h["Volume"].astype(float).fillna(0) if "Volume" in h else None
+    if v is None or v.iloc[-60:].sum() == 0 or len(k) < 60:
+        return None
+    yuk = h["High"].astype(float) if "High" in h else k
+    dus = h["Low"].astype(float) if "Low" in h else k
+    o = {}
+    yon = np.sign(k.diff().fillna(0))
+    obv = (yon * v).cumsum(); o["obv"] = obv
+    ort20 = v.iloc[-20:].mean()
+    o["obv_egim"] = float((obv.iloc[-1] - obv.iloc[-21]) / (ort20 * 20)) if ort20 > 0 else None
+    o["obv_egim60"] = float((obv.iloc[-1] - obv.iloc[-61]) / (v.iloc[-60:].mean() * 60)) if v.iloc[-60:].mean() > 0 else None
+    aralik = (yuk - dus).replace(0, np.nan)
+    if aralik.iloc[-20:].notna().sum() >= 10:
+        mfm = (((k - dus) - (yuk - k)) / aralik).fillna(0)
+        cmf = (mfm * v).rolling(20).sum() / v.rolling(20).sum()
+        o["cmf"] = float(cmf.iloc[-1]); o["cmf_seri"] = cmf
+        tp = (yuk + dus + k) / 3; ham = tp * v
+        poz = ham.where(tp > tp.shift(1), 0).rolling(14).sum(); neg = ham.where(tp < tp.shift(1), 0).rolling(14).sum()
+        mfi = 100 - 100 / (1 + poz / neg.replace(0, np.nan))
+        o["mfi"] = float(mfi.iloc[-1]) if not np.isnan(mfi.iloc[-1]) else None
+    else:
+        o["cmf"] = o["mfi"] = None; o["cmf_seri"] = None
+    son = slice(-20, None)
+    yukari = v.iloc[son][k.diff().iloc[son] > 0].sum(); asagi = v.iloc[son][k.diff().iloc[son] < 0].sum()
+    o["hacim_oran_ud"] = float(yukari / asagi) if asagi > 0 else None
+    ort50 = v.rolling(50).mean()
+    pat = []
+    for t in k.index[-20:]:
+        if ort50.get(t) and v[t] > 2 * ort50[t]:
+            i = k.index.get_loc(t)
+            pat.append((t, float(k.iloc[i] / k.iloc[i - 1] - 1), float(v[t] / ort50[t])))
+    o["patlamalar"] = pat
+    o["fiyat20"] = float(k.iloc[-1] / k.iloc[-21] - 1)
+    # Uyumsuzluk
+    o["uyumsuzluk"] = None
+    if o["obv_egim"] is not None:
+        if o["fiyat20"] < -0.03 and o["obv_egim"] > 0.10: o["uyumsuzluk"] = "pozitif"
+        elif o["fiyat20"] > 0.03 and o["obv_egim"] < -0.10: o["uyumsuzluk"] = "negatif"
+    # Özet skor
+    p = 0
+    if o.get("cmf") is not None: p += 1 if o["cmf"] > 0.05 else -1 if o["cmf"] < -0.05 else 0
+    if o["obv_egim"] is not None: p += 1 if o["obv_egim"] > 0.1 else -1 if o["obv_egim"] < -0.1 else 0
+    if o["hacim_oran_ud"] is not None: p += 1 if o["hacim_oran_ud"] > 1.25 else -1 if o["hacim_oran_ud"] < 0.8 else 0
+    if o["uyumsuzluk"] == "pozitif": p += 1
+    if o["uyumsuzluk"] == "negatif": p -= 1
+    o["puan"] = p
+    o["ozet"] = "GÜÇLÜ GİRİŞ" if p >= 3 else "GİRİŞ" if p >= 1 else "GÜÇLÜ ÇIKIŞ" if p <= -3 else "ÇIKIŞ" if p <= -1 else "NÖTR"
+    return o
+
+def akis_yorumlari(m):
+    a = m.get("akis") or {}; y = m.get("yabanci") or {}
+    c = []
+    if a:
+        if a.get("cmf") is not None:
+            c.append(f"Chaikin Para Akışı (20G) {ond(a['cmf'], 2)}: " +
+                     ("belirgin para girişi var." if a["cmf"] > 0.1 else "hafif para girişi." if a["cmf"] > 0.03 else
+                      "belirgin para çıkışı var." if a["cmf"] < -0.1 else "hafif para çıkışı." if a["cmf"] < -0.03 else "akış dengeli."))
+        if a.get("mfi") is not None:
+            c.append(f"Para Akış Endeksi (MFI) {ond(a['mfi'], 0)}" + (": aşırı alım bölgesi." if a["mfi"] > 80 else
+                     ": aşırı satım bölgesi, tepki alımı gelebilir." if a["mfi"] < 20 else "."))
+        if a.get("hacim_oran_ud") is not None:
+            c.append(f"Son 20 günde yükselen günlerin hacmi düşen günlerin {ond(a['hacim_oran_ud'], 1)} katı: " +
+                     ("alıcılar baskın." if a["hacim_oran_ud"] > 1.25 else "satıcılar baskın." if a["hacim_oran_ud"] < 0.8 else "denge var."))
+        if a.get("uyumsuzluk") == "pozitif":
+            c.append("Fiyat düşerken hacim bazlı akış (OBV) yükseliyor: pozitif uyumsuzluk, sessiz toplama işareti olabilir.")
+        elif a.get("uyumsuzluk") == "negatif":
+            c.append("Fiyat yükselirken OBV düşüyor: negatif uyumsuzluk, yükselişin hacimle desteklenmediğine işaret edebilir.")
+        for t, r_, x in a.get("patlamalar", [])[-3:]:
+            c.append(f"{t:%d.%m} tarihinde ortalamanın {ond(x, 1)} katı hacim, fiyat {yz(r_)} " + ("(alım baskısı)." if r_ > 0 else "(satış baskısı)."))
+    if y.get("oran") is not None:
+        t_ = f"Yabancı payı %{ond(y['oran'], 2)}"
+        degis = [(et, y.get(k_)) for et, k_ in (("1 günde", "d1"), ("1 haftada", "d5"), ("1 ayda", "d20")) if y.get(k_) is not None]
+        if degis:
+            t_ += "; değişim: " + ", ".join(f"{et} {'+' if dv >= 0 else ''}{ond(dv, 2)} puan" for et, dv in degis)
+            d20 = y.get("d20") if y.get("d20") is not None else y.get("d5")
+            if d20 is not None:
+                t_ += ". " + ("Yabancı yatırımcı girişi dikkat çekiyor." if d20 > 0.5 else
+                              "Yabancı yatırımcı çıkışı dikkat çekiyor." if d20 < -0.5 else "Yabancı payında belirgin değişim yok.")
+        else:
+            t_ += ". Değişim geçmişi sabah otomasyonuyla günlük olarak birikiyor."
+        c.append(t_)
+    return c
+
 def veri_cek(kod, hafif=False):
     import yfinance as yf
     kod = kod.upper().replace(".IS", "").strip()
@@ -217,6 +313,13 @@ def veri_cek(kod, hafif=False):
     except Exception:
         d["temettu"] = pd.Series(dtype=float)
     d["kaynak"], d["kaynak_hata"] = "Yahoo Finance", None
+    d["yabanci"] = None
+    if not hafif:
+        try:
+            import bist_isyatirim as ISY
+            d["yabanci"] = ISY.yabanci_orani(kod)
+        except Exception as ex:
+            d["yabanci_hata"] = str(ex)[:150]
     # 1) Ana kaynak: İş Yatırım (KAP finansalları, TL)
     try:
         import bist_isyatirim as ISY
@@ -488,6 +591,27 @@ def metrikler(d, endeks=None):
 
     # --- Fiyat, risk, teknik ---
     m.update(fiyat_analizi(h, endeks))
+    # --- Para akışı ve yabancı payı ---
+    try:
+        m["akis"] = para_akisi(h)
+    except Exception:
+        m["akis"] = None
+    gec = yabanci_gecmis(d["kod"])
+    oran = d.get("yabanci")
+    if oran is None and gec is not None:
+        oran = float(gec.iloc[-1])
+    yab = None
+    if oran is not None:
+        yab = {"oran": oran, "gecmis": gec}
+        if gec is not None and len(gec) > 1:
+            g_ = gec.copy()
+            if d.get("yabanci") is not None:
+                g_.loc[pd.Timestamp(dt.date.today())] = d["yabanci"]; g_ = g_[~g_.index.duplicated(keep="last")].sort_index()
+            for ad_, n in (("d1", 1), ("d5", 5), ("d20", 20)):
+                if len(g_) > n:
+                    yab[ad_] = float(g_.iloc[-1] - g_.iloc[-1 - n])
+            yab["gecmis"] = g_
+    m["yabanci"] = yab
     m["hedef_analist"] = sayi(info.get("targetMeanPrice"))
     m["hedef_yuksek"] = sayi(info.get("targetHighPrice")); m["hedef_dusuk"] = sayi(info.get("targetLowPrice"))
     m["analist_sayi"] = info.get("numberOfAnalystOpinions")
@@ -822,6 +946,8 @@ def saglik(m):
             ("1Y getiri – BIST 100 farkı", yz(rel("1Y")), puan(rel("1Y"), [-0.2, -0.05, 0.05, 0.2])),
             ("6A getiri – BIST 100 farkı", yz(rel("6A")), puan(rel("6A"), [-0.15, -0.05, 0.05, 0.15])),
             ("Fiyat / 200G ortalama", yz(buyume(m["fiyat"], m["ma200"])), puan(buyume(m["fiyat"], m["ma200"]), [-0.15, -0.05, 0.05, 0.15])),
+            ("Chaikin para akışı (20G)", ond((m.get("akis") or {}).get("cmf"), 2), puan((m.get("akis") or {}).get("cmf"), [-0.15, -0.05, 0.05, 0.15])),
+            ("Yabancı payı değişimi (1 ay, puan)", ond((m.get("yabanci") or {}).get("d20"), 2), puan((m.get("yabanci") or {}).get("d20"), [-1.5, -0.3, 0.3, 1.5])),
         ],
         "Göreli Değer": [
             ("F/K – emsal medyanına göre", kat(oran(m["fk"], es.get("fk"))), puan(oran(m["fk"], es.get("fk")), [0.6, 0.85, 1.15, 1.5], ters=True)),
@@ -896,6 +1022,14 @@ def ipuclari(m):
     if m["potansiyel"] is not None:
         if m["potansiyel"] > 0.15: g.append(f"Model bazlı adil değer mevcut fiyatın {yz(m['potansiyel'])} üzerinde.")
         elif m["potansiyel"] < -0.15: z.append(f"Model bazlı adil değer mevcut fiyatın {yz(-m['potansiyel'])} altında.")
+    a = m.get("akis") or {}
+    if a.get("ozet") in ("GÜÇLÜ GİRİŞ", "GİRİŞ"): g.append(f"Hacim bazlı para akışı pozitif ({a['ozet'].lower()}).")
+    if a.get("ozet") in ("GÜÇLÜ ÇIKIŞ", "ÇIKIŞ"): z.append(f"Hacim bazlı para akışı negatif ({a['ozet'].lower()}).")
+    if a.get("uyumsuzluk") == "pozitif": g.append("Fiyat-OBV pozitif uyumsuzluğu: düşüşe rağmen hacimli alım.")
+    if a.get("uyumsuzluk") == "negatif": z.append("Fiyat-OBV negatif uyumsuzluğu: yükseliş hacimle desteklenmiyor.")
+    yb = m.get("yabanci") or {}
+    if yb.get("d20") is not None and yb["d20"] > 1: g.append(f"Yabancı payı son 1 ayda {ond(yb['d20'], 2)} puan arttı.")
+    if yb.get("d20") is not None and yb["d20"] < -1: z.append(f"Yabancı payı son 1 ayda {ond(-yb['d20'], 2)} puan azaldı.")
     nav = m.get("nav")
     if nav and nav.get("iskonto") is not None:
         if nav["iskonto"] > nav["hedef_iskonto"] + 0.05:
@@ -1065,6 +1199,31 @@ def g_emsal(m, emsaller):
         a, b = np.polyfit(xs, ys, 1); xx = np.linspace(xs.min(), xs.max(), 10); ax.plot(xx, a * xx + b, ls="--", color=C["gri"], lw=0.9)
     ax.set_xlabel("ROE (%)"); ax.set_ylabel("PD/DD (x)"); ax.grid(alpha=0.2)
     ax.set_title("Emsal Konumlandırma: ROE vs PD/DD (regresyon çizgisinin altı = görece ucuz)", loc="left")
+    return _png(fig)
+
+def g_akis(h, m):
+    a = m.get("akis")
+    if not a: return None
+    k = h["Close"].dropna(); son = k.index[-1]; bas = son - pd.Timedelta(days=182)
+    yb = (m.get("yabanci") or {}).get("gecmis")
+    n = 3 if (yb is not None and len(yb) >= 5) else 2
+    fig, axs = plt.subplots(n, 1, figsize=(7.5, 1.55 * n + 0.4), sharex=True, gridspec_kw={"hspace": 0.12})
+    ky = k[k.index >= bas]; obv = a["obv"].reindex(ky.index)
+    ax = axs[0]; ax.plot(ky.index, ky, color=C["lac"], lw=1.2); ax.set_ylabel("Fiyat", fontsize=7)
+    a2 = ax.twinx(); a2.spines["right"].set_visible(True); a2.plot(ky.index, obv, color=C["tur"], lw=1); a2.set_ylabel("OBV", fontsize=7)
+    a2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: tl(x, 0))); a2.tick_params(labelsize=6)
+    ax.set_title("Son 6 Ay: Fiyat ve Hacim Dengesi (OBV), Para Akışı" + (" ve Yabancı Payı" if n == 3 else ""), loc="left")
+    ax.grid(alpha=0.2)
+    ax = axs[1]
+    if a.get("cmf_seri") is not None:
+        c = a["cmf_seri"].reindex(ky.index)
+        ax.bar(ky.index, c, color=[C["yesil"] if x >= 0 else C["kirmizi"] for x in c.fillna(0)], width=1.0)
+        ax.axhline(0, color=C["gri"], lw=0.6); ax.set_ylabel("CMF (20G)", fontsize=7)
+    ax.grid(alpha=0.2); ax.tick_params(labelsize=6)
+    if n == 3:
+        ax = axs[2]; yy = yb[yb.index >= bas]
+        ax.plot(yy.index, yy.values, color=C["mavi"], marker="o", ms=2, lw=1); ax.set_ylabel("Yabancı %", fontsize=7)
+        ax.grid(alpha=0.2); ax.tick_params(labelsize=6)
     return _png(fig)
 
 def g_temettu(m):
@@ -1354,7 +1513,35 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     E += [Spacer(1, 6), t, Spacer(1, 6), _img(g_goreli(d["hist"], endeks, m["kod"]), W, 2.6 / 7.5)]
 
     # ---------------- SAYFA 7: TEMETTÜ + METODOLOJİ ----------------
-    E.append(CondPageBreak(9 * cm)); E.append(Paragraph("6. Temettü Analizi", ST["h1"]))
+    E.append(CondPageBreak(10 * cm)); E.append(Paragraph("6. Para Akışı ve Yabancı Payı", ST["h1"]))
+    a = m.get("akis"); yb = m.get("yabanci")
+    if a or yb:
+        v = [["Gösterge", "Değer", "Yorum"]]
+        if a:
+            v += [["Para akışı görünümü", a["ozet"], "CMF, OBV eğimi, hacim dengesi ve uyumsuzluk birleşimi"],
+                  ["Chaikin Para Akışı (20G)", ond(a.get("cmf"), 2), ">0 giriş, <0 çıkış"],
+                  ["Para Akış Endeksi (MFI 14)", ond(a.get("mfi"), 0), ">80 aşırı alım, <20 aşırı satım"],
+                  ["OBV eğimi (20G / 60G)", f"{ond(a.get('obv_egim'), 2)} / {ond(a.get('obv_egim60'), 2)}", "Hacim ağırlıklı yön; pozitif = birikim"],
+                  ["Yükselen/düşen gün hacmi (20G)", kat(a.get("hacim_oran_ud")), ">1,25 alıcılar, <0,8 satıcılar baskın"],
+                  ["Fiyat değişimi (20G)", yz(a.get("fiyat20")), "Uyumsuzluk: " + ({"pozitif": "pozitif (toplama)", "negatif": "negatif (dağıtım)"}.get(a.get("uyumsuzluk")) or "yok")],
+                  ["Hacim patlaması (son 20G)", str(len(a.get("patlamalar", []))), "Ortalamanın 2 katını aşan günler"]]
+        if yb:
+            v += [["Yabancı payı", f"%{ond(yb['oran'], 2)}", "İş Yatırım şirket kartı (güncel)"],
+                  ["Yabancı payı değişimi 1G / 1H / 1A", " / ".join(ond(yb.get(x), 2) for x in ("d1", "d5", "d20")), "Puan; geçmiş günlük kayıtlardan"]]
+        E.append(tablo(v, [W * .33, W * .2, W * .47], hizala_sol=(0, 2), font=7.4))
+        yorum = akis_yorumlari(m)
+        if yorum:
+            E.append(Spacer(1, 4))
+            for x in yorum: E.append(Paragraph("• " + x, ST["madde"]))
+        ga = g_akis(d["hist"], m)
+        if ga:
+            n = 3 if (yb and yb.get("gecmis") is not None and len(yb["gecmis"]) >= 5) else 2
+            E += [Spacer(1, 4), _img(ga, W, (1.55 * n + 0.4) / 7.5)]
+        E.append(Paragraph("Not: Aracı kurum dağılımı ve takas verileri Borsa İstanbul lisansına tabi olduğu için kullanılmamıştır; "
+                           "para akışı fiyat-hacim verisinden, yabancı payı ise kamuya açık şirket kartından hesaplanır.", ST["kucuk"]))
+    else:
+        E.append(Paragraph("Para akışı hesaplanamadı (hacim verisi yetersiz).", ST["p"]))
+    E.append(CondPageBreak(9 * cm)); E.append(Paragraph("7. Temettü Analizi", ST["h1"]))
     gt = g_temettu(m)
     if gt:
         ty = m["temettu_yillik"]; yillar = [y for y in ty.index if ty[y] > 0]
@@ -1366,7 +1553,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         E += [Spacer(1, 6), _img(gt, W, 2.2 / 7.5)]
     else:
         E.append(Paragraph("Şirketin kayıtlı nakit temettü geçmişi bulunamadı.", ST["p"]))
-    E.append(CondPageBreak(8 * cm)); E.append(Paragraph("7. Metodoloji ve Önemli Uyarılar", ST["h1"]))
+    E.append(CondPageBreak(8 * cm)); E.append(Paragraph("8. Metodoloji ve Önemli Uyarılar", ST["h1"]))
     met = [
         f"<b>Veri:</b> Mali tablolar öncelikle İş Yatırım'ın KAP finansallarından derlediği tablolardan, alınamazsa Yahoo Finance'ten çekilir; fiyat, temettü ve analist verileri Yahoo Finance kaynaklıdır. Gecikme veya eksiklik olabilir. "
         "TMS 29 (enflasyon muhasebesi) kapsamında yeniden düzenlenen tablolar ile nominal tablolar arasında yıllar arası kıyaslama sapmaları olabilir.",
@@ -1461,7 +1648,8 @@ def grafikler(d, m, endeks):
                     ("degerleme", lambda: g_futbol(m)),
                     ("fiyat", lambda: g_fiyat(d["hist"], endeks, m["kod"])),
                     ("goreli", lambda: g_goreli(d["hist"], endeks, m["kod"])),
-                    ("finansal", lambda: g_finansal(m))):
+                    ("finansal", lambda: g_finansal(m)),
+                    ("akis", lambda: g_akis(d["hist"], m))):
         try:
             b = fn()
             if b: out[ad_] = b.getvalue()
@@ -1474,7 +1662,9 @@ def ozet_satir(m):
             "Potansiyel": m["potansiyel"], "Sağlık skoru": m["genel_skor"], "F/K": m["fk"], "PD/DD": m["pddd"],
             "ROE": m["roe"], "Temettü verimi": m["temettu_verim"], "1Y getiri": m["r"].get("1Y"),
             "Görüş": m["gorus"], "Teknik": m["teknik_ozet"], "Veri puanı": (m.get("veri") or {}).get("puan"),
-            "Kaynak": "İş Yatırım" if str(m.get("kaynak", "")).startswith("İş") else "Yahoo"}
+            "Kaynak": "İş Yatırım" if str(m.get("kaynak", "")).startswith("İş") else "Yahoo",
+            "Para akışı": (m.get("akis") or {}).get("ozet"), "Yabancı %": (m.get("yabanci") or {}).get("oran"),
+            "Yabancı Δ1A": (m.get("yabanci") or {}).get("d20")}
 
 def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None, **param):
     """Birden çok hisseyi tarar, özet tablo döndürür. Emsaller tarama içindeki aynı sektör hisseleridir."""

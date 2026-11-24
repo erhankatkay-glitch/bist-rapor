@@ -78,6 +78,8 @@ def analiz(kod, emsal, prm, gun, surum):
         "yontemler": [{"Yöntem": y[0], "Değer (TL)": y[1], "Ağırlık": y[4], "Dahil": "✓" if y[6] else "hariç", "Not": y[5]}
                       for y in m["yontemler"]],
         "saglik": m["saglik"],
+        "akis_ozet": (m.get("akis") or {}).get("ozet"), "akis_yorum": br.akis_yorumlari(m),
+        "yabanci": (m.get("yabanci") or {}).get("oran"),
     }
 
 
@@ -94,7 +96,7 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
         df[c] = df[c].apply(lambda x: None if x is None else round(x * 100, 1))
     df = df.sort_values(sirala, ascending=sirala in ("F/K", "PD/DD"), na_position="last")
     st.dataframe(df[["Kod", "Şirket", "Sağlık skoru", "Potansiyel", "Fiyat", "Adil değer", "F/K", "PD/DD", "ROE",
-                     "Temettü verimi", "1Y getiri", "Teknik", "Veri puanı"] + (["Kaynak"] if "Kaynak" in df else [])],
+                     "Temettü verimi", "1Y getiri", "Teknik"] + [c for c in ("Para akışı", "Yabancı %", "Yabancı Δ1A", "Veri puanı", "Kaynak") if c in df]],
                  hide_index=True, use_container_width=True,
                  column_config={
                      "Sağlık skoru": st.column_config.ProgressColumn("Skor", min_value=0, max_value=5, format="%.2f"),
@@ -106,6 +108,8 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                      "ROE": st.column_config.NumberColumn("ROE %", format="%.1f"),
                      "Temettü verimi": st.column_config.NumberColumn("Temettü %", format="%.1f"),
                      "1Y getiri": st.column_config.NumberColumn("1Y %", format="%.1f"),
+                     "Yabancı %": st.column_config.NumberColumn(format="%.2f"),
+                     "Yabancı Δ1A": st.column_config.NumberColumn("Yabancı Δ1A (puan)", format="%+.2f"),
                  })
 
 
@@ -143,7 +147,18 @@ with tab_r:
         if v:
             st.caption(f"Veri kalitesi {v.get('puan')}/100 · son finansal dönem "
                        f"{v['son_donem']:%d.%m.%Y}" if v.get("son_donem") is not None else f"Veri kalitesi {v.get('puan')}/100")
-        a1, a2, a3 = st.tabs(["Özet", "Grafikler", "Değerleme"])
+        a1, a4, a2, a3 = st.tabs(["Özet", "Para Akışı", "Grafikler", "Değerleme"])
+        with a4:
+            if r.get("akis_ozet"):
+                kart(st, "PARA AKIŞI GÖRÜNÜMÜ", r["akis_ozet"],
+                     f"Yabancı payı %{br.ond(r['yabanci'], 2)}" if r.get("yabanci") is not None else "",
+                     "#1E8E5A" if "GİRİŞ" in r["akis_ozet"] else "#C0392B" if "ÇIKIŞ" in r["akis_ozet"] else "#D9A21B")
+            for x in r.get("akis_yorum") or []:
+                st.markdown(f"- {x}")
+            if "akis" in r["grafik"]:
+                st.image(r["grafik"]["akis"], use_container_width=True)
+            st.caption("Takas ve aracı kurum dağılımı lisanslı veri olduğundan kullanılmaz; analiz fiyat-hacim verisi ve "
+                       "kamuya açık yabancı payına dayanır.")
         with a1:
             if r["guclu"]: st.markdown("**Güçlü yönler**\n" + "\n".join(f"- 🟢 {x}" for x in r["guclu"]))
             if r["zayif"]: st.markdown("**Dikkat edilmesi gerekenler**\n" + "\n".join(f"- 🔴 {x}" for x in r["zayif"]))
@@ -209,6 +224,8 @@ with tab_k:
             "F/K": lambda o: br.kat(o["F/K"]), "PD/DD": lambda o: br.kat(o["PD/DD"]), "ROE": lambda o: br.yz(o["ROE"]),
             "Temettü verimi": lambda o: br.yz(o["Temettü verimi"]), "1Y getiri": lambda o: br.yz(o["1Y getiri"]),
             "Görüş": lambda o: o["Görüş"], "Teknik": lambda o: o["Teknik"],
+            "Para akışı": lambda o: o.get("Para akışı") or "–",
+            "Yabancı payı": lambda o: f"%{br.ond(o.get('Yabancı %'), 2)}" if o.get("Yabancı %") is not None else "–",
         }
         tbl = pd.DataFrame({k: {ad_: f(r["ozet"]) for ad_, f in satir.items()} for k, r in S.items()})
         st.dataframe(tbl, use_container_width=True)
