@@ -28,8 +28,10 @@ jobs:
       - run: git clone -q --depth 1 --branch bulten "$GH_URL" onceki || mkdir -p onceki
       - name: Deneme mesajı gönder
         run: |
-          python tg.py dene | tee sonuc.txt
-          grep -q "Gönderildi: \[[0-9]" sonuc.txt || { echo "Mesaj gönderilemedi: token veya sohbet numarasını kontrol edin"; exit 1; }
+          mkdir -p cikti/telegram_test
+          python tg.py dene 2>&1 | sed -E 's/bot[0-9]+:[A-Za-z0-9_-]+/bot***/g' | tee cikti/telegram_test/sonuc.txt
+          python -c "import os;t=os.environ.get('TELEGRAM_TOKEN','');c=os.environ.get('TELEGRAM_CHAT_ID','');print('token uzunluk',len(t),'iki nokta',':' in t,'bosluk',t!=t.strip(),'| chat',len(c),'rakam',c.strip().lstrip('-').isdigit(),'bosluk',c!=c.strip())" | tee -a cikti/telegram_test/sonuc.txt
+          grep -q "Gönderildi: \[[0-9]" cikti/telegram_test/sonuc.txt || { echo "Mesaj gönderilemedi: token veya sohbet numarasını kontrol edin"; exit 1; }
       - name: Silme defterini kaydet
         if: always()
         run: python yayinla.py cikti "Telegram testi $(date -u +%FT%H%M)"
