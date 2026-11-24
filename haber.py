@@ -67,70 +67,74 @@ def _yon_enf(b):
 
 
 KURALLAR = [
-    ("TCMB faiz kararı", lambda b: var(b, "merkez bankası", "tcmb") and "faiz" in b and not var(b, "fed", "avrupa merkez", "ecb", "japonya"),
+    # (ad, koşul, yön, [(varlık, işaret, (olumlu durumda gerekçe, olumsuz durumda gerekçe))], önem)
+    ("TCMB faiz kararı",
+     lambda b: var(b, "merkez bankası", "tcmb", "ppk") and var(b, "politika faiz", "faiz kararı", "faizi yüzde", "faizi %", "faizleri yüzde", "ppk", "faiz indirim", "faiz artır")
+               and not var(b, "fed", "avrupa merkez", "ecb", "japonya", "kredi kartı", "mevduat", "konut kredisi", "zorunlu karşılık"),
      _yon_faiz,
-     [("XU100", 1, "faiz indirimi hisse senetlerinin iskontosunu düşürür, mevduattan borsaya geçişi destekler"),
-      ("XBANK", 1, "bankalarda fonlama maliyeti ve tahvil portföyü değerlemesi iyileşir"),
-      ("USDTRY", 1, "düşük faiz TL'nin getiri avantajını azaltır, kur yukarı baskılanır"),
-      ("GRAMALTIN", 1, "TL faizinin düşmesi ve kur artışı gram altını destekler")], 3),
+     [("XU100", 1, ("faiz indirimi hisselerin iskontosunu düşürür, mevduattan borsaya geçişi destekler", "faiz artışı mevduatı cazip kılar, hisse değerlemelerini baskılar")),
+      ("XBANK", 1, ("bankalarda fonlama maliyeti düşer, tahvil portföyü değer kazanır", "fonlama maliyeti artar, tahvil portföyünde değer kaybı")),
+      ("USDTRY", 1, ("düşük faiz TL'nin getiri avantajını azaltır, kur yukarı baskılanır", "yüksek faiz TL'yi cazip kılar, kur baskısı azalır")),
+      ("GRAMALTIN", 1, ("TL faizinin düşmesi ve kur artışı gram altını destekler", "TL'nin güçlenmesi gram altını baskılar"))], 3),
     ("Fed faiz kararı", lambda b: var(b, "fed ", "fed'", "fed,", "federal reserve", "powell") and "faiz" in b,
      _yon_faiz,
-     [("ALTIN", 1, "düşen dolar faizi faiz getirmeyen altının fırsat maliyetini azaltır"),
-      ("BTC/USDT", 1, "gevşek para politikası risk iştahını ve likiditeyi artırır"),
-      ("XU100", 1, "gelişmekte olan piyasalara sermaye girişi beklentisi"),
-      ("USDTRY", -1, "küresel dolar zayıflığı kur baskısını hafifletir")], 3),
+     [("ALTIN", 1, ("düşen dolar faizi altının fırsat maliyetini azaltır", "yükselen dolar faizi altının fırsat maliyetini artırır")),
+      ("BTC/USDT", 1, ("gevşek para politikası risk iştahını ve likiditeyi artırır", "sıkı para politikası likiditeyi daraltır")),
+      ("XU100", 1, ("gelişmekte olan piyasalara sermaye girişi beklentisi", "gelişmekte olan piyasalardan sermaye çıkışı riski")),
+      ("USDTRY", -1, ("küresel dolar zayıflığı kur baskısını hafifletir", "küresel dolar güçlenmesi kuru yukarı iter"))], 3),
     ("Türkiye enflasyon verisi", lambda b: var(b, "tüik", "türkiye'de enflasyon", "yıllık enflasyon", "aylık enflasyon") and "enflasyon" in b and not var(b, "abd", "amerika", "euro bölgesi"),
      _yon_enf,
-     [("XU100", 1, "düşük enflasyon faiz indirimi beklentisini güçlendirir"),
-      ("XBANK", 1, "faiz indirimi beklentisi bankaların tahvil portföyüne olumlu yansır"),
-      ("USDTRY", -1, "dezenflasyon TL varlıklarına güveni artırır")], 3),
+     [("XU100", 1, ("düşük enflasyon faiz indirimi beklentisini güçlendirir", "yüksek enflasyon faiz indirimlerini geciktirebilir")),
+      ("XBANK", 1, ("faiz indirimi beklentisi bankalara olumlu", "sıkı para politikasının uzaması bankaları baskılar")),
+      ("USDTRY", -1, ("dezenflasyon TL varlıklarına güveni artırır", "yüksek enflasyon TL'nin reel değerini aşındırır"))], 3),
     ("ABD enflasyon verisi", lambda b: var(b, "abd", "amerika") and var(b, "enflasyon", "tüfe", "cpi", "pce"),
      _yon_enf,
-     [("ALTIN", 1, "düşük enflasyon Fed'in faiz indirme olasılığını artırır"),
-      ("BTC/USDT", 1, "faiz indirimi beklentisi riskli varlıkları destekler"),
-      ("XU100", 1, "küresel risk iştahı artar")], 3),
+     [("ALTIN", 1, ("düşük enflasyon Fed'in faiz indirme olasılığını artırır", "yüksek enflasyon Fed'i sıkı tutar, altını baskılar")),
+      ("BTC/USDT", 1, ("faiz indirimi beklentisi riskli varlıkları destekler", "sıkı Fed beklentisi riskli varlıkları baskılar")),
+      ("XU100", 1, ("küresel risk iştahı artar", "küresel risk iştahı azalır"))], 3),
     ("ABD istihdam verisi", lambda b: var(b, "tarım dışı", "istihdam") and var(b, "abd", "amerika"),
      lambda b: 1 if var(b, "beklentinin altında", "zayıf", "geriledi", "azaldı") else -1 if var(b, "beklentinin üzerinde", "güçlü", "arttı") else 0,
-     [("ALTIN", 1, "zayıf istihdam faiz indirimi beklentisini artırır, doları zayıflatır"),
-      ("BTC/USDT", 1, "gevşeme beklentisi riskli varlıklara olumlu")], 2),
+     [("ALTIN", 1, ("zayıf istihdam faiz indirimi beklentisini artırır, doları zayıflatır", "güçlü istihdam faiz indirimlerini geciktirir")),
+      ("BTC/USDT", 1, ("gevşeme beklentisi riskli varlıklara olumlu", "sıkı para beklentisi riskli varlıklara olumsuz"))], 2),
     ("Kredi notu", lambda b: var(b, "kredi notu", "not görünümü") and var(b, "türkiye", "moody", "fitch", "s&p"),
      lambda b: 1 if var(b, "yükseltti", "pozitif", "artırdı", "yükseldi") else -1 if var(b, "düşürdü", "negatif", "indirdi") else 0,
-     [("XU100", 1, "not artışı yabancı yatırımcı girişini ve risk primi düşüşünü destekler"),
-      ("XBANK", 1, "bankaların dış borçlanma maliyeti düşer"),
-      ("USDTRY", -1, "ülke risk priminin (CDS) düşmesi TL'yi destekler")], 3),
+     [("XU100", 1, ("not artışı yabancı girişini ve risk primi düşüşünü destekler", "not indirimi yabancı çıkışı ve risk primi artışı getirir")),
+      ("XBANK", 1, ("bankaların dış borçlanma maliyeti düşer", "bankaların dış borçlanma maliyeti artar")),
+      ("USDTRY", -1, ("ülke risk priminin düşmesi TL'yi destekler", "ülke risk priminin artması TL'yi baskılar"))], 3),
     ("Petrol arz / fiyat gelişmesi", lambda b: var(b, "petrol", "brent", "opec"),
      lambda b: 1 if var(b, "kesinti", "yükseldi", "sert yükseliş", "arz endişe", "üretimi azalt") else -1 if var(b, "düştü", "geriledi", "üretimi artır", "arz fazlası") else 0,
-     [("BRENT", 1, "arz/fiyat haberinin doğrudan etkisi"),
-      ("TUPRS", 1, "rafineri marjları ve stok kazancı petrol fiyatıyla birlikte hareket eder"),
-      ("THYAO", -1, "yakıt, havayolu maliyetlerinin en büyük kalemlerinden"),
-      ("PGSUS", -1, "yakıt maliyeti artışı kârlılığı baskılar"),
-      ("USDTRY", 1, "enerji ithalatçısı Türkiye'nin cari açığı petrol fiyatıyla büyür")], 2),
-    ("Jeopolitik gerilim", lambda b: var(b, "savaş", "saldırı", "füze", "çatışma", "işgal", "bombal", "gerilim tırman", "ateşkes", "barış anlaşması"),
+     [("BRENT", 1, ("arz daralması / fiyat artışı", "arz artışı / fiyat düşüşü")),
+      ("TUPRS", 1, ("rafineri marjları ve stok kazancı artar", "stok zararı ve marj baskısı")),
+      ("THYAO", -1, ("yakıt maliyeti artar", "yakıt maliyeti düşer")),
+      ("PGSUS", -1, ("yakıt maliyeti kârlılığı baskılar", "yakıt maliyeti kârlılığı destekler")),
+      ("USDTRY", 1, ("enerji ithalatçısı Türkiye'nin cari açığı büyür", "enerji faturası ve cari açık hafifler"))], 2),
+    ("Jeopolitik gelişme", lambda b: var(b, "savaş", "saldırı", "füze", "çatışma", "işgal", "bombal", "gerilim tırman", "ateşkes", "barış anlaşması") and not var(b, "kripto", "borsası saldır", "siber"),
      lambda b: 1 if var(b, "ateşkes", "barış", "anlaşma sağlandı", "gerilim azal") else -1,
-     [("ALTIN", -1, "güvenli liman talebi (gerilimde yükselir)"),
-      ("BRENT", -1, "arz kesintisi riski primi (gerilimde yükselir)"),
-      ("XU100", 1, "risk iştahı (gerilimde düşer)"),
-      ("BTC/USDT", 1, "riskli varlıklardan kaçış (gerilimde düşer)")], 3),
-    ("Kripto ETF / kurumsal talep", lambda b: var(b, "etf", "rezerv", "kurumsal alım", "strateji bitcoin", "microstrategy", "blackrock") and var(b, "bitcoin", "kripto", "ethereum", "btc", "eth"),
+     [("ALTIN", -1, ("güvenli liman talebi azalır", "güvenli liman talebi artar")),
+      ("BRENT", -1, ("arz kesintisi risk primi azalır", "arz kesintisi risk primi artar")),
+      ("XU100", 1, ("risk iştahı geri döner", "riskten kaçış, yabancı satışı")),
+      ("BTC/USDT", 1, ("risk iştahı geri döner", "riskli varlıklardan kaçış"))], 3),
+    ("Kripto ETF / kurumsal akış", lambda b: var(b, "etf", "rezerv", "kurumsal alım", "microstrategy", "blackrock") and var(b, "bitcoin", "kripto", "ethereum", "btc", "eth"),
      lambda b: -1 if var(b, "red", "reddetti", "çıkış", "satış", "erteledi") else 1,
-     [("BTC/USDT", 1, "kurumsal talep ve fon girişi"), ("ETH/USDT", 1, "piyasa geneline yayılan talep")], 2),
+     [("BTC/USDT", 1, ("kurumsal talep ve fon girişi", "fon çıkışı ve kurumsal satış baskısı")),
+      ("ETH/USDT", 1, ("piyasa geneline yayılan talep", "piyasa geneline yayılan satış baskısı"))], 2),
     ("Kripto güvenlik / düzenleme riski", lambda b: var(b, "hack", "saldırıya uğra", "çalındı", "sec dava", "yasakla", "soruşturma", "iflas") and var(b, "kripto", "bitcoin", "borsa", "coin", "token", "ethereum", "binance"),
      lambda b: -1,
-     [("BTC/USDT", 1, "güven kaybı ve olası zorunlu satışlar"), ("ETH/USDT", 1, "piyasa geneline yayılan risk algısı")], 2),
-    ("Dolar/TL hareketi", lambda b: var(b, "dolar", "kur") and var(b, "tl", "türk lirası") and var(b, "rekor", "sert", "yükseldi", "geriledi", "düştü"),
-     lambda b: -1 if var(b, "rekor", "yükseldi", "sert yükseliş") else 1 if var(b, "geriledi", "düştü") else 0,
-     [("USDTRY", -1, "kurun yönü (TL değer kaybında yükselir)"),
-      ("GRAMALTIN", -1, "kur artışı gram altını doğrudan yükseltir"),
-      ("FROTO", -1, "ihracatçılar kur artışından gelir tarafında fayda görür"),
-      ("XBANK", 1, "kur oynaklığı bankalarda risk algısını artırır")], 2),
+     [("BTC/USDT", 1, ("", "güven kaybı ve olası zorunlu satışlar")), ("ETH/USDT", 1, ("", "piyasa geneline yayılan risk algısı"))], 2),
+    ("Dolar/TL hareketi", lambda b: var(b, "dolar/tl", "dolar kuru", "dolar/türk", "usd/try", "türk lirası", "dolar tl", "dolar rekor") and var(b, "rekor", "sert", "yükseldi", "geriledi", "düştü", "değer kaybı", "değer kazan"),
+     lambda b: -1 if var(b, "rekor", "yükseldi", "sert yükseliş", "değer kaybı") else 1 if var(b, "geriledi", "düştü", "değer kazan") else 0,
+     [("USDTRY", -1, ("TL değer kazanıyor, kur geriliyor", "TL değer kaybediyor, kur yükseliyor")),
+      ("GRAMALTIN", -1, ("kurun gerilemesi gram altını baskılar", "kur artışı gram altını doğrudan yükseltir")),
+      ("FROTO", -1, ("güçlü TL ihracatçıların TL gelirini azaltır", "ihracatçılar kur artışından gelir tarafında fayda görür")),
+      ("XBANK", 1, ("kur istikrarı bankalarda risk algısını azaltır", "kur oynaklığı bankalarda risk algısını artırır"))], 2),
 ]
 
 
 GRUP_KURAL = {"makro_tr": ("TCMB faiz kararı", "Türkiye enflasyon verisi", "Kredi notu", "Dolar/TL hareketi", "Fed faiz kararı"),
               "makro_global": ("Fed faiz kararı", "ABD enflasyon verisi", "ABD istihdam verisi"),
-              "emtia": ("Petrol arz / fiyat gelişmesi", "Jeopolitik gerilim"),
-              "jeopolitik": ("Jeopolitik gerilim", "Petrol arz / fiyat gelişmesi"),
-              "kripto": ("Kripto güvenlik / düzenleme riski", "Kripto ETF / kurumsal talep", "Fed faiz kararı")}
+              "emtia": ("Petrol arz / fiyat gelişmesi", "Jeopolitik gelişme"),
+              "jeopolitik": ("Jeopolitik gelişme", "Petrol arz / fiyat gelişmesi"),
+              "kripto": ("Kripto güvenlik / düzenleme riski", "Kripto ETF / kurumsal akış", "Fed faiz kararı")}
 
 
 def sinifla(baslik, grup=None):
@@ -142,7 +146,7 @@ def sinifla(baslik, grup=None):
             if kosul(b):
                 y = yon_fn(b)
                 if y == 0: return None
-                return {"tur": ad, "yon": y, "etki": [(v, y * s, g) for v, s, g in etki], "onem": onem}
+                return {"tur": ad, "yon": y, "etki": [(v, y * s_, (g[0] if y > 0 else g[1]) if isinstance(g, tuple) else g) for v, s_, g in etki], "onem": onem}
         except Exception:
             continue
     return None
@@ -332,6 +336,8 @@ def calistir():
     kok_eski = os.path.join(KLON, "haber"); kok = os.path.join(CIKTI, "haber"); os.makedirs(kok, exist_ok=True)
     gorulen = oku(os.path.join(kok_eski, "gorulen.json"), {})
     son = oku(os.path.join(kok_eski, "son.json"), [])
+    # kurallar sıkılaştıkça eski hatalı sınıflamaları listeden düş
+    son = [a for a in son if a["tur"].startswith("Şirket") or (sinifla(a["baslik"]) or {}).get("tur") == a["tur"]]
     olaylar = oku(os.path.join(kok_eski, "olaylar.json"), [])
     tk = oku(os.path.join(kok_eski, "takvim.json"), {})
     simdi = dt.datetime.now(UTC)
