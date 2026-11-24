@@ -23,6 +23,7 @@ SP500 %1.8
 SP500 FORMASYON
 NASDAQ %2.2
 DXY %0.8
+NASDAQ FORMASYON
 US10Y %3
 VIX > 25
 # BIST'in ağır topları (endeksi en çok taşıyan hisseler): sert hareket + KAP
@@ -50,6 +51,16 @@ SAHOL KAP
 EREGL KAP
 TCELL KAP
 ENKAI KAP
+# ABD devleri (endeksleri sürükleyen hisseler)
+NVDA.US %5
+NVDA.US FORMASYON
+AAPL.US %4
+MSFT.US %4
+AMZN.US %5
+GOOGL.US %5
+META.US %5
+TSLA.US %7
+AVGO.US %6
 # Emtia
 ALTIN %2
 ALTIN FORMASYON

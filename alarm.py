@@ -49,6 +49,9 @@ def kurallar(metin):
 
 def _ad(kod):
     import bist_teknik as T
+    if kod.endswith(".US"):
+        import bist_abd as AB
+        return f"{kod[:-3]} ({AB.ad(kod)})"
     return f"{kod} ({T.KURESEL[kod][1]})" if kod in T.KURESEL else {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka"}.get(kod, kod)
 
 
@@ -95,7 +98,7 @@ def tara(K, durum):
                         if s:
                             import bist_varlik as V
                             hedefler.append({"tip": "formasyon", "kod": s, "metin": f"{s} FORMASYON (otomatik)"})
-                            if not _kripto(s) and s not in V.VARLIKLAR: hedefler.append({"tip": "kap", "kod": s, "metin": f"{s} KAP (otomatik)"})
+                            if not _kripto(s) and s not in V.VARLIKLAR and not s.endswith(".US"): hedefler.append({"tip": "kap", "kod": s, "metin": f"{s} KAP (otomatik)"})
         else:
             hedefler.append(k)
     tekil = {}
@@ -134,7 +137,7 @@ def tara(K, durum):
                         yeni[a2] = True
             elif k["tip"] == "kap":
                 import bist_borsa as BB, bist_veri as bv, bist_varlik as V
-                if _kripto(k["kod"]) or k["kod"] in V.VARLIKLAR: continue
+                if _kripto(k["kod"]) or k["kod"] in V.VARLIKLAR or k["kod"].endswith(".US"): continue
                 for x in BB.kap_haberleri(k["kod"], bv.sirket_adi(k["kod"]), gun=3, adet=6):
                     a2 = f"{k['kod']}|KAP|{x['baslik'][:80]}"
                     konu_gun = f"{k['kod']}|KAPKONU|{x['konu']}|{bugun}"   # aynı konuda günde tek bildirim
@@ -163,7 +166,7 @@ def gonder(mesajlar):
     if not b.aktif: return False
     z = dt.datetime.now(TSI).strftime("%Y%m%d%H%M")
     for i in range(0, len(mesajlar), 20):
-        b.mesaj("🔔 <b>Alarm</b>\n" + "\n".join(tg_kac(m) for m in mesajlar[i:i + 20]) + "\n\n<i>Model çıktısıdır, yatırım tavsiyesi değildir.</i>",
+        b.mesaj("🔔 <b>Alarm</b>\n" + "\n".join(tg_kac(m) for m in mesajlar[i:i + 20]),
                 f"alarm:{z}:{i}", 12, yerine=False)
     b.kaydet()
     return True

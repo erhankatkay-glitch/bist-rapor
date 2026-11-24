@@ -38,6 +38,9 @@ def yahoo_sembol(kod):
     """BIST kodu / emtia / kripto için Yahoo sembolü ve türü."""
     import bist_varlik as V, bist_kripto as KR
     k = kod.upper().strip()
+    if k.endswith(".US"):
+        import bist_abd as AB
+        return AB.yahoo(k), "abd"
     if KR.kripto_mu(k):
         return f"{KR.coz(k)[0]}-USD", "kripto"
     if k in V.VARLIKLAR:
@@ -372,16 +375,27 @@ def salinimlar(h, G, esik_atr=1.5):
 # =====================================================================
 # DESTEK / DİRENÇ, FİBONACCİ, PİVOT NOKTALARI
 # =====================================================================
-def destek_direnc(h, G, piv, n_max=3):
-    c = float(h["Close"].iloc[-1]); at = _son(G["ATR"]) or c * 0.02; tol = 0.6 * at
-    seviye = sorted(p for _, p, _ in piv[:-1])
-    kume = []
-    for p in seviye:
-        if kume and abs(p - kume[-1][-1]) <= tol: kume[-1].append(p)
-        else: kume.append([p])
-    lv = [(float(np.mean(k)), len(k)) for k in kume]
-    dest = sorted([x for x in lv if x[0] < c * 0.998], key=lambda x: -x[0])[:n_max]
-    dir_ = sorted([x for x in lv if x[0] > c * 1.002], key=lambda x: x[0])[:n_max]
+def destek_direnc(h, G, piv, n_max=3, pencere=400):
+    """Güncel fiyata göre en yakın destek ve dirençler: [(seviye, güç)].
+    Adaylar: son `pencere` mumdaki onaylı salınım tepe/dipleri + son 20 ve 60 mumun en yüksek/en düşüğü.
+    Birbirine 0,5 ATR'den yakın adaylar tek seviyede birleşir (küme ortalamasına göre; zincirleme büyüme yok).
+    Güç = temas sayısı; yakın zamanda oluşan seviyeler önce gelir. Fiyata 0,25 ATR'den yakın seviyeler atlanır."""
+    c = float(h["Close"].iloc[-1]); at = _son(G["ATR"]) or c * 0.02; tol = 0.5 * at; n = len(h)
+    aday = [(float(p), i) for i, p, _ in piv[:-1] if i >= n - pencere]
+    for k in (20, 60):
+        if n > k:
+            w = h.iloc[-k:]
+            aday.append((float(w["High"].max()), n - k + int(w["High"].values.argmax())))
+            aday.append((float(w["Low"].min()), n - k + int(w["Low"].values.argmin())))
+    kume = []   # [toplam, adet, son_indeks]
+    for p, i in sorted(aday):
+        if kume and abs(p - kume[-1][0] / kume[-1][1]) <= tol:
+            kume[-1][0] += p; kume[-1][1] += 1; kume[-1][2] = max(kume[-1][2], i)
+        else:
+            kume.append([p, 1, i])
+    lv = [(k[0] / k[1], k[1]) for k in kume]
+    dest = sorted([x for x in lv if x[0] < c - 0.25 * at], key=lambda x: -x[0])[:n_max]
+    dir_ = sorted([x for x in lv if x[0] > c + 0.25 * at], key=lambda x: x[0])[:n_max]
     return {"destek": dest, "direnc": dir_}
 
 
@@ -809,7 +823,8 @@ def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A"), kisa_vade=False):
         ad = V.VARLIKLAR[baz][1] if baz in V.VARLIKLAR else KR.ESKI.get(baz, baz)
         ad = f"{ad} ({baz}/{par}{', ' + h.attrs['borsa'] if h.attrs.get('borsa') else ''})"
     else:
-        ad = V.VARLIKLAR[kod][1] if kod in V.VARLIKLAR else KURESEL[kod][1] if kod in KURESEL else \
+        import bist_abd as AB
+        ad = V.VARLIKLAR[kod][1] if kod in V.VARLIKLAR else KURESEL[kod][1] if kod in KURESEL else AB.ad(kod) if tur == "abd" else \
             {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka", "XHOLD": "BIST Holding"}.get(kod, bv.sirket_adi(kod))
     sonuc = {"kod": kod, "ad": ad, "tur": tur, "para": para_k or ("₺" if tur == "hisse" or kod == "GRAMALTIN" else "" if tur == "endeks" else "$"),
              "tf": {}, "fiyat_zamani": h.index[-1]}

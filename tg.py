@@ -15,6 +15,7 @@ Ortam değişkenleri: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, DURUM_KLON (bulten dalı
 import os, sys, json, glob, re, time, datetime as dt
 
 MAKS_SAAT = 46.5
+NOT = "⚠️ <b><i>Gösterge bazlı analizdir, yatırım tavsiyesi değildir.</i></b>"
 KLON = os.environ.get("DURUM_KLON", "onceki")
 CIKTI = os.environ.get("DURUM_CIKTI", "cikti")
 UTC = dt.timezone.utc
@@ -90,8 +91,10 @@ class Bot:
                                 "sil": (t + dt.timedelta(hours=omur)).isoformat(), "bag": list(bag or [])})
 
     # ---------------------------------------------------------------- gönderim
-    def mesaj(self, metin, anahtar, omur_saat, bag=None, yerine=True):
-        """HTML metin; gerekirse birden çok parçaya bölünür. yerine=True: aynı anahtarlı eski mesajlar silinir."""
+    def mesaj(self, metin, anahtar, omur_saat, bag=None, yerine=True, notlu=True):
+        """HTML metin; gerekirse birden çok parçaya bölünür. yerine=True: aynı anahtarlı eski mesajlar silinir.
+        notlu=True: sona uyarı notu eklenir."""
+        if notlu: metin = metin.rstrip() + "\n\n" + NOT
         if not self.aktif:
             print(f"[Telegram kapalı] {anahtar}:\n{re.sub('<[^>]+>', '', metin)[:1500]}\n"); return []
         ids = []
@@ -212,5 +215,5 @@ if __name__ == "__main__":
         temizle()
     elif len(sys.argv) > 1 and sys.argv[1] == "dene":
         b = Bot("deneme")
-        ids = b.mesaj("✅ <b>Bağlantı testi</b>\nBu mesaj sessiz gönderildi ve 1 saat sonra otomatik silinecek.", "deneme", 1)
+        ids = b.mesaj("✅ <b>Bağlantı testi</b>\nBu mesaj sessiz gönderildi ve 1 saat sonra otomatik silinecek.", "deneme", 1, notlu=False)
         print("Gönderildi:", ids); b.kaydet()

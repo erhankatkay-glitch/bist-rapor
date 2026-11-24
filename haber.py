@@ -35,10 +35,22 @@ def yz(x):
     return ("%" + f"{x * 100:+.1f}").replace(".", ",").replace("%+", "+%").replace("%-", "−%")
 
 
-VARLIK_AD = {"XU100": "BIST 100", "XBANK": "BIST Banka", "USDTRY": "Dolar/TL", "ALTIN": "Altın (ons)", "GRAMALTIN": "Gram altın",
+VARLIK_AD = {"NASDAQ": "Nasdaq", "SP500": "S&P 500", "XU100": "BIST 100", "XBANK": "BIST Banka", "USDTRY": "Dolar/TL", "ALTIN": "Altın (ons)", "GRAMALTIN": "Gram altın",
              "BRENT": "Brent petrol", "BTC/USDT": "Bitcoin", "ETH/USDT": "Ethereum", "GUMUS": "Gümüş", "THYAO": "THY", "PGSUS": "Pegasus",
              "TUPRS": "Tüpraş", "FROTO": "Ford Otosan", "TOASO": "Tofaş", "ARCLK": "Arçelik", "XHOLD": "BIST Holding"}
-YAHOO = {"XU100": "XU100.IS", "XBANK": "XBANK.IS", "XHOLD": "XHOLD.IS", "USDTRY": "TRY=X", "ALTIN": "GC=F", "BRENT": "BZ=F", "GUMUS": "SI=F"}
+YAHOO = {"NASDAQ": "^IXIC", "SP500": "^GSPC", "XU100": "XU100.IS", "XBANK": "XBANK.IS", "XHOLD": "XHOLD.IS", "USDTRY": "TRY=X", "ALTIN": "GC=F", "BRENT": "BZ=F", "GUMUS": "SI=F"}
+
+def ysem(kod):
+    if kod.endswith(".US"): return kod[:-3].replace(".", "-")
+    return YAHOO.get(kod, kod + ".IS")
+
+
+def vad(kod):
+    if kod.endswith(".US"):
+        import bist_abd as AB
+        return f"{kod[:-3]} ({AB.ad(kod)})"
+    return VARLIK_AD.get(kod, kod)
+
 
 # ---------------------------------------------------------------------------------- sorgular
 SORGULAR = [
@@ -50,7 +62,32 @@ SORGULAR = [
     ("kripto", "Bitcoin ETF"), ("kripto", "kripto borsa hack"), ("kripto", "SEC kripto"), ("kripto", "Bitcoin rezerv"),
     ("sirket", "KAP bildirimi sipariş"), ("sirket", "KAP bedelsiz sermaye artırımı"), ("sirket", "KAP temettü kararı"),
     ("sirket", "KAP pay geri alım"), ("sirket", "SPK ceza işlem yasağı"), ("sirket", "KAP yeni iş ilişkisi"),
+    ("abd", "bilanço beklentileri aştı hisse"), ("abd", "bilanço beklentilerin altında hisse"), ("abd", "Nvidia bilanço"),
+    ("abd", "Wall Street hisse sert düştü"), ("abd", "Wall Street hisse rekor yükseldi"),
 ]
+ABD_AD = {"nvidia": "NVDA.US", "apple": "AAPL.US", "microsoft": "MSFT.US", "amazon": "AMZN.US", "alphabet": "GOOGL.US", "google": "GOOGL.US",
+          "meta": "META.US", "facebook": "META.US", "tesla": "TSLA.US", "broadcom": "AVGO.US", "netflix": "NFLX.US", "amd": "AMD.US",
+          "palantir": "PLTR.US", "coinbase": "COIN.US", "microstrategy": "MSTR.US", "oracle": "ORCL.US", "jpmorgan": "JPM.US",
+          "berkshire": "BRK.B.US", "intel": "INTC.US", "salesforce": "CRM.US", "walmart": "WMT.US", "boeing": "BA.US",
+          "eli lilly": "LLY.US", "tsmc": "TSM.US", "micron": "MU.US", "adobe": "ADBE.US", "qualcomm": "QCOM.US"}
+
+
+def abd_sinifla(baslik):
+    b = kk(baslik)
+    hisseler = list(dict.fromkeys(k for ad, k in ABD_AD.items() if re.search(rf"(^|\W){re.escape(ad)}", b)))[:2]
+    if not hisseler: return None
+    if var(b, "beklentileri aştı", "beklentilerin üzerinde", "rekor gelir", "rekor kâr", "güçlü bilanço", "tahminleri aştı", "yükseltti", "sert yükseldi", "rekor kırdı"):
+        y = 1
+    elif var(b, "beklentilerin altında", "hayal kırıklığı", "tahminlerin altında", "zayıf bilanço", "sert düştü", "çakıldı", "düşürdü", "soruşturma", "dava"):
+        y = -1
+    else:
+        return None
+    bil = var(b, "bilanço", "gelir", "kâr", "kar ", "çeyrek")
+    gerekce = ("bilanço beklentileri aştı; kazanç tahminleri yukarı revize edilebilir" if y > 0 else "bilanço beklentilerin altında; tahminler aşağı revize edilebilir") if bil \
+        else ("hisseye yönelik olumlu gelişme" if y > 0 else "hisseye yönelik olumsuz gelişme")
+    etki = [(h, y, gerekce) for h in hisseler]
+    etki.append(("NASDAQ", y, "endeksteki ağırlığı yüksek dev şirket; endeksi aynı yönde etkiler"))
+    return {"tur": "ABD şirket haberi" if not bil else "ABD bilançosu", "yon": y, "etki": etki, "onem": 2}
 
 # ---------------------------------------------------------------------------------- sınıflandırma kuralları
 # Her kural: (ad, koşul(b) -> bool, yön(b) -> +1/-1/0, etki listesi [(varlık, işaret, gerekçe)], önem 1-3)
@@ -115,7 +152,8 @@ KURALLAR = [
       ("XU100", 1, ("risk iştahı geri döner", "riskten kaçış, yabancı satışı")),
       ("BTC/USDT", 1, ("risk iştahı geri döner", "riskli varlıklardan kaçış"))], 3),
     ("Kripto ETF / kurumsal akış", lambda b: var(b, "etf", "rezerv", "kurumsal alım", "microstrategy", "blackrock") and var(b, "bitcoin", "kripto", "ethereum", "btc", "eth"),
-     lambda b: -1 if var(b, "red", "reddetti", "çıkış", "satış", "erteledi") else 1,
+     lambda b: -1 if var(b, "reddetti", "reddedildi", "çıkış", "çıktı", "satış", "sattı", "erteledi", "düştü", "geriledi", "kaçış") else
+               1 if var(b, "giriş", "onay", "aldı", "alım", "rekor talep", "yükseldi") else 0,
      [("BTC/USDT", 1, ("kurumsal talep ve fon girişi", "fon çıkışı ve kurumsal satış baskısı")),
       ("ETH/USDT", 1, ("piyasa geneline yayılan talep", "piyasa geneline yayılan satış baskısı"))], 2),
     ("Kripto güvenlik / düzenleme riski", lambda b: var(b, "hack", "saldırıya uğra", "çalındı", "sec dava", "yasakla", "soruşturma", "iflas") and var(b, "kripto", "bitcoin", "borsa", "coin", "token", "ethereum", "binance"),
@@ -215,7 +253,7 @@ def saatlik(kod):
                 f = f["Close"].reindex(g.index, method="ffill")
                 h = g[["Open", "High", "Low", "Close"]].mul(f, axis=0) / 31.1035; h["Volume"] = 0.0
             else:
-                h = yf.Ticker(YAHOO.get(kod, kod + ".IS")).history(period="5d", interval="60m")
+                h = yf.Ticker(ysem(kod)).history(period="5d", interval="60m")
             h.index = h.index.tz_convert(UTC)
             h = h[["Open", "High", "Low", "Close", "Volume"]].dropna(subset=["Close"])
     except Exception as ex:
@@ -240,17 +278,24 @@ def tepki(kod, t0):
     return {"degisim": p1 / p0 - 1, "hacim_k": vk, "p0": p0, "p1": p1, "oyn": oyn, "saat": len(sonra)}
 
 
+_TEK = {}
+
+
 def teknik_ozet(kod):
-    """Son kapanış bülteninden teknik puan, etiket, destek/direnç."""
-    pz = "kripto" if "/" in kod else "emtia" if kod in ("ALTIN", "GRAMALTIN", "BRENT", "GUMUS") else "bist"
+    """Güncel fiyat üzerinden canlı teknik özet: fiyat, günlük teknik görünüm, en yakın destek ve direnç."""
+    if kod in _TEK: return _TEK[kod]
+    o = None
     try:
-        df = pd.read_csv(os.path.join(KLON, pz, "ozet.csv"))
-        r = df[df["Kod"] == kod]
-        if not len(r): return None
-        r = r.iloc[0]
-        return {"puan": r.get("Teknik puan"), "etiket": r.get("Genel"), "destek": r.get("Destek"), "direnc": r.get("Direnç")}
-    except Exception:
-        return None
+        import bist_teknik as T
+        k = {"USDTRY": "USDTRY", "NASDAQ": "NASDAQ", "SP500": "SP500"}.get(kod, kod)
+        s_ = T.analiz(k, tfler=("G",)); g = s_["tf"]["G"]
+        o = {"fiyat": g["fiyat"], "etiket": g["etiket"], "puan": g["puan"],
+             "destek": g["sr"]["destek"][0][0] if g["sr"]["destek"] else None,
+             "direnc": g["sr"]["direnc"][0][0] if g["sr"]["direnc"] else None}
+    except Exception as ex:
+        print("teknik özet alınamadı:", kod, ex, file=sys.stderr)
+    _TEK[kod] = o
+    return o
 
 
 # ---------------------------------------------------------------------------------- olay çalışması (zamanla biriken)
@@ -282,7 +327,7 @@ def gunluk(kod):
         h = KR.saatlik_mumlar(kod.split("/")[0], "USDT", "Binance", bar=1000)[0]; h.index = h.index.tz_localize(UTC)
     else:
         import yfinance as yf
-        h = yf.Ticker(YAHOO.get(kod, kod + ".IS") if kod != "GRAMALTIN" else "GC=F").history(period="60d", interval="60m")
+        h = yf.Ticker(ysem(kod) if kod != "GRAMALTIN" else "GC=F").history(period="60d", interval="60m")
         h.index = h.index.tz_convert(UTC)
     _GUN[kod] = h
     return h
@@ -337,7 +382,7 @@ def calistir():
     gorulen = oku(os.path.join(kok_eski, "gorulen.json"), {})
     son = oku(os.path.join(kok_eski, "son.json"), [])
     # kurallar sıkılaştıkça eski hatalı sınıflamaları listeden düş
-    son = [a for a in son if a["tur"].startswith("Şirket") or (sinifla(a["baslik"]) or {}).get("tur") == a["tur"]]
+    son = [a for a in son if a["tur"].startswith(("Şirket", "ABD")) or (sinifla(a["baslik"]) or {}).get("tur") == a["tur"]]
     olaylar = oku(os.path.join(kok_eski, "olaylar.json"), [])
     tk = oku(os.path.join(kok_eski, "takvim.json"), {})
     simdi = dt.datetime.now(UTC)
@@ -352,7 +397,7 @@ def calistir():
             anahtar = hashlib.md5(kk(re.sub(r"\W+", " ", x["baslik"]))[:90].encode()).hexdigest()[:16]
             if anahtar in gorulen: continue
             gorulen[anahtar] = simdi.isoformat()
-            s = sirket_sinifla(x["baslik"], sozluk) if grup == "sirket" else sinifla(x["baslik"], grup)
+            s = sirket_sinifla(x["baslik"], sozluk) if grup == "sirket" else abd_sinifla(x["baslik"]) if grup == "abd" else sinifla(x["baslik"], grup)
             if s: aday.append({**x, **s, "anahtar": anahtar})
         time.sleep(0.5)
     # aynı tür + aynı yön + aynı varlıklar: tek olay, kaynak sayısı artar
@@ -363,7 +408,7 @@ def calistir():
         else: birlesik[k] = {**x, "kaynak_sayi": 1}
     # son 6 saatte aynı tür/yön zaten gönderildiyse tekrar etme
     yakin = {(o["tur"], o["yon"]) for o in son if simdi - dt.datetime.fromisoformat(o["zaman"]) < dt.timedelta(hours=6)}
-    olaylar_yeni = [x for k, x in birlesik.items() if (x["tur"], x["yon"]) not in yakin or x["tur"].startswith("Şirket")]
+    olaylar_yeni = [x for k, x in birlesik.items() if (x["tur"], x["yon"]) not in yakin or x["tur"].startswith(("Şirket", "ABD"))]
     olaylar_yeni.sort(key=lambda x: (-x["onem"], -x["kaynak_sayi"]))
     analizler = []
     for x in olaylar_yeni[:MAKS_MESAJ]:
@@ -412,7 +457,7 @@ def mesaj(a):
          (f" (+{a['kaynak_sayi'] - 1} kaynak daha)" if a["kaynak_sayi"] > 1 else "")]
     for v in a["varliklar"]:
         ok = "↑" if v["isaret"] > 0 else "↓"
-        satir = f"{ok} <b>{esc(VARLIK_AD.get(v['kod'], v['kod']))}</b>: {esc(v['gerekce'])}."
+        satir = f"{ok} <b>{esc(vad(v['kod']))}</b>: {esc(v['gerekce'])}."
         r = v.get("tepki")
         if r and r["saat"] >= 1:
             yonlu = r["degisim"] * v["isaret"]
@@ -420,12 +465,12 @@ def mesaj(a):
             durum = ("beklenen yönde fiyatlandı" if yonlu > esik else "ters yönde hareket var" if yonlu < -esik else "henüz belirgin tepki yok")
             satir += f" Haberden beri {yz(r['degisim'])}" + (f", hacim {r['hacim_k']:.1f}x".replace(".", ",") if r.get("hacim_k") else "") + f" → {durum}."
         te = v.get("teknik")
-        if te and isinstance(te.get("etiket"), str):
+        if te and te.get("fiyat"):
             import firsat as F
-            ek = f" Teknik: {te['etiket']}"
-            if pd.notna(te.get("puan")): ek += f" ({float(te['puan']):.0f})"
-            if pd.notna(te.get("destek")): ek += f", destek {F.fy(float(te['destek']))}"
-            if pd.notna(te.get("direnc")): ek += f", direnç {F.fy(float(te['direnc']))}"
+            p = te["fiyat"]
+            ek = f" Fiyat {F.fy(p)} · teknik {te['etiket']} ({float(te['puan']):.0f})"
+            if te.get("destek"): ek += f" · destek {F.fy(te['destek'])} ({yz(te['destek'] / p - 1)})"
+            if te.get("direnc"): ek += f" · direnç {F.fy(te['direnc'])} ({yz(te['direnc'] / p - 1)})"
             satir += ek + "."
         g = v.get("gecmis")
         if g:

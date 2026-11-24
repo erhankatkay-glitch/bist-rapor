@@ -26,7 +26,9 @@ Kriptoda AL ve SAT (vadeli), BIST ve emtiada yalnızca AL. Her piyasa ve zaman d
 | Kripto günlük + bültenler (+ pazartesi haftalık ve karne, ayın 1'i aylık) | 03:22 | kapanis_kripto.yml |
 | Emtia 4 saatlik (hafta içi) | 03:25 · 07:25 · 11:25 · 15:25 · 19:25 · 23:25 | kapanis_emtia.yml |
 | Emtia günlük + bülten | 01:35 | kapanis_emtia.yml |
-| Alarm + Telegram temizliği | 30 dakikada bir | alarm.yml |
+| ABD 4 saatlik | 13:50 ET (kış 21:50, yaz 20:50 TSİ) | kapanis_abd.yml |
+| ABD günlük + bülten (+H/A) | 16:25 ET (kış 00:25, yaz 23:25 TSİ) | kapanis_abd.yml |
+| Alarm + haber + Telegram temizliği | 30 dakikada bir | alarm.yml |
 
 GitHub zamanlanmış işleri genellikle 5–15 dakika gecikmeli başlatır.
 
@@ -52,3 +54,11 @@ KAP kaynaklı şirket haberleri (sipariş, temettü, bedelsiz, geri alım, ceza)
 Her önemli haber için etkilenecek varlıklar beklenen yön ve gerekçesiyle, haberden bu yana fiyat/hacim tepkisi
 ("fiyatlandı / henüz tepki yok / ters yönde"), son bültendeki teknik durum ve zamanla biriken geçmiş benzer haber istatistiği verilir.
 Her sabah 07:00'den sonra ABD/Euro/Çin önemli veri takvimi gönderilir. Mesajlar sessizdir; haberler 12, takvim 20 saat sonra silinir.
+
+## 🇺🇸 ABD borsaları
+
+NYSE, Nasdaq ve NYSE American'daki tüm hisseler (Nasdaq Trader sembol dizini; ETF, varant, hak, tercihli hariç) taranır;
+20 günlük medyan işlem hacmi ≥ 20 mn $ ve fiyatı ≥ 3 $ olan ~1.900 likit hisse için kapanış bülteni (sektör ETF'leriyle
+rotasyon grafiği dahil), 4 saatlik/günlük/haftalık/aylık fırsatlar, takip ve karne üretilir. Kod biçimi: `NVDA.US`, `BRK.B.US`.
+Alarm listesinde ABD devleri (NVDA, AAPL, MSFT, AMZN, GOOGL, META, TSLA, AVGO) ve Nasdaq/S&P 500 yer alır; haber motoru
+dev şirketlerin bilanço ve önemli haberlerini de sınıflar.

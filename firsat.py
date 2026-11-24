@@ -41,7 +41,7 @@ GIRIS_BAR = {"4S": 2, "G": 2, "H": 1, "A": 1}
 SURE_AD = {"4S": lambda n: f"{n} adet 4 saatlik mum", "G": lambda n: f"{n} günlük mum", "H": lambda n: f"{n} hafta",
            "A": lambda n: f"{n} ay"}
 BAR_GUN = {("kripto", "4S"): 6, ("kripto", "G"): 1, ("bist", "4S"): 2 * 5 / 7, ("bist", "G"): 5 / 7,
-           ("emtia", "4S"): 6 * 5 / 7, ("emtia", "G"): 5 / 7}
+           ("emtia", "4S"): 6 * 5 / 7, ("emtia", "G"): 5 / 7, ("abd", "4S"): 2 * 5 / 7, ("abd", "G"): 5 / 7}
 UST_TF = {"4S": "G", "G": "H", "H": "A", "A": "H"}
 AGIRLIK = (0.5, 0.3, 0.2)                   # H1/H2/H3'te kapatılan pozisyon payı
 GECMIS_BAR = 1500
@@ -565,7 +565,7 @@ def grafik(f, a, dosya, n=90):
     ax.tick_params(axis="y", labelsize=7); ax.grid(alpha=0.18)
     for sp in ("top", "right"): ax.spines[sp].set_visible(False)
     yon_ad = "AL" if yon == 1 else "SAT"
-    ax.set_title(f"{f['kod']} · {T.TF_AD[f['tf']]} · {yon_ad} · {f['kurulum_ad']}  (puan {f['puan']:.0f})", fontsize=9, loc="left", fontweight="bold")
+    ax.set_title(f"{gorunen(f['kod'], f.get('ad'))} · {T.TF_AD[f['tf']]} · {yon_ad} · {f['kurulum_ad']}  (puan {f['puan']:.0f})", fontsize=9, loc="left", fontweight="bold")
     ax.legend(fontsize=7, loc="upper left", frameon=False)
     ax.text(0.0, -0.13, "B: balina hacmi (mavi alım/emilim, kırmızı satış/dağıtım) · yeşil alan hedef, kırmızı alan risk",
             transform=ax.transAxes, fontsize=6.5, color="#64748b")
@@ -575,6 +575,14 @@ def grafik(f, a, dosya, n=90):
 
 
 # ------------------------------------------------------------------ mesaj metni (Telegram HTML)
+def gorunen(kod, ad=None):
+    """ABD hisselerinde '.US' eki yerine şirket adı: 'NVDA (Nvidia)'."""
+    if str(kod).endswith(".US"):
+        a = ad if ad and ad != kod and ad != kod[:-3] else None
+        return f"{kod[:-3]} ({a[:28]})" if a else kod[:-3]
+    return kod
+
+
 def _e(s):
     return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
@@ -583,7 +591,7 @@ def firsat_metni(f, tl=None):
     p = f["plan"]; yon = f["yon"]; g = p["giris"]; para = f["para"]
     b = []
     renk = "🟢" if yon == 1 else "🔴"
-    b.append(f"{renk} <b>{_e(f['kod'])} · {'AL' if yon == 1 else 'SAT'}</b> · Puan <b>{f['puan']:.0f}</b>/100")
+    b.append(f"{renk} <b>{_e(gorunen(f['kod'], f.get('ad')))} · {'AL' if yon == 1 else 'SAT'}</b> · Puan <b>{f['puan']:.0f}</b>/100")
     b.append(f"Kurulum: {_e(f['kurulum_ad'])}")
     bol = p["bolge"]
     b.append(f"Giriş: <b>{fy(g)}</b> (bölge {fy(bol[0])} – {fy(bol[1])})")
@@ -616,12 +624,12 @@ def acik_satiri(k):
     ger = (c - k["giris"]) / k["giris"] * yon
     asama = " ".join("✅" if i < k["asama"] else "▫️" for i in range(3))
     stop_not = "stop girişte" if k["asama"] else f"stop {fy(k['stop'])}"
-    return (f"• {_e(k['kod'])} {'AL' if yon == 1 else 'SAT'} ({k['tf']}) · giriş {fy(k['giris'])} · {stop_not} · {asama} · şu an {yz(ger)}")
+    return (f"• {_e(gorunen(k['kod'], k.get('ad')))} {'AL' if yon == 1 else 'SAT'} ({k['tf']}) · giriş {fy(k['giris'])} · {stop_not} · {asama} · şu an {yz(ger)}")
 
 
 def kapanis_satiri(k):
     ikon = {"stop": "⛔", "tüm hedefler": "🏁", "süre doldu": "⌛"}.get(k.get("sebep"), "↩️")
-    return (f"{ikon} {_e(k['kod'])} {'AL' if k['yon'] == 1 else 'SAT'} ({k['tf']}) kapandı: {_e(k.get('sebep'))} · "
+    return (f"{ikon} {_e(gorunen(k['kod'], k.get('ad')))} {'AL' if k['yon'] == 1 else 'SAT'} ({k['tf']}) kapandı: {_e(k.get('sebep'))} · "
             f"sonuç {rrs(k['R'])} ({yz(getiri(k))})")
 
 

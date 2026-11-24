@@ -8,6 +8,8 @@ Kullanım: python kapanis.py <slot> [--zorla]
   kripto         Her 4 saatlik mum kapanışı (03/07/11/15/19/23 TSİ) → 4 saatlik; 03:xx'te + günlük (+H/A) + bültenler
   emtia-4s       Hafta içi 4 saatlik mum kapanışları                → 4 saatlik
   emtia-kapanis  ABD vadeli kapanışı (01:35 TSİ)                    → günlük (+ haftalık/aylık) + bülten
+  abd-ogle       ABD 09:30–13:30 ET dilimi kapanışı                 → 4 saatlik
+  abd-kapanis    ABD kapanışı (16:00 ET)                            → 4 saatlik + günlük (+H/A) + bülten
 --zorla: tatil/tazelik kontrollerini atlar ve haftalık/aylık taramayı da yapar (deneme için)."""
 import os, sys, json, time, shutil, datetime as dt
 from concurrent.futures import ThreadPoolExecutor
@@ -22,11 +24,18 @@ import teknik_bulten as TB
 
 TSI = dt.timezone(dt.timedelta(hours=3)); UTC = dt.timezone.utc
 KLON, CIKTI = tg.KLON, tg.CIKTI
-PIYASA_AD = {"bist": "BIST", "kripto": "Kripto", "emtia": "Emtia"}
+PIYASA_AD = {"bist": "BIST", "kripto": "Kripto", "emtia": "Emtia", "abd": "ABD"}
 ADET = 5
 MIN_TL_HACIM = 20e6       # BIST: 20 günlük medyan işlem hacmi
 MIN_USD_HACIM = 2e6       # Kripto: 24 saatlik USDT hacmi
-YONLER = {"bist": (1,), "kripto": (1, -1), "emtia": (1,)}
+YONLER = {"bist": (1,), "kripto": (1, -1), "emtia": (1,), "abd": (1,)}
+MIN_USD_HISSE = 20e6      # ABD: 20 günlük medyan dolar hacmi
+ZORLA = False
+try:
+    from zoneinfo import ZoneInfo
+    ET = ZoneInfo("America/New_York")
+except Exception:
+    ET = None
 OMUR = {"4S": 46.5, "G": 46.5, "H": 46.5, "A": 46.5}   # üst sınır; asıl silme: yeni mesaj gelince / kurulumlar kapanınca
 TAKIP_OMUR = 24
 
@@ -185,7 +194,7 @@ def takip_et(D, bars_fn, simdi):
         except Exception as ex:
             log("takip verisi alınamadı:", k["kod"], ex); bars = None
         for tur, _ in F.ilerlet(k, bars, simdi):
-            g = k["giris"]; ad = f"<b>{F._e(k['kod'])}</b> {_yon(k)} ({T.TF_AD[k['tf']].lower()})"
+            g = k["giris"]; ad = f"<b>{F._e(F.gorunen(k['kod'], k.get('ad')))}</b> {_yon(k)} ({T.TF_AD[k['tf']].lower()})"
             if tur.startswith("H"):
                 i = int(tur[1]) - 1; f = k["hedef"][i]
                 ek = " → pozisyonun yarısını kapat, stopu girişe (" + F.fy(g) + ") çek" if i == 0 else " → %30'unu kapat" if i == 1 else ""
@@ -223,7 +232,10 @@ def mum_metni(p, tf, mum):
     m = pd.Timestamp(mum)
     if tf == "4S":
         bit = m + pd.Timedelta(hours=4)
-        if p != "bist": bit = bit + pd.Timedelta(hours=3)
+        if p == "abd":
+            bit = min(bit, m.normalize() + pd.Timedelta(hours=16))
+            bit = pd.Timestamp(bit.to_pydatetime().replace(tzinfo=ET)).tz_convert("Europe/Istanbul").tz_localize(None)
+        elif p != "bist": bit = bit + pd.Timedelta(hours=3)
         return f"{bit:%d.%m.%Y %H:%M} TSİ"
     if tf == "H": return f"{m:%d.%m.%Y} haftası"
     if tf == "A": return f"{m:%m.%Y} ayı"
@@ -233,6 +245,10 @@ def mum_metni(p, tf, mum):
 def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
     """Bir zaman dilimi için tarama → seçim → takip kaydı → grafik → Telegram."""
     if not varliklar: log(f"{D.p} {tf}: taranacak varlık yok"); return []
+    son_mum = str(max(v["a"]["h"].index[-1] for v in varliklar))
+    if not ZORLA and D.islenen.get(f"{tf}_mum") == son_mum:
+        log(f"{D.p} {tf}: {son_mum} mumu zaten işlendi, atlandı."); return []
+    D.islenen[f"{tf}_mum"] = son_mum
     t0 = time.time()
     secilen, adaylar, pist = F.tara(varliklar, tf, D.p, YONLER[D.p], adet=ADET + 4)
     acik_anahtar = {(k["kod"], k["tf"], k["yon"]) for k in D.acik}
@@ -268,13 +284,12 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
         bloklar = ["\n".join(bas)] + [F.firsat_metni(f, tl_fn(f) if tl_fn else None) for f in secilen]
         if acik_tf:
             bloklar.append("📂 <b>Önceki mesajlardan açık kurulumlar</b>\n" + "\n".join(F.acik_satiri(k) for k in acik_tf[:12]))
-        bloklar.append("<i>Plan: H1'de pozisyonun yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 görülünce stop girişe çekilir. "
-                       "Model çıktısıdır, yatırım tavsiyesi değildir.</i>")
+        bloklar.append("<i>Plan: H1'de pozisyonun yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 görülünce stop girişe çekilir.</i>")
         bag = [k["id"] for k in yeni] + [k["id"] for k in acik_tf]
         anahtar = f"firsat:{D.p}:{tf}"
         ids = bot.mesaj("\n\n".join(bloklar), anahtar, OMUR[tf], bag=bag, yerine=True)
         if ids:
-            bot.album([(os.path.join(D.kok, grafik[f["kod"]]), f"{f['kod']} · {'AL' if f['yon'] == 1 else 'SAT'} · puan {f['puan']:.0f}")
+            bot.album([(os.path.join(D.kok, grafik[f["kod"]]), f"{F.gorunen(f['kod'], f.get('ad'))} · {'AL' if f['yon'] == 1 else 'SAT'} · puan {f['puan']:.0f}")
                        for f in secilen if f["kod"] in grafik], anahtar, OMUR[tf], bag=bag)
     D.acik += yeni
     return secilen
@@ -486,10 +501,82 @@ def emtia(slot, zorla):
     D.kaydet(); bot.kaydet()
 
 
+def abd_4s(h1, simdi_et):
+    """ABD seansı 09:30–16:00 (ET): 09:30–13:30 ve 13:30–16:00 dilimleri."""
+    h = h1[(h1.index.hour * 60 + h1.index.minute >= 570) & (h1.index.hour < 16)]
+    agg = {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
+    g = h.resample("4h", origin="start_day", offset="9h30min").agg(agg).dropna(subset=["Close"])
+    bitis = pd.Series([min(t + pd.Timedelta(hours=4), t.normalize() + pd.Timedelta(hours=16)) for t in g.index], index=g.index)
+    return g[bitis <= simdi_et + pd.Timedelta(minutes=2)]
+
+
+def abd_bilanco_riski(f):
+    try:
+        import yfinance as yf, bist_abd as AB
+        e = yf.Ticker(AB.yahoo(f["kod"])).get_earnings_dates(limit=8)
+        if e is None or not len(e): return
+        bugun = pd.Timestamp.now(tz="UTC").normalize()
+        gelecek = sorted(t for t in pd.to_datetime(e.index, utc=True) if t >= bugun)
+        if gelecek:
+            gun = (gelecek[0].normalize() - bugun).days
+            if gun <= 7: f["risk"].append(f"Bilanço {gun} gün içinde ({gelecek[0]:%d.%m}); bilanço sonrası açılış boşluğu riski")
+    except Exception:
+        pass
+
+
+def abd(slot, zorla):
+    import bist_abd as AB
+    simdi_et = pd.Timestamp(dt.datetime.now(ET).replace(tzinfo=None))
+    dk = simdi_et.hour * 60 + simdi_et.minute
+    if not zorla:
+        if simdi_et.weekday() >= 5: log("ABD: hafta sonu, atlandı."); return
+        if slot == "abd-ogle" and not (13 * 60 + 35 <= dk < 16 * 60): log(f"ABD öğle turu için saat uygun değil ({simdi_et:%H:%M} ET)."); return
+        if slot == "abd-kapanis" and dk < 16 * 60 + 10: log(f"ABD piyasası henüz kapanmadı ({simdi_et:%H:%M} ET)."); return
+    bot = tg.Bot("abd"); D = Durum("abd")
+    if slot == "abd-kapanis" and not zorla:
+        if D.islenen.get("kapanis_gun") == str(simdi_et.date()):
+            log("ABD kapanış turu bugün zaten yapıldı (yaz/kış saati için iki zamanlama var)."); return
+        D.islenen["kapanis_gun"] = str(simdi_et.date())
+    # likit evren: kapanış turunda yeniden hesaplanır, öğle turunda kayıtlıdan okunur
+    evren_yol = os.path.join(D.kok, "evren.csv")
+    analizler = None; r = None
+    if slot == "abd-kapanis":
+        r = TB.calistir("abd", klasor=CIKTI, zorla=zorla)
+        if TB.ABD_EVREN is not None:
+            TB.ABD_EVREN.to_csv(evren_yol, index=False)
+            try: shutil.copy(AB.LISTE_DOSYA, os.path.join(D.kok, "abd_listesi.csv"))
+            except Exception: pass
+        analizler = (TB.SON.get("abd") or {}).get("analizler")
+    if not os.path.exists(AB.LISTE_DOSYA) and os.path.exists(os.path.join(D.kok, "abd_listesi.csv")):
+        shutil.copy(os.path.join(D.kok, "abd_listesi.csv"), AB.LISTE_DOSYA)   # şirket adları için
+    try: kodlar = list(pd.read_csv(evren_yol)["Kod"])
+    except Exception:
+        lk, _ = AB.likit_hisseler(); lk.to_csv(evren_yol, index=False); kodlar = list(lk["Kod"])
+    acik_kod = {k["kod"] for k in D.acik}
+    log(f"ABD: {len(kodlar)} likit hisse için saatlik veri indiriliyor…")
+    ham = yahoo_saatlik([AB.yahoo(k) for k in list(kodlar) + list(acik_kod)], "America/New_York")
+    h1 = {AB.kod_yap(s_): d for s_, d in ham.items()}
+    log(f"Saatlik veri: {len(h1)} hisse")
+    olay = takip_et(D, lambda k: h1.get(k["kod"]), simdi_et)
+    h4 = {k: abd_4s(d, simdi_et) for k, d in h1.items()}
+    son = max((d.index[-1] for d in h4.values() if len(d)), default=None)
+    if son is not None and (zorla or simdi_et - son <= pd.Timedelta(hours=7)):
+        V_ = [{"kod": k, "ad": AB.ad(k), "para": "$", "a": F.hafif(d, "4S"), "ust_fn": (lambda hh=h1[k]: ust_gunluk(hh, "hisse"))}
+              for k, d in h4.items() if len(d) >= 80 and d.index[-1] == son]
+        firsat_turu(bot, D, "4S", V_, ekstra_fn=abd_bilanco_riski)
+    if r and analizler:
+        likit = set(kodlar)
+        gunluk_tf_turu(bot, D, analizler, ("G", "H", "A"), zorla, False, lambda s: "$", lambda s: s["kod"] in likit, ekstra_fn=abd_bilanco_riski)
+        TB.telegram_gonder("abd", *r, klasor=CIKTI, bot=bot)
+    if olay: takip_mesaji(bot, D)
+    bot.bag_guncelle([k["id"] for k in D.acik])
+    D.kaydet(); bot.kaydet()
+
+
 # ====================================================================== haftalık karne
 def karne_mesaji(bot, D_kripto):
     t = dt.datetime.now(UTC); satir = ["📒 <b>Haftalık fırsat karnesi</b>"]
-    for p in ("bist", "kripto", "emtia"):
+    for p in ("bist", "abd", "kripto", "emtia"):
         if p == "kripto": gec = D_kripto.gecmis; acik = D_kripto.acik
         else:
             try:
@@ -506,7 +593,7 @@ def karne_mesaji(bot, D_kripto):
         if pt and pt["n"] > (ph["n"] if ph else 0):
             s += f"\nBaşlangıçtan beri: {pt['n']} kurulum · H1 %{pt['h1'] * 100:.0f} · kazanan %{pt['kazanc'] * 100:.0f} · ort. {F.rrs(pt['ort_R'])}"
         satir.append(s)
-    satir.append("\nR: stop mesafesi kadar risk birimi. Model çıktısıdır, yatırım tavsiyesi değildir.")
+    satir.append("\nR: stop mesafesi kadar risk birimi.")
     bot.mesaj("\n".join(satir), "karne", 46.5, yerine=True)
 
 
@@ -531,11 +618,13 @@ tg.Bot.__init__, Durum.__init__ = _bot_init, _durum_init
 if __name__ == "__main__":
     slot = sys.argv[1] if len(sys.argv) > 1 else ""
     zorla = "--zorla" in sys.argv
+    ZORLA = zorla
     os.makedirs(CIKTI, exist_ok=True)
     try:
         if slot in ("bist-ogle", "bist-kapanis"): bist(slot, zorla)
         elif slot == "kripto": kripto(zorla)
         elif slot in ("emtia-4s", "emtia-kapanis"): emtia(slot, zorla)
+        elif slot in ("abd-ogle", "abd-kapanis"): abd(slot, zorla)
         else: sys.exit(__doc__)
     except Exception:
         import traceback; traceback.print_exc()

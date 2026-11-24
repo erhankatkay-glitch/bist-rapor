@@ -124,6 +124,29 @@ def kripto_evren_cek(gun, surum):
         return pd.DataFrame({"Kod": kr, "Binance USDT": True, "Binance TRY": True, "OKX USDT": True, "OKX TRY": False, "Hacim $": 0.0}), f"Borsa listesi alınamadı: {e}"
 
 
+@st.cache_data(ttl=24 * 3600, show_spinner=False)
+def abd_listesi_cek(gun):
+    import bist_abd as AB
+    try:
+        df = AB.tum_hisseler()
+    except Exception:
+        df = pd.DataFrame(columns=["Kod", "Sembol", "Ad", "Borsa"])
+    return df
+
+
+def abd_sec(key):
+    """ABD hissesi seçimi (NYSE + Nasdaq) → 'AAPL.US' gibi kod. Endeksler: SP500, NASDAQ, DOW, VIX."""
+    import bist_abd as AB
+    df = abd_listesi_cek(GUN)
+    dev = [f"{k} — {v}" for k, v in AB.DEV.items()]
+    ops = dev + [f"{r.Sembol} — {r.Ad}" for r in df.itertuples() if r.Sembol not in AB.DEV] + \
+        ["SP500 — S&P 500 endeksi", "NASDAQ — Nasdaq endeksi", "DOW — Dow Jones", "VIX — Korku endeksi"]
+    sec = st.selectbox(f"ABD hissesi ({len(df):,} hisse, sembol veya ad yazın)".replace(",", "."), ops, index=None, key=key, placeholder="ör. NVDA, Apple")
+    if not sec: return ""
+    sem = sec.split(" — ")[0]
+    return sem if sem in ("SP500", "NASDAQ", "DOW", "VIX") else AB.kod_yap(sem)
+
+
 def kripto_sec(key):
     """Coin + parite (USDT / TL) + borsa (Binance / OKX) seçimi → 'PEPE/TRY' gibi kod."""
     ev, not_ = kripto_evren_cek(GUN, br.SURUM)
@@ -439,9 +462,11 @@ def bulten_oku(piyasa, zaman):
 with tab_x:
     st.caption("Günlük, haftalık ve aylık kapanışlara göre 30'a yakın gösterge, mum formasyonları, grafik formasyonları "
                "(ikili tepe/dip, OBO/TOBO, üçgen, kama, bayrak, kanal), price action, Fibonacci, pivot ve uyumsuzluk analizi.")
-    tk_tur = st.radio("Varlık türü", ["Hisse", "Emtia", "Kripto"], horizontal=True, key="tk_tur")
+    tk_tur = st.radio("Varlık türü", ["Hisse", "ABD", "Emtia", "Kripto"], horizontal=True, key="tk_tur")
     if tk_tur == "Hisse":
         tk_kod = hisse_sec("Hisse (endeks için XU100 yazabilirsiniz)", "tk_kod")
+    elif tk_tur == "ABD":
+        tk_kod = abd_sec("tk_abd")
     elif tk_tur == "Kripto":
         tk_kod = kripto_sec("tk_k")
     else:
@@ -494,9 +519,9 @@ with tab_x:
     st.divider()
     st.markdown("#### 📬 Kapanış bültenleri")
     st.caption("Otomatik üretilir: BIST 19:07, emtia 02:07, kripto (USDT ve TL pariteleri) 04:07 TSİ — kapanıştan yaklaşık 1 saat sonra. Tüm BIST hisseleri ile Binance ve OKX'teki tüm coinler taranır.")
-    b_p = st.radio("Bülten", ["BIST", "Kripto USDT", "Kripto TL", "Emtia"], horizontal=True, key="bul_p")
+    b_p = st.radio("Bülten", ["BIST", "ABD", "Kripto USDT", "Kripto TL", "Emtia"], horizontal=True, key="bul_p")
     try:
-        B = bulten_oku({"BIST": "bist", "Kripto USDT": "kripto", "Kripto TL": "kripto_tl", "Emtia": "emtia"}[b_p], ZAMAN)
+        B = bulten_oku({"BIST": "bist", "ABD": "abd", "Kripto USDT": "kripto", "Kripto TL": "kripto_tl", "Emtia": "emtia"}[b_p], ZAMAN)
     except Exception as e:
         B = None; st.caption(f"Bülten okunamadı: {e}")
     if not B:
@@ -584,8 +609,8 @@ def _md(html):
 with tab_f:
     st.caption("Kapanan her mumda (4 saatlik, günlük, haftalık, aylık) taze oluşan işlem kurulumları; giriş, stop, 3 hedef, "
                "geçmiş başarı ve balina izleriyle. Aynı içerik Telegram'a sessiz gönderilir ve süresi dolunca oradan silinir; burada kalır.")
-    fp = st.radio("Piyasa", ["BIST", "Kripto", "Emtia"], horizontal=True, key="fr_p")
-    fk = {"BIST": "bist", "Kripto": "kripto", "Emtia": "emtia"}[fp]
+    fp = st.radio("Piyasa", ["BIST", "ABD", "Kripto", "Emtia"], horizontal=True, key="fr_p")
+    fk = {"BIST": "bist", "ABD": "abd", "Kripto": "kripto", "Emtia": "emtia"}[fp]
     with st.spinner("Fırsatlar yükleniyor…"):
         FD = firsat_oku(fk, ZAMAN)
     son = FD.get("son") or {}
@@ -1040,7 +1065,7 @@ with tab_al:
     with st.expander("➕ Yeni alarm ekle"):
         tip = st.selectbox("Alarm türü", ["Fiyat üstüne çıkınca", "Fiyat altına inince", "Günlük % hareket", "RSI altına inince", "RSI üstüne çıkınca",
                                           "Teknik puan üstüne çıkınca", "Yeni formasyon / kırılım", "KAP haberi"], key="al_tip")
-        kod_a = st.text_input("Kod (örn. THYAO, BTC/TRY, PEPE/USDT@OKX, ALTIN)", key="al_kod").strip().upper()
+        kod_a = st.text_input("Kod (örn. THYAO, NVDA.US, BTC/TRY, PEPE/USDT@OKX, ALTIN, SP500)", key="al_kod").strip().upper()
         deger = st.text_input("Değer (fiyat, yüzde veya RSI/puan)", key="al_deger").strip().replace(",", ".") if tip not in ("Yeni formasyon / kırılım", "KAP haberi") else ""
         kural = {"Fiyat üstüne çıkınca": f"{kod_a} > {deger}", "Fiyat altına inince": f"{kod_a} < {deger}", "Günlük % hareket": f"{kod_a} %{deger}",
                  "RSI altına inince": f"{kod_a} RSI < {deger}", "RSI üstüne çıkınca": f"{kod_a} RSI > {deger}", "Teknik puan üstüne çıkınca": f"{kod_a} PUAN > {deger}",

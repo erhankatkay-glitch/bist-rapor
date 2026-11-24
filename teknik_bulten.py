@@ -15,9 +15,11 @@ import bist_teknik_rapor as TR
 
 TSI = dt.timezone(dt.timedelta(hours=3))
 BASLIK = {"bist": "Kapanış Teknik Bülteni – BIST", "kripto": "Kapanış Teknik Bülteni – Kripto (USDT)",
-          "kripto_tl": "Kapanış Teknik Bülteni – Kripto TL Pariteleri", "emtia": "Kapanış Teknik Bülteni – Emtia"}
+          "kripto_tl": "Kapanış Teknik Bülteni – Kripto TL Pariteleri", "emtia": "Kapanış Teknik Bülteni – Emtia",
+          "abd": "Kapanış Teknik Bülteni – ABD Borsaları"}
 SON = {}   # piyasa → {"analizler", "endeks", "satir"}: fırsat motoru aynı analizleri yeniden kullanır
-REFERANS = {"bist": "XU100", "kripto": "BTC/USDT", "kripto_tl": "BTC/TRY", "emtia": "ALTIN"}
+REFERANS = {"bist": "XU100", "kripto": "BTC/USDT", "kripto_tl": "BTC/TRY", "emtia": "ALTIN", "abd": "SP500"}
+ABD_EVREN = None   # likit ABD listesi (DataFrame); kapanis.py durum klasörüne kaydeder
 
 
 def evren(piyasa):
@@ -31,6 +33,14 @@ def evren(piyasa):
             return [k + ("/TRY" if piyasa == "kripto_tl" else "/USDT") for k, v in V.VARLIKLAR.items() if v[2] == "kripto"]
     if piyasa == "emtia":
         return [k for k, v in V.VARLIKLAR.items() if v[2] == "emtia"]
+    if piyasa == "abd":
+        global ABD_EVREN
+        import bist_abd as AB
+        tum = AB.tum_hisseler()
+        AB.liste_kaydet(tum)
+        ABD_EVREN, not_ = AB.likit_hisseler(tum)
+        print(not_)
+        return list(ABD_EVREN["Kod"])
     try:
         import bist_evren as EV
         df, harz, not_ = EV.bist_listesi()
@@ -71,7 +81,7 @@ def takip(piyasa):
     kod = [s.strip().upper() for s in open(yol, encoding="utf-8") if s.strip() and not s.startswith("#")] if os.path.exists(yol) else []
     import bist_kripto as KR
     kr = lambda k: KR.kripto_mu(k) or (k in V.VARLIKLAR and V.VARLIKLAR[k][2] == "kripto")
-    if piyasa == "bist": return [k for k in kod if k not in V.VARLIKLAR and not kr(k)]
+    if piyasa == "bist": return [k for k in kod if k not in V.VARLIKLAR and not kr(k) and not k.endswith(".US")]
     if piyasa in ("kripto", "kripto_tl"):
         par = "TRY" if piyasa == "kripto_tl" else "USDT"
         out = []
@@ -80,6 +90,7 @@ def takip(piyasa):
             b, p, bo = KR.coz(k)
             if p == par: out.append(KR.kod_yap(b, p, bo))
         return out
+    if piyasa == "abd": return [k for k in kod if k.endswith(".US")]
     return [k for k in kod if k in V.VARLIKLAR and V.VARLIKLAR[k][2] == "emtia"]
 
 
@@ -98,7 +109,8 @@ def calistir(piyasa, klasor="cikti", veri_fn=None, zorla=False):
     # Tatil kontrolü: referansın son mumu beklenen kapanış gününe ait değilse bülten üretme
     try:
         son = veri[T.yahoo_sembol(ref)[0]].index[-1].date()
-        beklenen = {"bist": bugun, "kripto": utc_bugun - dt.timedelta(days=1), "kripto_tl": utc_bugun - dt.timedelta(days=1), "emtia": utc_bugun}[piyasa]
+        beklenen = {"bist": bugun, "kripto": utc_bugun - dt.timedelta(days=1), "kripto_tl": utc_bugun - dt.timedelta(days=1), "emtia": utc_bugun,
+                    "abd": utc_bugun}[piyasa]
         if not zorla and son < beklenen:
             print(f"Son veri {son}, beklenen {beklenen}: piyasa kapalı/tatil ya da veri gecikmeli. Bülten atlandı.")
             return None
@@ -113,6 +125,7 @@ def calistir(piyasa, klasor="cikti", veri_fn=None, zorla=False):
     try:
         endeks = T.analiz(ref, fiyat_fn=fn)
         if ref == "XU100": endeks["ad"] = "BIST 100"
+        if ref == "SP500": endeks["ad"] = "S&P 500"
     except Exception as ex:
         endeks = None; print("Referans analizi yapılamadı:", ex, file=sys.stderr)
     print(f"Analiz: {len(analizler)} tamam, {len(hata)} hata")
@@ -152,6 +165,15 @@ def _ekler(piyasa, analizler, endeks, satir):
                 r["Açığa satış oranı"] = float(x["Oran"].iloc[0]) if len(x) and pd.notna(x["Oran"].iloc[0]) else None
         except Exception as ex:
             print("Açığa satış verisi alınamadı:", ex, file=sys.stderr)
+    if piyasa == "abd":
+        try:
+            import yfinance as yf, bist_abd as AB
+            d = yf.download(list(AB.SEKTOR_ETF), period="2y", interval="1d", auto_adjust=True, progress=False, group_by="ticker")
+            gruplar = {AB.SEKTOR_ETF[e]: [br._naive(d[e]["Close"].dropna())] * 2 for e in AB.SEKTOR_ETF if e in d.columns.get_level_values(0)}
+            if endeks and endeks["tf"].get("G") and gruplar:
+                ek["rrg"] = IL.rrg(gruplar, endeks["tf"]["G"]["h"]["Close"])
+        except Exception as ex:
+            print("ABD sektör rotasyonu hesaplanamadı:", ex, file=sys.stderr)
     if piyasa in ("kripto", "kripto_tl"):
         try:
             import bist_kripto as KR
@@ -173,7 +195,8 @@ def _yaz(piyasa, analizler, endeks, ref, klasor, hata=None):
     kirilim = [s for s in one if T.ozet_satir(s)["Kırılım"]]
     secim = list(dict.fromkeys([s["kod"] for s in kirilim[:4]] + [s["kod"] for s in one[:4]]))
     bulten_secim = [s for s in analizler if s["kod"] in secim]
-    TR.bulten_pdf(BASLIK[piyasa], satir, bulten_secim, os.path.join(hedef, "bulten.pdf"), endeks=endeks, ekler=ekler)
+    TR.bulten_pdf(BASLIK[piyasa], satir, bulten_secim, os.path.join(hedef, "bulten.pdf"), endeks=endeks, ekler=ekler,
+                  sym="₺" if piyasa in ("bist", "kripto_tl") else "$")
     pd.DataFrame(satir).to_csv(os.path.join(hedef, "ozet.csv"), index=False)
     gorsel = []
     by = {s["kod"]: s for s in analizler}
@@ -244,9 +267,11 @@ def telegram_gonder(piyasa, meta, satir, klasor="cikti", bot=None):
             if len(k): satirlar.append("🐋 Balina satışı/dağıtım: " + ", ".join(k.nsmallest(8, "Teknik puan")["Kod"]))
         k = df[df["RSI"] < 30]
         if len(k): satirlar.append("🔻 Aşırı satım: " + ", ".join(k.nsmallest(8, "RSI")["Kod"]))
-    satirlar.append("\nTüm liste, grafikler ve raporlar uygulamanın Teknik sekmesinde.\nModel çıktısıdır, yatırım tavsiyesi değildir.")
+    satirlar.append("\nTüm liste, grafikler ve raporlar uygulamanın Teknik sekmesinde.")
     anahtar = f"bulten:{piyasa}"
-    ids = bot.mesaj("\n".join(satirlar), anahtar, 30, yerine=True)
+    metin = "\n".join(satirlar)
+    if piyasa == "abd": metin = metin.replace(".US,", ",").replace(".US (", " (").replace(".US\n", "\n")
+    ids = bot.mesaj(metin, anahtar, 30, yerine=True)
     try:
         yol = os.path.join(klasor, piyasa, "bulten.pdf")
         if ids and os.path.exists(yol):
