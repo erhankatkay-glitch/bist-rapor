@@ -103,7 +103,7 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
     t = dt.datetime.now(TSI)
     ax.add_patch(Rectangle((0, H - 8), W, 8, color=C["altin"]))
-    K._t(ax, K._marka(ax, H), H - 77, "SABAH ÖZETİ", 15, C["altin"], "semibold")
+    K._t(ax, K._marka(ax, H), H - 58, "SABAH ÖZETİ", 15, C["altin"], "semibold")
     K._t(ax, 48, H - 140, f"{t.day} {AYLAR[t.month - 1]} {GUNLER[t.weekday()]}", 44, weight="bold")
     K._t(ax, 48, H - 182, "Bugün neyi izlemeli?", 20, C["soluk"])
     # piyasa ızgarası

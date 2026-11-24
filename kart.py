@@ -14,9 +14,10 @@ for f in ("FiraSans-Regular.ttf", "FiraSans-Medium.ttf", "FiraSans-SemiBold.ttf"
     except Exception: pass
 FONT = "Fira Sans"
 
-C = {"bg": "#0B1220", "panel": "#111A2E", "panel2": "#16223B", "cizgi": "#22304D", "yazi": "#F1F5F9", "soluk": "#94A3B8",
-     "silik": "#64748B", "altin": "#F59E0B", "yesil": "#22C55E", "yesil2": "#16A34A", "kirmizi": "#EF4444", "mavi": "#3B82F6",
-     "mor": "#A78BFA", "turkuaz": "#22D3EE"}
+# Uygulamayla aynı kimlik: siyah/antrasit zemin, altın vurgu, neon yeşil–kırmızı
+C = {"bg": "#0B0B0C", "panel": "#17181B", "panel2": "#1E1F23", "cizgi": "#2A2B30", "yazi": "#F4F4F5", "soluk": "#A1A1AA",
+     "silik": "#71717A", "altin": "#E8B84A", "yesil": "#22C55E", "yesil2": "#16A34A", "kirmizi": "#EF4444", "mavi": "#60A5FA",
+     "mor": "#C4B5FD", "turkuaz": "#5EEAD4"}
 W, H = 1080, 1500
 
 
@@ -27,7 +28,26 @@ def _t(ax, x, y, s, size=20, color=None, weight="regular", ha="left", va="baseli
 _LOGO_IMG = None
 
 
-def _marka(ax, H, x=48, boy=42):
+_HERO_IMG = None
+
+
+def _hero():
+    """Uygulamadaki boğa–ayı görselinin karta uygun, aşağı doğru solan soluk hali."""
+    global _HERO_IMG
+    if _HERO_IMG is None:
+        try:
+            from PIL import Image
+            im = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "varlik", "hero.jpg")).convert("RGB")
+            a_ = np.asarray(im).astype(float) / 255.0
+            h_ = a_.shape[0]; t = np.linspace(0, 1, h_)[:, None]
+            alfa = (0.40 * (1 - t) ** 1.3)
+            _HERO_IMG = np.dstack([a_, np.repeat(alfa, a_.shape[1], axis=1)])
+        except Exception:
+            _HERO_IMG = False
+    return _HERO_IMG if _HERO_IMG is not False else None
+
+
+def _marka(ax, H, x=48, boy=36):
     """Sol üst köşeye KATKAY logosu (bütün Telegram kartlarında ortak)."""
     global _LOGO_IMG
     try:
@@ -35,14 +55,18 @@ def _marka(ax, H, x=48, boy=42):
             import matplotlib.image as mpimg, os
             _LOGO_IMG = mpimg.imread(os.path.join(os.path.dirname(os.path.abspath(__file__)), "varlik", "logo_96.png"))
         xl, yl = ax.get_xlim(), ax.get_ylim()
-        ax.imshow(_LOGO_IMG, extent=[x, x + boy, H - 50 - boy, H - 50], aspect="auto", zorder=5, interpolation="lanczos")
+        hero = _hero()
+        if hero is not None:
+            ax.imshow(hero, extent=[xl[0], xl[1], H - 300, H - 8], aspect="auto", zorder=0, interpolation="bilinear")
+        ax.imshow(_LOGO_IMG, extent=[x, x + boy, H - 38 - boy, H - 38], aspect="auto", zorder=5, interpolation="lanczos")
         ax.set_xlim(*xl); ax.set_ylim(*yl)
-        return x + boy + 14
+        return x + boy + 12
     except Exception:
         return x
 
 
 def _kutu(ax, x, y, w, h, renk, r=14, alpha=1.0, kenar=None):
+    if kenar is None and renk in (C["panel"], C["panel2"]): kenar = C["cizgi"]   # uygulamadaki gibi ince çerçeve
     ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}", fc=renk, ec=kenar or "none", lw=1.5 if kenar else 0,
                                 alpha=alpha))
 
@@ -102,7 +126,7 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     # ---- başlık
     ax.add_patch(Rectangle((0, H - 8), W, 8, color=C["altin"]))
     import tg
-    _t(ax, _marka(ax, H), H - 77, f"{tg.buyuk(piyasa_ad)}  ·  {tg.buyuk(tf_ad)}  ·  FIRSAT", 15, C["altin"], "semibold")
+    _t(ax, _marka(ax, H), H - 58, f"{tg.buyuk(piyasa_ad)}  ·  {tg.buyuk(tf_ad)}  ·  FIRSAT", 15, C["altin"], "semibold")
     _t(ax, 48, H - 140, F.gorunen(f["kod"], None), 54, weight="bold")
     ad = f.get("ad") or ""
     if ad and ad not in f["kod"]: _t(ax, 48, H - 180, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
@@ -231,11 +255,11 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
     fig = plt.figure(figsize=(W / 100, H / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
     ax.add_patch(Rectangle((0, H - 8), W, 8, color=C["altin"]))
-    _t(ax, _marka(ax, H), H - 77, f"{tg.buyuk(piyasa_ad)}  ·  KAPANIŞ ÖZETİ", 15, C["altin"], "semibold")
+    _t(ax, _marka(ax, H), H - 58, f"{tg.buyuk(piyasa_ad)}  ·  KAPANIŞ ÖZETİ", 15, C["altin"], "semibold")
     import datetime as _dt
     try: tarih = _dt.date.fromisoformat(str(meta["kapanis"])[:10]).strftime("%d.%m.%Y")
     except Exception: tarih = str(meta["kapanis"])
-    _t(ax, W - 48, H - 77, tarih, 15, C["soluk"], ha="right")
+    _t(ax, W - 48, H - 58, tarih, 15, C["soluk"], ha="right")
     E = meta.get("endeks") or {}
     # --- endeks paneli
     _kutu(ax, 40, H - 330, W - 80, 230, C["panel"])
@@ -340,7 +364,7 @@ def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
     fig = plt.figure(figsize=(W / 100, H_ / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H_); ax.axis("off")
     ax.add_patch(Rectangle((0, H_ - 8), W, 8, color=vurgu))
-    _t(ax, _marka(ax, H_), H_ - 77, ust, 15, vurgu, "semibold")
+    _t(ax, _marka(ax, H_), H_ - 58, ust, 15, vurgu, "semibold")
     _t(ax, 48, H_ - 140, baslik, 40, weight="bold")
     if alt: _t(ax, 48, H_ - 185, alt, 18, C["soluk"])
     y = H_ - ust_y
