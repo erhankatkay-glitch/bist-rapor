@@ -36,46 +36,14 @@ TKR = importlib.reload(TKR)
 FR = importlib.reload(FR)
 HB = importlib.reload(HB)
 DURUM_EMOJI = {"iyi": "🟢", "orta": "🟡", "zayif": "🔴", "yok": "⚪"}
-ETK_RENK = {"GÜÇLÜ AL": "#16A34A", "AL": "#22C55E", "NÖTR": "#D97706", "SAT": "#EF4444", "GÜÇLÜ SAT": "#DC2626"}
+ETK_RENK = {"GÜÇLÜ AL": "#22C55E", "AL": "#22C55E", "NÖTR": "#F59E0B", "SAT": "#EF4444", "GÜÇLÜ SAT": "#EF4444"}
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
 
 st.set_page_config(page_title="BIST Rapor", page_icon="📊", layout="centered", initial_sidebar_state="collapsed")
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-html, body, .stApp, .stMarkdown, button, input, textarea, select {font-family: 'Inter', -apple-system, sans-serif !important;}
-#MainMenu, footer, header {visibility: hidden;}
-.block-container {padding-top: 0.8rem; padding-bottom: 2rem; max-width: 680px;}
-.ust-bant {background: linear-gradient(135deg, #0B1220 0%, #14294B 100%); border-radius: 18px; padding: 16px 18px 14px;
-           margin-bottom: 14px; border-bottom: 3px solid #F59E0B; box-shadow: 0 8px 24px rgba(11,18,32,.18);}
-.ust-bant .b {color: #F59E0B; font-size: .68rem; font-weight: 800; letter-spacing: .14em;}
-.ust-bant .t {color: #FFFFFF; font-size: 1.32rem; font-weight: 800; margin-top: 2px; letter-spacing: -.01em;}
-.ust-bant .a {color: #94A3B8; font-size: .8rem; margin-top: 2px;}
-div.stButton > button, div.stDownloadButton > button {width: 100%; height: 3rem; font-size: 1.0rem; font-weight: 700; border-radius: 12px;}
-div.stButton > button[kind="primary"], div.stDownloadButton > button[kind="primary"] {background: linear-gradient(135deg, #14294B, #1E3A8A);
-           border: none; box-shadow: 0 4px 14px rgba(20,41,75,.28);}
-.kart {background: #FFFFFF; border: 1px solid #E5E7EB; border-left: 4px solid #14294B; border-radius: 14px; padding: 11px 14px; margin-bottom: 10px;
-       box-shadow: 0 1px 2px rgba(15,23,42,.05), 0 6px 16px rgba(15,23,42,.05);}
-.kart .e {font-size: .66rem; color: #64748B; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;}
-.kart .d {font-size: 1.32rem; font-weight: 800; letter-spacing: -.01em; margin: 2px 0;}
-.kart .a {font-size: .74rem; color: #64748B;}
-.stTabs [data-baseweb="tab-list"] {gap: 6px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; padding-bottom: 4px;}
-.stTabs [data-baseweb="tab"] {background: #F1F5F9; border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: .86rem; white-space: nowrap; height: auto;}
-.stTabs [aria-selected="true"] {background: #14294B !important; color: #FFFFFF !important;}
-.stTabs [aria-selected="true"] p {color: #FFFFFF !important;}
-.stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {display: none;}
-[data-testid="stExpander"] details {border-radius: 12px;}
-[data-testid="stImage"] img {border-radius: 14px;}
-</style>""", unsafe_allow_html=True)
-
-st.markdown('<div class="ust-bant"><div class="b">PİYASA ARAŞTIRMA MERKEZİ</div>'
-            '<div class="t">BIST · ABD · Kripto · Emtia</div>'
-            '<div class="a">Temel analiz · teknik fırsatlar · haber etkisi · portföy uyarıları</div></div>', unsafe_allow_html=True)
-if st.button("🔄 Verileri yenile (önbelleği temizle)", key="yenile"):
-    st.cache_data.clear()
-    for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin", "tk_sonuc", "pf"):
-        st.session_state.pop(k_, None)
-    st.rerun()
+import uygulama_stil as TS
+TS = importlib.reload(TS)
+st.markdown(TS.STIL, unsafe_allow_html=True)
+_ust_yer = st.empty()   # üst bant + kayan fiyat şeridi (piyasa verisi gelince doldurulur)
 
 # ---------------- Makro veriler ----------------
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -98,7 +66,12 @@ EVDS, EVDS_HATA = evds_verisi(EVDS_KEY, dt.date.today().isoformat()) if EVDS_KEY
 OTO = mk.oto_varsayim(EVDS) if EVDS else {}
 
 # ---------------- Ortak ayarlar ----------------
-with st.expander("⚙️ Varsayımlar"):
+with st.expander(":material/tune: Ayarlar ve varsayımlar"):
+    if st.button(":material/refresh: Verileri yenile (önbelleği temizle)", key="yenile"):
+        st.cache_data.clear()
+        for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin", "tk_sonuc", "pf"):
+            st.session_state.pop(k_, None)
+        st.rerun()
     c1, c2 = st.columns(2)
     rf = c1.number_input("Risksiz faiz (TR 10Y)", value=0.36, step=0.01, format="%.4f")
     enf = c2.number_input("Yıllık enflasyon" + (" (EVDS)" if "enflasyon" in OTO else ""), value=float(OTO.get("enflasyon", 0.2977)),
@@ -115,6 +88,10 @@ GUN = dt.date.today().isoformat()
 _s = dt.datetime.now()
 ZAMAN = _s.strftime("%Y%m%d%H") + str(_s.minute // 15)   # fiyatlı analizler en fazla 15 dk önbellekte kalır
 SAAT2 = _s.strftime("%Y%m%d") + str(_s.hour // 2)        # taramalar en fazla 2 saat
+try:
+    _ust_yer.markdown(TS.ust_bant(piyasa_verisi(ZAMAN)), unsafe_allow_html=True)
+except Exception:
+    _ust_yer.markdown(TS.ust_bant(None), unsafe_allow_html=True)
 
 
 @st.cache_data(ttl=6 * 3600, show_spinner=False)
@@ -202,22 +179,23 @@ def hisse_sec(etiket, key):
     return bv.secimden_kod(s) if s else ""
 
 
-def kart(col, etiket, deger, alt="", renk="#14294B"):
-    col.markdown(f'<div class="kart" style="border-left-color:{renk}"><div class="e">{etiket}</div>'
-                 f'<div class="d" style="color:{renk}">{deger}</div><div class="a">{alt}</div></div>', unsafe_allow_html=True)
+def kart(col, etiket, deger, alt="", renk=None):
+    vurgu = renk or "#F59E0B"; yazi = renk or "#F8FAFC"
+    col.markdown(f'<div class="kart" style="--v:{vurgu}"><div class="e">{etiket}</div>'
+                 f'<div class="d" style="color:{yazi}">{deger}</div><div class="a">{alt}</div></div>', unsafe_allow_html=True)
 
 
 def ozet_goster(baslik, gorus, kisa, tam, tez, katalizor, risk, senaryo=None):
     """Kurumsal rapor tarzı yatırım özeti (uygulama ekranı)."""
-    renk = {"OLUMLU": "#16A34A", "ILIMLI OLUMLU": "#22C55E", "NÖTR": "#D97706", "TEMKİNLİ": "#EA580C", "OLUMSUZ": "#DC2626",
-            "GÜÇLÜ AL": "#16A34A", "AL": "#22C55E", "SAT": "#EF4444", "GÜÇLÜ SAT": "#DC2626"}.get(gorus, "#D97706")
+    renk = {"OLUMLU": "#22C55E", "ILIMLI OLUMLU": "#22C55E", "NÖTR": "#F59E0B", "TEMKİNLİ": "#FB923C", "OLUMSUZ": "#EF4444",
+            "GÜÇLÜ AL": "#22C55E", "AL": "#22C55E", "SAT": "#EF4444", "GÜÇLÜ SAT": "#EF4444"}.get(gorus, "#F59E0B")
     md = lambda s: s.replace("<b>", "**").replace("</b>", "**")
-    st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#F8FAFC;border-radius:10px;padding:10px 12px;margin:6px 0">'
+    st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#111A2E;border-radius:10px;padding:10px 12px;margin:6px 0">'
                 f'<div style="font-size:0.7rem;color:#F59E0B;font-weight:700">YATIRIM ÖZETİ · GENEL GÖRÜNÜM '
                 f'<span style="color:{renk}">{gorus}</span></div>'
-                f'<div style="font-size:1.02rem;font-weight:800;color:#0F172A;margin:4px 0 6px">{baslik}</div>'
-                f'<div style="font-size:0.88rem;color:#334155">{kisa}</div></div>', unsafe_allow_html=True)
-    with st.expander("📑 Yönetici özeti, yatırım tezi ve senaryolar", expanded=False):
+                f'<div style="font-size:1.02rem;font-weight:800;color:#F1F5F9;margin:4px 0 6px">{baslik}</div>'
+                f'<div style="font-size:0.88rem;color:#CBD5E1">{kisa}</div></div>', unsafe_allow_html=True)
+    with st.expander(":material/article: Yönetici özeti, yatırım tezi ve senaryolar", expanded=False):
         st.markdown(md(tam))
         pos, neg = tez
         if pos: st.markdown("**Yatırım tezini destekleyenler**\n" + "\n".join(f"{i}. **{a_}.** {b_}" for i, (a_, b_) in enumerate(pos, 1)))
@@ -348,22 +326,25 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                  })
 
 
-tab_r, tab_x, tab_f, tab_h, tab_v, tab_p, tab_t, tab_b, tab_pf, tab_al, tab_k, tab_w = st.tabs(
-    ["📄 Hisse", "📐 Teknik", "🎯 Fırsatlar", "📰 Haberler", "🪙 Emtia & Kripto", "🌍 Piyasa", "🔎 Tarayıcı", "👶 Bebek", "💼 Portföy", "🔔 Alarm", "⚖️ Karşılaştır", "⭐ Takip"])
+tab_p, tab_r, tab_x, tab_f, tab_h, tab_tk, tab_pr, tab_v, tab_t, tab_b, tab_pf, tab_al, tab_k, tab_w = st.tabs(
+    [":material/dashboard: Piyasalar", ":material/description: Hisse", ":material/candlestick_chart: Teknik", ":material/my_location: Fırsatlar",
+     ":material/newspaper: Haberler", ":material/event: Takvim", ":material/insights: Performans", ":material/currency_bitcoin: Emtia & Kripto",
+     ":material/manage_search: Tarayıcı", ":material/school: Bebek", ":material/account_balance_wallet: Portföy",
+     ":material/notifications_active: Alarm", ":material/balance: Karşılaştır", ":material/star: Takip"])
 
 # ================= RAPOR =================
 def varlik_goster(r, on="v"):
     sym = "$" if r["para"] == "USD" else "₺"
     st.markdown(f"### {r['ad']}")
     st.caption(f"🕒 Fiyat zamanı: {r.get('fiyat_zamani')} TSİ · Rapor üretimi: {r.get('uretim')}")
-    renk = {"iyi": "#16A34A", "orta": "#D97706", "zayif": "#DC2626"}[V.durum_gorunum(r["gorunum"])]
+    renk = {"iyi": "#22C55E", "orta": "#F59E0B", "zayif": "#EF4444"}[V.durum_gorunum(r["gorunum"])]
     c1, c2 = st.columns(2)
     kart(c1, "SON FİYAT", f"{br.tl(r['fiyat'])} {sym}", f"≈ {br.tl(r['fiyat_tl'])} ₺" if r["para"] == "USD" else "")
     kart(c2, "GENEL GÖRÜNÜM", r["gorunum"], f"Skor {br.ond(r['skor'], 1)}/5", renk)
     c1, c2 = st.columns(2)
-    kart(c1, "1 YIL ($)", br.yz(r["r_usd"].get("1Y")), f"TL reel: {br.yz(r['r_reel'])}", "#16A34A" if (r["r_usd"].get("1Y") or 0) > 0 else "#DC2626")
+    kart(c1, "1 YIL ($)", br.yz(r["r_usd"].get("1Y")), f"TL reel: {br.yz(r['r_reel'])}", "#22C55E" if (r["r_usd"].get("1Y") or 0) > 0 else "#EF4444")
     kart(c2, "VOLATİLİTE", br.yz(r["vol"]), f"Zirveden: {br.yz(r['zirveden'])}")
-    st.download_button("⬇️ PDF Raporu İndir", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key=f"{on}_dl")
+    st.download_button(":material/download: PDF Raporu İndir", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key=f"{on}_dl")
     ozet_goster(r["baslik"], r["gorus_v"], r["ozet_kisa"], r["ozet_tam"], r["tez"], r["kr"][0], r["kr"][1])
     b1, b2, b3 = st.tabs(["Göstergeler karnesi", "Grafikler", "Değerlendirme"])
     with b1:
@@ -389,7 +370,7 @@ with tab_r:
             r_vs = st.selectbox("Emtia", [f"{k} — {v[1]}" for k, v in V.VARLIKLAR.items() if v[2] == "emtia"], index=None,
                                 placeholder="Örn. Altın, Brent, Gümüş", key="r_vsec")
             r_vk = r_vs.split(" — ")[0] if r_vs else ""
-        if st.button("📄 Rapor Oluştur", type="primary", disabled=not r_vk, key="r_vbtn"):
+        if st.button(":material/description: Rapor Oluştur", type="primary", disabled=not r_vk, key="r_vbtn"):
             try:
                 with st.status(f"{r_vs} analiz ediliyor…") as s_:
                     st.session_state.rv_sonuc = varlik_analiz(r_vk, tuple(PRM.items()), ZAMAN, br.SURUM)
@@ -401,7 +382,7 @@ with tab_r:
         kod = hisse_sec("Hisse", "r_kod") if r_tur == "BIST" else abd_sec("r_abd")
         with st.expander("Emsal hisseler (isteğe bağlı)"):
             emsal = st.text_input("Virgülle ayırın; boş bırakılırsa sektör grubu otomatik seçilir", "", key="r_emsal")
-        if st.button("📄 Rapor Oluştur", type="primary", disabled=not kod, key="r_btn"):
+        if st.button(":material/description: Rapor Oluştur", type="primary", disabled=not kod, key="r_btn"):
             try:
                 with st.status(f"{kod} analiz ediliyor… (30–60 sn)") as s:
                     st.session_state.sonuc = analiz(kod, emsal, tuple(PRM.items()), ZAMAN, br.SURUM)
@@ -425,7 +406,7 @@ with tab_r:
             kart(c1, "POTANSİYEL", br.yz(o["Potansiyel"]), o["Görüş"], renk_pot(o["Potansiyel"]))
             kart(c2, "SAĞLIK SKORU", f"{br.ond(o['Sağlık skoru'], 2)}/5" if o["Sağlık skoru"] else "–", r["skor_etiket"],
                  renk_skor(o["Sağlık skoru"]))
-            st.download_button("⬇️ PDF Raporu İndir", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary")
+            st.download_button(":material/download: PDF Raporu İndir", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary")
             v = r.get("veri") or {}
             if v:
                 st.caption(f"Veri kalitesi {v.get('puan')}/100 · son finansal dönem "
@@ -470,13 +451,13 @@ with tab_r:
                     for c_, tf in zip(cols, ("G", "H", "A")):
                         if tf in r["teknik"]:
                             e_, p_ = r["teknik"][tf]
-                            kart(c_, f"TEKNİK · {TK.TF_AD[tf].upper()}", e_, f"Puan {p_:.0f}/100", ETK_RENK.get(e_, "#14294B"))
+                            kart(c_, f"TEKNİK · {TK.TF_AD[tf].upper()}", e_, f"Puan {p_:.0f}/100", ETK_RENK.get(e_))
                 if r.get("tek"):
                     st.markdown("**Temel göstergeler karnesi**")
                     for soru, cevap, durum in r["tek"]:
                         st.markdown(f"{DURUM_EMOJI.get(durum, '⚪')} **{soru}**  \n{cevap}")
                 ileri_goster(r.get("ileri"))
-                with st.expander("🧾 Başlıklar itibarıyla değerlendirme", expanded=False):
+                with st.expander(":material/receipt_long: Başlıklar itibarıyla değerlendirme", expanded=False):
                     for bas, metin in r.get("genel") or []:
                         st.markdown(f"**{bas}.** {metin}")
                 if r["guclu"]: st.markdown("**Analist notları – olumlu**\n" + "\n".join(f"- 🟢 {x}" for x in r["guclu"]))
@@ -540,7 +521,7 @@ with tab_x:
                             placeholder="Seçin")
         tk_kod = tk_s.split(" — ")[0] if tk_s else ""
     st.checkbox("Kısa vade dahil (1 saatlik ve 4 saatlik grafikler)", key="tk_kisa")
-    if st.button("📐 Teknik analiz yap", type="primary", disabled=not tk_kod, key="tk_btn"):
+    if st.button(":material/candlestick_chart: Teknik analiz yap", type="primary", disabled=not tk_kod, key="tk_btn"):
         try:
             with st.status(f"{tk_kod} teknik analizi yapılıyor… (15–40 sn)") as s_:
                 st.session_state.tk_sonuc = teknik_analiz(tk_kod, ZAMAN, br.SURUM, st.session_state.get("tk_kisa", False))
@@ -551,23 +532,23 @@ with tab_x:
         r = st.session_state.tk_sonuc
         st.markdown(f"### {r['ad']} ({r['kod']})")
         st.caption(f"🕒 Son fiyat verisi: {r['fiyat_zamani']} · Fiyat {TK.sayi(r['fiyat'])} {r['para']} ({br.yz(r['degisim'])})")
-        kart(st, "GENEL TEKNİK GÖRÜNÜM", r["etiket"], f"Puan {r['puan']:.0f}/100 (günlük %30, haftalık %40, aylık %30)", ETK_RENK.get(r["etiket"], "#14294B"))
+        kart(st, "GENEL TEKNİK GÖRÜNÜM", r["etiket"], f"Puan {r['puan']:.0f}/100 (günlük %30, haftalık %40, aylık %30)", ETK_RENK.get(r["etiket"]))
         cols = st.columns(3)
         for c_, tf in zip(cols, ("G", "H", "A")):
             x = r["tf"].get(tf)
-            if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"], "#14294B"))
+            if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"]))
         if r["tf"].get("1S") or r["tf"].get("4S"):
             cols = st.columns(2)
             for c_, tf in zip(cols, ("1S", "4S")):
                 x = r["tf"].get(tf)
-                if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"], "#14294B"))
-        st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#F8FAFC;border-radius:10px;padding:10px 12px;margin:6px 0">'
+                if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"]))
+        st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#111A2E;border-radius:10px;padding:10px 12px;margin:6px 0">'
                     f'<div style="font-size:0.7rem;color:#F59E0B;font-weight:700">TEKNİK GÖRÜNÜM ÖZETİ</div>'
-                    f'<div style="font-size:1.0rem;font-weight:800;color:#0F172A;margin:4px 0 6px">{r["baslik"]}</div>'
-                    f'<div style="font-size:0.88rem;color:#334155">{r["yorum"]}</div></div>', unsafe_allow_html=True)
+                    f'<div style="font-size:1.0rem;font-weight:800;color:#F1F5F9;margin:4px 0 6px">{r["baslik"]}</div>'
+                    f'<div style="font-size:0.88rem;color:#CBD5E1">{r["yorum"]}</div></div>', unsafe_allow_html=True)
         for b_, t_, h_, i_ in r.get("senaryo") or []:
             st.markdown(f"{'🟢' if 'Yükseliş' in b_ else '🔴'} **{b_}:** {t_} → hedef **{h_}** · {i_}")
-        st.download_button("⬇️ Teknik PDF raporu", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="tk_dl")
+        st.download_button(":material/download: Teknik PDF raporu", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="tk_dl")
         ileri_goster(r.get("ileri"))
         sira = [t for t in ("1S", "4S", "G", "H", "A") if t in r["tf"]]
         sek = st.tabs([TK.TF_AD[t] for t in sira])
@@ -597,7 +578,7 @@ with tab_x:
         st.markdown(f"**{mt['baslik']}** · kapanış {mt['kapanis']} · üretim {mt['uretim']} · {mt['adet']} varlık")
         if mt.get("endeks"): st.caption(f"{mt['endeks']['ad']}: {mt['endeks']['etiket']} ({mt['endeks']['puan']:.0f}/100)")
         if B.get("kart"): st.image(B["kart"], use_container_width=True)
-        st.download_button("⬇️ Bülten PDF", data=B["pdf"], file_name=f"{mt['piyasa']}_bulten_{mt['kapanis']}.pdf", mime="application/pdf", key="bul_dl")
+        st.download_button(":material/download: Bülten PDF", data=B["pdf"], file_name=f"{mt['piyasa']}_bulten_{mt['kapanis']}.pdf", mime="application/pdf", key="bul_dl")
         oz = B["ozet"].sort_values("Teknik puan", ascending=False)
         st.dataframe(oz[["Kod", "Teknik puan", "Genel", "Günlük", "Haftalık", "Aylık", "RSI", "Formasyon +", "Formasyon −"]].head(25),
                      hide_index=True, use_container_width=True,
@@ -610,7 +591,7 @@ with tab_x:
         if B["rapor"]:
             with st.expander("Takip listesi teknik raporları"):
                 for ad_, b_ in B["rapor"].items():
-                    st.download_button(f"⬇️ {ad_}", data=b_, file_name=ad_, mime="application/pdf", key=f"bul_{ad_}")
+                    st.download_button(f":material/download: {ad_}", data=b_, file_name=ad_, mime="application/pdf", key=f"bul_{ad_}")
 
 # ================= EMTİA & KRİPTO =================
 @st.cache_data(ttl=3 * 3600, show_spinner=False, max_entries=60)
@@ -796,7 +777,7 @@ with tab_h:
     simdi_ = pd.Timestamp.now(tz="Europe/Istanbul")
     yaklasan = [e for e in tkv if pd.Timestamp(e["zaman"]) >= simdi_ - pd.Timedelta(hours=2)]
     if yaklasan:
-        with st.expander(f"🗓 Bu haftanın önemli verileri ({len(yaklasan)})", expanded=False):
+        with st.expander(f":material/event: Bu haftanın önemli verileri ({len(yaklasan)})", expanded=False):
             for e in yaklasan[:20]:
                 t_ = pd.Timestamp(e["zaman"])
                 st.markdown(f"- `{t_:%d.%m %H:%M}` **{HB.ULKE_AD.get(e['ulke'], e['ulke'])}** – {e['baslik']}"
@@ -811,6 +792,112 @@ with tab_h:
             st.markdown(_md(HB.mesaj(a)))
             if a.get("link"): st.markdown(f"[Habere git]({a['link']})")
 
+# ================= TAKVİM =================
+@st.cache_data(ttl=900, show_spinner=False)
+def json_oku(yol, zaman):
+    import requests
+    try:
+        r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/{yol}?t={zaman}", timeout=20)
+        return r.json() if r.status_code == 200 else None
+    except Exception:
+        return None
+
+
+with tab_tk:
+    st.caption("Bu haftanın yüksek etkili ekonomik verileri (ABD, Euro Bölgesi, Çin, İngiltere, Japonya). Saatler Türkiye saatidir. "
+               "Geçmiş tepki, aynı veri daha önce açıklandığında altın, S&P 500 vadeli, Bitcoin ve dolar/TL'nin ilk 1 saatteki ortalama hareketidir.")
+    tkv = (json_oku("haber/takvim.json", ZAMAN) or {}).get("liste") or []
+    arsiv = json_oku("haber/takvim_arsiv.json", ZAMAN) or []
+    if not tkv:
+        st.info("Takvim verisi henüz yok; her sabah 07:00'den sonra güncellenir.")
+    simdi_ = pd.Timestamp.now(tz="Europe/Istanbul")
+    gunler_ = {}
+    for e in tkv:
+        t_ = pd.Timestamp(e["zaman"])
+        if t_ < simdi_ - pd.Timedelta(hours=3): continue
+        gunler_.setdefault(t_.strftime("%d.%m.%Y %A"), []).append((t_, e))
+    GUN_TR = {"Monday": "Pazartesi", "Tuesday": "Salı", "Wednesday": "Çarşamba", "Thursday": "Perşembe", "Friday": "Cuma", "Saturday": "Cumartesi", "Sunday": "Pazar"}
+    for g_, liste_ in gunler_.items():
+        tarih_, gun_ = g_.split(" ")
+        st.markdown(f"##### {GUN_TR.get(gun_, gun_)} · {tarih_}")
+        for t_, e in liste_:
+            x = [a for a in arsiv if a["baslik"] == e["baslik"] and a["ulke"] == e["ulke"] and a.get("tepki")]
+            tep = []
+            for v in ("Altın", "S&P 500 vadeli", "Bitcoin", "Dolar/TL"):
+                d = [a["tepki"][v]["1s"] for a in x if v in a["tepki"] and "1s" in a["tepki"][v]]
+                if d: tep.append(f"{v} ±%{sum(abs(z) for z in d) / len(d) * 100:.1f}".replace(".", ","))
+            gecti = t_ < simdi_
+            st.markdown(
+                f'<div style="background:#111A2E;border:1px solid rgba(148,163,184,.14);border-left:4px solid {"#94A3B8" if gecti else "#F59E0B"};border-radius:12px;'
+                f'padding:9px 12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between">'
+                f'<b style="color:#F1F5F9">{t_:%H:%M} · {e["ulke"]} – {e["baslik"]}</b>'
+                f'<span style="color:#B45309;font-weight:700;font-size:.85rem">{("beklenti " + e["beklenti"]) if e.get("beklenti") else ""}</span></div>'
+                f'<div style="font-size:.78rem;color:#94A3B8;margin-top:2px">{("önceki " + e["onceki"]) if e.get("onceki") else ""}'
+                f'{(" · geçmişte 1 saatte: " + ", ".join(tep) + f" ({len(x)} açıklama)") if tep else ""}{" · açıklandı" if gecti else ""}</div></div>',
+                unsafe_allow_html=True)
+    st.caption("Kural: beklentiden güçlü ABD verisi genellikle doları ve faiz beklentisini yükseltir, altın ve kripto üzerinde baskı yaratır; zayıf veri tersini yapar.")
+
+# ================= PERFORMANS =================
+with tab_pr:
+    st.caption("Sistemin gönderdiği fırsatların gerçek sonuçları. Her kurulum giriş fiyatından izlenir; H1'de yarısı, H2'de %30'u, H3'te kalanı "
+               "kapatılır, H1 sonrası stop girişe çekilir. R: stop mesafesi kadar risk birimi (+1R = riske edilen kadar kazanç).")
+    tum, acik_t = [], []
+    for pz, ad_ in (("bist", "BIST"), ("abd", "ABD"), ("kripto", "Kripto"), ("emtia", "Emtia")):
+        for k in json_oku(f"firsat/{pz}/gecmis.json", ZAMAN) or []: tum.append({**k, "Piyasa": ad_})
+        for k in json_oku(f"firsat/{pz}/acik.json", ZAMAN) or []: acik_t.append({**k, "Piyasa": ad_})
+    pf_ = FR.performans(tum)
+    c1, c2, c3, c4 = st.columns(4)
+    if pf_:
+        kart(c1, "KAPANAN", f"{pf_['n']}", f"açık {len(acik_t)}")
+        kart(c2, "İLK HEDEF", f"%{pf_['h1'] * 100:.0f}", "stoptan önce", "#1E8E5A" if pf_["h1"] >= 0.5 else "#F59E0B")
+        kart(c3, "KAZANAN", f"%{pf_['kazanc'] * 100:.0f}", "R > 0", "#1E8E5A" if pf_["kazanc"] >= 0.5 else "#F59E0B")
+        kart(c4, "ORT. SONUÇ", FR.rrs(pf_["ort_R"]), f"toplam {FR.rrs(pf_['top_R'])}", "#1E8E5A" if pf_["ort_R"] > 0 else "#C0392B")
+        df_ = pd.DataFrame(tum)
+        df_["kapanis_t"] = pd.to_datetime(df_["kapanis"].astype(str).str[:19], errors="coerce")
+        df_ = df_.sort_values("kapanis_t")
+        st.markdown("**Birikimli sonuç (R)**")
+        st.line_chart(df_.set_index("kapanis_t")["R"].cumsum().rename("Toplam R"), height=220)
+        df_["Ay"] = df_["kapanis_t"].dt.strftime("%Y-%m")
+        tablolar = []
+        for ad_, grp in (("Piyasa", "Piyasa"), ("Zaman dilimi", "tf"), ("Kurulum", "kurulum"), ("Ay", "Ay")):
+            t_ = []
+            for kk, g in df_.groupby(grp):
+                p_ = FR.performans(g.to_dict("records"))
+                t_.append({ad_: TK.TF_AD.get(kk, kk) if grp == "tf" else kk, "Adet": p_["n"], "İlk hedef %": round(p_["h1"] * 100),
+                           "Kazanan %": round(p_["kazanc"] * 100), "Ort. R": round(p_["ort_R"], 2), "Toplam R": round(p_["top_R"], 1)})
+            tablolar.append((ad_, pd.DataFrame(t_)))
+        for ad_, t_ in tablolar:
+            with st.expander({"Piyasa": "Piyasaya göre", "Zaman dilimi": "Zaman dilimine göre", "Kurulum": "Kurulum türüne göre", "Ay": "Aylara göre"}[ad_],
+                             expanded=ad_ == "Piyasa"):
+                st.dataframe(t_.sort_values("Adet", ascending=False), hide_index=True, use_container_width=True,
+                             column_config={"Ort. R": st.column_config.NumberColumn(format="%+.2f")})
+        en_ = df_.nlargest(3, "R"); kt_ = df_.nsmallest(3, "R")
+        c1, c2 = st.columns(2)
+        c1.markdown("**En iyi sonuçlar**\n" + "\n".join(f"- {FR.gorunen(r.kod, r.ad)} {FR.rrs(r.R)}" for r in en_.itertuples()))
+        c2.markdown("**En kötü sonuçlar**\n" + "\n".join(f"- {FR.gorunen(r.kod, r.ad)} {FR.rrs(r.R)}" for r in kt_.itertuples()))
+    else:
+        kart(c1, "KAPANAN", "0", f"açık {len(acik_t)}")
+        st.info("Henüz kapanmış kurulum yok. Kurulumlar hedefe, stopa ya da süre sonuna ulaştıkça bu sayfa dolacak; anlamlı bir tablo için 1–2 hafta gerekir.")
+    if acik_t:
+        st.markdown("**Açık kurulumlar**")
+        st.dataframe(pd.DataFrame([{"Piyasa": k["Piyasa"], "Kod": FR.gorunen(k["kod"], k.get("ad")), "Dilim": TK.TF_AD[k["tf"]],
+                                    "Yön": "AL" if k["yon"] == 1 else "SAT", "Getiri": round((k.get("son_fiyat", k["giris"]) / k["giris"] - 1) * k["yon"] * 100, 1),
+                                    "Görülen hedef": k["asama"]} for k in acik_t]), hide_index=True, use_container_width=True,
+                     column_config={"Getiri": st.column_config.NumberColumn(format="%+.1f%%")})
+    st.markdown("**Geçmiş testi (tüm piyasa, aynı kurallar)**")
+    sat_ = []
+    for pz, ad_ in (("bist", "BIST"), ("abd", "ABD"), ("kripto", "Kripto"), ("emtia", "Emtia")):
+        for tf, d in (json_oku(f"firsat/{pz}/istatistik.json", ZAMAN) or {}).items():
+            for an_, v in d.items():
+                ku, yon, _ = an_.split("|")
+                if v.get("n", 0) < 50: continue
+                sat_.append({"Piyasa": ad_, "Dilim": TK.TF_AD.get(tf, tf), "Kurulum": FR.KURULUM.get(ku, (ku, ku))[0 if yon == "1" else 1],
+                             "Örnek": v["n"], "1R %": round(v["p1"] * 100), "Ort. R": round(v["ort_R"], 2)})
+    if sat_:
+        st.dataframe(pd.DataFrame(sat_).sort_values("Ort. R", ascending=False), hide_index=True, use_container_width=True,
+                     column_config={"Ort. R": st.column_config.NumberColumn(format="%+.2f")})
+        st.caption("Son taramadaki likit varlıkların geçmişinde aynı kurulumların sonucu. Ort. R sıfırın üzerindeyse kural geçmişte kazandırmış.")
+
 with tab_v:
     st.caption("Altın, gümüş, petrol, tarım ürünleri ve önde gelen kripto paralar. Bilançosu olmayan bu varlıklar için analiz "
                "trend, momentum, risk, para akışı, mevsimsellik ve piyasa verilerine dayanır.")
@@ -821,7 +908,7 @@ with tab_v:
         v_sec = st.selectbox("Emtia", [f"{k} — {v[1]}" for k, v in V.VARLIKLAR.items() if v[2] == "emtia"], index=None,
                              placeholder="Örn. Altın, Brent, Gümüş", key="v_sec")
         v_kod = v_sec.split(" — ")[0] if v_sec else ""
-    if st.button("📄 Analiz Et", type="primary", disabled=not v_kod, key="v_btn"):
+    if st.button(":material/description: Analiz Et", type="primary", disabled=not v_kod, key="v_btn"):
         try:
             with st.status(f"{v_sec} analiz ediliyor…") as s:
                 st.session_state.v_sonuc = varlik_analiz(v_kod, tuple(PRM.items()), ZAMAN, br.SURUM)
@@ -829,7 +916,7 @@ with tab_v:
         except Exception as e:
             st.error(f"Analiz yapılamadı: {e}")
     if "v_sonuc" in st.session_state: varlik_goster(st.session_state.v_sonuc, "v")
-    with st.expander("📊 Tüm emtia ve kriptoları karşılaştır"):
+    with st.expander(":material/bar_chart: Tüm emtia ve kriptoları karşılaştır"):
         n_k = st.select_slider("Kripto sayısı (hacme göre)", options=[25, 50, 100, 200, 400], value=50, key="v_n")
         if st.button("Karşılaştırmayı oluştur", key="v_tara"):
             with st.spinner(f"16 emtia + {n_k} kripto taranıyor… (birkaç dakika)"):
@@ -856,20 +943,67 @@ def _degisim_metni(v):
         if v.get(k) is not None: parca.append(f"{et} {br.yz(v[k])}")
     return " · ".join(parca)
 
+def spark_svg(seri, renk, w=120, h=34):
+    """Son 60 günün mini fiyat çizgisi (satır içi SVG)."""
+    v = [float(x) for x in seri.dropna().iloc[-60:]]
+    if len(v) < 2: return ""
+    lo, hi = min(v), max(v); hi = hi if hi > lo else lo + 1
+    pts = " ".join(f"{i * (w - 2) / (len(v) - 1) + 1:.1f},{h - 2 - (x - lo) / (hi - lo) * (h - 4):.1f}" for i, x in enumerate(v))
+    alan = f"1,{h} " + pts + f" {w - 1},{h}"
+    return (f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}"><polygon points="{alan}" fill="{renk}" fill-opacity="0.10"/>'
+            f'<polyline points="{pts}" fill="none" stroke="{renk}" stroke-width="1.8" stroke-linejoin="round"/></svg>')
+
+
+def piyasa_karti(ad_, v):
+    d = v.get("d1G") or 0; renk = "#22C55E" if d > 0 else "#EF4444" if d < 0 else "#94A3B8"
+    ok = "▲" if d > 0 else "▼" if d < 0 else "■"
+    deger = br.ond(v["deger"], 2 if v["deger"] < 10000 else 0)
+    birim = {"puan": "", "TL": " ₺", "$": " $", "%": "%"}.get(v["birim"], "")
+    alt = " · ".join(x for x in (f"1A {br.yz(v['d1A'])}" if v.get("d1A") is not None else "", f"YBB {br.yz(v['YBB'])}" if v.get("YBB") is not None else "") if x)
+    return (f'<div class="pk">'
+            f'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+            f'<div><div style="font-size:.66rem;color:#94A3B8;font-weight:700;letter-spacing:.06em">{ad_.upper()}</div>'
+            f'<div style="font-size:1.18rem;font-weight:800;color:#F1F5F9;margin-top:2px">{deger}{birim}</div>'
+            f'<div style="font-size:.8rem;font-weight:700;color:{renk}">{ok} {br.yz(d)}</div></div>'
+            f'<div style="margin-top:6px">{spark_svg(v["seri"], renk)}</div></div>'
+            f'<div style="font-size:.68rem;color:#94A3B8;margin-top:2px">{alt}</div></div>')
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def gorsel_oku(yol, zaman):
+    import requests
+    try:
+        r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/{yol}?t={zaman}", timeout=20)
+        return r.content if r.status_code == 200 else None
+    except Exception:
+        return None
+
+
 with tab_p:
-    st.markdown("#### 📈 Makro panel")
+    sabah_k = gorsel_oku("sabah/kart.png", ZAMAN)
+    if sabah_k:
+        with st.expander(":material/wb_sunny: Bugünün sabah özeti", expanded=True):
+            st.image(sabah_k, use_container_width=True)
+            ses = gorsel_oku("sabah/ozet.mp3", ZAMAN)
+            if ses: st.audio(ses, format="audio/mp3")
+    st.markdown("#### 🌐 Piyasalar")
     try:
         PV = piyasa_verisi(ZAMAN)
     except Exception as e:
         PV = {}; st.caption(f"Piyasa verisi alınamadı: {e}")
-    sira = ["USD/TRY", "EUR/TRY", "Gram altın", "BIST 100", "BIST 100 ($)", "Brent petrol", "Ons altın", "ABD 10Y faiz"]
+    sira = ["BIST 100", "S&P 500", "Nasdaq", "USD/TRY", "EUR/TRY", "Gram altın", "Ons altın", "Gümüş", "Brent petrol",
+            "Bitcoin", "Ethereum", "Dolar endeksi", "ABD 10Y faiz", "VIX", "BIST 100 ($)"]
     goster = [x for x in sira if x in PV]
     for i in range(0, len(goster), 2):
         cols = st.columns(2)
         for c, ad_ in zip(cols, goster[i:i + 2]):
-            v = PV[ad_]; d1 = v.get("d1G")
-            kart(c, ad_.upper(), f"{br.ond(v['deger'], 2)} {v['birim']}", _degisim_metni(v),
-                 "#1E8E5A" if (d1 or 0) > 0 else "#C0392B" if (d1 or 0) < 0 else "#14294B")
+            c.markdown(piyasa_karti(ad_, PV[ad_]), unsafe_allow_html=True)
+    st.caption("Kripto anlık, diğerleri ~15 dk gecikmeli (Yahoo). Mini grafik son 60 işlem günü.")
+    for pz, ad_ in (("bist", "BIST"), ("abd", "ABD"), ("kripto", "Kripto")):
+        k_ = gorsel_oku(f"{pz}/kapanis_karti.png", ZAMAN)
+        if k_:
+            with st.expander(f":material/bar_chart: {ad_} son kapanış özeti"):
+                st.image(k_, use_container_width=True)
     if EVDS:
         st.markdown("**TCMB (EVDS)**")
         for ad_, v in EVDS.items():
@@ -897,7 +1031,7 @@ with tab_p:
         P_SATIR = st.session_state.p_tarama
     else:
         st.info("İlk otomatik tarama bir sonraki iş günü sabahı hazır olacak. İsterseniz şimdi elle başlatabilirsiniz (tüm BIST, 15–30 dakika).")
-        if st.button("🌍 Tüm piyasayı şimdi tara", key="p_btn"):
+        if st.button(":material/public: Tüm piyasayı şimdi tara", key="p_btn"):
             with st.spinner(f"{len(EVREN)} hisse taranıyor (15–30 dk)… Ekranı kapatmayın."):
                 st.session_state.p_tarama = tarama(tuple(sorted(EVREN["Kod"])), tuple(PRM.items()), SAAT2, br.SURUM)[0]
             st.rerun()
@@ -956,7 +1090,7 @@ with tab_t:
     gruplar = {k: v for k, v in gruplar.items() if v}
     secim = st.selectbox("Evren", list(gruplar), key="t_grup")
     sirala = st.selectbox("Sırala", ["Sağlık skoru", "Potansiyel", "F/K", "PD/DD", "Temettü verimi", "1Y getiri"], key="t_sira")
-    if st.button("🔎 Taramayı Başlat", type="primary", key="t_btn"):
+    if st.button(":material/search: Taramayı Başlat", type="primary", key="t_btn"):
         with st.spinner(f"{len(gruplar[secim])} hisse taranıyor… Ekranı kapatmayın."):
             try:
                 satirlar, hatalar = tarama(tuple(gruplar[secim]), tuple(PRM.items()), SAAT2, br.SURUM)
@@ -984,7 +1118,7 @@ def resmi_ilk_cek(gun, surum):
 with tab_b:
     st.caption("Bebek şirketler, Borsa İstanbul'un resmi tanımıyla belirlenir: halka arz edilip işlem görmeye başladığı ilk günden itibaren "
                "2 yıl boyunca BIST Halka Arz Endeksi'nde (XHARZ) yer alan şirketler. Liste otomatik güncellenir; ayar gerekmez.")
-    if st.button("👶 Bebek şirketleri getir", type="primary", key="b_btn"):
+    if st.button(":material/school: Bebek şirketleri getir", type="primary", key="b_btn"):
         with st.spinner("Resmi halka arz endeksi ve ilk işlem tarihleri alınıyor…"):
             hedef = list(HARZ) if HARZ else list(EVREN["Kod"])
             ilk = ilk_cek(tuple(sorted(hedef)), GUN, br.SURUM)
@@ -1007,7 +1141,7 @@ with tab_b:
                        "'İlk işlemden getiri' bedelsiz/bölünme düzeltilmiş Yahoo verisinden hesaplanır. "
                        "'Endekste kalan' süre dolduğunda şirket bebek statüsünden çıkar.")
             n_derin = min(len(liste), 120)
-            if st.button(f"🔬 Derin analiz: bilanço, büyüme ve bebek skoru ({n_derin} şirket, 2–6 dk)", key="b_derin"):
+            if st.button(f":material/biotech: Derin analiz: bilanço, büyüme ve bebek skoru ({n_derin} şirket, 2–6 dk)", key="b_derin"):
                 with st.spinner("Şirketlerin finansalları taranıyor… Ekranı kapatmayın."):
                     kodlar = tuple(x["Kod"] for x in liste[:n_derin])
                     sat, hat = tarama(kodlar, tuple(PRM.items()), SAAT2, br.SURUM)
@@ -1057,7 +1191,7 @@ with tab_pf:
     varsayilan = st.query_params.get("p", "").replace(";", "\n") or "THYAO 100\nASELS 50\nBTC/TRY 0,01\nGRAMALTIN 10"
     pf_metin = st.text_area("Portföy", varsayilan, height=160, key="pf_metin",
                             help="Örnekler: THYAO 1000 @ 280 · BTC/TRY 0,05 · ETH/USDT 1,2 · GRAMALTIN 50 (gram) · ALTIN 2 (ons)")
-    if st.button("💼 Portföyü analiz et", type="primary", key="pf_btn"):
+    if st.button(":material/work: Portföyü analiz et", type="primary", key="pf_btn"):
         try:
             with st.status("Portföy analiz ediliyor… (her varlık için veri çekilir)") as s_:
                 st.session_state.pf = portfoy_analiz(pf_metin.strip(), ZAMAN, br.SURUM)
@@ -1065,7 +1199,7 @@ with tab_pf:
                 s_.update(label="Hazır ✓", state="complete", expanded=False)
         except Exception as e:
             st.error(f"Portföy analiz edilemedi: {e}")
-    with st.expander("📌 Telegram'da kişisel portföy uyarıları"):
+    with st.expander(":material/push_pin: Telegram'da kişisel portföy uyarıları"):
         st.caption("Kaydettiğiniz portföy için 30 dakikada bir kontrol yapılır: ters (satış) sinyal, teknik görünümün SAT'a dönmesi, "
                    "destek kırılması, sert düşüş, maliyete göre −%8 zarar / +%15 kâr; kapanışlarda SAT yönlü kurulum ve ilgili haberler "
                    "💼 işaretiyle Telegram'a gelir.")
@@ -1079,7 +1213,7 @@ with tab_pf:
         try: gh = st.secrets.get("GH_TOKEN", "")
         except Exception: gh = ""
         if gh:
-            if st.button("📌 Yukarıdaki portföyü Telegram takibine al", key="pf_kaydet"):
+            if st.button(":material/push_pin: Yukarıdaki portföyü Telegram takibine al", key="pf_kaydet"):
                 import requests, base64
                 u = f"https://api.github.com/repos/{REPO}/contents/portfoy.txt"; hd = {"Authorization": f"Bearer {gh}", "Accept": "application/vnd.github+json"}
                 j = requests.get(u, headers=hd, timeout=20).json()
@@ -1095,11 +1229,11 @@ with tab_pf:
         c1, c2 = st.columns(2)
         kart(c1, "TOPLAM DEĞER", f"{br.tl(r['toplam'])} TL", f"Getiri: {br.yz(r['getiri'])} · $: {br.yz(r['getiri_usd'])}")
         kart(c2, "YILLIK OYNAKLIK", br.yz(r["vol"]), f"Günlük VaR %95: {br.tl(r['var95_tl'])} TL",
-             "#16A34A" if r["vol"] < 0.2 else "#D97706" if r["vol"] < 0.35 else "#DC2626")
-        st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#F8FAFC;border-radius:10px;padding:10px 12px;margin:6px 0">'
-                    f'<div style="font-size:1.0rem;font-weight:800;color:#0F172A;margin-bottom:6px">{r["baslik"]}</div>'
-                    f'<div style="font-size:0.88rem;color:#334155">{r["ozet"]}</div></div>', unsafe_allow_html=True)
-        st.download_button("⬇️ Portföy PDF raporu", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="pf_dl")
+             "#22C55E" if r["vol"] < 0.2 else "#F59E0B" if r["vol"] < 0.35 else "#EF4444")
+        st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#111A2E;border-radius:10px;padding:10px 12px;margin:6px 0">'
+                    f'<div style="font-size:1.0rem;font-weight:800;color:#F1F5F9;margin-bottom:6px">{r["baslik"]}</div>'
+                    f'<div style="font-size:0.88rem;color:#CBD5E1">{r["ozet"]}</div></div>', unsafe_allow_html=True)
+        st.download_button(":material/download: Portföy PDF raporu", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="pf_dl")
         t = pd.DataFrame(r["tablo"])
         for c in ("Ağırlık", "Risk katkısı", "Volatilite", "K/Z"):
             t[c] = t[c].apply(lambda x: None if x is None or pd.isna(x) else round(x * 100, 1))
@@ -1136,7 +1270,7 @@ with tab_al:
     st.markdown("**Kurallar**")
     mevcut = open("alarmlar.txt", encoding="utf-8").read() if os.path.exists("alarmlar.txt") else ""
     st.code("\n".join(s for s in mevcut.splitlines() if s.strip() and not s.startswith("#")) or "(kural yok)")
-    with st.expander("➕ Yeni alarm ekle"):
+    with st.expander(":material/add: Yeni alarm ekle"):
         tip = st.selectbox("Alarm türü", ["Fiyat üstüne çıkınca", "Fiyat altına inince", "Günlük % hareket", "RSI altına inince", "RSI üstüne çıkınca",
                                           "Teknik puan üstüne çıkınca", "Yeni formasyon / kırılım", "KAP haberi"], key="al_tip")
         kod_a = st.text_input("Kod (örn. THYAO, NVDA.US, BTC/TRY, PEPE/USDT@OKX, ALTIN, SP500)", key="al_kod").strip().upper()
@@ -1160,46 +1294,99 @@ with tab_al:
                     "alarmlar.txt dosyasına ekleyebilirsiniz.")
 
 # ================= KARŞILAŞTIR =================
+def radar_png(S):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt, numpy as np, io as _io
+    kat = list(next(iter(S.values()))["saglik"].keys())
+    if not kat: return None
+    ac = np.linspace(0, 2 * np.pi, len(kat), endpoint=False).tolist(); ac += ac[:1]
+    fig = plt.figure(figsize=(5.2, 4.6), dpi=130, facecolor="#0B1220"); ax = fig.add_subplot(111, polar=True, facecolor="#111A2E")
+    ax.tick_params(colors="#CBD5E1"); ax.spines["polar"].set_color("#334155"); ax.grid(color="#334155", lw=.6)
+    renk = ["#38BDF8", "#F59E0B", "#22C55E"]
+    for (k, r), c in zip(S.items(), renk):
+        v = [float(r["saglik"].get(x) or 0) for x in kat]; v += v[:1]
+        ax.plot(ac, v, color=c, lw=2, label=k); ax.fill(ac, v, color=c, alpha=0.12)
+    ax.set_xticks(ac[:-1]); ax.set_xticklabels(kat, fontsize=8); ax.set_ylim(0, 5); ax.set_yticks([1, 2, 3, 4, 5]); ax.tick_params(axis="y", labelsize=6)
+    ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.12), fontsize=8, frameon=False, labelcolor="#E2E8F0")
+    b = _io.BytesIO(); fig.tight_layout(); fig.savefig(b, format="png", facecolor=fig.get_facecolor()); plt.close(fig)
+    return b.getvalue()
+
+
 with tab_k:
-    secenek = bv.arama_secenekleri()
+    st.caption("BIST ve ABD hisselerini (karışık da olabilir) değerleme, kârlılık, büyüme, teknik ve risk açısından yan yana koyar; "
+               "her kriterde öne çıkanı işaretler ve sade bir sonuç yazar.")
+    _abd = abd_listesi_cek(GUN)
+    secenek = bv.arama_secenekleri() + [f"{r.Sembol} — {r.Ad} (ABD)" for r in _abd.itertuples()]
     try:
         secili = st.multiselect("2–3 hisse seçin", secenek, max_selections=3, key="k_sec", accept_new_options=True,
-                                placeholder="Şirket adı veya kodu")
+                                placeholder="Şirket adı veya kodu (örn. THYAO, Nvidia)")
     except TypeError:
         secili = st.multiselect("2–3 hisse seçin", secenek, max_selections=3, key="k_sec")
-    kodlar = [bv.secimden_kod(x) for x in secili]
-    if st.button("⚖️ Karşılaştır", type="primary", disabled=len(kodlar) < 2, key="k_btn"):
+    import bist_abd as _AB
+    kodlar = [(_AB.kod_yap(x.split(" — ")[0]) if x.endswith("(ABD)") else bv.secimden_kod(x)) for x in secili]
+    if st.button(":material/balance: Karşılaştır", type="primary", disabled=len(kodlar) < 2, key="k_btn"):
         sonuc = {}
-        with st.status("Hisseler analiz ediliyor…") as s:
+        with st.status("Hisseler analiz ediliyor… (hisse başına 30–60 sn)") as s:
             for k in kodlar:
                 try:
-                    sonuc[k] = analiz(k, "", tuple(PRM.items()), ZAMAN, br.SURUM)
+                    r_ = analiz(k, "", tuple(PRM.items()), ZAMAN, br.SURUM); sonuc[r_["ozet"]["Kod"]] = r_
                 except Exception as e:
                     st.warning(f"{k}: {e}")
             s.update(label="Hazır ✓", state="complete", expanded=False)
         st.session_state.kars = sonuc
-    if "kars" in st.session_state and st.session_state.kars:
+    if "kars" in st.session_state and len(st.session_state.kars) >= 2:
         S = st.session_state.kars
-        satir = {
-            "Fiyat (TL)": lambda o: br.tl(o["Fiyat"]), "Adil değer (TL)": lambda o: br.tl(o["Adil değer"]),
-            "Potansiyel": lambda o: br.yz(o["Potansiyel"]), "Sağlık skoru": lambda o: br.ond(o["Sağlık skoru"], 2),
-            "F/K": lambda o: br.kat(o["F/K"]), "PD/DD": lambda o: br.kat(o["PD/DD"]), "ROE": lambda o: br.yz(o["ROE"]),
-            "Temettü verimi": lambda o: br.yz(o["Temettü verimi"]), "1Y getiri": lambda o: br.yz(o["1Y getiri"]),
-            "Görüş": lambda o: o["Görüş"], "Teknik": lambda o: o["Teknik"],
-            "Para akışı": lambda o: o.get("Para akışı") or "–",
-            "Yabancı payı": lambda o: f"%{br.ond(o.get('Yabancı %'), 2)}" if o.get("Yabancı %") is not None else "–",
-        }
-        tbl = pd.DataFrame({k: {ad_: f(r["ozet"]) for ad_, f in satir.items()} for k, r in S.items()})
-        st.dataframe(tbl, use_container_width=True)
+        cols = st.columns(len(S))
+        for c_, (k, r) in zip(cols, S.items()):
+            o = r["ozet"]; pt = o.get("Potansiyel")
+            kart(c_, k, f"{br.tl(o['Fiyat'])} {r.get('pb', 'TL')}", f"Adil {br.tl(o['Adil değer'])} · {br.yz(pt)}",
+                 "#1E8E5A" if (pt or 0) > 0.1 else "#C0392B" if (pt or 0) < -0.1 else "#F59E0B")
+        kriter = [("Potansiyel (adil değere göre)", "Potansiyel", 1, br.yz), ("Finansal sağlık (1–5)", "Sağlık skoru", 1, lambda x: br.ond(x, 2)),
+                  ("F/K (düşük = ucuz)", "F/K", -1, br.kat), ("PD/DD (düşük = ucuz)", "PD/DD", -1, br.kat),
+                  ("Özkaynak kârlılığı (ROE)", "ROE", 1, br.yz), ("Temettü verimi", "Temettü verimi", 1, br.yz),
+                  ("1 yıllık getiri", "1Y getiri", 1, br.yz), ("Teknik puan (günlük)", "_tek", 1, lambda x: f"{x:.0f}")]
+        def deger_(r, alan):
+            if alan == "_tek": return ((r.get("teknik") or {}).get("G") or (None, None))[1]
+            return r["ozet"].get(alan)
+        kazan = {k: 0 for k in S}; satirlar_ = {}
+        for ad_, alan, yon, fmt in kriter:
+            v = {k: deger_(r, alan) for k, r in S.items()}
+            gecerli = {k: x for k, x in v.items() if x is not None and (alan not in ("F/K", "PD/DD") or x > 0)}
+            en = (max if yon > 0 else min)(gecerli, key=gecerli.get) if len(gecerli) >= 2 else None
+            if en: kazan[en] += 1
+            satirlar_[ad_] = {k: ("🏆 " if k == en else "") + (fmt(x) if x is not None else "–") for k, x in v.items()}
+        satirlar_["Model görüşü"] = {k: r["ozet"].get("Görüş") or "–" for k, r in S.items()}
+        satirlar_["Teknik görünüm"] = {k: r["ozet"].get("Teknik") or "–" for k, r in S.items()}
+        st.dataframe(pd.DataFrame(satirlar_).T, use_container_width=True)
+        # sade sonuç
+        sira_ = sorted(kazan.items(), key=lambda x: -x[1])
+        def en_iyi(alan, yon):
+            v = {k: deger_(r, alan) for k, r in S.items() if deger_(r, alan) is not None and (alan not in ("F/K",) or deger_(r, alan) > 0)}
+            return (max if yon > 0 else min)(v, key=v.get) if len(v) >= 2 else None
+        c_ = []
+        e = en_iyi("Potansiyel", 1)
+        if e: c_.append(f"**Değerleme:** modele göre en fazla yukarı potansiyel {e}'de ({br.yz(S[e]['ozet']['Potansiyel'])}).")
+        e = en_iyi("ROE", 1)
+        if e: c_.append(f"**Kârlılık:** özkaynak kârlılığı en yüksek {e} ({br.yz(S[e]['ozet']['ROE'])}).")
+        e = en_iyi("Sağlık skoru", 1)
+        if e: c_.append(f"**Finansal sağlık:** en güçlü bilanço ve nakit akışı {e} ({br.ond(S[e]['ozet']['Sağlık skoru'], 2)}/5).")
+        e = en_iyi("_tek", 1)
+        if e: c_.append(f"**Teknik:** grafikte en güçlü görünüm {e} (puan {deger_(S[e], '_tek'):.0f}).")
+        c_.append(f"**Genel:** {sira_[0][0]} {len(kriter)} kriterin {sira_[0][1]} tanesinde önde"
+                  + (f"; {sira_[1][0]} {sira_[1][1]} kriterde öne çıkıyor." if len(sira_) > 1 else "."))
+        st.markdown('<div style="border-left:4px solid #F59E0B;background:rgba(245,158,11,.08);border-radius:12px;padding:10px 14px;margin:8px 0">'
+                    '<div style="font-size:.7rem;color:#B45309;font-weight:800;letter-spacing:.08em">SADE SONUÇ</div></div>', unsafe_allow_html=True)
+        for x in c_: st.markdown("- " + x)
+        st.caption("Karşılaştırma modelin göstergelerine dayanır; şirketlerin farklı sektör ve para biriminde olması kıyası etkileyebilir.")
+        rp = radar_png(S)
+        if rp:
+            st.markdown("**Finansal sağlık profili**"); st.image(rp, use_container_width=True)
         fy = pd.DataFrame({k: r["fiyat"] / r["fiyat"].iloc[0] * 100 for k, r in S.items()}).dropna(how="all")
         st.markdown("**Son 12 ay performans (100 baz)**")
-        st.line_chart(fy, height=260)
-        sk = pd.DataFrame({k: r["saglik"] for k, r in S.items()})
-        if not sk.empty:
-            st.markdown("**Sağlık skoru kategorileri**")
-            st.bar_chart(sk, height=260, stack=False)
+        st.line_chart(fy, height=240)
         for k, r in S.items():
-            st.download_button(f"⬇️ {k} PDF", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", key=f"k_dl_{k}")
+            st.download_button(f":material/download: {k} raporu (PDF)", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", key=f"k_dl_{k}")
 
 # ================= TAKİP =================
 with tab_w:
@@ -1208,7 +1395,7 @@ with tab_w:
     st.caption("Takip listeniz sayfa adresinde saklanır. Listeyi değiştirdikten sonra simgeyi ana ekrana "
                "yeniden eklerseniz liste kalıcı olur.")
     yeni = hisse_sec("Listeye ekle", "w_ekle")
-    if st.button("➕ Listeye Ekle", disabled=not yeni, key="w_btn"):
+    if st.button(":material/add: Listeye Ekle", disabled=not yeni, key="w_btn"):
         if yeni not in liste:
             liste.append(yeni); st.query_params["takip"] = ",".join(liste); st.rerun()
     def _cikar(k):
@@ -1218,8 +1405,8 @@ with tab_w:
         st.markdown("**Takip listeniz** (çıkarmak için dokunun):")
         sutun = st.columns(4)
         for i, k in enumerate(liste):
-            sutun[i % 4].button(f"✖ {k}", key=f"rm_{k}", on_click=_cikar, args=(k,))
-        if st.button("🔄 Listeyi Güncelle", type="primary", key="w_tara"):
+            sutun[i % 4].button(f":material/close: {k}", key=f"rm_{k}", on_click=_cikar, args=(k,))
+        if st.button(":material/refresh: Listeyi Güncelle", type="primary", key="w_tara"):
             with st.spinner("Takip listesi taranıyor…"):
                 st.session_state.takip = tarama(tuple(liste), tuple(PRM.items()), SAAT2, br.SURUM)
         if "takip" in st.session_state:
@@ -1238,11 +1425,11 @@ with tab_w:
             tablo_goster(pd.read_csv(ozet_dosya).to_dict("records"), "Potansiyel")
         for f in sorted(glob.glob(os.path.join(son, "*.pdf"))):
             with open(f, "rb") as fh:
-                st.download_button(f"⬇️ {os.path.basename(f)}", data=fh.read(), file_name=os.path.basename(f),
+                st.download_button(f":material/download: {os.path.basename(f)}", data=fh.read(), file_name=os.path.basename(f),
                                    mime="application/pdf", key=f"s_{f}")
     else:
         st.caption("Hafta içi her sabah 08:17'de takip_listesi.txt'deki hisseler için raporlar otomatik hazırlanır. "
                    "İlk raporlar oluşunca burada görünecek.")
 
 st.divider()
-st.caption(f"Veri: Yahoo Finance (gecikmeli olabilir). Otomatik model çıktısıdır, yatırım tavsiyesi değildir. · Sürüm {br.SURUM}")
+st.markdown(f'<div class="alt-not">Veriler Yahoo Finance, Binance ve OKX kaynaklıdır, gecikmeli olabilir.<br>Gösterge bazlı otomatik analizdir, yatırım tavsiyesi değildir · Sürüm {br.SURUM}</div>', unsafe_allow_html=True)

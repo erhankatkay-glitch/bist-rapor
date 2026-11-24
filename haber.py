@@ -341,9 +341,9 @@ def gecmis_istatistik(olaylar, tur, kod, yon):
 
 
 # ---------------------------------------------------------------------------------- takvim
-def takvim():
+def takvim(hafta="thisweek"):
     import requests
-    j = requests.get("https://nfs.faireconomy.media/ff_calendar_thisweek.json", headers={"User-Agent": "Mozilla/5.0"}, timeout=20).json()
+    j = requests.get(f"https://nfs.faireconomy.media/ff_calendar_{hafta}.json", headers={"User-Agent": "Mozilla/5.0"}, timeout=20).json()
     out = []
     for e in j:
         if e.get("impact") != "High" or e.get("country") not in ("USD", "EUR", "CNY", "GBP", "JPY"): continue
@@ -354,7 +354,91 @@ def takvim():
     return out
 
 
+TEPKI_VARLIK = {"Altın": "GC=F", "S&P 500 vadeli": "ES=F", "Bitcoin": "BTC/USDT", "Dolar/TL": "TRY=X"}
+
+
+def _tepki_olc(sembol, t0):
+    """Veri açıklanmadan önceki son fiyata göre 1 saat ve 1 gün sonraki değişim."""
+    if "/" in sembol:
+        import bist_kripto as KR
+        h = KR.saatlik_mumlar(sembol.split("/")[0], "USDT", "Binance", bar=1000)[0]; h.index = h.index.tz_localize(UTC)
+    else:
+        import yfinance as yf
+        h = yf.Ticker(sembol).history(period="60d", interval="60m"); h.index = h.index.tz_convert(UTC)
+    c = h["Close"].dropna()
+    once = c[c.index < t0]
+    if not len(once): return None
+    p0 = float(once.iloc[-1]); o = {}
+    for ad, dlt in (("1s", dt.timedelta(hours=1)), ("1g", dt.timedelta(days=1))):
+        s_ = c[(c.index >= t0) & (c.index <= t0 + dlt)]
+        if len(s_) and dt.datetime.now(UTC) >= t0 + dlt: o[ad] = float(s_.iloc[-1]) / p0 - 1
+    return o or None
+
+
+def takvim_arsivi(arsiv, liste):
+    """Geçmiş veri açıklamalarının piyasa tepkisini ölçer ve biriktirir."""
+    simdi = dt.datetime.now(UTC); anahtar = {(a["zaman"], a["baslik"]) for a in arsiv}
+    for e in liste:
+        if (e["zaman"], e["baslik"]) not in anahtar and dt.datetime.fromisoformat(e["zaman"]) < simdi:
+            arsiv.append({**e, "tepki": {}}); anahtar.add((e["zaman"], e["baslik"]))
+    olcum = 0
+    for a in arsiv:
+        if olcum >= 12: break
+        t0 = dt.datetime.fromisoformat(a["zaman"]).astimezone(UTC)
+        if simdi - t0 < dt.timedelta(hours=1) or simdi - t0 > dt.timedelta(days=55): continue
+        if all(len(a["tepki"].get(v, {})) == 2 for v in TEPKI_VARLIK): continue
+        for v, sem in TEPKI_VARLIK.items():
+            if len(a["tepki"].get(v, {})) == 2: continue
+            try:
+                r = _tepki_olc(sem, t0)
+                if r: a["tepki"][v] = r
+            except Exception:
+                pass
+        olcum += 1
+    return [a for a in arsiv if simdi - dt.datetime.fromisoformat(a["zaman"]).astimezone(UTC) < dt.timedelta(days=800)]
+
+
+def tepki_ozeti(arsiv, baslik, ulke):
+    """Aynı verinin geçmiş açıklamalarında varlık başına ortalama mutlak 1 saatlik hareket."""
+    x = [a for a in arsiv if a["baslik"] == baslik and a["ulke"] == ulke and a.get("tepki")]
+    out = {}
+    for v in TEPKI_VARLIK:
+        d = [a["tepki"][v]["1s"] for a in x if v in a["tepki"] and "1s" in a["tepki"][v]]
+        if d: out[v] = {"n": len(d), "ort_mutlak": float(np.mean(np.abs(d))), "yukari": float(np.mean(np.array(d) > 0))}
+    return out
+
+
 ULKE_AD = {"USD": "ABD", "EUR": "Euro Bölgesi", "CNY": "Çin", "GBP": "İngiltere", "JPY": "Japonya"}
+
+
+ETKI = {"USD": "altın, Bitcoin, Nasdaq ve BIST", "EUR": "EUR/TRY, altın ve Avrupa borsaları", "CNY": "emtia (bakır, petrol) ve risk iştahı",
+        "GBP": "sterlin ve küresel risk iştahı", "JPY": "yen ve küresel risk iştahı"}
+
+
+def takvim_karti_gonder(b, liste, bugun, metin, arsiv=None):
+    try:
+        import kart as K
+        gun = [e for e in liste if dt.datetime.fromisoformat(e["zaman"]).date() == bugun]
+        bol = {}
+        for e in gun:
+            t = dt.datetime.fromisoformat(e["zaman"])
+            alt = " · ".join(x for x in (f"önceki {e['onceki']}" if e.get("onceki") else "", f"etkilenir: {ETKI.get(e['ulke'], 'küresel piyasalar')}") if x)
+            to = tepki_ozeti(arsiv or [], e["baslik"], e["ulke"])
+            if to:
+                alt += " · geçmişte 1 saatte ort. " + ", ".join(f"{v.lower()} ±%{x['ort_mutlak'] * 100:.1f}".replace(".", ",") for v, x in list(to.items())[:3])
+            bol.setdefault(ULKE_AD.get(e["ulke"], e["ulke"]), []).append(
+                {"sol": f"{t:%H:%M}  ·  {e['baslik']}", "sag": f"beklenti {e['beklenti']}" if e.get("beklenti") else "", "sag_renk": K.C["altin"],
+                 "nokta": K.C["altin"], "alt": alt})
+        yol = os.path.join(CIKTI, "haber", "takvim.png"); os.makedirs(os.path.dirname(yol), exist_ok=True)
+        K.bildirim_karti(f"EKONOMİK TAKVİM  ·  {bugun:%d.%m.%Y}", f"Bugün {len(gun)} önemli veri", "Saatler Türkiye saatiyle",
+                         [{"baslik": u, "renk": K.C["mavi"], "satirlar": v} for u, v in bol.items()], yol, vurgu=K.C["mavi"],
+                         not_="Beklentiden güçlü ABD verisi: dolar ve faiz beklentisi yukarı, altın ve kripto üzerinde baskı. Zayıf veri: tersi. "
+                              "Açıklama anlarında oynaklık artar; stoplar sık tetiklenebilir.")
+        b.sil_anahtar("takvim")
+        alt = "🗓 <b>BUGÜNÜN ÖNEMLİ VERİLERİ</b>\n" + "\n".join(f"{dt.datetime.fromisoformat(e['zaman']):%H:%M} · {esc(ULKE_AD.get(e['ulke'], e['ulke']))} – {esc(e['baslik'])}" for e in gun[:10])
+        return bool(b.foto(yol, alt[:1000], "takvim", 20))
+    except Exception as ex:
+        print("Takvim kartı çizilemedi:", ex, file=sys.stderr); return False
 
 
 def takvim_mesaji(liste, bugun):
@@ -426,15 +510,24 @@ def calistir():
     b = tg.Bot("alarm")
     if analizler:
         import tg as _tg
-        b.mesaj(f"📰 <b>HABER ETKİSİ</b> · {simdi.astimezone(TSI):%d.%m %H:%M}\n{_tg.AYRAC}\n" + "\n\n".join(mesaj(a) for a in analizler),
+        if not haber_karti_gonder(b, analizler, simdi):
+          b.mesaj(f"📰 <b>HABER ETKİSİ</b> · {simdi.astimezone(TSI):%d.%m %H:%M}\n{_tg.AYRAC}\n" + "\n\n".join(mesaj(a) for a in analizler),
                 f"haber:{simdi:%Y%m%d%H%M}", 12, yerine=False)
     # takvim (günde bir, 07:00 TSİ sonrası ilk turda)
     bugun = simdi.astimezone(TSI).date()
+    arsiv = oku(os.path.join(kok_eski, "takvim_arsiv.json"), []) or []
+    try:
+        if not arsiv:
+            arsiv = takvim_arsivi(arsiv, takvim("lastweek"))
+        arsiv = takvim_arsivi(arsiv, tk.get("liste", []))
+    except Exception as ex:
+        print("takvim arşivi:", ex, file=sys.stderr)
+    json.dump(arsiv, open(os.path.join(kok, "takvim_arsiv.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=0, default=str)
     if simdi.astimezone(TSI).hour >= 7 and tk.get("gonderildi") != str(bugun):
         try:
             liste = takvim(); tk = {"liste": liste, "gonderildi": str(bugun)}
             m = takvim_mesaji(liste, bugun)
-            if m: b.mesaj(m, "takvim", 20, yerine=True)
+            if m and not takvim_karti_gonder(b, liste, bugun, m, arsiv): b.mesaj(m, "takvim", 20, yerine=True)
         except Exception as ex:
             print("takvim alınamadı:", ex, file=sys.stderr)
     b.kaydet()
@@ -449,6 +542,45 @@ def calistir():
     for ad, veri in (("gorulen", gorulen), ("son", son), ("olaylar", olaylar), ("takvim", tk)):
         json.dump(veri, open(os.path.join(kok, ad + ".json"), "w", encoding="utf-8"), ensure_ascii=False, indent=0, default=str)
     print(f"Haber: {len(aday)} sınıflanan başlık, {len(analizler)} analiz gönderildi.")
+
+
+def kart_bolumu(a):
+    """Bir haber analizini görsel kart bölümüne çevirir."""
+    import kart as K, firsat as F
+    C = K.C; pf = _pf(); t = dt.datetime.fromisoformat(a["zaman"]).astimezone(TSI)
+    sat = []
+    for v in a["varliklar"]:
+        yuk = v["isaret"] > 0
+        alt = [v["gerekce"][:1].upper() + v["gerekce"][1:] + "."]
+        r = v.get("tepki")
+        if r and r["saat"] >= 1:
+            yonlu = r["degisim"] * v["isaret"]; esik = max(r["oyn"] * 1.5, 0.002)
+            alt.append(f"Haberden beri {yz(r['degisim'])} → " + ("fiyatlandı" if yonlu > esik else "ters yönde" if yonlu < -esik else "henüz tepki yok"))
+        te = v.get("teknik")
+        if te and te.get("fiyat"):
+            p = te["fiyat"]; e = f"Fiyat {F.fy(p)} · teknik {te['etiket']} ({float(te['puan']):.0f})"
+            if te.get("destek"): e += f" · destek {F.fy(te['destek'])} ({yz(te['destek'] / p - 1)})"
+            if te.get("direnc"): e += f" · direnç {F.fy(te['direnc'])} ({yz(te['direnc'] / p - 1)})"
+            alt.append(e)
+        sat.append({"sol": ("Portföy · " if _pfk(v["kod"]) in pf else "") + vad(v["kod"]), "sag": "↑ yükseliş" if yuk else "↓ düşüş",
+                    "sag_renk": C["yesil"] if yuk else C["kirmizi"], "nokta": C["yesil"] if yuk else C["kirmizi"], "alt": "  ".join(alt)})
+    return {"baslik": f"{a['tur']} · {'olumlu' if a['yon'] > 0 else 'olumsuz'} · {t:%H:%M}", "renk": C["yesil"] if a["yon"] > 0 else C["kirmizi"],
+            "aciklama": f"“{a['baslik'][:160]}”" + (f" — {a['kaynak']}" if a.get("kaynak") else ""), "satirlar": sat}
+
+
+def haber_karti_gonder(b, analizler, simdi):
+    try:
+        import kart as K, tg as _tg
+        yol = os.path.join(CIKTI, "haber", "kart.png"); os.makedirs(os.path.dirname(yol), exist_ok=True)
+        K.bildirim_karti(f"HABER ETKİSİ  ·  {simdi.astimezone(TSI):%d.%m %H:%M}",
+                         f"{len(analizler)} önemli haber", "Etkilenen varlıklar, beklenen yön ve piyasanın tepkisi",
+                         [kart_bolumu(a) for a in analizler], yol, vurgu=K.C["turkuaz"])
+        alt = f"📰 <b>HABER ETKİSİ</b> · {simdi.astimezone(TSI):%H:%M}\n" + "\n".join(
+            f"{'🟢' if a['yon'] > 0 else '🔴'} <b>{esc(a['tur'])}</b>: " + (f'<a href="{esc(a["link"])}">{esc(a["baslik"][:90])}</a>' if a.get("link") else esc(a["baslik"][:90]))
+            for a in analizler)
+        return bool(b.foto(yol, alt[:1000], f"haber:{simdi:%Y%m%d%H%M}", 12))
+    except Exception as ex:
+        print("Haber kartı çizilemedi:", ex, file=sys.stderr); return False
 
 
 def _pfk(kod):

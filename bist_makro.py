@@ -5,12 +5,19 @@ import numpy as np
 import pandas as pd
 
 PIYASA = {  # ad: (yahoo kodu, birim)
+    "BIST 100": ("XU100.IS", "puan"),
+    "S&P 500": ("^GSPC", "puan"),
+    "Nasdaq": ("^IXIC", "puan"),
     "USD/TRY": ("TRY=X", "TL"),
     "EUR/TRY": ("EURTRY=X", "TL"),
-    "BIST 100": ("XU100.IS", "puan"),
     "Ons altın": ("GC=F", "$"),
+    "Gümüş": ("SI=F", "$"),
     "Brent petrol": ("BZ=F", "$"),
+    "Bitcoin": ("BTC-USD", "$"),
+    "Ethereum": ("ETH-USD", "$"),
+    "Dolar endeksi": ("DX-Y.NYB", ""),
     "ABD 10Y faiz": ("^TNX", "%"),
+    "VIX": ("^VIX", ""),
 }
 
 # EVDS serileri: her kalem için aday kodlar (ilk çalışan kullanılır)
@@ -34,13 +41,22 @@ def _degisim(s, gun):
 def piyasa_paneli():
     import yfinance as yf
     out = {}
+    kodlar = [k for k, _ in PIYASA.values()]
+    try:
+        df = yf.download(kodlar, period="2y", interval="1d", auto_adjust=True, progress=False, group_by="ticker", threads=True)
+    except Exception:
+        df = None
     for ad, (kod, birim) in PIYASA.items():
         try:
-            h = yf.Ticker(kod).history(period="2y")["Close"].dropna()
-            h.index = h.index.tz_localize(None) if h.index.tz is not None else h.index
+            if df is not None and kod in df.columns.get_level_values(0):
+                h = df[kod]["Close"].dropna()
+            else:
+                h = yf.Ticker(kod).history(period="2y")["Close"].dropna()
+            h.index = h.index.tz_localize(None) if getattr(h.index, "tz", None) is not None else h.index
+            if len(h) < 5: continue
             yb = h[h.index < pd.Timestamp(h.index[-1].year, 1, 1)]
             out[ad] = {"deger": float(h.iloc[-1]), "birim": birim, "seri": h,
-                       "d1G": _degisim(h, 1), "d1A": _degisim(h, 30), "d1Y": _degisim(h, 365),
+                       "d1G": float(h.iloc[-1] / h.iloc[-2] - 1), "d1A": _degisim(h, 30), "d1Y": _degisim(h, 365),
                        "YBB": float(h.iloc[-1] / yb.iloc[-1] - 1) if len(yb) else None}
         except Exception:
             continue

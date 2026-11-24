@@ -1,0 +1,44 @@
+name: Sabah özeti (kart + sesli)
+
+on:
+  schedule:
+    - cron: "20 5 * * *"   # 08:20 TSİ başlar, 09:00 TSİ'de gönderir
+  push:
+    branches: [main]
+    paths: [".github/tetik/sabah"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sabah-ozet
+  cancel-in-progress: false
+
+jobs:
+  sabah:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DURUM_KLON: onceki
+      DURUM_CIKTI: cikti
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt gTTS
+      - name: 09:00 TSİ'yi bekle
+        if: github.event_name == 'schedule'
+        run: python kapanis.py bekle sabah
+      - name: Önceki durumu al
+        run: git clone -q --depth 1 --branch bulten "$GH_URL" onceki || mkdir -p onceki
+      - name: Sabah özetini üret ve gönder
+        run: python sabah.py
+      - name: Yayınla
+        if: always()
+        run: python yayinla.py cikti "Sabah özeti $(date -u +%F)"

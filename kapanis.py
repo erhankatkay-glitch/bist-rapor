@@ -11,7 +11,7 @@ Kullanım: python kapanis.py <slot> [--zorla]
   abd-ogle       ABD 09:30–13:30 ET dilimi kapanışı                 → 4 saatlik
   abd-kapanis    ABD kapanışı (16:00 ET)                            → 4 saatlik + günlük (+H/A) + bülten
 --zorla: tatil/tazelik kontrollerini atlar ve haftalık/aylık taramayı da yapar (deneme için)."""
-import os, sys, json, time, shutil, datetime as dt
+import os, re, sys, json, time, shutil, datetime as dt
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pandas as pd
@@ -208,10 +208,51 @@ def takip_et(D, bars_fn, simdi):
             if k["durum"] == "kapandı" and k.get("sebep") == "tüm hedefler":
                 m += f"\n🏁 {ad} tüm hedefler tamamlandı · sonuç {F.rrs(k['R'])} ({F.yz(F.getiri(k))})"
             yeni_olay.append(m)
-            D.olaylar.append({"zaman": dt.datetime.now(UTC).isoformat(), "id": k["id"], "metin": m})
+            sol = f"{F.gorunen(k['kod'], k.get('ad'))} · {_yon(k)} · {T.TF_AD[k['tf']].lower()}"
+            if tur.startswith("H"):
+                i = int(tur[1]) - 1; f_ = k["hedef"][i]
+                ne = ["pozisyonun yarısını kapat, stopu girişe (" + F.fy(g) + ") çek", "pozisyonun %30'unu kapat", "kalan pozisyonu kapat"][i]
+                kk = {"tur": "hedef", "sol": sol, "sag": f"H{i + 1} görüldü",
+                      "alt": f"H{i + 1} seviyesi {F.fy(f_)} ({F.yz((f_ - g) / g * k['yon'])}) · {ne}"
+                             + (f" · kurulum tamamlandı, sonuç {F.rrs(k['R'])} ({F.yz(F.getiri(k))})" if k["durum"] == "kapandı" else "")}
+            else:
+                kk = {"tur": tur, "sol": sol, "sag": F.rrs(k["R"]), "alt": {"stop": "Stop oldu", "basabas": "İlk hedef sonrası girişte kapandı",
+                       "sure": "Süre doldu, piyasadan kapatıldı"}.get(tur, "") + f" · çıkış {F.fy(k.get('cikis'))} · sonuç {F.yz(F.getiri(k))}"}
+            D.olaylar.append({"zaman": dt.datetime.now(UTC).isoformat(), "id": k["id"], "metin": m, "kart": kk})
         (D.gecmis if k["durum"] == "kapandı" else kalan).append(k)
     D.acik = kalan
     return yeni_olay
+
+
+def _duz(h):
+    return re.sub(r"<[^>]+>", "", str(h)).replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+
+
+def kart_gonder(bot, anahtar, omur, ust, baslik, alt, bolumler, aciklama, vurgu="altin", not_=None, yedek=None, bag=None):
+    """Bildirimi görsel kart olarak gönderir (önce aynı anahtarlı eskiyi siler); çizilemezse yedek metni gönderir."""
+    try:
+        import kart as KT
+        os.makedirs(os.path.join(CIKTI, "kartlar"), exist_ok=True)
+        yol = os.path.join(CIKTI, "kartlar", re.sub(r"[^a-z0-9]+", "_", anahtar.lower()) + ".png")
+        KT.bildirim_karti(ust, baslik, alt, bolumler, yol, vurgu=KT.C.get(vurgu, vurgu), not_=not_)
+        bot.sil_anahtar(anahtar)
+        if bot.foto(yol, aciklama[:1000], anahtar, omur, bag=bag): return True
+    except Exception as ex:
+        log("kart çizilemedi:", anahtar, ex)
+    if yedek: return bool(bot.mesaj(yedek, anahtar, omur, bag=bag, yerine=True))
+    return False
+
+
+def acik_kart_satirlari(acik, n=10):
+    import kart as KT
+    C = KT.C; out = []
+    for k in acik[:n]:
+        c = k.get("son_fiyat", k["giris"]); ger = (c - k["giris"]) / k["giris"] * k["yon"]
+        durum = " · ".join(f"H{i + 1} {'görüldü' if i < k['asama'] else F.fy(k['hedef'][i])}" for i in range(3))
+        out.append({"sol": f"{F.gorunen(k['kod'], k.get('ad'))} · {'AL' if k['yon'] == 1 else 'SAT'} · {T.TF_AD[k['tf']].lower()}",
+                    "sag": F.yz(ger), "sag_renk": C["yesil"] if ger >= 0 else C["kirmizi"], "nokta": C["yesil"] if k["yon"] == 1 else C["kirmizi"],
+                    "alt": f"giriş {F.fy(k['giris'])} · stop {'girişte' if k['asama'] else F.fy(k['stop'])} · {durum}"})
+    return out
 
 
 def takip_mesaji(bot, D):
@@ -227,7 +268,20 @@ def takip_mesaji(bot, D):
     if D.acik:
         satir.append(f"📂 Açık kurulum: <b>{len(D.acik)}</b>")
         satir.append("<blockquote expandable>" + "\n".join(F.acik_satiri(k) for k in D.acik[:20]) + "</blockquote>")
-    bot.mesaj("\n".join(satir), f"takip:{D.p}", TAKIP_OMUR, yerine=True)
+    import kart as KT
+    C = KT.C; sat = []
+    renk_tur = {"hedef": C["yesil"], "stop": C["kirmizi"], "basabas": C["soluk"], "sure": C["soluk"]}
+    for o in reversed(son[-12:]):
+        z = dt.datetime.fromisoformat(o["zaman"]).astimezone(TSI); kk = o.get("kart")
+        if not kk: kk = {"tur": "", "sol": _duz(o["metin"])[2:60], "sag": "", "alt": ""}
+        sag_r = C["yesil"] if kk["tur"] == "hedef" or str(kk.get("sag", "")).startswith("+") else C["kirmizi"] if kk["tur"] == "stop" else C["yazi"]
+        sat.append({"sol": kk["sol"], "sag": kk.get("sag"), "sag_renk": sag_r, "nokta": renk_tur.get(kk["tur"], C["altin"]),
+                    "alt": f"{z:%d.%m %H:%M} · {kk['alt']}"})
+    bol = [{"baslik": "Son gelişmeler", "renk": C["altin"], "satirlar": sat}]
+    if D.acik: bol.append({"baslik": f"Açık kurulumlar ({len(D.acik)})", "renk": C["mavi"], "satirlar": acik_kart_satirlari(D.acik)})
+    aciklama = f"📌 <b>{tg.buyuk(PIYASA_AD[D.p])} · KURULUM TAKİBİ</b>\n" + "\n".join(_duz(o["metin"])[:140] for o in reversed(son[-6:]))
+    kart_gonder(bot, f"takip:{D.p}", TAKIP_OMUR, f"{tg.buyuk(PIYASA_AD[D.p])}  ·  KURULUM TAKİBİ", "Hedef ve stop gelişmeleri",
+                f"Son {TAKIP_OMUR} saat", bol, aciklama, "altin", yedek="\n".join(satir))
 
 
 # ====================================================================== fırsat turu
@@ -296,7 +350,19 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
         bas.append("\n<i>Plan: H1'de yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 görülünce stop girişe çekilir.</i>")
         bag = [k["id"] for k in yeni] + [k["id"] for k in acik_tf]
         anahtar = f"firsat:{D.p}:{tf}"
-        ids = bot.mesaj("\n".join(bas), anahtar, OMUR[tf], bag=bag, yerine=True)
+        import kart as KT
+        C = KT.C
+        satl = [{"sol": f"{F.gorunen(f['kod'], f.get('ad'))} · {'AL' if f['yon'] == 1 else 'SAT'}", "sag": f"puan {f['puan']:.0f}",
+                 "sag_renk": C["yesil"] if f["yon"] == 1 else C["kirmizi"], "nokta": C["yesil"] if f["yon"] == 1 else C["kirmizi"],
+                 "alt": f"{f['kurulum_ad'][:60]} · giriş {F.fy(f['plan']['giris'])} · stop {F.fy(f['plan']['stop'])} · H1 {F.fy(f['plan']['hedef'][0]['fiyat'])}"}
+                for f in secilen]
+        bol = [{"baslik": "Yeni fırsatlar (ayrıntılı kartlar aşağıda)", "renk": C["altin"], "satirlar": satl}]
+        if acik_tf: bol.append({"baslik": f"Önceki mesajlardan açık kurulumlar ({len(acik_tf)})", "renk": C["mavi"], "satirlar": acik_kart_satirlari(acik_tf, 8)})
+        not_ = "Plan: H1'de pozisyonun yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 görülünce stop girişe çekilir."
+        if any(f["yon"] == -1 for f in secilen): not_ += " SAT fırsatları vadeli (kaldıraçlı) işlem içindir; spotta açığa satış yapılamaz."
+        ids = kart_gonder(bot, anahtar, OMUR[tf], f"{tg.buyuk(PIYASA_AD[D.p])}  ·  {tg.buyuk(T.TF_AD[tf])} FIRSATLAR",
+                          f"{len(secilen)} yeni fırsat", f"Mum: {mum_metni(D.p, tf, mum)} · {len(varliklar):,} likit varlık tarandı".replace(",", "."),
+                          bol, "\n".join(bas), "altin", not_=not_, yedek="\n".join(bas), bag=bag)
         if ids:
             for f in secilen:
                 ek = []
@@ -329,6 +395,7 @@ def portfoy_uyari(bot, D, tf, varliklar, adaylar):
             if "sr" not in v["a"]: v["a"] = T.tf_analiz(v["a"]["h"], tf)
             sat += [a for a in F.degerlendir(v, tf, b, pist, D.p) if a["puan"] >= 45]
     if not sat: return
+    sat_liste = sat
     s = [f"💼 <b>PORTFÖY UYARISI · {tg.buyuk(T.TF_AD[tf])}</b>", tg.AYRAC,
          "Portföyünüzdeki varlıklarda ters yönlü (satış) kurulum oluştu:"]
     for a in sorted(sat, key=lambda x: -x["puan"])[:6]:
@@ -338,7 +405,18 @@ def portfoy_uyari(bot, D, tf, varliklar, adaylar):
                  f"\nGeçersizlik (yukarı stop): <code>{F.fy(p_['stop'])}</code> ({F.yz((p_['stop'] - p_['giris']) / p_['giris'])})"
                  + (f"\n⚠️ " + F._e(" · ".join(a["risk"][:2])) if a.get("risk") else "") + "</blockquote>")
     s.append("<i>Pozisyonu korumak için stop seviyenizi gözden geçirmeniz, kısmi kâr almanız ya da yükseliş teyidi beklemeniz düşünülebilir.</i>")
-    bot.mesaj("\n".join(s), f"portfoy:{D.p}:{tf}", 24, yerine=True)
+    import kart as KT
+    C = KT.C; sat = []
+    for a in sorted(sat_liste, key=lambda x: -x["puan"])[:6]:
+        p_ = a["plan"]
+        sat.append({"sol": F.gorunen(a["kod"], a.get("ad")), "sag": f"puan {a['puan']:.0f}", "sag_renk": C["kirmizi"], "nokta": C["kirmizi"],
+                    "alt": f"{a['kurulum_ad'][:60]} · fiyat {F.fy(p_['giris'])} · aşağı hedefler {F.fy(p_['hedef'][0]['fiyat'])} / "
+                           f"{F.fy(p_['hedef'][1]['fiyat'])} · yükseliş teyidi (geçersizlik) {F.fy(p_['stop'])}"})
+    aciklama = f"💼 <b>PORTFÖY UYARISI · {tg.buyuk(T.TF_AD[tf])}</b>\n" + "\n".join(f"🔴 <b>{F._e(F.gorunen(a['kod'], a.get('ad')))}</b>: {F._e(a['kurulum_ad'][:50])}" for a in sat_liste[:6])
+    kart_gonder(bot, f"portfoy:{D.p}:{tf}", 24, f"PORTFÖY UYARISI  ·  {tg.buyuk(T.TF_AD[tf])}", "Satış yönlü kurulum",
+                "Portföyünüzdeki varlıklarda ters sinyal oluştu", [{"baslik": "Dikkat edilmesi gerekenler", "renk": C["kirmizi"], "satirlar": sat}],
+                aciklama, "kirmizi", not_="Pozisyonu korumak için stop seviyenizi gözden geçirmeniz, kısmi kâr almanız ya da yükseliş teyidi beklemeniz düşünülebilir.",
+                yedek="\n".join(s))
 
 
 # ====================================================================== ortak yardımcılar
@@ -621,8 +699,8 @@ def abd(slot, zorla):
 
 # ====================================================================== haftalık karne
 def karne_mesaji(bot, D_kripto):
-    t = dt.datetime.now(UTC); satir = ["📒 <b>HAFTALIK FIRSAT KARNESİ</b>", tg.AYRAC]
-    tablo = [f"{'Piyasa':<7}{'Kapanan':>8}{'H1':>6}{'Kazanç':>8}{'Ort.R':>8}"]
+    import kart as KT
+    C = KT.C; t = dt.datetime.now(UTC); satir = ["📒 <b>HAFTALIK FIRSAT KARNESİ</b>", tg.AYRAC]; kart_s = []
     for p in ("bist", "abd", "kripto", "emtia"):
         if p == "kripto": gec = D_kripto.gecmis; acik = D_kripto.acik
         else:
@@ -632,15 +710,20 @@ def karne_mesaji(bot, D_kripto):
             except Exception:
                 gec, acik = [], []
         hafta = [k for k in gec if k.get("kapanis") and _utc(k) >= t - dt.timedelta(days=7)]
-        ph = F.performans(hafta)
-        if ph: tablo.append(f"{PIYASA_AD[p]:<7}{ph['n']:>8}{ph['h1'] * 100:>5.0f}%{ph['kazanc'] * 100:>7.0f}%{ph['ort_R']:>+8.2f}".replace(".", ","))
-        else: tablo.append(f"{PIYASA_AD[p]:<7}{0:>8}{'–':>6}{'–':>8}{'–':>8}")
-        pt = F.performans(gec)
-        if pt: satir.append(f"• <b>{PIYASA_AD[p]}</b>: açık {len(acik)} · başlangıçtan beri {pt['n']} kurulum, H1 %{pt['h1'] * 100:.0f}, ort. {F.rrs(pt['ort_R'])}")
-        else: satir.append(f"• <b>{PIYASA_AD[p]}</b>: açık {len(acik)}")
-    satir.insert(2, "<b>Son 7 gün</b>\n<pre>" + "\n".join(tablo) + "</pre>")
-    satir.append("\n<i>R: stop mesafesi kadar risk birimi. H1: ilk hedefe stoptan önce ulaşma oranı.</i>")
-    bot.mesaj("\n".join(satir), "karne", 46.5, yerine=True)
+        ph, pt = F.performans(hafta), F.performans(gec)
+        if ph:
+            alt = f"7 günde {ph['n']} kapanan · ilk hedefe ulaşma %{ph['h1'] * 100:.0f} · kazanan %{ph['kazanc'] * 100:.0f} · toplam {F.rrs(ph['top_R'])}"
+            sag, sr = F.rrs(ph["ort_R"]), (C["yesil"] if ph["ort_R"] >= 0 else C["kirmizi"])
+        else:
+            alt, sag, sr = "Son 7 günde kapanan kurulum yok", "–", C["soluk"]
+        if pt: alt += f" · başlangıçtan beri {pt['n']} kurulum, ort. {F.rrs(pt['ort_R'])}"
+        kart_s.append({"sol": f"{PIYASA_AD[p]} · açık {len(acik)}", "sag": sag, "sag_renk": sr, "nokta": sr, "alt": alt})
+        satir.append(f"• <b>{PIYASA_AD[p]}</b>: {alt} · ort. {sag}")
+    satir.append("\n<i>R: stop mesafesi kadar risk birimi.</i>")
+    kart_gonder(bot, "karne", 46.5, "HAFTALIK FIRSAT KARNESİ", "Sistem nasıl performans gösterdi?", f"{t.astimezone(TSI):%d.%m.%Y} itibarıyla",
+                [{"baslik": "Piyasalara göre", "renk": C["altin"], "satirlar": kart_s}], "\n".join(satir), "altin",
+                not_="R: stop mesafesi kadar risk birimi. +1R, riske edilen tutar kadar kazanç; −1R, stop olunca kaybedilen tutardır. "
+                     "Ortalama R sıfırın üzerindeyse sistem uzun vadede kazandırıyor demektir.", yedek="\n".join(satir))
 
 
 def _utc(k):
@@ -662,7 +745,7 @@ def hedef_zaman(slot, simdi_utc):
         return s + pd.Timedelta(minutes=ek)
     return {"bist-ogle": lambda: tsi(14, 17), "bist-kapanis": lambda: tsi(18, 26), "kripto": lambda: sinir4(2),
             "emtia-4s": lambda: sinir4(12), "emtia-kapanis": lambda: (u.normalize() + pd.Timedelta(hours=22, minutes=12)),
-            "abd-ogle": lambda: et(13, 34), "abd-kapanis": lambda: et(16, 12)}[slot]()
+            "abd-ogle": lambda: et(13, 34), "abd-kapanis": lambda: et(16, 12), "sabah": lambda: tsi(9, 0)}[slot]()
 
 
 def bekle(slot, sinir_dk=130):

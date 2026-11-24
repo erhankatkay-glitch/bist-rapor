@@ -298,3 +298,62 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
     _t(ax, W / 2, 22, "Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
     return dosya
+
+
+# ================================================================== GENEL BİLDİRİM KARTI
+def _sar(s, n):
+    return textwrap.wrap(str(s), n) or [""]
+
+
+def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
+    """Bildirimler için ortak tasarım. bolumler: [{"baslik", "renk", "aciklama"(ops.), "satirlar": [
+    {"sol", "sag"(ops.), "sag_renk"(ops.), "nokta"(renk, ops.), "alt"(ops.)}]}]. Yükseklik içeriğe göre ayarlanır."""
+    vurgu = vurgu or C["altin"]
+    # --- yükseklik hesabı
+    ust_y = 250; h = ust_y
+    for b in bolumler:   # çizimle birebir aynı ölçüler
+        h += 46
+        if b.get("aciklama"): h += 30 * len(_sar(b["aciklama"], 70)[:3]) + 10
+        for s in b["satirlar"]:
+            h += 44 + 26 * (len(_sar(s.get("alt", ""), 80)[:4]) if s.get("alt") else 0) + 14
+        h += 20
+    if not_: h += 30 * len(_sar(not_, 82)[:4]) + 30
+    H_ = int(h + 60)
+    fig = plt.figure(figsize=(W / 100, H_ / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
+    ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H_); ax.axis("off")
+    ax.add_patch(Rectangle((0, H_ - 8), W, 8, color=vurgu))
+    _t(ax, 48, H_ - 70, ust, 15, vurgu, "semibold")
+    _t(ax, 48, H_ - 140, baslik, 40, weight="bold")
+    if alt: _t(ax, 48, H_ - 185, alt, 18, C["soluk"])
+    y = H_ - ust_y
+    for b in bolumler:
+        renk = b.get("renk") or vurgu
+        # bölüm başlığı
+        ax.add_patch(Rectangle((40, y - 8), 6, 34, color=renk))
+        _t(ax, 62, y, b["baslik"], 20, renk, "bold")
+        y -= 46
+        if b.get("aciklama"):
+            for sat in _sar(b["aciklama"], 70)[:3]:
+                _t(ax, 62, y, sat, 18, C["yazi"], style="italic"); y -= 30
+            y -= 10
+        for s in b["satirlar"]:
+            alt_s = _sar(s.get("alt", ""), 80)[:4] if s.get("alt") else []
+            kh = 44 + 26 * len(alt_s)
+            _kutu(ax, 40, y - kh + 30, W - 80, kh, C["panel"], r=12)
+            if s.get("nokta"): ax.add_patch(Circle((66, y + 8), 8, color=s["nokta"]))
+            _t(ax, 86 if s.get("nokta") else 62, y, textwrap.shorten(str(s["sol"]), 52, placeholder="…"), 20, weight="bold")
+            if s.get("sag"): _t(ax, W - 62, y, str(s["sag"]), 20, s.get("sag_renk") or C["yazi"], "bold", ha="right")
+            yy = y - 30
+            for sat in alt_s:
+                _t(ax, 86 if s.get("nokta") else 62, yy, sat, 15.5, C["soluk"]); yy -= 26
+            y -= kh + 14
+        y -= 20
+    if not_:
+        nl = _sar(not_, 82)[:4]
+        _kutu(ax, 40, y - 30 * len(nl) - 10, W - 80, 30 * len(nl) + 40, C["panel2"], kenar=C["cizgi"])
+        yy = y - 4
+        for sat in nl:
+            _t(ax, 62, yy, sat, 15.5, C["soluk"]); yy -= 30
+    _t(ax, W / 2, 20, "Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
+    return dosya

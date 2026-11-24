@@ -87,7 +87,7 @@ def _ad(kod):
     if kod.endswith(".US"):
         import bist_abd as AB
         return f"{kod[:-3]} ({AB.ad(kod)})"
-    return f"{kod} ({T.KURESEL[kod][1]})" if kod in T.KURESEL else {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka"}.get(kod, kod)
+    return T.KURESEL[kod][1] if kod in T.KURESEL else {"XU100": "BIST 100", "XU030": "BIST 30", "XBANK": "BIST Banka"}.get(kod, kod)
 
 
 def _kripto(kod):
@@ -205,22 +205,71 @@ GRUP = [("💼", "💼 <b>PORTFÖYÜNÜZ</b>"), ("⚡🔔", "⚡ <b>Sert hareket
         ("📈", "📈 <b>RSI ve teknik puan</b>"), ("📰", "📰 <b>Şirket haberleri (KAP)</b>")]
 
 
+def _satir(m):
+    """Alarm metnini kart satırına çevirir: (grup, satır sözlüğü, bağlantı)."""
+    import kart as K
+    C = K.C; url = None
+    if "⟦" in m and m.endswith("⟧"): m, url = m[:-1].split("⟦", 1)
+    ik, govde = m[:1], m[1:].strip()
+    fiyat = degis = None
+    mt = re.search(r" · fiyat (\S+)(?: \(([^)]+)\))?$", govde)
+    if mt: fiyat, degis = mt.group(1), mt.group(2); govde = govde[:mt.start()]
+    renk_d = (C["kirmizi"] if degis and degis.startswith("-") else C["yesil"]) if degis else None
+    if ik == "⚡":
+        mm = re.match(r"(.+?) bugün (\S+) hareket etti \(fiyat (\S+)\)", govde)
+        if mm:
+            d = mm.group(2); dus = d.startswith("-")
+            return "⚡", {"sol": mm.group(1), "sag": d.replace("-", "−"), "sag_renk": C["kirmizi"] if dus else C["yesil"],
+                          "nokta": C["kirmizi"] if dus else C["yesil"], "alt": f"Gün içinde sert {'düşüş' if dus else 'yükseliş'} · fiyat {mm.group(3)}"}, url
+    if ik == "🔔":
+        mm = re.match(r"(.+?) fiyatı (.+?): (\S+)$", govde)
+        if mm: return "⚡", {"sol": mm.group(1), "sag": mm.group(3), "nokta": C["altin"], "alt": "Fiyat " + mm.group(2)}, url
+    if ":" in govde:
+        sol, alt = govde.split(":", 1)
+    else:
+        sol, alt = govde, ""
+    alt = alt.strip().replace("⚠️ ", "").replace("-%", "−%")
+    if degis: alt += f" · günlük {degis.replace('-', '−')}"
+    nokta = {"🟢": C["yesil"], "🔴": C["kirmizi"], "📈": C["mavi"], "📰": C["turkuaz"], "💼": C["altin"]}.get(ik, C["soluk"])
+    if ik == "📰" and degis: nokta = renk_d
+    return ik if ik in ("💼", "📈", "📰") else "🟢" if ik in ("🟢", "🔴") else "•", {"sol": sol.strip(), "sag": fiyat, "nokta": nokta, "alt": alt}, url
+
+
+GRUP_KART = [("💼", "Portföyünüz", "altin"), ("⚡", "Sert hareket ve fiyat seviyeleri", "altin"), ("🟢", "Formasyon ve kırılımlar", "mavi"),
+             ("📈", "RSI ve teknik puan", "mor"), ("📰", "Şirket haberleri (KAP)", "turkuaz"), ("•", "Diğer", "soluk")]
+
+
 def gonder(mesajlar):
-    """Alarmlar konu başlıklarına göre gruplanır, sessiz gönderilir ve 12 saat sonra otomatik silinir."""
+    """Alarmlar görsel kart olarak (konu başlıklarına göre gruplu) sessiz gönderilir; 12 saat sonra silinir."""
     if not mesajlar: return False
     import tg
     b = tg.Bot("alarm")
     if not b.aktif: return False
     z = dt.datetime.now(TSI)
-    for i in range(0, len(mesajlar), 25):
-        parca = mesajlar[i:i + 25]
-        s = [f"🔔 <b>ALARMLAR</b> · {z:%d.%m %H:%M}", tg.AYRAC]
-        for ikonlar, baslik in GRUP:
-            g = [m for m in parca if m[:1] in ikonlar or m[:2] in ikonlar]
-            if g: s += [baslik, "<blockquote>" + "\n".join(tg_kac(m) for m in g) + "</blockquote>"]
-        diger = [m for m in parca if not any(m[:1] in ik or m[:2] in ik for ik, _ in GRUP)]
-        if diger: s += ["<blockquote>" + "\n".join(tg_kac(m) for m in diger) + "</blockquote>"]
-        b.mesaj("\n".join(s), f"alarm:{z:%Y%m%d%H%M}:{i}", 12, yerine=False)
+    for i in range(0, len(mesajlar), 14):
+        parca = mesajlar[i:i + 14]; anahtar = f"alarm:{z:%Y%m%d%H%M}:{i}"
+        gonderildi = False
+        try:
+            import kart as K
+            sat = [_satir(m) for m in parca]
+            bol = [{"baslik": ad, "renk": K.C[r], "satirlar": [x[1] for x in sat if x[0] == g]} for g, ad, r in GRUP_KART]
+            bol = [x for x in bol if x["satirlar"]]
+            os.makedirs("alarm_cikti", exist_ok=True); yol = os.path.join("alarm_cikti", f"kart_{i}.png")
+            pf = any(x[0] == "💼" for x in sat)
+            K.bildirim_karti(f"ALARMLAR  ·  {z:%d.%m %H:%M}", f"{len(parca)} yeni alarm" if not pf else "Portföy uyarısı",
+                             "Fiyat, formasyon ve şirket haberleri", bol, yol, vurgu=K.C["altin"])
+            linkler = [(x[1]["sol"], x[2]) for x in sat if x[2]]
+            alt = f"🔔 <b>{len(parca)} yeni alarm</b> · {z:%H:%M}\n" + "\n".join(tg_kac(m.split("⟦")[0])[:150] for m in parca[:6])
+            if linkler: alt += "\n" + " · ".join(f'<a href="{u}">{tg_kac(s_)[:20]}</a>' for s_, u in linkler[:5])
+            gonderildi = bool(b.foto(yol, alt[:1000], anahtar, 12))
+        except Exception as ex:
+            print("Alarm kartı çizilemedi:", ex, file=sys.stderr)
+        if not gonderildi:
+            s_ = [f"🔔 <b>ALARMLAR</b> · {z:%d.%m %H:%M}", tg.AYRAC]
+            for ikonlar, baslik in GRUP:
+                g = [m for m in parca if m[:1] in ikonlar]
+                if g: s_ += [baslik, "<blockquote>" + "\n".join(tg_kac(m) for m in g) + "</blockquote>"]
+            b.mesaj("\n".join(s_), anahtar, 12, yerine=False)
     b.kaydet()
     return True
 
