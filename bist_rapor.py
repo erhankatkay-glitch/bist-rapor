@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-8"
+SURUM = "2026.11.24-9"
 
 import bist_veri as BV
 
@@ -258,6 +258,27 @@ def akis_yorumlari(m):
     a = m.get("akis") or {}; y = m.get("yabanci") or {}
     c = []
     if a:
+        poz, neg = [], []
+        if a.get("cmf") is not None:
+            (poz if a["cmf"] > 0.05 else neg if a["cmf"] < -0.05 else []).append("CMF")
+        if a.get("obv_egim") is not None:
+            (poz if a["obv_egim"] > 0.1 else neg if a["obv_egim"] < -0.1 else []).append("OBV eğimi")
+        if a.get("hacim_oran_ud") is not None:
+            (poz if a["hacim_oran_ud"] > 1.25 else neg if a["hacim_oran_ud"] < 0.8 else []).append("hacim dengesi")
+        if a.get("uyumsuzluk") == "pozitif": poz.append("pozitif uyumsuzluk")
+        if a.get("uyumsuzluk") == "negatif": neg.append("negatif uyumsuzluk")
+        ozet_c = f"<b>Genel görünüm: {a['ozet']}.</b> "
+        if poz and neg:
+            ozet_c += f"Sinyaller karışık: {', '.join(poz)} olumlu; {', '.join(neg)} olumsuz. Toplamda olumlu taraf ağır basıyor." if a["puan"] > 0 else \
+                      f"Sinyaller karışık: {', '.join(poz)} olumlu; {', '.join(neg)} olumsuz. Toplamda olumsuz taraf ağır basıyor." if a["puan"] < 0 else \
+                      f"Sinyaller karışık: {', '.join(poz)} olumlu; {', '.join(neg)} olumsuz; net bir yön yok."
+        elif poz:
+            ozet_c += f"Olumlu sinyaller: {', '.join(poz)}."
+        elif neg:
+            ozet_c += f"Olumsuz sinyaller: {', '.join(neg)}."
+        else:
+            ozet_c += "Belirgin bir para akışı sinyali yok."
+        c.append(ozet_c)
         if a.get("cmf") is not None:
             c.append(f"Chaikin Para Akışı (20G) {ond(a['cmf'], 2)}: " +
                      ("belirgin para girişi var." if a["cmf"] > 0.1 else "hafif para girişi." if a["cmf"] > 0.03 else
@@ -1211,7 +1232,8 @@ def g_akis(h, m):
     ky = k[k.index >= bas]; obv = a["obv"].reindex(ky.index)
     ax = axs[0]; ax.plot(ky.index, ky, color=C["lac"], lw=1.2); ax.set_ylabel("Fiyat", fontsize=7)
     a2 = ax.twinx(); a2.spines["right"].set_visible(True); a2.plot(ky.index, obv, color=C["tur"], lw=1); a2.set_ylabel("OBV", fontsize=7)
-    a2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: tl(x, 0))); a2.tick_params(labelsize=6)
+    a2.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: _tr(f"{x/1e9:,.2f}") + " mr" if abs(x) >= 1e9 else _tr(f"{x/1e6:,.1f}") + " mn"))
+    a2.tick_params(labelsize=6)
     ax.set_title("Son 6 Ay: Fiyat ve Hacim Dengesi (OBV), Para Akışı" + (" ve Yabancı Payı" if n == 3 else ""), loc="left")
     ax.grid(alpha=0.2)
     ax = axs[1]

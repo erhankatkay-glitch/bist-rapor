@@ -154,7 +154,7 @@ with tab_r:
                      f"Yabancı payı %{br.ond(r['yabanci'], 2)}" if r.get("yabanci") is not None else "",
                      "#1E8E5A" if "GİRİŞ" in r["akis_ozet"] else "#C0392B" if "ÇIKIŞ" in r["akis_ozet"] else "#D9A21B")
             for x in r.get("akis_yorum") or []:
-                st.markdown(f"- {x}")
+                st.markdown("- " + x.replace("<b>", "**").replace("</b>", "**"))
             if "akis" in r["grafik"]:
                 st.image(r["grafik"]["akis"], use_container_width=True)
             st.caption("Takas ve aracı kurum dağılımı lisanslı veri olduğundan kullanılmaz; analiz fiyat-hacim verisi ve "
