@@ -400,6 +400,9 @@ def protokol(baz, cg_id=None):
     p = max(adaylar, key=lambda x: x.get("tvl") or 0)
     o = {"ad": p.get("name"), "tvl": p.get("tvl"), "d7": (p.get("change_7d") or 0) / 100 if p.get("change_7d") is not None else None,
          "mcap": p.get("mcap"), "kategori": p.get("category"), "slug": p.get("slug")}
+    if not o["mcap"]:
+        try: o["mcap"] = cg_piyasa().get(baz.upper(), {}).get("market_cap")
+        except Exception: pass
     if o["mcap"] and o["tvl"]: o["mcap_tvl"] = o["mcap"] / o["tvl"]
     try:
         f = _get(f"{LLAMA}/summary/fees/{p['slug']}", dataType="dailyFees")
