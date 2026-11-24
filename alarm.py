@@ -109,7 +109,7 @@ def tara(K, durum):
                 if k["tip"] == "fiyat":
                     kosul = p > k["deger"] if k["op"] == ">" else p < k["deger"]
                     if kosul and not durum.get(anahtar):
-                        bildir.append(f"🔔 {k['kod']} fiyatı {_s(k['deger'])} seviyesinin {'üzerine çıktı' if k['op'] == '>' else 'altına indi'}: {_s(p)}")
+                        bildir.append(f"🔔 {_ad(k['kod'])} fiyatı {_s(k['deger'])} seviyesinin {'üzerine çıktı' if k['op'] == '>' else 'altına indi'}: {_s(p)}")
                     yeni[anahtar] = bool(kosul)
                 else:
                     gun_anahtar = f"{anahtar}|{bugun}"
@@ -121,7 +121,7 @@ def tara(K, durum):
                 x = float(g["G"]["RSI"].iloc[-1]) if k["tip"] == "rsi" else float(s["puan"])
                 kosul = x > k["deger"] if k["op"] == ">" else x < k["deger"]
                 if kosul and not durum.get(anahtar):
-                    bildir.append(f"📈 {k['kod']} {'RSI' if k['tip'] == 'rsi' else 'teknik puan'} {x:.0f} ({k['op']} {k['deger']:g})")
+                    bildir.append(f"📈 {_ad(k['kod'])} {'RSI' if k['tip'] == 'rsi' else 'teknik puan'} {x:.0f} ({k['op']} {k['deger']:g}) · fiyat {_s(g['fiyat'])}")
                 yeni[anahtar] = bool(kosul)
             elif k["tip"] == "formasyon":
                 s = teknik(k["kod"]); g = s["tf"]["G"]
@@ -129,7 +129,8 @@ def tara(K, durum):
                     if not any(w in ad for w in ("TEYİT", "KIRILIM", "BOS", "CHoCH", "Altın kesişim", "Ölüm kesişimi")): continue
                     a2 = f"{k['kod']}|{ad}|{g['tarih']:%Y-%m-%d}"
                     if not durum.get(a2):
-                        bildir.append(f"{'🟢' if yon > 0 else '🔴'} {k['kod']}: {ad.split(': ', 1)[-1]} (günlük, {g['tarih']:%d.%m})")
+                        fy = f" · fiyat {_s(g['fiyat'])}" + (f" ({_p(g['degisim'])})" if g.get("degisim") is not None else "")
+                        bildir.append(f"{'🟢' if yon > 0 else '🔴'} {_ad(k['kod'])}: {ad.split(': ', 1)[-1]} (günlük, {g['tarih']:%d.%m}){fy}")
                         yeni[a2] = True
             elif k["tip"] == "kap":
                 import bist_borsa as BB, bist_veri as bv, bist_varlik as V
@@ -139,7 +140,11 @@ def tara(K, durum):
                     konu_gun = f"{k['kod']}|KAPKONU|{x['konu']}|{bugun}"   # aynı konuda günde tek bildirim
                     if not durum.get(a2) and not durum.get(konu_gun) and not yeni.get(konu_gun):
                         yeni[konu_gun] = True
-                        bildir.append(f"📰 {k['kod']} · {x['konu']}: {x['baslik'][:140]}")
+                        try:
+                            p_, d_ = anlik(k["kod"]); fy = f" · fiyat {_s(p_)} ({_p(d_)})"
+                        except Exception:
+                            fy = ""
+                        bildir.append(f"📰 {k['kod']} · {x['konu']}: {x['baslik'][:140]}{fy}")
                     yeni[a2] = True   # gönderilmese de görüldü say (aynı haberin diğer başlıkları ertesi gün gelmesin)
         except Exception as ex:
             print(f"{anahtar}: {ex}", file=sys.stderr)
