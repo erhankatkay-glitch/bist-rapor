@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-9"
+SURUM = "2026.11.24-10"
 
 import bist_veri as BV
 
@@ -121,6 +121,10 @@ def cagr(son, ilk_, yil):
 def reel(g):
     return None if g is None else (1 + g) / (1 + PARAM["ENFLASYON"]) - 1
 
+def kucuk(s):
+    """Türkçe kurallarına uygun küçük harf (İ→i, I→ı)."""
+    return str(s).replace("İ", "i").replace("I", "ı").lower()
+
 def _tr(s):
     return s.replace(",", "X").replace(".", ",").replace("X", ".")
 
@@ -192,6 +196,93 @@ def _naive(x):
 # =====================================================================
 # VERİ
 # =====================================================================
+# ---------------------------------------------------------------------
+# Dolar bazlı analiz, destek/direnç, haberler
+# ---------------------------------------------------------------------
+def kur_cek():
+    import yfinance as yf
+    h = yf.Ticker("TRY=X").history(period="5y")["Close"].dropna()
+    return _naive(h)
+
+def dolar_analizi(h, fx):
+    if fx is None or len(fx) < 30:
+        return None
+    k = h["Close"].dropna()
+    f = fx.reindex(k.index, method="ffill").dropna()
+    if len(f) < 30:
+        return None
+    u = (k.reindex(f.index) / f).dropna()
+    son = u.index[-1]; o = {"seri": u, "kur": float(f.iloc[-1]), "fiyat_usd": float(u.iloc[-1])}
+    def ret(gun):
+        s_ = u[u.index <= son - pd.Timedelta(days=gun)]
+        return float(u.iloc[-1] / s_.iloc[-1] - 1) if len(s_) else None
+    o["r"] = {"1A": ret(30), "3A": ret(91), "6A": ret(182), "1Y": ret(365), "3Y": ret(365 * 3)}
+    yb = u[u.index < pd.Timestamp(son.year, 1, 1)]
+    o["r"]["YBB"] = float(u.iloc[-1] / yb.iloc[-1] - 1) if len(yb) else None
+    fy = f[f.index <= son - pd.Timedelta(days=365)]
+    o["kur_1y"] = float(f.iloc[-1] / fy.iloc[-1] - 1) if len(fy) else None
+    y3 = u.iloc[-756:]
+    o["zirve_3y"] = float(y3.max()); o["zirveden"] = float(u.iloc[-1] / y3.max() - 1)
+    return o
+
+def seviyeler(h, pencere=5, tol=0.025):
+    k = h["Close"].dropna().iloc[-250:]
+    if len(k) < 60:
+        return None
+    hi = h["High"].reindex(k.index).fillna(k) if "High" in h else k
+    lo = h["Low"].reindex(k.index).fillna(k) if "Low" in h else k
+    noktalar = []
+    for i in range(pencere, len(k) - pencere):
+        if hi.iloc[i] == hi.iloc[i - pencere:i + pencere + 1].max(): noktalar.append(float(hi.iloc[i]))
+        if lo.iloc[i] == lo.iloc[i - pencere:i + pencere + 1].min(): noktalar.append(float(lo.iloc[i]))
+    noktalar.sort(); kume = []
+    for x in noktalar:
+        if kume and abs(x - np.mean(kume[-1])) / np.mean(kume[-1]) <= tol: kume[-1].append(x)
+        else: kume.append([x])
+    seviye = [(float(np.mean(c)), len(c)) for c in kume]
+    p = float(k.iloc[-1])
+    dest = sorted([sv for sv in seviye if sv[0] < p * 0.995], key=lambda x: -x[0])[:3]
+    dir_ = sorted([sv for sv in seviye if sv[0] > p * 1.005], key=lambda x: x[0])[:3]
+    H, L, C_ = float(hi.iloc[-1]), float(lo.iloc[-1]), p
+    P = (H + L + C_) / 3
+    return {"destek": dest, "direnc": dir_, "pivot": P, "R1": 2 * P - L, "S1": 2 * P - H, "R2": P + (H - L), "S2": P - (H - L),
+            "fiyat": p}
+
+POZ_KELIME = ["rekor", "artış", "arttı", "yükseldi", "yükseliş", "büyüdü", "büyüme", "sözleşme", "kazandı", "anlaşma",
+              "temettü", "geri alım", "hedef fiyatı yükselt", "yükseltti", "onay", "ihracat", "sipariş", "yatırım", "güçlü",
+              "olumlu", "kâr payı", "teşvik", "ihale"]
+NEG_KELIME = ["düştü", "düşüş", "zarar", "geriledi", "ceza", "soruşturma", "dava", "iflas", "konkordato", "satış baskısı",
+              "düşürdü", "kayıp", "grev", "iptal", "olumsuz", "uyarı", "endişe", "zayıf", "sert düşüş", "tedbir"]
+
+def haber_cek(kod, ad=None, adet=8, gun=30):
+    """Google News RSS (Türkçe) üzerinden son haber başlıkları + basit kelime bazlı ton."""
+    import requests, xml.etree.ElementTree as ET, email.utils as eu
+    sorgu = f'"{ad}" OR {kod} hisse' if ad else f"{kod} hisse"
+    r = requests.get("https://news.google.com/rss/search", params={"q": sorgu, "hl": "tr", "gl": "TR", "ceid": "TR:tr"},
+                     headers={"User-Agent": "Mozilla/5.0"}, timeout=12)
+    r.raise_for_status()
+    kok = ET.fromstring(r.content); liste = []
+    sinir = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=gun)
+    for it in kok.iter("item"):
+        baslik = (it.findtext("title") or "").strip()
+        kaynak = (it.findtext("source") or "").strip()
+        try:
+            tarih = eu.parsedate_to_datetime(it.findtext("pubDate"))
+        except Exception:
+            tarih = None
+        if tarih and tarih < sinir:
+            continue
+        if kaynak and baslik.endswith(" - " + kaynak):
+            baslik = baslik[: -len(kaynak) - 3]
+        kucuk_b = kucuk(baslik)
+        ton = sum(w in kucuk_b for w in POZ_KELIME) - sum(w in kucuk_b for w in NEG_KELIME)
+        liste.append({"baslik": baslik, "kaynak": kaynak, "tarih": tarih, "link": it.findtext("link"),
+                      "ton": 1 if ton > 0 else -1 if ton < 0 else 0})
+    liste.sort(key=lambda x: x["tarih"] or dt.datetime.min.replace(tzinfo=dt.timezone.utc), reverse=True)
+    liste = liste[:adet]
+    t = sum(x["ton"] for x in liste)
+    return {"liste": liste, "ton": t, "ozet": ("OLUMLU" if t >= 2 else "OLUMSUZ" if t <= -2 else "NÖTR") if liste else "–"}
+
 YABANCI_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raporlar", "yabanci_oran.csv")
 
 def yabanci_gecmis(kod):
@@ -612,6 +703,11 @@ def metrikler(d, endeks=None):
 
     # --- Fiyat, risk, teknik ---
     m.update(fiyat_analizi(h, endeks))
+    try:
+        m["seviye"] = seviyeler(h)
+    except Exception:
+        m["seviye"] = None
+    m["usd"] = None; m["haber"] = None
     # --- Para akışı ve yabancı payı ---
     try:
         m["akis"] = para_akisi(h)
@@ -1043,9 +1139,23 @@ def ipuclari(m):
     if m["potansiyel"] is not None:
         if m["potansiyel"] > 0.15: g.append(f"Model bazlı adil değer mevcut fiyatın {yz(m['potansiyel'])} üzerinde.")
         elif m["potansiyel"] < -0.15: z.append(f"Model bazlı adil değer mevcut fiyatın {yz(-m['potansiyel'])} altında.")
+    u = m.get("usd") or {}
+    if u.get("r", {}).get("1Y") is not None:
+        (g if u["r"]["1Y"] > 0.10 else z if u["r"]["1Y"] < -0.10 else []).append(
+            f"Dolar bazında son 1 yıl getirisi {yz(u['r']['1Y'])}.")
+    sv = m.get("seviye") or {}
+    if sv.get("destek"):
+        uz = sv["destek"][0][0] / m["fiyat"] - 1
+        if uz > -0.03: g.append(f"Fiyat güçlü bir destek bölgesine yakın ({tl(sv['destek'][0][0])} TL).")
+    if sv.get("direnc"):
+        uz = sv["direnc"][0][0] / m["fiyat"] - 1
+        if uz < 0.03: z.append(f"Fiyat yakın bir direncin hemen altında ({tl(sv['direnc'][0][0])} TL).")
+    hb = m.get("haber") or {}
+    if hb.get("ozet") == "OLUMLU": g.append("Son haber akışının tonu olumlu.")
+    if hb.get("ozet") == "OLUMSUZ": z.append("Son haber akışının tonu olumsuz.")
     a = m.get("akis") or {}
-    if a.get("ozet") in ("GÜÇLÜ GİRİŞ", "GİRİŞ"): g.append(f"Hacim bazlı para akışı pozitif ({a['ozet'].lower()}).")
-    if a.get("ozet") in ("GÜÇLÜ ÇIKIŞ", "ÇIKIŞ"): z.append(f"Hacim bazlı para akışı negatif ({a['ozet'].lower()}).")
+    if a.get("ozet") in ("GÜÇLÜ GİRİŞ", "GİRİŞ"): g.append(f"Hacim bazlı para akışı pozitif ({kucuk(a['ozet'])}).")
+    if a.get("ozet") in ("GÜÇLÜ ÇIKIŞ", "ÇIKIŞ"): z.append(f"Hacim bazlı para akışı negatif ({kucuk(a['ozet'])}).")
     if a.get("uyumsuzluk") == "pozitif": g.append("Fiyat-OBV pozitif uyumsuzluğu: düşüşe rağmen hacimli alım.")
     if a.get("uyumsuzluk") == "negatif": z.append("Fiyat-OBV negatif uyumsuzluğu: yükseliş hacimle desteklenmiyor.")
     yb = m.get("yabanci") or {}
@@ -1080,23 +1190,119 @@ def yatirim_ozeti(m):
     if m["adil"]:
         c.append(f"{len([y for y in m['yontemler'] if y[6]])} farklı değerleme yönteminin ağırlıklı ortalamasıyla ulaşılan adil değer "
                  f"<b>{tl(m['adil'])} TL</b> (aralık {tl(m['adil_dusuk'])} – {tl(m['adil_yuksek'])} TL) olup mevcut fiyata göre "
-                 f"<b>{yz(m['potansiyel'])}</b> potansiyele işaret ediyor; değerleme görüşü <b>{m['gorus'].lower()}</b>, model güveni <b>{m['guven'].lower()}</b>.")
+                 f"<b>{yz(m['potansiyel'])}</b> potansiyele işaret ediyor; değerleme görüşü <b>{kucuk(m['gorus'])}</b>, model güveni <b>{kucuk(m['guven'])}</b>.")
     if m["genel_skor"]:
         en = sorted(m["saglik"].items(), key=lambda x: x[1])
-        c.append(f"Finansal sağlık skoru <b>{ond(m['genel_skor'], 2)}/5 ({m['skor_etiket'].lower()})</b>; "
-                 f"en güçlü alan {en[-1][0].lower()}, en zayıf alan {en[0][0].lower()}.")
+        c.append(f"Finansal sağlık skoru <b>{ond(m['genel_skor'], 2)}/5 ({kucuk(m['skor_etiket'])})</b>; "
+                 f"en güçlü alan {kucuk(en[-1][0])}, en zayıf alan {kucuk(en[0][0])}.")
     if m["roe"] is not None:
         c.append(f"Şirket son 12 ayda {yz(m['roe'])} özkaynak kârlılığı üretmiş olup bu oran %{ond(PARAM['ENFLASYON']*100, 1)} yıllık enflasyonla "
                  f"karşılaştırıldığında {'reel getiri yaratıldığını' if m['roe'] > PARAM['ENFLASYON'] else 'reel bazda getiri üretilemediğini'} gösteriyor.")
     if m["r"].get("1Y") is not None:
         e1 = m["r_endeks"].get("1Y")
         c.append(f"Hisse son bir yılda {yz(m['r']['1Y'])} getiri sağladı" + (f" (BIST 100: {yz(e1)})" if e1 is not None else "") +
-                 f"; teknik görünüm <b>{m['teknik_ozet'].lower()}</b>.")
+                 f"; teknik görünüm <b>{kucuk(m['teknik_ozet'])}</b>.")
     return " ".join(c)
 
 # =====================================================================
 # GRAFİKLER
 # =====================================================================
+def genel_degerlendirme(m):
+    """Raporun tüm bölümlerini özetleyen yapılandırılmış değerlendirme: [(başlık, metin), ...]."""
+    B = []; enf = PARAM["ENFLASYON"]
+    # Değerleme
+    if m.get("adil"):
+        t = (f"Ağırlıklı adil değer {tl(m['adil'])} TL, mevcut fiyata göre {yz(m['potansiyel'])} potansiyel "
+             f"({kucuk(m['gorus'])}, model güveni {kucuk(m['guven'])}). ")
+        dahil = [y for y in m["yontemler"] if y[6]]
+        if dahil:
+            en_y = max(dahil, key=lambda y: y[1]); en_d = min(dahil, key=lambda y: y[1])
+            t += f"Yöntemler {tl(en_d[1])} TL ({en_d[0]}) ile {tl(en_y[1])} TL ({en_y[0]}) arasında dağılıyor. "
+        if m.get("nav"): t += f"Holding, halka açık iştiraklerine göre {yz(m['nav'].get('iskonto'), 0)} iskontolu işlem görüyor. "
+        if m.get("sinirlandi"): t += "Uç sonuçlar nedeniyle adil değer temkinli sınıra çekildi. "
+        if m.get("usd"): t += f"Dolar bazında adil değer yaklaşık ${ond(m['adil'] / m['usd']['kur'], 2)}, fiyat ${ond(m['usd']['fiyat_usd'], 2)}."
+        B.append(("Değerleme", t))
+    # Finansal sağlık
+    if m.get("saglik"):
+        sr = sorted(m["saglik"].items(), key=lambda x: x[1])
+        t = (f"Genel sağlık skoru {ond(m['genel_skor'], 2)}/5 ({kucuk(m['skor_etiket'])}). En güçlü alan {kucuk(sr[-1][0])} "
+             f"({ond(sr[-1][1], 1)}), en zayıf alan {kucuk(sr[0][0])} ({ond(sr[0][1], 1)}). ")
+        if m.get("piotroski") is not None: t += f"Piotroski F-skoru {ond(m['piotroski'], 1)}/9. "
+        if m.get("altman") is not None: t += f"Altman Z'' {ond(m['altman'], 2)} ({'güvenli' if m['altman'] > 2.6 else 'gri' if m['altman'] > 1.1 else 'riskli'} bölge)."
+        B.append(("Finansal sağlık", t))
+    # Kârlılık ve büyüme
+    t = ""
+    if m.get("roe") is not None:
+        t += f"Özkaynak kârlılığı {yz(m['roe'])}; %{ond(enf * 100, 1)} enflasyona göre reel {'pozitif' if m['roe'] > enf else 'negatif'}. "
+    if m.get("net_marj") is not None: t += f"Net kâr marjı {yz(m['net_marj'])}. "
+    if m.get("ciro_b") is not None: t += f"Hasılat yıllık {yz(m['ciro_b'])} (reel {yz(reel(m['ciro_b']))}) değişti. "
+    if m.get("ceyrek_net_b") is not None: t += f"Son çeyrek net kâr yıllık {yz(m['ceyrek_net_b'])}."
+    if t: B.append(("Kârlılık ve büyüme", t))
+    # Bilanço ve nakit
+    t = ""
+    if m.get("banka"):
+        bk = m["banka"]
+        t += (f"Net faiz marjı {yz(bk.get('nim'))}, risk maliyeti {yz(bk.get('risk_maliyeti'))}, kredi/mevduat {kat(bk.get('kredi_mevduat'))}, "
+              f"özkaynak/aktif {yz(bk.get('ozk_varlik'))}.")
+    else:
+        if m.get("borc_ozk") is not None: t += f"Borç/özkaynak {kat(m['borc_ozk'])}"
+        if m.get("nb_favok") is not None: t += f", net borç/FAVÖK {kat(m['nb_favok'])}"
+        t += ". " if t else ""
+        if m["T"].get("sna") is not None: t += f"Son 12 ay serbest nakit akışı {tl(m['T']['sna'])} TL (verim {yz(m.get('sna_verim'))})."
+    if t: B.append(("Bilanço ve nakit", t))
+    # Fiyat, teknik, seviyeler
+    t = f"Teknik görünüm {kucuk(m['teknik_ozet'])}; RSI {ond(m['rsi'], 0)}. "
+    if m.get("ma200"): t += f"Fiyat 200 günlük ortalamanın {'üzerinde' if m['fiyat'] > m['ma200'] else 'altında'}. "
+    sv = m.get("seviye") or {}; sp = []
+    if sv.get("destek"): sp.append(f"en yakın destek {tl(sv['destek'][0][0])} TL ({yz(sv['destek'][0][0] / m['fiyat'] - 1)})")
+    if sv.get("direnc"): sp.append(f"en yakın direnç {tl(sv['direnc'][0][0])} TL ({yz(sv['direnc'][0][0] / m['fiyat'] - 1)})")
+    if sp: j_ = ", ".join(sp); t += j_[0].upper() + j_[1:] + ". "
+    if m["r"].get("1Y") is not None and m["r_endeks"].get("1Y") is not None:
+        t += f"Son 1 yılda {yz(m['r']['1Y'])} getiri (BIST 100: {yz(m['r_endeks']['1Y'])})."
+    B.append(("Fiyat ve teknik", t))
+    # Dolar bazlı
+    u = m.get("usd")
+    if u and u["r"].get("1Y") is not None:
+        t = (f"Dolar bazında 1 yıllık getiri {yz(u['r']['1Y'])}, yılbaşından beri {yz(u['r'].get('YBB'))}; aynı dönemde USD/TRY "
+             f"{yz(u.get('kur_1y'))} değişti. ")
+        if m["r"].get("1Y") is not None:
+            t += f"TL getirisinin enflasyondan arındırılmış karşılığı {yz(reel(m['r']['1Y']))}. "
+        t += f"Hisse dolar bazında 3 yıllık zirvesinin {yz(-u['zirveden'] if u['zirveden'] < 0 else 0)} altında."
+        B.append(("Dolar bazlı performans", t))
+    # Para akışı ve yabancı
+    ak = akis_yorumlari(m)
+    if ak: B.append(("Para akışı ve yabancı payı", " ".join(x.replace("<b>", "").replace("</b>", "") for x in ak[:3])))
+    # Haber
+    hb = m.get("haber") or {}
+    if hb.get("liste"):
+        B.append(("Haber akışı", f"Son {len(hb['liste'])} haberin genel tonu {kucuk(hb['ozet'])} (basit kelime analizi). "
+                                 f"En güncel: \"{hb['liste'][0]['baslik'][:110]}\"."))
+    # Temettü
+    if m.get("temettu_verim"):
+        B.append(("Temettü", f"Temettü verimi {yz(m['temettu_verim'])}, dağıtım oranı {yz(m.get('dagitim_orani'))}."))
+    # Riskler / güçlü
+    if m.get("zayif"): B.append(("Öne çıkan riskler", " ".join(m["zayif"][:3])))
+    if m.get("guclu"): B.append(("Öne çıkan güçlü yönler", " ".join(m["guclu"][:3])))
+    # Sonuç
+    temel = "güçlü" if (m.get("genel_skor") or 0) >= 3.25 else "orta" if (m.get("genel_skor") or 0) >= 2.5 else "zayıf"
+    deg = {"DEĞERİNİN ALTINDA": "cazip", "MAKUL DEĞERDE": "makul", "DEĞERİNİN ÜZERİNDE": "pahalı"}.get(m.get("gorus"), "belirsiz")
+    kisa_p = sum([m["teknik_ozet"] in ("POZİTİF", "GÜÇLÜ POZİTİF"), (m.get("akis") or {}).get("puan", 0) > 0])
+    kisa_n = sum([m["teknik_ozet"] in ("NEGATİF", "GÜÇLÜ NEGATİF"), (m.get("akis") or {}).get("puan", 0) < 0])
+    kisa = "olumlu" if kisa_p > kisa_n else "olumsuz" if kisa_n > kisa_p else "kararsız"
+    if temel == "güçlü" and deg == "cazip":
+        yorum = "Temel tablo ile fiyatlama birlikte olumlu; model açısından öne çıkan bir profil."
+    elif temel == "zayıf" and deg == "pahalı":
+        yorum = "Hem temel tablo hem fiyatlama zayıf; model açısından temkin gerektiren bir profil."
+    elif deg == "cazip":
+        yorum = "Fiyatlama cazip ancak temel tablo bunu tam desteklemiyor; ucuzluğun gerekçesi (risk) iyi incelenmeli."
+    elif temel == "güçlü":
+        yorum = "Temeller güçlü ancak bu büyük ölçüde fiyata yansımış görünüyor."
+    else:
+        yorum = "Belirgin bir yön sinyali yok; gelişmeler izlenmeli."
+    B.append(("Sonuç", f"Temel görünüm {temel}, değerleme {deg}, kısa vadeli fiyat/akış görünümü {kisa}. {yorum} "
+                       "Bu değerlendirme otomatik model çıktısıdır, yatırım tavsiyesi değildir."))
+    return B
+
 def _png(fig, dpi=170):
     b = io.BytesIO(); fig.savefig(b, format="png", dpi=dpi, bbox_inches="tight"); plt.close(fig); b.seek(0); return b
 
@@ -1134,7 +1340,7 @@ def g_futbol(m):
     ax.set_title("Değerleme Aralıkları (Futbol Sahası Grafiği)", loc="left"); ax.grid(axis="x", alpha=0.25)
     return _png(fig)
 
-def g_fiyat(h, endeks, kod):
+def g_fiyat(h, endeks, kod, sev=None):
     k = h["Close"].dropna(); son = k.index[-1]; bas = son - pd.Timedelta(days=365)
     ky = k[k.index >= bas]
     fig = plt.figure(figsize=(7.5, 5.6)); gs = fig.add_gridspec(4, 1, height_ratios=[3, 0.8, 1, 1], hspace=0.12)
@@ -1143,7 +1349,12 @@ def g_fiyat(h, endeks, kod):
         ax.plot(ky.index, k.rolling(n).mean().reindex(ky.index), color=rk, lw=0.9, label=f"{n}G ort.")
     ma20, sd = k.rolling(20).mean().reindex(ky.index), k.rolling(20).std().reindex(ky.index)
     ax.fill_between(ky.index, ma20 - 2 * sd, ma20 + 2 * sd, color=C["acik"], alpha=0.35, label="Bollinger")
-    ax.set_title(f"{kod} – Son 12 Ay Fiyat, Ortalamalar ve Göstergeler", loc="left"); ax.legend(fontsize=7, frameon=False, ncol=4)
+    if sev:
+        for lv, n in sev.get("destek", [])[:2]:
+            ax.axhline(lv, color=C["yesil"], lw=0.8, ls=":"); ax.text(ky.index[0], lv, f" D {tl(lv)}", fontsize=6, color=C["yesil"], va="bottom")
+        for lv, n in sev.get("direnc", [])[:2]:
+            ax.axhline(lv, color=C["kirmizi"], lw=0.8, ls=":"); ax.text(ky.index[0], lv, f" R {tl(lv)}", fontsize=6, color=C["kirmizi"], va="bottom")
+    ax.set_title(f"{kod} – Son 12 Ay Fiyat, Ortalamalar, Destek (D) / Direnç (R)", loc="left"); ax.legend(fontsize=7, frameon=False, ncol=4)
     ax.grid(alpha=0.2); ax.tick_params(labelbottom=False)
     a2 = fig.add_subplot(gs[1], sharex=ax)
     if "Volume" in h:
@@ -1158,6 +1369,15 @@ def g_fiyat(h, endeks, kod):
     a4.bar(ky.index, hst, color=[C["yesil"] if x >= 0 else C["kirmizi"] for x in hst.fillna(0)], width=1.0)
     a4.plot(ky.index, macd.reindex(ky.index), color=C["lac"], lw=0.8); a4.plot(ky.index, sig.reindex(ky.index), color=C["tur"], lw=0.8)
     a4.set_ylabel("MACD", fontsize=7); a4.tick_params(labelsize=6)
+    return _png(fig)
+
+def g_dolar(m):
+    u = m.get("usd")
+    if not u: return None
+    s_ = u["seri"]; s_ = s_[s_.index >= s_.index[-1] - pd.Timedelta(days=365 * 3)]
+    fig, ax = plt.subplots(figsize=(7.5, 2.3))
+    ax.plot(s_.index, s_.values, color=C["yesil"], lw=1.2); ax.set_ylabel("$ / hisse")
+    ax.set_title(f"{m['kod']} – Dolar Bazlı Fiyat (3 yıl)", loc="left"); ax.grid(alpha=0.2)
     return _png(fig)
 
 def g_goreli(h, endeks, kod):
@@ -1312,7 +1532,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
                        + (f' · {m["kur_notu"]}' if m.get("kur_notu") else "") + '</font>', ST["kucuk"]))
     E.append(Spacer(1, 7))
     kw = W / 4 - 3
-    satir1 = [kutu("SON FİYAT", f"{tl(m['fiyat'])} TL", f"52H: {tl(m['dip52'])} – {tl(m['zirve52'])}"),
+    satir1 = [kutu("SON FİYAT", f"{tl(m['fiyat'])} TL", f"≈ ${ond(m['usd']['fiyat_usd'], 2)} · 52H {tl(m['dip52'])}–{tl(m['zirve52'])}" if m.get("usd") else f"52H: {tl(m['dip52'])} – {tl(m['zirve52'])}"),
               kutu("ADİL DEĞER", f"{tl(m['adil'])} TL" if m["adil"] else "–", f"Aralık {tl(m['adil_dusuk'])} – {tl(m['adil_yuksek'])}" if m["adil"] else None, MAVI),
               kutu("POTANSİYEL", yz(pt), m["gorus"], pr),
               kutu("SAĞLIK SKORU", f"{ond(m['genel_skor'], 2)}/5" if m["genel_skor"] else "–", m["skor_etiket"], puan_renk(m["genel_skor"] or 0))]
@@ -1515,12 +1735,27 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
 
     # ---------------- SAYFA 6: FİYAT, RİSK, TEKNİK ----------------
     E.append(CondPageBreak(17 * cm)); E.append(Paragraph("5. Fiyat Performansı, Risk ve Teknik Görünüm", ST["h1"]))
-    E.append(_img(g_fiyat(d["hist"], endeks, m["kod"]), W, 5.6 / 7.5))
+    E.append(_img(g_fiyat(d["hist"], endeks, m["kod"], m.get("seviye")), W, 5.6 / 7.5))
     per = [["Dönem"] + list(m["r"].keys()), [m["kod"]] + [yz(x) for x in m["r"].values()]]
     if m["r_endeks"]:
         per.append(["BIST 100"] + [yz(m["r_endeks"].get(k_)) for k_ in m["r"]])
         per.append(["Göreli fark"] + [yz(m["r"][k_] - m["r_endeks"][k_]) if m["r"][k_] is not None and m["r_endeks"].get(k_) is not None else "–" for k_ in m["r"]])
+    if m.get("usd"):
+        per.append([f"{m['kod']} ($)"] + [yz(m["usd"]["r"].get(k_)) for k_ in m["r"]])
     E += [Spacer(1, 4), tablo(per, [W * .2] + [W * .8 / 6] * 6, font=7.3)]
+    sv = m.get("seviye")
+    if sv:
+        v = [["Seviye", "Fiyat (TL)", "Uzaklık", "Güç"]]
+        for lv, n in reversed(sv["direnc"]): v.append(["Direnç", tl(lv), yz(lv / m["fiyat"] - 1), "●" * min(n, 5)])
+        v.append(["Son fiyat", tl(m["fiyat"]), "–", ""])
+        for lv, n in sv["destek"]: v.append(["Destek", tl(lv), yz(lv / m["fiyat"] - 1), "●" * min(n, 5)])
+        pv = [["Pivot (klasik, son gün)", "Değer"], ["R2", tl(sv["R2"])], ["R1", tl(sv["R1"])], ["Pivot", tl(sv["pivot"])],
+              ["S1", tl(sv["S1"])], ["S2", tl(sv["S2"])]]
+        t = Table([[tablo(v, [W * .14, W * .12, W * .1, W * .1], font=7.2), tablo(pv, [W * .28, W * .16], font=7.2)]],
+                  colWidths=[W * .5, W * .5])
+        t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
+        E.append(KeepTogether([Paragraph("Destek ve Direnç Seviyeleri", ST["h2"]), t,
+                               Paragraph("Seviyeler son 1 yılın tepe/dip noktalarının kümelenmesiyle bulunur; ● sayısı seviyenin kaç kez test edildiğini gösterir.", ST["kucuk"])]))
     risk = tablo([["Risk Metriği", "Değer"], ["Beta (2Y haftalık, BIST 100)", _tr(f"{m['beta']:.2f}") if m["beta"] is not None else "–"],
                   ["Endeksle korelasyon", _tr(f"{m['korelasyon']:.2f}") if m["korelasyon"] is not None else "–"],
                   ["Yıllık volatilite", yz(m["vol"])], ["Maks. düşüş (3Y)", yz(m["max_dd"])],
@@ -1533,6 +1768,14 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     tk.setStyle(TableStyle(st))
     t = Table([[risk, tk]], colWidths=[W * .49, W * .51]); t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
     E += [Spacer(1, 6), t, Spacer(1, 6), _img(g_goreli(d["hist"], endeks, m["kod"]), W, 2.6 / 7.5)]
+    gd = g_dolar(m)
+    if gd:
+        u = m["usd"]
+        E.append(KeepTogether([Paragraph("Dolar Bazlı Görünüm", ST["h2"]),
+            Paragraph(f"Güncel kur {ond(u['kur'], 2)} TL ile hisse ${ond(u['fiyat_usd'], 2)}; piyasa değeri ${tl(m['piy_deg'] / u['kur'])}. "
+                      f"Son 1 yılda dolar bazlı getiri {yz(u['r'].get('1Y'))}, USD/TRY değişimi {yz(u.get('kur_1y'))}. "
+                      f"TL bazlı getirinin enflasyondan arındırılmış karşılığı {yz(reel(m['r'].get('1Y')))}.", ST["p"]),
+            Spacer(1, 3), _img(gd, W, 2.3 / 7.5)]))
 
     # ---------------- SAYFA 7: TEMETTÜ + METODOLOJİ ----------------
     E.append(CondPageBreak(10 * cm)); E.append(Paragraph("6. Para Akışı ve Yabancı Payı", ST["h1"]))
@@ -1563,6 +1806,15 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
                            "para akışı fiyat-hacim verisinden, yabancı payı ise kamuya açık şirket kartından hesaplanır.", ST["kucuk"]))
     else:
         E.append(Paragraph("Para akışı hesaplanamadı (hacim verisi yetersiz).", ST["p"]))
+    hb = m.get("haber") or {}
+    if hb.get("liste"):
+        E.append(CondPageBreak(6 * cm)); E.append(Paragraph(f"Haber Akışı (son 30 gün) – genel ton: {hb['ozet']}", ST["h2"]))
+        v = [["Tarih", "Başlık", "Kaynak", "Ton"]]
+        for x in hb["liste"]:
+            v.append([f"{x['tarih']:%d.%m}" if x["tarih"] else "–", Paragraph(x["baslik"][:140], ST["hucre"]), x["kaynak"][:22],
+                      "+" if x["ton"] > 0 else "−" if x["ton"] < 0 else "·"])
+        E.append(tablo(v, [W * .09, W * .63, W * .2, W * .08], hizala_sol=(0, 1, 2), font=7.2))
+        E.append(Paragraph("Kaynak: Google Haberler. Ton, başlıktaki olumlu/olumsuz kelimelere dayalı basit bir sınıflandırmadır.", ST["kucuk"]))
     E.append(CondPageBreak(9 * cm)); E.append(Paragraph("7. Temettü Analizi", ST["h1"]))
     gt = g_temettu(m)
     if gt:
@@ -1575,7 +1827,10 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         E += [Spacer(1, 6), _img(gt, W, 2.2 / 7.5)]
     else:
         E.append(Paragraph("Şirketin kayıtlı nakit temettü geçmişi bulunamadı.", ST["p"]))
-    E.append(CondPageBreak(8 * cm)); E.append(Paragraph("8. Metodoloji ve Önemli Uyarılar", ST["h1"]))
+    E.append(PageBreak()); E.append(Paragraph("8. Genel Değerlendirme ve Özet", ST["h1"]))
+    for bas, metin in genel_degerlendirme(m):
+        E.append(KeepTogether([Paragraph(bas, ST["h2"]), Paragraph(metin, ST["p"])]))
+    E.append(CondPageBreak(8 * cm)); E.append(Paragraph("9. Metodoloji ve Önemli Uyarılar", ST["h1"]))
     met = [
         f"<b>Veri:</b> Mali tablolar öncelikle İş Yatırım'ın KAP finansallarından derlediği tablolardan, alınamazsa Yahoo Finance'ten çekilir; fiyat, temettü ve analist verileri Yahoo Finance kaynaklıdır. Gecikme veya eksiklik olabilir. "
         "TMS 29 (enflasyon muhasebesi) kapsamında yeniden düzenlenen tablolar ile nominal tablolar arasında yıllar arası kıyaslama sapmaları olabilir.",
@@ -1587,6 +1842,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         "<b>Gerekçeli PD/DD (finansallar):</b> (ROE − g)/(Ke − g). <b>Gordon:</b> D1/(Ke − g). <b>Graham:</b> √(22,5 × HBK × HBDD).",
         "<b>Sağlık skoru:</b> Kârlılık, reel büyüme, nakit akışı, finansal güç, fiyat momentumu ve göreli değer kategorilerinde eşik bazlı 1–5 puanlama.",
         "<b>Piotroski F-skoru</b> (0–9) temel iyileşmeyi, <b>Altman Z''</b> (gelişmekte olan piyasa versiyonu) iflas riskini ölçer.",
+        "<b>Dolar bazlı analiz:</b> TL fiyat günlük USD/TRY kuruyla (Yahoo) dolara çevrilir. <b>Destek/direnç:</b> son 250 günün yerel tepe/dipleri %2,5 bantla kümelenir. "
+        "<b>Haberler:</b> Google Haberler RSS başlıkları; ton kelime bazlıdır ve yanılabilir.",
         "<b>UYARI:</b> Bu rapor otomatik bir model çıktısıdır; yatırım danışmanlığı kapsamında değildir ve alım-satım tavsiyesi içermez. "
         "Yatırım kararları kişisel risk ve getiri tercihlerinize uygun olarak, yetkili kuruluşlardan alınacak danışmanlıkla verilmelidir.",
     ]
@@ -1627,7 +1884,8 @@ def piyasa_degeri(kod):
     info = t.info or {}
     return sayi(info.get("marketCap"))
 
-def analiz_et(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, pd_fn=None, log=print, endeks=None, **param):
+def analiz_et(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, pd_fn=None, log=print, endeks=None,
+              fx_fn=None, haber_fn=None, **param):
     """Veriyi çeker, tüm analizleri yapar; (d, m, emsaller, endeks) döndürür."""
     PARAM.update({k.upper(): v for k, v in param.items()})
     veri_fn = veri_fn or veri_cek; endeks_fn = endeks_fn or endeks_cek; pd_fn = pd_fn or piyasa_degeri
@@ -1652,11 +1910,20 @@ def analiz_et(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, pd_fn=None, lo
     log("Analiz ve değerleme yapılıyor...")
     m = metrikler(d, endeks)
     nav = nav_hesapla(kod, pd_fn) if kod in BV.HOLDING_PAYLARI else None
+    try:
+        m["usd"] = dolar_analizi(d["hist"], (fx_fn or kur_cek)())
+    except Exception:
+        m["usd"] = None
+    try:
+        m["haber"] = (haber_fn or haber_cek)(kod, BV.ad(kod))
+    except Exception as ex:
+        m["haber"] = {"liste": [], "ton": 0, "ozet": "–", "hata": str(ex)[:100]}
     degerleme(m, emsaller, nav); saglik(m); ipuclari(m)
     return d, m, emsaller, endeks
 
-def rapor(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, log=print, klasor=".", detay=False, pd_fn=None, **param):
-    d, m, emsaller, endeks = analiz_et(kod, emsal_kodlar, veri_fn, endeks_fn, pd_fn, log, **param)
+def rapor(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, log=print, klasor=".", detay=False, pd_fn=None,
+          fx_fn=None, haber_fn=None, **param):
+    d, m, emsaller, endeks = analiz_et(kod, emsal_kodlar, veri_fn, endeks_fn, pd_fn, log, fx_fn=fx_fn, haber_fn=haber_fn, **param)
     dosya = os.path.join(klasor, f"{m['kod']}_Arastirma_Raporu_{dt.date.today():%Y%m%d}.pdf")
     log("PDF oluşturuluyor...")
     pdf_olustur(d, m, emsaller, endeks, dosya)
@@ -1685,10 +1952,14 @@ def ozet_satir(m):
             "ROE": m["roe"], "Temettü verimi": m["temettu_verim"], "1Y getiri": m["r"].get("1Y"),
             "Görüş": m["gorus"], "Teknik": m["teknik_ozet"], "Veri puanı": (m.get("veri") or {}).get("puan"),
             "Kaynak": "İş Yatırım" if str(m.get("kaynak", "")).startswith("İş") else "Yahoo",
-            "Para akışı": (m.get("akis") or {}).get("ozet"), "Yabancı %": (m.get("yabanci") or {}).get("oran"),
+            "Para akışı": (m.get("akis") or {}).get("ozet"), "Akış puanı": (m.get("akis") or {}).get("puan"),
+            "6A göreli": (m["r"].get("6A") - m["r_endeks"].get("6A")) if m["r"].get("6A") is not None and m["r_endeks"].get("6A") is not None else None,
+            "1Y $": ((m.get("usd") or {}).get("r") or {}).get("1Y"), "Güven": m.get("guven"),
+            "Sektör": next((g_ for g_, l_ in SEKTOR_GRUPLARI.items() if m["kod"] in l_), m.get("sektor") or "Diğer"),
+            "Yabancı %": (m.get("yabanci") or {}).get("oran"),
             "Yabancı Δ1A": (m.get("yabanci") or {}).get("d20")}
 
-def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None, **param):
+def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None, fx_fn=None, **param):
     """Birden çok hisseyi tarar, özet tablo döndürür. Emsaller tarama içindeki aynı sektör hisseleridir."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
     PARAM.update({k.upper(): v for k, v in param.items()})
@@ -1697,11 +1968,16 @@ def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None
         endeks = (endeks_fn or endeks_cek)()
     except Exception:
         endeks = None
+    try:
+        fx = (fx_fn or kur_cek)()
+    except Exception:
+        fx = None
     ham, hatalar = {}, {}
     def is_(k):
         for deneme in range(2):
             try:
-                return k, metrikler(veri_fn(k, hafif=True), endeks), None
+                dd = veri_fn(k, hafif=True); mm_ = metrikler(dd, endeks); mm_["_hist"] = dd["hist"]
+                return k, mm_, None
             except Exception as ex:
                 hata = ex
         return k, None, str(hata)
@@ -1719,8 +1995,67 @@ def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None
         emsal = [ham[e] for e in ham if e != k and grup_of.get(e) and grup_of.get(e) == grup_of.get(k)]
         nav = nav_hesapla(k, lambda x: pdeg.get(x) or pd_fn(x)) if k in BV.HOLDING_PAYLARI else None
         try:
+            try:
+                mm["usd"] = dolar_analizi(mm["_hist"], fx) if fx is not None else None
+            except Exception:
+                mm["usd"] = None
             degerleme(mm, emsal, nav); saglik(mm)
             satirlar.append(ozet_satir(mm))
         except Exception as ex:
             hatalar[k] = str(ex)
+    firsat_ekle(satirlar)
     return satirlar, hatalar
+
+FIRSAT_AGIRLIK = {"Sağlık skoru": 0.35, "Potansiyel": 0.30, "6A göreli": 0.20, "Akış puanı": 0.15}
+FIRSAT_AD = {"Sağlık skoru": "güçlü temeller", "Potansiyel": "değerleme iskontosu", "6A göreli": "göreli güç",
+             "Akış puanı": "para girişi"}
+
+def firsat_ekle(satirlar):
+    """Tarama satırlarına yüzdelik sıra tabanlı 'Fırsat skoru' (0–100) ve gerekçe ekler."""
+    if not satirlar: return satirlar
+    df = pd.DataFrame(satirlar)
+    uygun = (df.get("Veri puanı", 100).fillna(0) >= 60)
+    yuzdelik = {c: df.loc[uygun, c].rank(pct=True) for c in FIRSAT_AGIRLIK if c in df}
+    for i, r in df.iterrows():
+        if not uygun.iloc[i] if hasattr(uygun, "iloc") else True:
+            satirlar[i]["Fırsat skoru"] = None; satirlar[i]["Gerekçe"] = "Veri yetersiz"; continue
+        top, w, ned = 0.0, 0.0, []
+        for c, ag in FIRSAT_AGIRLIK.items():
+            p = yuzdelik.get(c, pd.Series(dtype=float)).get(i)
+            if p is not None and not pd.isna(p):
+                top += p * ag; w += ag
+                if p >= 0.75: ned.append(FIRSAT_AD[c])
+        satirlar[i]["Fırsat skoru"] = round(100 * top / w, 1) if w >= 0.5 else None
+        satirlar[i]["Gerekçe"] = ", ".join(ned) if ned else "dengeli profil"
+    return satirlar
+
+def kategoriler(satirlar, n=8):
+    """Tarama sonucundan hazır listeler (model sıralamasıdır, yatırım tavsiyesi değildir)."""
+    if not satirlar: return {}
+    df = pd.DataFrame(satirlar)
+    df = df[df.get("Veri puanı", 100).fillna(0) >= 60] if "Veri puanı" in df else df
+    out = {}
+    def al(maske, sira, artan=False):
+        x = df[maske] if maske is not None else df
+        return x.sort_values(sira, ascending=artan).head(n).to_dict("records") if sira in x else []
+    out["⭐ En yüksek fırsat skoru"] = al(df["Fırsat skoru"].notna(), "Fırsat skoru")
+    out["💎 Değer fırsatları (potansiyel ≥ %20, skor ≥ 3)"] = al((df["Potansiyel"] >= 0.20) & (df["Sağlık skoru"] >= 3), "Potansiyel")
+    out["🏆 Kaliteli şirketler (skor ≥ 3,5)"] = al(df["Sağlık skoru"] >= 3.5, "Sağlık skoru")
+    if "6A göreli" in df: out["🚀 Göreli güç liderleri (6 ay, BIST 100'e göre)"] = al(df["6A göreli"].notna(), "6A göreli")
+    if "Temettü verimi" in df: out["💰 Yüksek temettü (≥ %4)"] = al(df["Temettü verimi"] >= 0.04, "Temettü verimi")
+    if "Akış puanı" in df: out["🌊 Para girişi olanlar"] = al(df["Akış puanı"] >= 2, "Akış puanı")
+    if "Yabancı Δ1A" in df and df["Yabancı Δ1A"].notna().any():
+        out["🌍 Yabancı payı artanlar (1 ay)"] = al(df["Yabancı Δ1A"] > 0, "Yabancı Δ1A")
+    return {k: v for k, v in out.items() if v}
+
+def sektor_ozet(satirlar):
+    if not satirlar: return pd.DataFrame()
+    df = pd.DataFrame(satirlar)
+    g = df.groupby("Sektör")
+    out = pd.DataFrame({
+        "Hisse": g.size(), "Sağlık skoru": g["Sağlık skoru"].median(), "Potansiyel %": g["Potansiyel"].median() * 100,
+        "F/K": g["F/K"].median(), "PD/DD": g["PD/DD"].median(), "1Y getiri %": g["1Y getiri"].median() * 100,
+        "6A göreli %": g["6A göreli"].median() * 100 if "6A göreli" in df else np.nan,
+        "Para girişi oranı %": g["Akış puanı"].apply(lambda x: (x > 0).mean() * 100) if "Akış puanı" in df else np.nan,
+    })
+    return out[out["Hisse"] >= 2].sort_values("Sağlık skoru", ascending=False).round(2)

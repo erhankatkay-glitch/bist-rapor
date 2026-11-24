@@ -3,11 +3,14 @@
 import os, glob, tempfile, datetime as dt, importlib
 import pandas as pd
 import streamlit as st
+import json
 import bist_veri as bv
 import bist_isyatirim as isy
+import bist_makro as mk
 import bist_rapor as br
 bv = importlib.reload(bv)
 isy = importlib.reload(isy)  # alt modüller de güncellensin
+mk = importlib.reload(mk)
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
 
 st.set_page_config(page_title="BIST Rapor", page_icon="📊", layout="centered", initial_sidebar_state="collapsed")
@@ -23,14 +26,39 @@ div.stButton > button, div.stDownloadButton > button {width: 100%; height: 3rem;
 
 st.markdown("## 📊 BIST Hisse Araştırma")
 
+# ---------------- Makro veriler ----------------
+@st.cache_data(ttl=3600, show_spinner=False)
+def piyasa_verisi(saat):
+    return mk.piyasa_paneli()
+
+@st.cache_data(ttl=6 * 3600, show_spinner=False)
+def evds_verisi(anahtar, gun):
+    return mk.evds_paneli(anahtar)
+
+def _evds_anahtar():
+    try:
+        k = st.secrets.get("EVDS_KEY", "")
+    except Exception:
+        k = ""
+    return st.session_state.get("evds_key") or k
+
+EVDS_KEY = _evds_anahtar()
+EVDS, EVDS_HATA = evds_verisi(EVDS_KEY, dt.date.today().isoformat()) if EVDS_KEY else ({}, {})
+OTO = mk.oto_varsayim(EVDS) if EVDS else {}
+
 # ---------------- Ortak ayarlar ----------------
 with st.expander("⚙️ Varsayımlar"):
     c1, c2 = st.columns(2)
     rf = c1.number_input("Risksiz faiz (TR 10Y)", value=0.36, step=0.01, format="%.4f")
-    enf = c2.number_input("Yıllık enflasyon", value=0.2977, step=0.01, format="%.4f")
+    enf = c2.number_input("Yıllık enflasyon" + (" (EVDS)" if "enflasyon" in OTO else ""), value=float(OTO.get("enflasyon", 0.2977)),
+                          step=0.01, format="%.4f")
     erp = c1.number_input("Hisse risk primi", value=0.07, step=0.005, format="%.3f")
     g = c2.number_input("DCF uç büyüme", value=0.15, step=0.01, format="%.3f")
-    st.caption("Varsayılanlar Kasım 2026 piyasa verilerine göre ayarlıdır.")
+    st.caption("Enflasyon, EVDS anahtarı girildiyse TCMB verisinden otomatik alınır; diğerleri Kasım 2026 piyasa verilerine göre ayarlıdır.")
+    yeni_k = st.text_input("TCMB EVDS API anahtarı (isteğe bağlı)", value="", type="password",
+                           help="evds3.tcmb.gov.tr → Benim Sayfam → API anahtarı. Kalıcı olması için Streamlit Secrets'a EVDS_KEY olarak ekleyin.")
+    if yeni_k:
+        st.session_state["evds_key"] = yeni_k
 PRM = dict(rf=rf, enflasyon=enf, erp=erp, terminal_g=g)
 GUN = dt.date.today().isoformat()
 
@@ -79,6 +107,8 @@ def analiz(kod, emsal, prm, gun, surum):
                       for y in m["yontemler"]],
         "saglik": m["saglik"],
         "akis_ozet": (m.get("akis") or {}).get("ozet"), "akis_yorum": br.akis_yorumlari(m),
+        "genel": br.genel_degerlendirme(m), "haber": m.get("haber"), "seviye": m.get("seviye"),
+        "usd": {k: v for k, v in (m.get("usd") or {}).items() if k != "seri"} if m.get("usd") else None,
         "yabanci": (m.get("yabanci") or {}).get("oran"),
     }
 
@@ -113,7 +143,7 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
                  })
 
 
-tab_r, tab_t, tab_k, tab_w = st.tabs(["📄 Rapor", "🔎 Tarayıcı", "⚖️ Karşılaştır", "⭐ Takip"])
+tab_r, tab_p, tab_t, tab_k, tab_w = st.tabs(["📄 Rapor", "🌍 Piyasa", "🔎 Tarayıcı", "⚖️ Karşılaştır", "⭐ Takip"])
 
 # ================= RAPOR =================
 with tab_r:
@@ -147,7 +177,18 @@ with tab_r:
         if v:
             st.caption(f"Veri kalitesi {v.get('puan')}/100 · son finansal dönem "
                        f"{v['son_donem']:%d.%m.%Y}" if v.get("son_donem") is not None else f"Veri kalitesi {v.get('puan')}/100")
-        a1, a4, a2, a3 = st.tabs(["Özet", "Para Akışı", "Grafikler", "Değerleme"])
+        a1, a4, a5, a2, a3 = st.tabs(["Özet", "Para Akışı", "Haberler", "Grafikler", "Değerleme"])
+        with a5:
+            hb = r.get("haber") or {}
+            if hb.get("liste"):
+                st.markdown(f"**Genel ton: {hb['ozet']}** · son 30 gün")
+                for x in hb["liste"]:
+                    isaret = "🟢" if x["ton"] > 0 else "🔴" if x["ton"] < 0 else "⚪"
+                    tarih = f"{x['tarih']:%d.%m}" if x.get("tarih") else ""
+                    st.markdown(f"{isaret} [{x['baslik']}]({x['link']})  \n<small>{tarih} · {x['kaynak']}</small>", unsafe_allow_html=True)
+                st.caption("Ton, başlıktaki kelimelere dayalı basit bir sınıflandırmadır.")
+            else:
+                st.info("Son 30 günde haber bulunamadı." + (f" ({hb.get('hata')})" if hb.get("hata") else ""))
         with a4:
             if r.get("akis_ozet"):
                 kart(st, "PARA AKIŞI GÖRÜNÜMÜ", r["akis_ozet"],
@@ -160,6 +201,18 @@ with tab_r:
             st.caption("Takas ve aracı kurum dağılımı lisanslı veri olduğundan kullanılmaz; analiz fiyat-hacim verisi ve "
                        "kamuya açık yabancı payına dayanır.")
         with a1:
+            sv = r.get("seviye") or {}; u = r.get("usd") or {}
+            c1, c2 = st.columns(2)
+            if sv.get("destek"): kart(c1, "EN YAKIN DESTEK", f"{br.tl(sv['destek'][0][0])} TL", br.yz(sv["destek"][0][0] / o["Fiyat"] - 1), "#1E8E5A")
+            if sv.get("direnc"): kart(c2, "EN YAKIN DİRENÇ", f"{br.tl(sv['direnc'][0][0])} TL", br.yz(sv["direnc"][0][0] / o["Fiyat"] - 1), "#C0392B")
+            if u.get("r"):
+                c1, c2 = st.columns(2)
+                kart(c1, "DOLAR FİYAT", f"${br.ond(u['fiyat_usd'], 2)}", f"Kur {br.ond(u['kur'], 2)}", "#2F6DB5")
+                kart(c2, "1Y GETİRİ ($)", br.yz(u["r"].get("1Y")), f"TL reel: {br.yz(br.reel(o['1Y getiri']))}",
+                     "#1E8E5A" if (u["r"].get("1Y") or 0) > 0 else "#C0392B")
+            with st.expander("🧾 Genel değerlendirme (tüm raporun özeti)", expanded=True):
+                for bas, metin in r.get("genel") or []:
+                    st.markdown(f"**{bas}.** {metin}")
             if r["guclu"]: st.markdown("**Güçlü yönler**\n" + "\n".join(f"- 🟢 {x}" for x in r["guclu"]))
             if r["zayif"]: st.markdown("**Dikkat edilmesi gerekenler**\n" + "\n".join(f"- 🔴 {x}" for x in r["zayif"]))
         with a2:
@@ -173,6 +226,97 @@ with tab_r:
                 st.dataframe(dfv, hide_index=True, use_container_width=True,
                              column_config={"Değer (TL)": st.column_config.NumberColumn(format="%.2f"),
                                             "Ağırlık": st.column_config.NumberColumn(format="%.2f")})
+
+# ================= PİYASA =================
+def _degisim_metni(v):
+    parca = []
+    for et, k in (("1G", "d1G"), ("1A", "d1A"), ("YBB", "YBB")):
+        if v.get(k) is not None: parca.append(f"{et} {br.yz(v[k])}")
+    return " · ".join(parca)
+
+with tab_p:
+    st.markdown("#### 📈 Makro panel")
+    try:
+        PV = piyasa_verisi(dt.datetime.now().strftime("%Y%m%d%H"))
+    except Exception as e:
+        PV = {}; st.caption(f"Piyasa verisi alınamadı: {e}")
+    sira = ["USD/TRY", "EUR/TRY", "Gram altın", "BIST 100", "BIST 100 ($)", "Brent petrol", "Ons altın", "ABD 10Y faiz"]
+    goster = [x for x in sira if x in PV]
+    for i in range(0, len(goster), 2):
+        cols = st.columns(2)
+        for c, ad_ in zip(cols, goster[i:i + 2]):
+            v = PV[ad_]; d1 = v.get("d1G")
+            kart(c, ad_.upper(), f"{br.ond(v['deger'], 2)} {v['birim']}", _degisim_metni(v),
+                 "#1E8E5A" if (d1 or 0) > 0 else "#C0392B" if (d1 or 0) < 0 else "#14294B")
+    if EVDS:
+        st.markdown("**TCMB (EVDS)**")
+        for ad_, v in EVDS.items():
+            st.markdown(f"- {ad_}: **{br.ond(v['deger'], 2)}** ({v['tarih']:%m.%Y})")
+        if OTO: st.caption("Model varsayımlarındaki enflasyon EVDS'den otomatik alındı.")
+        if EVDS_HATA: st.caption("Okunamayan seriler: " + "; ".join(f"{k} ({h})" for k, h in EVDS_HATA.items()))
+    else:
+        st.caption("TCMB verileri (enflasyon, fonlama maliyeti, rezerv) için ⚙️ Varsayımlar bölümüne ücretsiz EVDS API anahtarınızı girin.")
+
+    st.divider()
+    st.markdown("#### 🎯 Günlük piyasa taraması ve fırsat listeleri")
+    st.caption("Tüm listedeki hisseler her iş günü sabahı otomatik taranır. Listeler model sıralamasıdır; yatırım tavsiyesi değildir.")
+    tarama_dosya = "raporlar/tarama.csv"
+    P_SATIR = None
+    if os.path.exists(tarama_dosya):
+        _df = pd.read_csv(tarama_dosya)
+        P_SATIR = _df.drop(columns=["tarih"]).to_dict("records")
+        st.caption(f"Son tarama: {_df['tarih'].iloc[0]} · {len(_df)} hisse")
+    elif "p_tarama" in st.session_state:
+        P_SATIR = st.session_state.p_tarama
+    else:
+        st.info("İlk otomatik tarama bir sonraki iş günü sabahı hazır olacak. İsterseniz şimdi elle başlatabilirsiniz (5–10 dakika).")
+        if st.button("🌍 Tüm piyasayı şimdi tara", key="p_btn"):
+            with st.spinner(f"{len(bv.SIRKETLER)} hisse taranıyor… Ekranı kapatmayın."):
+                st.session_state.p_tarama = tarama(tuple(sorted(bv.SIRKETLER)), tuple(PRM.items()), GUN, br.SURUM)[0]
+            st.rerun()
+    if P_SATIR:
+        for baslik, liste in br.kategoriler(P_SATIR).items():
+            with st.expander(baslik, expanded=baslik.startswith("⭐")):
+                dfk = pd.DataFrame(liste)
+                dfk["Potansiyel %"] = (dfk["Potansiyel"] * 100).round(1)
+                kol = [c for c in ["Kod", "Şirket", "Fırsat skoru", "Sağlık skoru", "Potansiyel %", "Gerekçe"] if c in dfk]
+                st.dataframe(dfk[kol], hide_index=True, use_container_width=True,
+                             column_config={"Fırsat skoru": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.0f"),
+                                            "Sağlık skoru": st.column_config.NumberColumn(format="%.2f")})
+        st.caption("Fırsat skoru: sağlık skoru (%35), potansiyel (%30), 6 aylık göreli güç (%20) ve para akışının (%15) "
+                   "taranan hisseler içindeki yüzdelik sıralamasıdır. Bir hisse hakkında karar vermeden önce tam raporunu inceleyin.")
+
+        st.divider()
+        st.markdown("#### 🗺️ Sektör ısı haritası")
+        so = br.sektor_ozet(P_SATIR)
+        if not so.empty:
+            yesil = [c for c in ["Sağlık skoru", "Potansiyel %", "1Y getiri %", "6A göreli %", "Para girişi oranı %"] if c in so]
+            kirmizi = [c for c in ["F/K", "PD/DD"] if c in so]
+            try:
+                sty = so.style.format("{:.1f}", subset=[c for c in so.columns if c != "Hisse"])
+                sty = sty.background_gradient(cmap="RdYlGn", subset=yesil, axis=0).background_gradient(cmap="RdYlGn_r", subset=kirmizi, axis=0)
+                st.dataframe(sty, use_container_width=True)
+            except Exception:
+                st.dataframe(so, use_container_width=True)
+            st.caption("Değerler sektördeki hisselerin medyanıdır. Yeşil olumlu, kırmızı olumsuz (F/K ve PD/DD'de düşük değer yeşil).")
+
+    st.divider()
+    st.markdown("#### 🧪 Skorun geçmiş testi (backtest)")
+    if os.path.exists("raporlar/backtest.json"):
+        bt_ = json.load(open("raporlar/backtest.json", encoding="utf-8"))
+        oz = bt_["ozet"]
+        c1, c2 = st.columns(2)
+        kart(c1, "YÜKSEK – DÜŞÜK SKOR FARKI", br.yz(oz["ort_fark"]), "3 aylık dönem ortalaması",
+             "#1E8E5A" if oz["ort_fark"] > 0 else "#C0392B")
+        kart(c2, "İSABET ORANI", br.yz(oz["isabet"], 0), f"{oz['donem_sayisi']} dönem",
+             "#1E8E5A" if oz["isabet"] >= 0.6 else "#D9A21B" if oz["isabet"] >= 0.5 else "#C0392B")
+        st.markdown(oz["yorum"])
+        if os.path.exists("raporlar/backtest.png"): st.image("raporlar/backtest.png", use_container_width=True)
+        st.caption(f"Güncelleme: {oz['uretim']}. Test, sağlık skorunun geçmişe uygulanabilen sadeleştirilmiş hâlini kullanır "
+                   "(ROE, büyüme, kâr verimi, defter değeri/piyasa değeri, momentum). Bugün listede olan hisselerle yapıldığı için "
+                   "hayatta kalma yanlılığı içerir ve işlem maliyetleri dahil değildir. Geçmiş performans geleceğin garantisi değildir.")
+    else:
+        st.info("Backtest her Pazar sabahı otomatik çalışır; ilk sonuç ilk Pazar günü burada görünecek.")
 
 # ================= TARAYICI =================
 with tab_t:

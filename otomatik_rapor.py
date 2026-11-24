@@ -25,10 +25,34 @@ def yabanci_kaydet(gun):
     df.to_csv(yol, index=False)
     print(f"Yabancı oranı kaydedildi: {len(yeni)} hisse")
 
+def piyasa_taramasi(gun):
+    """Tüm listedeki hisseleri tarar; fırsat skoru ve sektör özetiyle raporlar/tarama.csv'ye yazar."""
+    import bist_veri as bv
+    satirlar, hatalar = br.tara(sorted(bv.SIRKETLER), isci=4)
+    df = pd.DataFrame(satirlar)
+    df.insert(0, "tarih", gun)
+    df.to_csv(os.path.join("raporlar", "tarama.csv"), index=False)
+    print(f"Piyasa taraması: {len(satirlar)} hisse, {len(hatalar)} hata")
+
 def main():
     kodlar = [s.strip().upper() for s in open("takip_listesi.txt", encoding="utf-8")
               if s.strip() and not s.strip().startswith("#")]
     gun = dt.date.today().isoformat()
+    os.makedirs("raporlar", exist_ok=True)
+    anahtar = os.environ.get("EVDS_KEY")
+    if anahtar:  # varsayımları TCMB verisiyle güncelle
+        try:
+            import bist_makro as mk
+            evds, _ = mk.evds_paneli(anahtar)
+            prm = mk.oto_varsayim(evds)
+            br.PARAM.update({k.upper(): v for k, v in prm.items()})
+            print("EVDS varsayımları:", prm)
+        except Exception as ex:
+            print(f"EVDS okunamadı: {ex}", file=sys.stderr)
+    try:
+        yabanci_kaydet(gun)          # önce yabancı oranları (rapor ve tarama bunları kullanır)
+    except Exception as ex:
+        print(f"Yabancı oranı kaydı başarısız: {ex}", file=sys.stderr)
     klasor = os.path.join("raporlar", gun)
     os.makedirs(klasor, exist_ok=True)
     satirlar = []
@@ -40,10 +64,13 @@ def main():
         except Exception as ex:
             print(f"{k} atlandı: {ex}", file=sys.stderr)
     pd.DataFrame(satirlar).to_csv(os.path.join(klasor, "ozet.csv"), index=False)
-    yabanci_kaydet(gun)
-    for eski in sorted(glob.glob("raporlar/20*"))[:-5]:  # yabanci_oran.csv bu desene girmez
+    for eski in sorted(glob.glob("raporlar/20*"))[:-5]:  # yalnızca tarihli klasörler
         shutil.rmtree(eski, ignore_errors=True)
     print(f"{len(satirlar)}/{len(kodlar)} rapor üretildi → {klasor}")
+    try:
+        piyasa_taramasi(gun)
+    except Exception as ex:
+        print(f"Piyasa taraması başarısız: {ex}", file=sys.stderr)
 
 if __name__ == "__main__":
     main()

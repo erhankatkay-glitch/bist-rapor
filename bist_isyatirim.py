@@ -149,7 +149,7 @@ def _tarih(yy, pp):
     return pd.Timestamp(yy, pp, 1) + pd.offsets.MonthEnd(0)
 
 
-def finansallar(kod, oturum=None, bugun=None):
+def finansallar(kod, oturum=None, bugun=None, ceyrek_sayi=8):
     """İş Yatırım'dan finansalları çeker. Başarısızsa istisna fırlatır."""
     donemler = _ceyrek_sonlari(16, bugun)
     satirlar, grup = {}, None
@@ -222,7 +222,7 @@ def finansallar(kod, oturum=None, bugun=None):
                 d = {p: seri.get(p, np.nan) for p in yil_sonlari}
             else:
                 d = ceyreklik(seri) if akis else seri
-                d = {p: d.get(p, np.nan) for p in donem_dolu[:8]}
+                d = {p: d.get(p, np.nan) for p in donem_dolu[:ceyrek_sayi]}
             veri[k] = d
         if not veri:
             return pd.DataFrame()
