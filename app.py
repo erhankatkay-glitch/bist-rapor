@@ -71,6 +71,7 @@ def analiz(kod, emsal, prm, gun, surum):
         "dosya": os.path.basename(dosya), "pdf": pdf, "ozet": br.ozet_satir(m), "grafik": br.grafikler(d, m, endeks),
         "fiyat": k[k.index >= k.index[-1] - pd.Timedelta(days=365)],
         "guclu": m["guclu"], "zayif": m["zayif"], "kur_notu": m.get("kur_notu"), "guven": m["guven"],
+        "kaynak": m.get("kaynak"), "kaynak_hata": m.get("kaynak_hata"),
         "sinirlandi": m.get("sinirlandi"), "skor_etiket": m["skor_etiket"], "veri": m.get("veri"),
         "yontemler": [{"Yöntem": y[0], "Değer (TL)": y[1], "Ağırlık": y[4], "Dahil": "✓" if y[6] else "hariç", "Not": y[5]}
                       for y in m["yontemler"]],
@@ -91,7 +92,7 @@ def tablo_goster(satirlar, sirala="Sağlık skoru"):
         df[c] = df[c].apply(lambda x: None if x is None else round(x * 100, 1))
     df = df.sort_values(sirala, ascending=sirala in ("F/K", "PD/DD"), na_position="last")
     st.dataframe(df[["Kod", "Şirket", "Sağlık skoru", "Potansiyel", "Fiyat", "Adil değer", "F/K", "PD/DD", "ROE",
-                     "Temettü verimi", "1Y getiri", "Teknik", "Veri puanı"]],
+                     "Temettü verimi", "1Y getiri", "Teknik", "Veri puanı"] + (["Kaynak"] if "Kaynak" in df else [])],
                  hide_index=True, use_container_width=True,
                  column_config={
                      "Sağlık skoru": st.column_config.ProgressColumn("Skor", min_value=0, max_value=5, format="%.2f"),
@@ -124,6 +125,8 @@ with tab_r:
     if "sonuc" in st.session_state:
         r = st.session_state.sonuc; o = r["ozet"]
         st.markdown(f"### {o['Şirket']} ({o['Kod']})")
+        st.caption("📚 Finansal veri kaynağı: " + (r.get("kaynak") or "Yahoo Finance"))
+        if r.get("kaynak_hata"): st.caption("⚠️ " + r["kaynak_hata"])
         if r.get("kur_notu"): st.caption("ⓘ " + r["kur_notu"])
         c1, c2 = st.columns(2)
         kart(c1, "SON FİYAT", f"{br.tl(o['Fiyat'])} TL", f"F/K {br.kat(o['F/K'])} · PD/DD {br.kat(o['PD/DD'])}")

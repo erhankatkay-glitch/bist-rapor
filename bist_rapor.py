@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-3"
+SURUM = "2026.11.24-4"
 
 import bist_veri as BV
 
@@ -216,6 +216,40 @@ def veri_cek(kod, hafif=False):
         d["temettu"] = _naive(t.dividends) if not hafif else pd.Series(dtype=float)
     except Exception:
         d["temettu"] = pd.Series(dtype=float)
+    d["kaynak"], d["kaynak_hata"] = "Yahoo Finance", None
+    # 1) Ana kaynak: İş Yatırım (KAP finansalları, TL)
+    try:
+        import bist_isyatirim as ISY
+        isy = ISY.finansallar(kod)
+        # Ölçek kontrolü: Yahoo ile karşılaştır (binlik/milyonluk birim farkına karşı)
+        y_var = None
+        try:
+            yb = d["q_bilanco"] if isinstance(d["q_bilanco"], pd.DataFrame) and not d["q_bilanco"].empty else d["bilanco"]
+            y_var = float(pd.to_numeric(yb.loc["Total Assets"]).dropna().iloc[0])
+            fpb = (info.get("financialCurrency") or DOVIZ_RAPORLAYAN.get(kod, "TRY")).upper()
+            if fpb != "TRY":
+                y_var = None  # dövizli Yahoo verisiyle ölçek kıyası yapılmaz
+        except Exception:
+            y_var = None
+        i_b = isy["q_bilanco"] if not isy["q_bilanco"].empty else isy["bilanco"]
+        i_var = float(pd.to_numeric(i_b.loc["Total Assets"]).dropna().iloc[0])
+        olcek = 1.0
+        if y_var and i_var and y_var > 0 and i_var > 0:
+            us = round(math.log10(y_var / i_var))
+            if abs(us) >= 2:
+                olcek = 10.0 ** us
+        for k in ("gelir", "bilanco", "nakit", "q_gelir", "q_bilanco", "q_nakit"):
+            df = isy[k]
+            if olcek != 1.0 and not df.empty:
+                df = df.copy(); m_ = [i != "Ordinary Shares Number" for i in df.index]
+                df.loc[m_] = df.loc[m_] * olcek
+            d[k] = df
+        d["kaynak"] = f"İş Yatırım (KAP finansalları, {isy['grup']})" + (f", ölçek ×{olcek:g}" if olcek != 1.0 else "")
+        d["kur_notu"] = None
+        return d
+    except Exception as ex:
+        d["kaynak_hata"] = f"İş Yatırım verisi alınamadı ({type(ex).__name__}: {str(ex)[:120]}); Yahoo kullanıldı."
+    # 2) Yedek: Yahoo (gerekirse kur çevrimi)
     fin_pb = (info.get("financialCurrency") or DOVIZ_RAPORLAYAN.get(kod, "")).upper()
     pb = (info.get("currency") or "TRY").upper()
     d["kur_notu"] = None
@@ -275,6 +309,7 @@ def metrikler(d, endeks=None):
     m = {"kod": d["kod"], "ad": BV.ad(d["kod"]) or info.get("longName") or info.get("shortName") or d["kod"],
          "sektor": info.get("sector") or "–", "sanayi": info.get("industry") or "–"}
     m["finansal"] = finansal_mi(info, d["kod"]); m["kur_notu"] = d.get("kur_notu")
+    m["kaynak"] = d.get("kaynak", "Yahoo Finance"); m["kaynak_hata"] = d.get("kaynak_hata")
     kap = h["Close"].dropna(); p = float(kap.iloc[-1]); m["fiyat"] = p
     m["tarih"] = kap.index[-1]
 
@@ -1090,8 +1125,8 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     # ---------------- SAYFA 1: ÖZET ----------------
     E.append(Paragraph(f"{m['ad']}", ST["h1"]))
     E.append(Paragraph(f'<font color="#6B7280">BIST: {m["kod"]}  ·  {m["sektor"]} / {m["sanayi"]}  ·  Veri tarihi {m["tarih"]:%d.%m.%Y}</font>', ST["p"]))
-    if m.get("kur_notu"):
-        E.append(Paragraph(f'<font color="#6B7280">ⓘ {m["kur_notu"]}</font>', ST["kucuk"]))
+    E.append(Paragraph(f'<font color="#6B7280">Finansal veri kaynağı: {m.get("kaynak", "Yahoo Finance")}'
+                       + (f' · {m["kur_notu"]}' if m.get("kur_notu") else "") + '</font>', ST["kucuk"]))
     E.append(Spacer(1, 7))
     kw = W / 4 - 3
     satir1 = [kutu("SON FİYAT", f"{tl(m['fiyat'])} TL", f"52H: {tl(m['dip52'])} – {tl(m['zirve52'])}"),
@@ -1331,7 +1366,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         E.append(Paragraph("Şirketin kayıtlı nakit temettü geçmişi bulunamadı.", ST["p"]))
     E.append(CondPageBreak(8 * cm)); E.append(Paragraph("7. Metodoloji ve Önemli Uyarılar", ST["h1"]))
     met = [
-        f"<b>Veri:</b> Fiyat, finansal tablo ve analist verileri Yahoo Finance üzerinden otomatik çekilir; KAP'taki resmi finansallarla farklılık, gecikme veya eksiklik olabilir. "
+        f"<b>Veri:</b> Mali tablolar öncelikle İş Yatırım'ın KAP finansallarından derlediği tablolardan, alınamazsa Yahoo Finance'ten çekilir; fiyat, temettü ve analist verileri Yahoo Finance kaynaklıdır. Gecikme veya eksiklik olabilir. "
         "TMS 29 (enflasyon muhasebesi) kapsamında yeniden düzenlenen tablolar ile nominal tablolar arasında yıllar arası kıyaslama sapmaları olabilir.",
         "<b>Son 12 ay (TTM):</b> Gelir tablosu ve nakit akışı kalemleri son dört çeyreğin toplamıdır; bilanço kalemleri son açıklanan dönemdir.",
         f"<b>İNA (DCF):</b> {PARAM['DCF_YIL']} yıllık açık tahmin dönemi; hasılat büyümesi tarihsel bileşik büyümeden uç büyümeye doğrusal azalır, "
@@ -1352,6 +1387,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
          ["Son finansal dönem", (f"{vk['son_donem']:%d.%m.%Y} ({vk['gun']} gün önce)" if vk.get("son_donem") is not None else "–")],
          ["Kullanılabilir çeyrek / yıl sayısı", f"{vk.get('ceyrek', 0)} / {vk.get('yil', 0)}"],
          ["Eksik ana kalemler", ", ".join(vk.get("eksik") or []) or "Yok"],
+         ["Finansal veri kaynağı", m.get("kaynak", "Yahoo Finance")],
          ["Para birimi", m.get("kur_notu") or "Finansallar ve fiyat aynı para biriminde (TL)"],
          ["Veri kalite puanı", f"{vk.get('puan', '–')}/100"]]
     E.append(KeepTogether([Spacer(1, 4), tablo(v, [W * .35, W * .65], font=7.4)]))
@@ -1435,7 +1471,8 @@ def ozet_satir(m):
     return {"Kod": m["kod"], "Şirket": m["ad"], "Fiyat": m["fiyat"], "Adil değer": m["adil"],
             "Potansiyel": m["potansiyel"], "Sağlık skoru": m["genel_skor"], "F/K": m["fk"], "PD/DD": m["pddd"],
             "ROE": m["roe"], "Temettü verimi": m["temettu_verim"], "1Y getiri": m["r"].get("1Y"),
-            "Görüş": m["gorus"], "Teknik": m["teknik_ozet"], "Veri puanı": (m.get("veri") or {}).get("puan")}
+            "Görüş": m["gorus"], "Teknik": m["teknik_ozet"], "Veri puanı": (m.get("veri") or {}).get("puan"),
+            "Kaynak": "İş Yatırım" if str(m.get("kaynak", "")).startswith("İş") else "Yahoo"}
 
 def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None, **param):
     """Birden çok hisseyi tarar, özet tablo döndürür. Emsaller tarama içindeki aynı sektör hisseleridir."""
