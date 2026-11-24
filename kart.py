@@ -161,11 +161,11 @@ def basitce(f):
     risk, k1, k2 = yz_(st / g - 1), yz_(h1 / g - 1), yz_(h2 / g - 1)
     if f["yon"] == 1:
         return (f"{_fy(g)} civarından alım düşünülebilir. Fiyat {_fy(st)} seviyesinin altına inerse işlem geçersiz sayılır ve zarar "
-                f"kesilir (yaklaşık {risk}). Yükselişte ilk kâr {_fy(h1)} seviyesinde ({k1}) alınır, stop alış fiyatına "
-                f"çekilir; böylece kalan pozisyon zararsız taşınır. Sonraki hedef {_fy(h2)} ({k2}).")
+                f"kesilir (yaklaşık {risk}). Fiyat {_fy(h1)} seviyesine ulaşırsa ({k1}) pozisyonun yarısı satılarak kâr alınır ve "
+                f"stop alış fiyatına çekilir; böylece kalan kısım zarar riski olmadan taşınır. Sonraki hedef {_fy(h2)} ({k2}).")
     return (f"Fiyatın düşmesi beklenir (vadeli işlemde açığa satış). {_fy(g)} civarından satış pozisyonu düşünülebilir. Fiyat {_fy(st)} "
-            f"seviyesinin üzerine çıkarsa işlem kapatılır (yaklaşık {risk} zarar). Düşüşte ilk kâr {_fy(h1)} seviyesinde "
-            f"({k1}) alınır, stop giriş fiyatına çekilir. Sonraki hedef {_fy(h2)} ({k2}).")
+            f"seviyesinin üzerine çıkarsa işlem kapatılır (yaklaşık {risk} zarar). Fiyat {_fy(h1)} seviyesine inerse ({k1}) "
+            f"pozisyonun yarısı kapatılarak kâr alınır ve stop giriş fiyatına çekilir. Sonraki hedef {_fy(h2)} ({k2}).")
 
 
 def baslik_metni(f):

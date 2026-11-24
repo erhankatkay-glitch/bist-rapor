@@ -109,9 +109,17 @@ def yeniden_ornekle(h, tf, tur="hisse"):
     agg = {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
     if "TakerBuy" in h: agg["TakerBuy"] = "sum"
     if tf == "4S":
-        # BIST seansı 10:00–18:00: 10–14 ve 14–18 dilimleri; diğerleri UTC hizalı 4 saat
-        g = h.resample("4h", offset="2h").agg(agg) if tur == "hisse" else h.resample("4h").agg(agg)
-        return g.dropna(subset=["Close"])
+        if tur == "hisse":   # BIST 10:00–18:00 (+18:00–18:10 kapanış seansı son dilime): 10–14 ve 14–18
+            idx = h.index; saat = idx.hour
+            idx = idx.where(saat < 18, idx.normalize() + pd.Timedelta(hours=17, minutes=59))
+            idx = idx.where(saat >= 10, idx.normalize() + pd.Timedelta(hours=10))
+            h = h.set_axis(idx)
+            return h.resample("4h", offset="2h").agg(agg).dropna(subset=["Close"])
+        if tur == "abd":     # ET saatinde 09:30–13:30 ve 13:30–16:00
+            dk = h.index.hour * 60 + h.index.minute
+            h = h[(dk >= 570) & (h.index.hour < 16)]
+            return h.resample("4h", origin="start_day", offset="9h30min").agg(agg).dropna(subset=["Close"])
+        return h.resample("4h").agg(agg).dropna(subset=["Close"])
     kural = ("W-SUN" if tur == "kripto" else "W-FRI") if tf == "H" else "ME"
     g = h.resample(kural).agg(agg)
     return g.dropna(subset=["Close"])
@@ -121,22 +129,34 @@ def yeniden_ornekle(h, tf, tur="hisse"):
 # GÖSTERGELER
 # =====================================================================
 def _wilder(s, n):
-    return s.ewm(alpha=1 / n, adjust=False).mean()
+    """Wilder (RMA) yumuşatması: ilk değer ilk n gözlemin basit ortalaması, sonrası (önceki*(n-1)+yeni)/n.
+    TradingView ve Investing.com'daki RSI/ATR/ADX ile aynı sonucu verir."""
+    s = pd.Series(s, dtype=float); v = s.to_numpy(); out = np.full(len(v), np.nan)
+    ok = np.flatnonzero(~np.isnan(v))
+    if len(ok) < n: return pd.Series(out, index=s.index)
+    i0 = ok[0]
+    if np.isnan(v[i0:i0 + n]).any():   # aralıklı eksik veri: ileri doldurup devam et
+        v = s.ffill().to_numpy()
+    kuyruk = v[i0 + n - 1:].copy(); kuyruk[0] = v[i0:i0 + n].mean()
+    out[i0 + n - 1:] = pd.Series(kuyruk).ewm(alpha=1.0 / n, adjust=False, ignore_na=True).mean().to_numpy()
+    return pd.Series(out, index=s.index)
 
 
 def rsi(c, n=14):
-    d = c.diff(); up = _wilder(d.clip(lower=0), n); dn = _wilder(-d.clip(upper=0), n)
-    return 100 - 100 / (1 + up / dn.replace(0, np.nan))
+    d = c.diff().iloc[1:]; up = _wilder(d.clip(lower=0), n); dn = _wilder(-d.clip(upper=0), n)
+    r = 100 - 100 / (1 + up / dn.replace(0, np.nan))
+    r = r.where(~((dn == 0) & (up > 0)), 100.0).where(~((dn == 0) & (up == 0)), 50.0)
+    return r.reindex(c.index)
 
 
 def atr(h, n=14):
     pc = h["Close"].shift()
-    tr = pd.concat([h["High"] - h["Low"], (h["High"] - pc).abs(), (h["Low"] - pc).abs()], axis=1).max(axis=1)
+    tr = pd.concat([h["High"] - h["Low"], (h["High"] - pc).abs(), (h["Low"] - pc).abs()], axis=1).max(axis=1, skipna=True)
     return _wilder(tr, n)
 
 
 def adx(h, n=14):
-    up = h["High"].diff(); dn = -h["Low"].diff()
+    up = h["High"].diff().fillna(0); dn = (-h["Low"].diff()).fillna(0)
     pdm = pd.Series(np.where((up > dn) & (up > 0), up, 0.0), index=h.index)
     mdm = pd.Series(np.where((dn > up) & (dn > 0), dn, 0.0), index=h.index)
     a = atr(h, n)
@@ -205,7 +225,7 @@ def gostergeler(h):
     e13 = c.ewm(span=13, adjust=False).mean(); G["BULL"] = hi - e13; G["BEAR"] = lo - e13
     med = (hi + lo) / 2; G["AO"] = med.rolling(5).mean() - med.rolling(34).mean()
     G["ATR"] = atr(h)
-    m20, s20 = c.rolling(20).mean(), c.rolling(20).std()
+    m20, s20 = c.rolling(20).mean(), c.rolling(20).std(ddof=0)
     G["BB_UST"], G["BB_ORTA"], G["BB_ALT"] = m20 + 2 * s20, m20, m20 - 2 * s20
     G["BB_GEN"] = (G["BB_UST"] - G["BB_ALT"]) / m20
     G["KC_UST"], G["KC_ALT"] = G["EMA20"] + 2 * G["ATR"], G["EMA20"] - 2 * G["ATR"]
@@ -217,7 +237,7 @@ def gostergeler(h):
     G["ST"], G["ST_YON"] = supertrend(h)
     G["OBV"] = (np.sign(c.diff()).fillna(0) * v).cumsum()
     mf = tp * v; pos = mf.where(tp > tp.shift(), 0).rolling(14).sum(); neg = mf.where(tp < tp.shift(), 0).rolling(14).sum()
-    G["MFI"] = 100 - 100 / (1 + pos / neg.replace(0, np.nan))
+    G["MFI"] = (100 - 100 / (1 + pos / neg.replace(0, np.nan))).where(~((neg == 0) & (pos > 0)), 100.0)
     mfm = ((c - lo) - (hi - c)) / (hi - lo).replace(0, np.nan)
     G["CMF"] = (mfm * v).rolling(20).sum() / v.rolling(20).sum().replace(0, np.nan)
     n_ = 25
@@ -434,7 +454,7 @@ def _dogru(xs, ys):
     return b, a
 
 
-def grafik_formasyonlari(h, G, piv):
+def grafik_formasyonlari(h, G, piv, tf="G"):
     c = h["Close"].values; n = len(c); son = c[-1]; at = _son(G["ATR"]) or son * 0.02
     bul = []; cizim = []
     P = piv[:-1] if len(piv) > 1 else []   # onaylanmış salınımlar
@@ -446,7 +466,7 @@ def grafik_formasyonlari(h, G, piv):
     # İkili tepe / dip
     if len(tep) >= 2 and len(dip) >= 1:
         t1, t2 = tep[-2], tep[-1]; ara = [d for d in dip if t1[0] < d[0] < t2[0]]
-        if ara and abs(t1[1] - t2[1]) <= tol and n - t2[0] <= 40:
+        if ara and abs(t1[1] - t2[1]) <= tol and n - t2[0] <= 40 and son <= max(t1[1], t2[1]) + 0.25 * at:
             boyun = min(d[1] for d in ara); yuk = max(t1[1], t2[1]) - boyun
             if yuk > 1.5 * at:
                 d_ = "TEYİT (boyun çizgisi kırıldı)" if son < boyun else "oluşumda"
@@ -454,7 +474,7 @@ def grafik_formasyonlari(h, G, piv):
                      {"x": [t1[0], t2[0]], "y": [t1[1], t2[1]], "yatay": boyun})
     if len(dip) >= 2 and len(tep) >= 1:
         d1, d2 = dip[-2], dip[-1]; ara = [t for t in tep if d1[0] < t[0] < d2[0]]
-        if ara and abs(d1[1] - d2[1]) <= tol and n - d2[0] <= 40:
+        if ara and abs(d1[1] - d2[1]) <= tol and n - d2[0] <= 40 and son >= min(d1[1], d2[1]) - 0.25 * at:
             boyun = max(t[1] for t in ara); yuk = boyun - min(d1[1], d2[1])
             if yuk > 1.5 * at:
                 d_ = "TEYİT (boyun çizgisi kırıldı)" if son > boyun else "oluşumda"
@@ -463,7 +483,7 @@ def grafik_formasyonlari(h, G, piv):
     # Omuz-baş-omuz / Ters OBO
     if len(tep) >= 3 and len(dip) >= 2:
         s1, b, s2 = tep[-3:]
-        if b[1] > s1[1] + 0.5 * at and b[1] > s2[1] + 0.5 * at and abs(s1[1] - s2[1]) <= 1.5 * tol and n - s2[0] <= 50:
+        if b[1] > s1[1] + 0.5 * at and b[1] > s2[1] + 0.5 * at and abs(s1[1] - s2[1]) <= 1.5 * tol and n - s2[0] <= 50 and son < b[1]:
             lows = [d for d in dip if s1[0] < d[0] < s2[0]]
             if len(lows) >= 2:
                 l1, l2 = lows[0], lows[-1]; eg = (l2[1] - l1[1]) / max(l2[0] - l1[0], 1); boyun = l2[1] + eg * (n - 1 - l2[0])
@@ -473,7 +493,7 @@ def grafik_formasyonlari(h, G, piv):
                      {"x": [s1[0], b[0], s2[0]], "y": [s1[1], b[1], s2[1]], "boyun": [(l1[0], l1[1]), (n - 1, boyun)]})
     if len(dip) >= 3 and len(tep) >= 2:
         s1, b, s2 = dip[-3:]
-        if b[1] < s1[1] - 0.5 * at and b[1] < s2[1] - 0.5 * at and abs(s1[1] - s2[1]) <= 1.5 * tol and n - s2[0] <= 50:
+        if b[1] < s1[1] - 0.5 * at and b[1] < s2[1] - 0.5 * at and abs(s1[1] - s2[1]) <= 1.5 * tol and n - s2[0] <= 50 and son > b[1]:
             highs = [t for t in tep if s1[0] < t[0] < s2[0]]
             if len(highs) >= 2:
                 h1, h2 = highs[0], highs[-1]; eg = (h2[1] - h1[1]) / max(h2[0] - h1[0], 1); boyun = h2[1] + eg * (n - 1 - h2[0])
@@ -529,10 +549,12 @@ def grafik_formasyonlari(h, G, piv):
     dc_u, dc_l = _son(G["DC_UST"]), _son(G["DC_ALT"])
     if dc_u and son > dc_u: ekle("20 dönem zirve kırılımı", 1, "KIRILIM", "Fiyat son 20 dönemin en yükseğini aştı.", None, 1)
     if dc_l and son < dc_l: ekle("20 dönem dip kırılımı", -1, "KIRILIM", "Fiyat son 20 dönemin en düşüğünün altına indi.", None, 1)
-    if n > 260:
-        z52 = float(h["High"].iloc[-253:-1].max()); d52 = float(h["Low"].iloc[-253:-1].min())
-        if son > z52: ekle("52 dönem zirvesi aşıldı", 1, "KIRILIM", "Fiyat uzun vadeli zirvesinin üzerinde.", None, 2)
-        if son < d52: ekle("52 dönem dibi kırıldı", -1, "KIRILIM", "Fiyat uzun vadeli dibinin altında.", None, 2)
+    yil = {"G": 252, "H": 52, "A": 12}.get(tf)
+    if yil and n > yil + 5:
+        if tf == "G" and pd.Series(h.index[-30:]).diff().dt.days.max() <= 1: yil = 365   # kripto: 7/24 işlem
+        z52 = float(h["High"].iloc[-yil - 1:-1].max()); d52 = float(h["Low"].iloc[-yil - 1:-1].min())
+        if son > z52: ekle("1 yıllık zirve aşıldı (52 hafta)", 1, "KIRILIM", "Fiyat son 1 yılın en yüksek seviyesinin üzerinde.", None, 2)
+        if son < d52: ekle("1 yıllık dip kırıldı (52 hafta)", -1, "KIRILIM", "Fiyat son 1 yılın en düşük seviyesinin altında.", None, 2)
     # Trend çizgisi kırılımı
     if len(dip) >= 2:
         d1, d2 = dip[-2], dip[-1]
@@ -588,7 +610,9 @@ def price_action(h, G, piv):
         hedef_i = tep[-1][0]
         for j in range(hedef_i - 1, max(hedef_i - 15, 0), -1):
             if c[j] < h["Open"].values[j]:
-                o["ob"] = ("Boğa emir bloğu", lo[j], hi[j], h.index[j]); break
+                if lo[j + 1:].min(initial=np.inf) >= lo[j] and son > hi[j]:
+                    o["ob"] = ("Boğa emir bloğu", lo[j], hi[j], h.index[j])
+                break
     return o
 
 
@@ -615,17 +639,22 @@ def kesisimler(G, son_n=10):
     def kes(a, b, ad_al, ad_sat, guc):
         x, y = G[a], G[b]; d = (x - y).iloc[-son_n - 1:]
         if len(d.dropna()) < 2: return
-        isaret = np.sign(d.dropna())
-        degis = isaret.diff().fillna(0)
-        if (degis > 0).any(): bul.append((ad_al, 1, f"Son {son_n} mum içinde gerçekleşti.", guc))
-        elif (degis < 0).any(): bul.append((ad_sat, -1, f"Son {son_n} mum içinde gerçekleşti.", guc))
+        isaret = np.sign(d.dropna()); isaret = isaret[isaret != 0]
+        degis = isaret.diff().fillna(0); kes_ = degis[degis != 0]
+        if not len(kes_): return
+        yon = 1 if kes_.iloc[-1] > 0 else -1
+        if np.sign(d.iloc[-1]) != yon: return            # kesişim geri alınmış
+        once = len(d) - 1 - list(d.index).index(kes_.index[-1])
+        zaman = "son mumda" if once == 0 else f"{once} mum önce"
+        bul.append((ad_al if yon > 0 else ad_sat, yon, f"Kesişim {zaman} gerçekleşti ve geçerliliğini koruyor.", guc))
     kes("SMA50", "SMA200", "Altın kesişim (SMA50 > SMA200)", "Ölüm kesişimi (SMA50 < SMA200)", 3)
     kes("EMA20", "EMA50", "EMA20 EMA50'yi yukarı kesti", "EMA20 EMA50'yi aşağı kesti", 2)
     kes("MACD", "MACD_SIG", "MACD al kesişimi", "MACD sat kesişimi", 1)
     kes("TENKAN", "KIJUN", "Ichimoku Tenkan/Kijun al kesişimi", "Ichimoku Tenkan/Kijun sat kesişimi", 1)
-    st = G["ST_YON"].iloc[-son_n - 1:]
-    if (st.diff() > 0).any(): bul.append(("SuperTrend al sinyaline döndü", 1, "Trend takip göstergesi yukarı döndü.", 2))
-    elif (st.diff() < 0).any(): bul.append(("SuperTrend sat sinyaline döndü", -1, "Trend takip göstergesi aşağı döndü.", 2))
+    st = G["ST_YON"].iloc[-son_n - 1:]; dg = st.diff(); dg = dg[dg.fillna(0) != 0]
+    if len(dg) and np.sign(dg.iloc[-1]) == np.sign(st.iloc[-1]):
+        if st.iloc[-1] > 0: bul.append(("SuperTrend al sinyaline döndü", 1, "Trend takip göstergesi yukarı döndü ve yönünü koruyor.", 2))
+        else: bul.append(("SuperTrend sat sinyaline döndü", -1, "Trend takip göstergesi aşağı döndü ve yönünü koruyor.", 2))
     return bul
 
 
@@ -746,7 +775,7 @@ def tf_analiz(h, tf):
     if len(h) < 30:
         return None
     G = gostergeler(h); piv = salinimlar(h, G, AYAR[tf]["atr_k"])
-    oy = oylama(h, G); mum = mum_formasyonlari(h, G); form, cizim = grafik_formasyonlari(h, G, piv)
+    oy = oylama(h, G); mum = mum_formasyonlari(h, G); form, cizim = grafik_formasyonlari(h, G, piv, tf)
     pa = price_action(h, G, piv); uy = uyumsuzluklar(h, G, piv); kes = kesisimler(G)
     sr = destek_direnc(h, G, piv); fib = fibonacci(h, min(AYAR[tf]["pencere_fib"], len(h))); pv = pivot_noktalari(h)
     dr = durumlar(h, G)
@@ -806,7 +835,7 @@ def saatlik_veri(kod, tur):
     y, _ = yahoo_sembol(kod)
     h = yf.Ticker(y).history(period="730d", interval="60m", auto_adjust=True)
     if h is None or h.empty: raise ValueError("saatlik veri yok")
-    try: h.index = h.index.tz_convert("Europe/Istanbul").tz_localize(None)
+    try: h.index = h.index.tz_convert("America/New_York" if tur == "abd" else "Europe/Istanbul").tz_localize(None)
     except Exception: h = br._naive(h)
     return h[["Open", "High", "Low", "Close", "Volume"]].dropna(subset=["Close"]).iloc[-2500:]
 
@@ -833,8 +862,9 @@ def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A"), kisa_vade=False):
     if kisa_vade and not fiyat_fn:
         try:
             hs = saatlik_veri(kod, tur)
+            tur_s = "hisse" if tur == "endeks" and kod.startswith("X") else tur
             for tf in ("1S", "4S"):
-                sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(hs, tf, tur), tf)
+                sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(hs, tf, tur_s), tf)
         except Exception as ex:
             sonuc["kisa_hata"] = str(ex)[:100]
     ag = {"G": 0.3, "H": 0.4, "A": 0.3}
@@ -857,10 +887,10 @@ def sade_yorum(s):
     if g:
         en = sorted([x for x in g["sinyal"] if x[1] != 0], key=lambda x: -x[3])[:2]
         if en: metin += "Öne çıkan: " + "; ".join(x[0].split(": ", 1)[-1] for x in en) + ". "
-        sr = g["sr"]
-        if sr["destek"]: metin += f"En yakın destek {sayi(sr['destek'][0][0])}"
-        if sr["direnc"]: metin += f", direnç {sayi(sr['direnc'][0][0])}"
-        metin += "."
+        sr = g["sr"]; sv = []
+        if sr["destek"]: sv.append(f"en yakın destek {sayi(sr['destek'][0][0])}")
+        if sr["direnc"]: sv.append(f"en yakın direnç {sayi(sr['direnc'][0][0])}")
+        if sv: metin += (", ".join(sv) + ".")[0].upper() + (", ".join(sv) + ".")[1:]
     return metin
 
 

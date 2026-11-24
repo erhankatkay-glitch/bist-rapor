@@ -50,6 +50,7 @@ KALEMLER = {
     "brut": (["brut kar zarar", "ticari faaliyetlerden brut kar zarar", "gross profit"], True, False),
     "faal": (["faaliyet kari zarari", "net faaliyet kar zarari", "esas faaliyet kari zarari", "operating profit",
               "operating income"], True, False),
+    "nfk": (["net faaliyet kar zarari", "net faaliyet kari zarari", "net faaliyet kari"], True, False),
     "vergi_once": (["surdurulen faaliyetler vergi oncesi kari zarari", "vergi oncesi kar zarar",
                     "surdurulen faaliyetler vergi oncesi kar zarar", "profit before tax"], True, False),
     "vergi": (["surdurulen faaliyetler vergi geliri gideri", "donem vergi geliri gideri", "tax expense"], True, False),
@@ -233,7 +234,7 @@ def finansallar(kod, oturum=None, bugun=None, ceyrek_sayi=8):
 
     BIL = ["don_var", "nakit", "nakit_yat", "stok", "varlik", "kvy", "yukum", "fin_borc", "ozk_ana", "azinlik",
            "gecmis", "sermaye", "krediler", "mevduat"]
-    GEL = ["ciro", "brut", "faal", "vergi_once", "vergi", "net", "net_ana", "fin_gider", "amort", "nfg", "karsilik"]
+    GEL = ["ciro", "brut", "faal", "nfk", "vergi_once", "vergi", "net", "net_ana", "fin_gider", "amort", "nfg", "karsilik"]
     NAK = ["isl_na", "capex", "sna", "temettu"]
 
     def yf_bicim(df):
@@ -241,8 +242,13 @@ def finansallar(kod, oturum=None, bugun=None, ceyrek_sayi=8):
             return df
         df = df.copy()
         # FAVÖK = faaliyet kârı + amortisman
-        if "faal" in df.index and "amort" in df.index:
-            df.loc["ebitda"] = df.loc["faal"] + df.loc["amort"].abs()
+        # Piyasa (İş Yatırım/KAP) tanımı: Net faaliyet kârı (brüt kâr − faaliyet giderleri) + amortisman;
+        # esas faaliyetlerden diğer gelir/giderler (kur farkı, vade farkı vb.) FAVÖK'e katılmaz.
+        if "amort" in df.index and ("nfk" in df.index or "faal" in df.index):
+            taban = df.loc["nfk"] if "nfk" in df.index else df.loc["faal"]
+            if "nfk" in df.index and "faal" in df.index: taban = taban.fillna(df.loc["faal"])
+            df.loc["ebitda"] = taban + df.loc["amort"].abs()
+        if "nfk" in df.index: df = df.drop(index="nfk")
         if "capex" in df.index:
             df.loc["capex"] = -df.loc["capex"].abs()
         if "temettu" in df.index:

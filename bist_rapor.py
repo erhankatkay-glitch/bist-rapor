@@ -24,9 +24,9 @@ warnings.filterwarnings("ignore")
 # PARAMETRELER (Kasım 2026 piyasa koşullarına göre varsayılanlar)
 # =====================================================================
 PARAM = {
-    "RF": 0.36,
+    "RF": 0.366,         # TR 10Y gösterge tahvil (%36,62 kapanış, 19.11.2026)
     "MAKS_POTANSIYEL": 0.80,  # adil değer en fazla fiyatın %80 üstü (temkinli sınır)
-    "MIN_POTANSIYEL": -0.60,          # Risksiz faiz: TR 10Y gösterge tahvil (~%36,6, 19.11.2026)
+    "MIN_POTANSIYEL": -0.60,
     "ERP": 0.07,         # Hisse senedi risk primi
     "TERMINAL_G": 0.15,  # DCF uç büyüme (nominal TL)
     "ENFLASYON": 0.2977, # TÜİK yıllık TÜFE (Ekim 2026)
@@ -34,7 +34,7 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-20"
+SURUM = "2026.11.24-21"
 
 # ---------------------------------------------------------------- piyasa bağlamı (BIST / ABD)
 PB = "TL"            # rapor metinlerindeki para birimi
@@ -42,8 +42,10 @@ EN = "BIST 100"      # karşılaştırma endeksi adı
 RF_AD = "TR 10Y"
 PIYASA = "bist"
 BIST_PARAM = dict(PARAM)
-ABD_PARAM = {"RF": 0.043,          # ABD 10 yıllık tahvil
-             "ERP": 0.050, "TERMINAL_G": 0.025, "ENFLASYON": 0.029, "VERGI": 0.21}
+ABD_PARAM = {"RF": 0.050,          # ABD 10 yıllık tahvil (~%5,05, 19.11.2026)
+             "ERP": 0.050, "TERMINAL_G": 0.025,
+             "ENFLASYON": 0.037,   # ABD TÜFE yıllık %3,7 (Eylül 2026; Ekim yıllık verisi yayımlanmadı)
+             "VERGI": 0.21}
 
 
 def AN_getiri(r):
@@ -91,7 +93,7 @@ SEKTOR_GRUPLARI = {
     "GYO": ["EKGYO", "ISGYO", "TRGYO"],
     "Sigorta": ["ANSGR", "AKGRT", "TURSG", "AGESA"],
     "Teknoloji": ["LOGO", "KAREL", "NETAS", "INDES", "ARDYZ"],
-    "Madencilik": ["KOZAL", "KOZAA", "IPEKE"],
+    "Madencilik": ["TRALT", "TRMET", "TRENJ"],
     "İnşaat-Taahhüt": ["ENKAI", "TKFEN"],
 }
 
@@ -187,10 +189,13 @@ def deger(s, i=0):
     return sayi(s.iloc[i]) if s is not None and len(s) > i else None
 
 def ttm(q, a, *adlar):
-    """Son 4 çeyrek toplamı; yoksa son yıllık değer."""
+    """Son 4 ARDIŞIK çeyreğin toplamı; çeyrek eksikse (araya boşluk girmişse) son yıllık değer."""
     s = satir(q, *adlar)
     if s is not None and len(s) >= 4:
-        return float(s.iloc[:4].sum())
+        t = [pd.Timestamp(x) for x in s.index[:4]]
+        ardisik = all(60 <= (t[i] - t[i + 1]).days <= 120 for i in range(3))
+        if ardisik:
+            return float(s.iloc[:4].sum())
     return deger(satir(a, *adlar))
 
 def son_bilanco(q, a, *adlar):
@@ -570,10 +575,12 @@ def seri_canli(s, sembol):
 
 def beklenen_donem(bugun=None):
     """Yasal süreye göre bugün itibarıyla açıklanmış olması gereken en son mali tablo dönemi.
-    (Yaklaşık: 1. ve 3. çeyrek +60 gün, 2. çeyrek ve yıl sonu +70 gün.)"""
+    SPK II-14.1 (konsolide): 3 ve 9 ay 40 gün, 6 ay (sınırlı denetim) ~55 gün, yıllık 70 gün. Bankalar ve SPK ek süreleri
+    için 10 gün tolerans eklenir. ABD (10-Q 40–45 gün, 10-K 60–90 gün) için ayrı tolerans kullanılır."""
     bugun = pd.Timestamp(bugun or dt.date.today())
+    sure = ((12, 90), (9, 55), (6, 55), (3, 55)) if PIYASA == "abd" else ((12, 80), (9, 50), (6, 65), (3, 50))
     for yil in (bugun.year, bugun.year - 1, bugun.year - 2):
-        for ay, ek in ((12, 70), (9, 60), (6, 70), (3, 60)):
+        for ay, ek in sure:
             son = pd.Timestamp(yil, ay, 1) + pd.offsets.MonthEnd(0)
             if son + pd.Timedelta(days=ek) <= bugun:
                 return son
@@ -623,6 +630,21 @@ def metrikler(d, endeks=None):
     if T["sna"] is None and T["isl_na"] is not None and T["capex"] is not None:
         T["sna"] = T["isl_na"] + T["capex"]
     T["tem_odenen"] = ttm(qN, N, "Cash Dividends Paid", "Common Stock Dividend Paid")
+    if PIYASA == "abd":
+        # Yahoo çeyreklik tablosunda çeyrek eksikse ttm() son yıllık değere düşer (eski kalabilir);
+        # bu durumda Yahoo'nun hazır son 12 ay (TTM) değerleri kullanılır.
+        def _tam(df, *ad):
+            s_ = satir(df, *ad)
+            if s_ is None or len(s_) < 4: return False
+            t_ = [pd.Timestamp(x) for x in s_.index[:4]]
+            return all(60 <= (t_[i] - t_[i + 1]).days <= 120 for i in range(3))
+        for k_, adlar_, ik in (("ciro", ("Total Revenue", "Operating Revenue"), "totalRevenue"),
+                               ("net", ("Net Income Common Stockholders", "Net Income"), "netIncomeToCommon"),
+                               ("favok", ("EBITDA", "Normalized EBITDA"), "ebitda"),
+                               ("isl_na", ("Operating Cash Flow",), "operatingCashflow")):
+            df_ = qN if k_ == "isl_na" else qA
+            if not _tam(df_, *adlar_) and sayi(info.get(ik)) is not None:
+                T[k_] = sayi(info.get(ik))
     m["T"] = T
 
     # --- Son bilanço ---
@@ -643,14 +665,25 @@ def metrikler(d, endeks=None):
         K["isl_serm"] = K["don_var"] - K["kvy"]
     m["K"] = K
 
-    hs = sayi(info.get("sharesOutstanding")) or son_bilanco(qB, B, "Ordinary Shares Number", "Share Issued")
+    hs_y = sayi(info.get("sharesOutstanding")); hs_b = son_bilanco(qB, B, "Ordinary Shares Number", "Share Issued")
+    # BIST: bedelsiz sermaye artırımlarını Yahoo geç işleyebilir; KAP sermayesi (1 TL nominal = 1 pay) ile kıyaslanır,
+    # paylar iptal edilmediği için büyük olan daha güncel kabul edilir.
+    hs = (max(hs_y, hs_b) if hs_y and hs_b and PIYASA != "abd" else hs_y or hs_b)
+    mc_y = sayi(info.get("marketCap"))
+    if PIYASA == "abd" and mc_y and p > 0 and (not hs or abs(p * hs / mc_y - 1) > 0.05):
+        hs = mc_y / p   # çok sınıflı paylar (ör. BRK-A/B): toplam piyasa değerine denk pay adedi
+    if hs_y and hs_b and PIYASA != "abd" and abs(hs_y / hs_b - 1) > 0.03:
+        m["hisse_notu"] = f"Pay adedi kaynakları farklı (Yahoo {tl(hs_y)}, KAP sermayesi {tl(hs_b)}); güncel olan {tl(hs)} kullanıldı."
     m["hisse"] = hs
     m["piy_deg"] = p * hs if hs else sayi(info.get("marketCap"))
     m["net_borc"] = K["borc"] - K["nakit"]
     m["fd"] = m["piy_deg"] + m["net_borc"] + K["azinlik"] if m["piy_deg"] else None
     m["hbk"] = bol(T["net"], hs); m["hbdd"] = bol(K["ozk"], hs)
-    vergi_oran = bol(T["vergi"], T["vergi_once"])
-    m["efektif_vergi"] = min(max(vergi_oran, 0), 0.4) if vergi_oran is not None else PARAM["VERGI"]
+    vg = T["vergi"]
+    if vg is not None and "İş Yatırım" in str(d.get("kaynak")): vg = -vg   # KAP tablolarında vergi gideri eksi işaretlidir
+    vergi_oran = bol(vg, T["vergi_once"]) if (T["vergi_once"] or 0) > 0 else None
+    # Ertelenmiş vergi / enflasyon muhasebesi etkisiyle oran anlamsızlaşırsa (eksi ya da >%50) yasal oran kullanılır
+    m["efektif_vergi"] = vergi_oran if vergi_oran is not None and 0 <= vergi_oran <= 0.5 else PARAM["VERGI"]
 
     # --- Çarpanlar ---
     pos = lambda x: x if x is not None and x > 0 else None
@@ -856,9 +889,8 @@ def piotroski(A, B, N):
     return round(skor, 1), kriter
 
 def rsi(s, n=14):
-    d = s.diff(); up = d.clip(lower=0).ewm(alpha=1/n, adjust=False).mean()
-    dn = (-d.clip(upper=0)).ewm(alpha=1/n, adjust=False).mean()
-    return 100 - 100 / (1 + up / dn.replace(0, np.nan))
+    import bist_teknik as BT
+    return BT.rsi(s, n)
 
 def fiyat_analizi(h, endeks):
     k = h["Close"].dropna(); p = float(k.iloc[-1]); son = k.index[-1]; o = {}
@@ -891,9 +923,9 @@ def fiyat_analizi(h, endeks):
     for n in (20, 50, 200):
         o[f"ma{n}"] = float(k.rolling(n).mean().iloc[-1]) if len(k) >= n else None
     o["rsi"] = float(rsi(k).iloc[-1])
-    e12, e26 = k.ewm(span=12).mean(), k.ewm(span=26).mean(); macd = e12 - e26; sig = macd.ewm(span=9).mean()
+    e12, e26 = k.ewm(span=12, adjust=False).mean(), k.ewm(span=26, adjust=False).mean(); macd = e12 - e26; sig = macd.ewm(span=9, adjust=False).mean()
     o["macd"], o["macd_sinyal"] = float(macd.iloc[-1]), float(sig.iloc[-1])
-    ma20, sd20 = k.rolling(20).mean(), k.rolling(20).std()
+    ma20, sd20 = k.rolling(20).mean(), k.rolling(20).std(ddof=0)
     o["boll_b"] = float(((k - (ma20 - 2*sd20)) / (4*sd20)).iloc[-1])
     if "Volume" in h:
         v = h["Volume"].fillna(0)
@@ -1047,7 +1079,7 @@ def degerleme(m, emsaller, nav=None):
         cev = lambda x: (x * m["T"]["favok"] - m["net_borc"] - m["K"]["azinlik"]) / hs
         Y.append(["Emsal FD/FAVÖK", cev(ff["med"]), cev(ff["q1"]), cev(ff["q3"]), 0.20,
                   f"Medyan FD/FAVÖK {kat(ff['med'])} (n={ff['n']})"])
-    if pd_ and m["hbdd"] and m["hbdd"] > 0:
+    if pd_ and m["hbdd"] and m["hbdd"] > 0 and (fin or (m.get("roe") or 0) <= 0.40):
         Y.append(["Emsal PD/DD", pd_["med"] * m["hbdd"], pd_["q1"] * m["hbdd"], pd_["q3"] * m["hbdd"], 0.20 if fin else 0.07,
                   f"Medyan PD/DD {kat(pd_['med'])} (n={pd_['n']})"])
     # 3) Gerekçeli PD/DD (finansal şirketler)
@@ -1058,7 +1090,7 @@ def degerleme(m, emsaller, nav=None):
             Y.append(["Gerekçeli PD/DD", jpb * m["hbdd"], None, None, 0.35,
                       f"(ROE {yz(m['roe'])} − g) / (Ke {yz(w['ke'])} − g) = {kat(jpb)}"])
     # 4) Temettü indirgeme
-    if m["dps_ttm"] and m["dps_ttm"] > 0 and w["ke"] > gT + 0.02:
+    if m["dps_ttm"] and m["dps_ttm"] > 0 and w["ke"] > gT + 0.02 and (fin or (m.get("dagitim_orani") or 0) >= 0.30):
         Y.append(["Temettü İndirgeme (Gordon)", m["dps_ttm"] * (1 + gT) / (w["ke"] - gT), None, None, 0.10 if fin else 0.05,
                   f"HBT {tl(m['dps_ttm'])} {PB}, Ke {yz(w['ke'])}"])
     # 5) Graham
@@ -1070,8 +1102,17 @@ def degerleme(m, emsaller, nav=None):
                   f"{m['analist_sayi'] or '?'} analist"])
     # Temkinli birleştirme: aykırı filtre (fiyatın %40'ı – 2,5 katı), ağırlıklı ortalama ile
     # ağırlıklı medyanın ortalaması, ardından potansiyel sınırı.
+    # Uç değerler atılmaz, sınırlanır: fiyatın 0,4–2,5 katı aralığı tam ağırlık; dışındakiler 0,5–2 kat aralığına
+    # kırpılıp yarım ağırlıkla katılır (ör. F/K'sı emsallerin çok altındaki ucuz bir hisse "ucuz" sinyalini kaybetmesin).
+    # Negatif / hesaplanamayan değerler (ör. eksi serbest nakit akışlı İNA) hariç tutulur.
     for y in Y:
-        y.append(y[1] is not None and (y[0].startswith("Net Aktif") or 0.40 * p <= y[1] <= 2.5 * p))
+        if y[1] is None or y[1] <= 0:
+            y.append(False); continue
+        if y[0].startswith("Net Aktif") or 0.40 * p <= y[1] <= 2.5 * p:
+            y.append(True); continue
+        ham = y[1]; y[1] = min(max(ham, 0.5 * p), 2.0 * p); y[4] = y[4] / 2
+        y[5] = f"{y[5]} · ham sonuç {tl(ham)} {PB} aşırı uç olduğundan {tl(y[1])} ile sınırlandı, yarım ağırlık"
+        y.append(True)
     gec = [y for y in Y if y[6]]
     tw = sum(y[4] for y in gec)
     m["yontemler"] = Y
@@ -1852,7 +1893,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
            ["× Varlık devir hızı", kat(m["varlik_devir"])], ["× Finansal kaldıraç", kat(m["kaldirac"])],
            ["= Özkaynak kârlılığı (ROE)", yz(m["roe"])]]
     if m["altman"] is not None:
-        dup += [["", ""], ["Altman Z'' (gelişmekte olan piyasa)", ond(m["altman"], 2)],
+        dup += [["", ""], ["Altman Z'' (imalat dışı, 4 değişkenli)", ond(m["altman"], 2)],
                 ["Bölge", "Güvenli (>2,6)" if m["altman"] > 2.6 else "Gri (1,1–2,6)" if m["altman"] > 1.1 else "Sıkıntı (<1,1)"]]
     dupont = tablo(dup, [W * .32, W * .16], font=7.2)
     if pk:
@@ -2099,6 +2140,7 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
          ["Eksik ana kalemler", ", ".join(vk.get("eksik") or []) or "Yok"],
          ["Finansal veri kaynağı", m.get("kaynak", "Yahoo Finance")],
          ["Para birimi", m.get("kur_notu") or f"Finansallar ve fiyat aynı para biriminde ({PB})"],
+         ["Pay adedi", m.get("hisse_notu") or (tl(m.get("hisse")) if m.get("hisse") else "–")],
          ["Veri kalite puanı", f"{vk.get('puan', '–')}/100"]]
     E.append(KeepTogether([Spacer(1, 4), tablo(v, [W * .35, W * .65], font=7.4)]))
     doc.build(E, onFirstPage=sayfa, onLaterPages=sayfa)

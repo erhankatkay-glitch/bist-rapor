@@ -106,11 +106,19 @@ def anlik(kod):
         t = KR._get(f"{KR.OKX}/market/ticker", instId=f"{baz}-{par}")["data"][0]
         return float(t["last"]), float(t["last"]) / float(t["sodUtc0"]) - 1
     import yfinance as yf, bist_teknik as T
+    def _son_ve_onceki(y):
+        g = yf.Ticker(y).history(period="5d", interval="15m")
+        d = yf.Ticker(y).history(period="10d")
+        if g is None or g.empty or d is None or d.empty: raise ValueError(f"{kod} fiyatı alınamadı")
+        son = float(g["Close"].dropna().iloc[-1]); gun = g.index[-1].date()
+        # önceki kapanış: son işlem gününden ÖNCEKİ günün kapanışı (seans açılmadan dünkü hareket 'bugün' sayılmasın)
+        once = d[[t.date() < gun for t in d.index]]["Close"].dropna()
+        return son, (float(once.iloc[-1]) if len(once) else son)
     y, _ = T.yahoo_sembol(kod)
-    g = yf.Ticker(y).history(period="5d", interval="15m")
-    d = yf.Ticker(y).history(period="5d")
-    if g is None or g.empty: raise ValueError(f"{kod} fiyatı alınamadı")
-    son = float(g["Close"].iloc[-1]); onceki = float(d["Close"].iloc[-2]) if len(d) > 1 else son
+    son, onceki = _son_ve_onceki(y)
+    if kod.upper() == "GRAMALTIN":   # ons altın ($) × USD/TRY / 31,1035
+        k_son, k_once = _son_ve_onceki("TRY=X")
+        son, onceki = son * k_son / 31.1035, onceki * k_once / 31.1035
     return son, son / onceki - 1
 
 

@@ -266,10 +266,12 @@ def tepki(kod, t0):
     """Haber zamanından bu yana değişim ve hacim oranı. (değişim, hacim_k, fiyat_t0, fiyat_son)"""
     h = saatlik(kod)
     if h is None or len(h) < 5: return None
-    once = h[h.index <= t0]
+    sure = pd.Series(h.index[-30:]).diff().median()
+    sure = sure if pd.notna(sure) and sure <= pd.Timedelta(hours=4) else pd.Timedelta(hours=1)
+    once = h[h.index + sure <= t0]            # haberden ÖNCE kapanmış son mum (tepkinin tamamı ölçülsün)
     if not len(once): return None
     p0 = float(once["Close"].iloc[-1]); p1 = float(h["Close"].iloc[-1])
-    sonra = h[h.index > t0]
+    sonra = h[h.index + sure > t0]
     vk = None
     if len(sonra) and h["Volume"].sum() > 0:
         ort = float(once["Volume"].iloc[-48:].mean() or 0)

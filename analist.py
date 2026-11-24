@@ -76,7 +76,7 @@ SEKTOR_TR = {"Industrials": "sanayi", "Financial Services": "finansal hizmetler"
              "Communication Services": "iletişim", "Healthcare": "sağlık"}
 
 SEKTOR_NOT = {
-    "Bankacılık": (["faiz indirim döngüsünün net faiz marjı üzerindeki etkisi", "aktif kalitesinde bozulma ve artan karşılık giderleri",
+    "Bankacılık": (["politika faizi patikasının (indirim ya da artırım) net faiz marjı üzerindeki etkisi", "aktif kalitesinde bozulma ve artan karşılık giderleri",
                     "BDDK kredi büyüme sınırlamaları ve makro ihtiyati düzenlemeler"],
                    ["TCMB faiz kararları ve mevduat maliyetlerindeki gerileme", "kredi büyüme sınırlamalarının gevşetilmesi",
                     "çeyreklik net faiz marjı ve takipteki kredi açıklamaları"]),
@@ -335,7 +335,7 @@ def katalizorler(m):
         sd = None
     if sd is not None:
         nd = (pd.Timestamp(sd) + pd.offsets.QuarterEnd(1))
-        ek = 70 if nd.month in (6, 12) else 60
+        ek = ({12: 75, 6: 45}.get(nd.month, 45) if br.PIYASA == "abd" else {12: 70, 6: 55}.get(nd.month, 40))   # SPK II-14.1 konsolide süreler
         K.append(f"{nd:%Y}/{nd.month:02d} dönemi finansal sonuçları (yasal son açıklama tarihi yaklaşık {nd + pd.Timedelta(days=ek):%d.%m.%Y})")
     if m.get("temettu_verim"): K.append("genel kurul dönemindeki temettü dağıtım kararı")
     if g_ in SEKTOR_NOT: K += SEKTOR_NOT[g_][1][:2]

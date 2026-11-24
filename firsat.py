@@ -47,6 +47,7 @@ UST_TF = {"4S": "G", "G": "H", "H": "A", "A": "H"}
 AGIRLIK = (0.5, 0.3, 0.2)                   # H1/H2/H3'te kapatılan pozisyon payı
 GECMIS_BAR = 1500
 MIN_PUAN = 55
+BEKLENEN_R_MIN = 0.02                       # geçmiş testte işlem başına beklenen sonuç bunun altındaysa fırsat sayılmaz
 PIYASA_ONCEL = 15                           # varlık örneği azken piyasa geneli istatistiğine verilen ağırlık
 
 
@@ -166,8 +167,9 @@ def tetikler(M):
 
 
 # ------------------------------------------------------------------ geçmiş testi
-def simule(H, L, C, t, giris, stop, rler, maks):
+def simule(H, L, C, t, giris, stop, rler, maks, O=None):
     """AL yönlü (aynalanmış) simülasyon. Aynı mumda stop ve hedef görülürse stop varsayılır (temkinli).
+    Fiyat stopun altında açılırsa (boşluk) çıkış açılış fiyatından yapılır — gerçekçi kayıp.
     Döner (R, aşama, sebep) ya da ufuk tamamlanmadıysa None."""
     risk = giris - stop
     if risk <= 0: return None
@@ -176,7 +178,8 @@ def simule(H, L, C, t, giris, stop, rler, maks):
     n = len(C); son = min(t + maks, n - 1)
     for j in range(t + 1, son + 1):
         if L[j] <= s:
-            return R + kalan * (s - giris) / risk, asama, ("başabaş" if asama else "stop")
+            cikis = min(s, O[j]) if O is not None and O[j] == O[j] else s
+            return R + kalan * (cikis - giris) / risk, asama, ("başabaş" if asama else "stop")
         while asama < 3 and H[j] >= hed[asama]:
             R += AGIRLIK[asama] * rler[asama]; kalan -= AGIRLIK[asama]; asama += 1
             if asama == 1: s = giris
@@ -194,10 +197,10 @@ def _istat(sonuc):
 
 
 def gecmis_testi(M, maske, stop, tf, rler=(1.0, 2.0, 3.0), hariç_son=True):
-    H, L, C = M["High"].tolist(), M["Low"].tolist(), M["Close"].tolist()
+    H, L, C, O = M["High"].tolist(), M["Low"].tolist(), M["Close"].tolist(), M["Open"].tolist()
     n = len(C); bas = max(60, n - GECMIS_BAR)
     idx = [t for t in np.flatnonzero(maske) if t >= bas and (not hariç_son or t < n - 1)]
-    return _istat([simule(H, L, C, t, C[t], stop[t], rler, MAKS_BAR[tf]) for t in idx])
+    return _istat([simule(H, L, C, t, C[t], stop[t], rler, MAKS_BAR[tf], O) for t in idx])
 
 
 class PiyasaIstatistik:
@@ -210,22 +213,22 @@ class PiyasaIstatistik:
 
 
 def piyasa_olaylari(M, tetik, tf):
-    H, L, C = M["High"].tolist(), M["Low"].tolist(), M["Close"].tolist()
+    H, L, C, O = M["High"].tolist(), M["Low"].tolist(), M["Close"].tolist(), M["Open"].tolist()
     n = len(C); bas = max(60, n - GECMIS_BAR); out = {}
     for k, (m, stop) in tetik.items():
         idx = [t for t in np.flatnonzero(m) if bas <= t < n - 1]
-        out[k] = [simule(H, L, C, t, C[t], stop[t], (1.0, 2.0, 3.0), MAKS_BAR[tf]) for t in idx]
+        out[k] = [simule(H, L, C, t, C[t], stop[t], (1.0, 2.0, 3.0), MAKS_BAR[tf], O) for t in idx]
     return out
 
 
 # ------------------------------------------------------------------ formasyon kırılımları (canlı + örneklemli geçmiş)
-_FORM_DISLA = ("dönem",)
+_FORM_DISLA = ("dönem", "1 yıllık")
 _TAZE = ("TEYİT", "KIRILIM")
 
 
-def _form_kirilimlari(h, G, atr_k):
+def _form_kirilimlari(h, G, atr_k, tf="G"):
     piv = T.salinimlar(h, G, atr_k)
-    form, _ = T.grafik_formasyonlari(h, G, piv)
+    form, _ = T.grafik_formasyonlari(h, G, piv, tf)
     return [f for f in form if any(x in f["durum"] for x in _TAZE) and not any(x in f["ad"] for x in _FORM_DISLA)], piv
 
 
@@ -234,9 +237,9 @@ def form_tetik(a, tf):
     h, G = a["h"], a["G"]
     if len(h) < 60: return []
     k = T.AYAR[tf]["atr_k"]
-    simdi, _ = _form_kirilimlari(h, G, k)
+    simdi, _ = _form_kirilimlari(h, G, k, tf)
     if not simdi: return []
-    once, _ = _form_kirilimlari(h.iloc[:-1], G.iloc[:-1], k)
+    once, _ = _form_kirilimlari(h.iloc[:-1], G.iloc[:-1], k, tf)
     eski = {(f["ad"], f["yon"]) for f in once}
     return [f for f in simdi if (f["ad"], f["yon"]) not in eski and f["yon"] != 0]
 
@@ -245,18 +248,18 @@ def form_gecmisi(a, tf, yon, rler, adim=2, pencere=400):
     """Formasyon kırılımlarının bu varlıktaki geçmişi (yalnızca o güne kadarki veriyle, örneklemli)."""
     h, G = a["h"], a["G"]; n = len(h); k = T.AYAR[tf]["atr_k"]
     H, L, C = h["High"].to_numpy(float), h["Low"].to_numpy(float), h["Close"].to_numpy(float)
-    at = G["ATR"].to_numpy(float)
-    if yon == -1: H, L, C = -L, -H, -C
+    O = h["Open"].to_numpy(float); at = G["ATR"].to_numpy(float)
+    if yon == -1: H, L, C, O = -L, -H, -C, -O
     once = set(); sonuc = []
     for t in range(max(80, n - pencere), n - 1, adim):
-        try: fl, piv = _form_kirilimlari(h.iloc[:t + 1], G.iloc[:t + 1], k)
+        try: fl, piv = _form_kirilimlari(h.iloc[:t + 1], G.iloc[:t + 1], k, tf)
         except Exception: continue
         simdi = {(f["ad"], f["yon"]) for f in fl if f["yon"] == yon}
         yeni = simdi - once; once = simdi
         if not yeni: continue
         st = _form_stop(piv[:-1], yon, C[t] * (1 if yon == 1 else -1), at[t])
         if st is None: continue
-        sonuc.append(simule(H.tolist(), L.tolist(), C.tolist(), t, C[t], st * (1 if yon == 1 else -1), rler, MAKS_BAR[tf]))
+        sonuc.append(simule(H.tolist(), L.tolist(), C.tolist(), t, C[t], st * (1 if yon == 1 else -1), rler, MAKS_BAR[tf], O.tolist()))
     return _istat(sonuc)
 
 
@@ -291,9 +294,10 @@ def hedef_adaylari(a, yon, giris, at):
     if a["tf"] in ("4S", "G"):
         for k in ("R1", "R2", "R3") if yon == 1 else ("S1", "S2", "S3"):
             ek(a["pivot"]["Klasik"][k], f"pivot {k}", "pivot")
-    if len(h) > 253:
-        ek(float(h["High"].iloc[-253:].max()) if yon == 1 else float(h["Low"].iloc[-253:].min()),
-           "52 dönem zirvesi" if yon == 1 else "52 dönem dibi", "sr")
+    yil = {"G": 365 if (pd.DatetimeIndex(h.index[-30:]).dayofweek >= 5).sum() > 4 else 252, "H": 52, "A": 12}.get(a["tf"])
+    if yil and len(h) > yil:
+        ek(float(h["High"].iloc[-yil:].max()) if yon == 1 else float(h["Low"].iloc[-yil:].min()),
+           "1 yıllık zirve" if yon == 1 else "1 yıllık dip", "sr")
     return sorted(out, key=lambda x: (x[0] - giris) * yon)
 
 
@@ -389,6 +393,8 @@ def degerlendir(v, tf, bulunan, pist, piyasa):
             vt = gecmis_testi(M, m, st, tf, rler)
         pm = pist.al((ana["kod_k"], yon, tf)) if ana["kod_k"] != "FORM" else {"n": 0}
         p1 = _blend(vt, pm, "p1"); ortR = _blend(vt, pm, "ort_R") if (vt.get("n") or pm.get("n", 0) >= 20) else 0.0
+        # Kalite kapısı: geçmişte (bu varlık + piyasa geneli harmanı) ortalama sonucu pozitif olmayan kurulum gönderilmez.
+        if ortR <= BEKLENEN_R_MIN: continue
         # teyitler
         G = a["G"]; c = p["giris"]; at = p["atr"]
         if "ust" not in v and v.get("ust_fn"):
@@ -406,7 +412,7 @@ def degerlendir(v, tf, bulunan, pist, piyasa):
         e50, s200 = float(G["EMA50"].iloc[-1]), float(G["SMA200"].iloc[-1]) if np.isfinite(G["SMA200"].iloc[-1]) else None
         trend_uyum = (c - e50) * yon > 0 and (s200 is None or (e50 - s200) * yon > 0)
         # puan
-        s_bt = float(np.clip((p1 - 0.35) / 0.35, 0, 1)) * 30
+        s_bt = float(np.clip((p1 - 0.35) / 0.35, 0, 1)) * 15 + float(np.clip(ortR / 0.40, 0, 1)) * 15
         s_mtf = (float(np.clip(((ust_puan - 40) if yon == 1 else (60 - ust_puan)) / 35, 0, 1)) * 20) if ust_puan is not None else 10
         s_tf = float(np.clip(((a["puan"] - 45) if yon == 1 else (55 - a["puan"])) / 35, 0, 1)) * 10
         s_hb = (float(np.clip((vk - 1) / 2, 0, 1)) * 8 if np.isfinite(vk) else 4) + (7 if bal_yon * yon > 0 else -7 if bal_yon * yon < 0 else 0)
@@ -495,14 +501,18 @@ def ilerlet(k, bars, simdi):
     yon = k["yon"]; g = k["giris"]; risk = k["risk"]
     son = pd.Timestamp(k["son_kontrol"])
     if bars is not None and len(bars):
-        b = bars[bars.index >= son]
+        sure = pd.Series(bars.index[-50:]).diff().median() if len(bars) > 2 else pd.Timedelta(hours=1)
+        sure = min(sure if pd.notna(sure) else pd.Timedelta(hours=1), pd.Timedelta(hours=4))
+        b = bars[(bars.index >= son) & (bars.index + sure <= pd.Timestamp(simdi))]   # bitmemiş mum işlenmez
         for t, r in b.iterrows():
             hi, lo = (r["High"], r["Low"]) if yon == 1 else (-r["Low"], -r["High"])
             s = k["stop"] * yon; gg = g * yon
             if lo <= s:
-                k["R"] += k["kalan"] * (s - gg) / risk; k["kalan"] = 0
+                op = r.get("Open", np.nan); op = op * yon if op == op else np.nan
+                cikis = min(s, op) if op == op else s            # stopun altında açıldıysa açılıştan çıkış
+                k["R"] += k["kalan"] * (cikis - gg) / risk; k["kalan"] = 0
                 k["durum"] = "kapandı"; k["sebep"] = "başabaş (H1 sonrası stop girişte)" if k["asama"] else "stop"
-                k["kapanis"] = str(t); k["cikis"] = k["stop"]
+                k["kapanis"] = str(t); k["cikis"] = float(cikis * yon)
                 olay.append(("stop" if not k["asama"] else "basabas", k["sebep"])); break
             while k["asama"] < 3 and hi >= k["hedef"][k["asama"]] * yon:
                 i = k["asama"]; k["R"] += AGIRLIK[i] * k["r"][i]; k["kalan"] -= AGIRLIK[i]; k["asama"] += 1
@@ -511,7 +521,7 @@ def ilerlet(k, bars, simdi):
             if k["asama"] == 3:
                 k["durum"] = "kapandı"; k["sebep"] = "tüm hedefler"; k["kapanis"] = str(t); k["cikis"] = k["hedef"][2]; break
             k["son_fiyat"] = float(r["Close"])
-        if len(b): k["son_kontrol"] = str(b.index[-1])
+        if len(b): k["son_kontrol"] = str(b.index[-1] + sure)
     if k["durum"] == "açık" and simdi >= pd.Timestamp(k["bitis"]):
         c = k["son_fiyat"]
         k["R"] += k["kalan"] * (c - g) * yon / risk; k["kalan"] = 0

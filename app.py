@@ -73,7 +73,7 @@ with st.expander(":material/tune: Ayarlar ve varsayımlar"):
             st.session_state.pop(k_, None)
         st.rerun()
     c1, c2 = st.columns(2)
-    rf = c1.number_input("Risksiz faiz (TR 10Y)", value=0.36, step=0.01, format="%.4f")
+    rf = c1.number_input("Risksiz faiz (TR 10Y)", value=0.366, step=0.01, format="%.4f")
     enf = c2.number_input("Yıllık enflasyon" + (" (EVDS)" if "enflasyon" in OTO else ""), value=float(OTO.get("enflasyon", 0.2977)),
                           step=0.01, format="%.4f")
     erp = c1.number_input("Hisse risk primi", value=0.07, step=0.005, format="%.3f")

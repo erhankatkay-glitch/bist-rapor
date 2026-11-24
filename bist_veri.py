@@ -17,10 +17,10 @@ SIRKETLER = {
     "EKGYO": "Emlak Konut GYO", "ENERY": "Enerya Enerji", "ENJSA": "Enerjisa Enerji", "ENKAI": "Enka İnşaat",
     "EREGL": "Ereğli Demir Çelik", "EUPWR": "Europower Enerji", "FROTO": "Ford Otosan",
     "GARAN": "Garanti BBVA", "GENIL": "Gen İlaç", "GESAN": "Girişim Elektrik", "GUBRF": "Gübre Fabrikaları",
-    "HALKB": "Halkbank", "HEKTS": "Hektaş", "INDES": "İndeks Bilgisayar", "IPEKE": "İpek Doğal Enerji",
+    "HALKB": "Halkbank", "HEKTS": "Hektaş", "INDES": "İndeks Bilgisayar", "TRENJ": "TR Doğal Enerji",
     "ISCTR": "İş Bankası (C)", "ISDMR": "İskenderun Demir Çelik", "ISGYO": "İş GYO", "ISMEN": "İş Yatırım",
     "KAREL": "Karel Elektronik", "KCAER": "Kocaer Çelik", "KCHOL": "Koç Holding", "KONTR": "Kontrolmatik",
-    "KORDS": "Kordsa Teknik Tekstil", "KOZAA": "Koza Anadolu Metal", "KOZAL": "Koza Altın",
+    "KORDS": "Kordsa Teknik Tekstil", "TRMET": "TR Anadolu Metal Madencilik", "TRALT": "Türk Altın İşletmeleri",
     "KRDMD": "Kardemir (D)", "KTLEV": "Katılımevim", "LOGO": "Logo Yazılım", "MAVI": "Mavi Giyim",
     "MGROS": "Migros", "MIATK": "Mia Teknoloji", "MPARK": "MLP Sağlık", "NETAS": "Netaş",
     "NUHCM": "Nuh Çimento", "ODAS": "Odaş Elektrik", "OTKAR": "Otokar", "OYAKC": "Oyak Çimento",
@@ -36,7 +36,7 @@ SIRKETLER = {
 
 # Tarayıcı için büyük ve likit hisseler (BIST 30'a benzer; endeks bileşimi dönemsel değişir)
 BUYUK_HISSELER = ["AKBNK", "ASELS", "ASTOR", "BIMAS", "CCOLA", "EKGYO", "ENKAI", "EREGL", "FROTO", "GARAN",
-                  "GUBRF", "ISCTR", "KCHOL", "KONTR", "KOZAL", "KRDMD", "MGROS", "OYAKC", "PETKM", "PGSUS",
+                  "GUBRF", "ISCTR", "KCHOL", "KONTR", "TRALT", "KRDMD", "MGROS", "OYAKC", "PETKM", "PGSUS",
                   "SAHOL", "SASA", "SISE", "TAVHL", "TCELL", "THYAO", "TOASO", "TTKOM", "TUPRS", "YKBNK"]
 
 # Holdinglerin halka açık iştiraklerindeki ekonomik payları (%).
