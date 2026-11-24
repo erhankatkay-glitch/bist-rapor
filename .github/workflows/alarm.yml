@@ -41,6 +41,10 @@ jobs:
       - name: Haber etkisi taraması
         if: always()
         run: python haber.py
+      - name: Yabancı yatırımcı akışı (TCMB, haftalık)
+        if: always()
+        continue-on-error: true
+        run: python yabanci_akis.py bildir
       - name: Telegram'da zamanı gelen mesajları sil
         if: always()
         run: python tg.py temizle

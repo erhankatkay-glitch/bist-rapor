@@ -74,6 +74,12 @@ def izlenecekler(PV, tk, acik, firs, hab):
         d = sp["d1G"]
         m.append(f"ABD borsaları dün {'yükselişle' if d > 0.003 else 'düşüşle' if d < -0.003 else 'yatay'} kapandı (S&P 500 {_y(d)})"
                  + (f"; korku endeksi VIX {vx['deger']:.0f} ile {'yüksek, temkin gerekli' if vx['deger'] > 25 else 'sakin'}." if vx else "."))
+    try:
+        import yabanci_akis as YA
+        c_ = YA.cumle(YA.ozet(YA.arsiv_oku(KLON)))
+        if c_: m.append(c_)
+    except Exception:
+        pass
     if tk:
         e = tk[0]; t = dt.datetime.fromisoformat(e["zaman"])
         m.append(f"Saat {t:%H:%M}'de {e['baslik']} verisi açıklanacak; altın, Bitcoin ve borsalarda oynaklık artabilir."
@@ -207,7 +213,7 @@ def calistir():
     if b.foto(yol, alt[:1000], "sabah", 20) and ses:
         try:
             with open(ses, "rb") as f:
-                j = b._api("sendAudio", {"chat_id": b.chat, "title": f"Sabah özeti {t:%d.%m}", "performer": "Piyasa Araştırma",
+                j = b._api("sendAudio", {"chat_id": b.chat, "title": f"Sabah özeti {t:%d.%m}", "performer": "KATKAY Yatırım",
                                          "disable_notification": True}, files={"audio": ("sabah_ozeti.mp3", f)}, timeout=120)
             if j.get("ok"): b._kaydet([j["result"]["message_id"]], "sabah", 20, None)
         except Exception as ex:

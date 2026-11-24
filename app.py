@@ -1111,6 +1111,30 @@ with tab_p:
         for c, ad_ in zip(cols, goster[i:i + 2]):
             c.markdown(piyasa_karti(ad_, PV[ad_]), unsafe_allow_html=True)
     st.caption("Kripto anlık, diğerleri ~15 dk gecikmeli (Yahoo). Mini grafik son 60 işlem günü.")
+    # ---- Yabancı yatırımcı akışı (TCMB haftalık)
+    try:
+        import yabanci_akis as YA
+        _ya = json_oku("yabanci/akis.json", ZAMAN)
+        _yo = YA.ozet(_ya) if _ya else None
+    except Exception:
+        _yo = None
+    if _yo:
+        st.markdown(TS.bolum("Yabancı yatırımcı akışı"), unsafe_allow_html=True)
+        _s = _yo["seri"]; _mx = max(abs(x["net"]) for x in _s) or 1; _w = 300; _h = 90; _bw = _w / len(_s)
+        _bar = "".join(
+            f'<rect x="{i * _bw + 3:.1f}" y="{(_h / 2 - x["net"] / _mx * (_h / 2 - 4)) if x["net"] > 0 else _h / 2:.1f}" width="{_bw - 6:.1f}" '
+            f'height="{abs(x["net"]) / _mx * (_h / 2 - 4):.1f}" rx="2" fill="{"#22C55E" if x["net"] > 0 else "#EF4444"}"/>' for i, x in enumerate(_s))
+        _svg = (f'<svg width="100%" viewBox="0 0 {_w} {_h}" preserveAspectRatio="none" style="height:90px">'
+                f'<line x1="0" y1="{_h / 2}" x2="{_w}" y2="{_h / 2}" stroke="rgba(255,255,255,.15)"/>{_bar}</svg>')
+        _r = lambda v: ("y" if (v or 0) > 0 else "k" if (v or 0) < 0 else "n")
+        st.markdown(
+            f'<div class="pk" style="display:block"><div class="pk-ad">{YA._gun(_yo["tarih"])} haftası · net hisse alımı</div>'
+            f'<div class="pk-d">{YA.mn(_yo["hafta"])}</div>'
+            f'<span class="rozet {_r(_yo["dort"])}">4 hafta {YA.mn(_yo["dort"])}</span> '
+            f'<span class="rozet {_r(_yo["onuc"])}">13 hafta {YA.mn(_yo["onuc"]) if _yo["onuc"] is not None else "birikiyor"}</span>'
+            f'<div style="margin-top:10px">{_svg}</div>'
+            f'<div class="pk-alt">{YA.cumle(_yo)} Kaynak: TCMB Haftalık Menkul Kıymet İstatistikleri (her perşembe 14:30). '
+            f'Hisse bazında değil, tüm BIST için toplamdır.</div></div>', unsafe_allow_html=True)
     for pz, ad_ in (("bist", "BIST"), ("abd", "ABD"), ("kripto", "Kripto")):
         k_ = gorsel_oku(f"{pz}/kapanis_karti.png", ZAMAN)
         if k_:
