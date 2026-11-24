@@ -140,6 +140,9 @@ def tara(K, durum):
                 if _kripto(k["kod"]) or k["kod"] in V.VARLIKLAR or k["kod"].endswith(".US"): continue
                 for x in BB.kap_haberleri(k["kod"], bv.sirket_adi(k["kod"]), gun=3, adet=6):
                     a2 = f"{k['kod']}|KAP|{x['baslik'][:80]}"
+                    # bilgi taşımayan başlıklar (rakamsız pay işlemi / sipariş bildirimi) gönderilmez
+                    if x["konu"] in ("Ortak / yönetici pay işlemi", "Yeni iş / sipariş / sözleşme", "Finansal sonuçlar") and not re.search(r"\d", x["baslik"].replace(k["kod"], "")):
+                        yeni[a2] = True; continue
                     konu_gun = f"{k['kod']}|KAPKONU|{x['konu']}|{bugun}"   # aynı konuda günde tek bildirim
                     if not durum.get(a2) and not durum.get(konu_gun) and not yeni.get(konu_gun):
                         yeni[konu_gun] = True
@@ -147,7 +150,7 @@ def tara(K, durum):
                             p_, d_ = anlik(k["kod"]); fy = f" · fiyat {_s(p_)} ({_p(d_)})"
                         except Exception:
                             fy = ""
-                        bildir.append(f"📰 {k['kod']} · {x['konu']}: {x['baslik'][:140]}{fy}")
+                        bildir.append(f"📰 {k['kod']} · {x['konu']}: {x['baslik'][:140]}{fy}" + (f"⟦{x['link']}⟧" if x.get("link") else ""))
                     yeni[a2] = True   # gönderilmese de görüldü say (aynı haberin diğer başlıkları ertesi gün gelmesin)
         except Exception as ex:
             print(f"{anahtar}: {ex}", file=sys.stderr)
@@ -173,7 +176,13 @@ def gonder(mesajlar):
 
 
 def tg_kac(s):
-    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    """Metni HTML'e çevirir; '⟦url⟧' ile eklenmiş bağlantıyı 'habere git' linkine dönüştürür."""
+    s = str(s); url = None
+    if "⟦" in s and s.endswith("⟧"):
+        s, url = s[:-1].split("⟦", 1)
+    t = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    if url: t += f' · <a href="{url.replace(chr(34), "")}">habere git</a>'
+    return t
 
 
 def main():

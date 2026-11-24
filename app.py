@@ -1056,7 +1056,10 @@ with tab_al:
     if kontrol: st.caption(f"Son kontrol: {kontrol.get('kontrol')} · {kontrol.get('kural')} kural")
     st.markdown("**Son alarmlar**")
     if son_al:
-        for x in son_al[:20]: st.markdown(f"- `{x['zaman']}` {x['mesaj']}")
+        import re as _re
+        for x in son_al[:20]:
+            m_ = _re.sub(r"⟦(.+?)⟧$", r" · [habere git](\1)", x["mesaj"])
+            st.markdown(f"- `{x['zaman']}` {m_}")
     else:
         st.info("Henüz tetiklenen alarm yok.")
     st.markdown("**Kurallar**")

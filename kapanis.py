@@ -530,7 +530,7 @@ def abd(slot, zorla):
     dk = simdi_et.hour * 60 + simdi_et.minute
     if not zorla:
         if simdi_et.weekday() >= 5: log("ABD: hafta sonu, atlandı."); return
-        if slot == "abd-ogle" and not (13 * 60 + 35 <= dk < 16 * 60): log(f"ABD öğle turu için saat uygun değil ({simdi_et:%H:%M} ET)."); return
+        if slot == "abd-ogle" and not (13 * 60 + 32 <= dk < 16 * 60): log(f"ABD öğle turu için saat uygun değil ({simdi_et:%H:%M} ET)."); return
         if slot == "abd-kapanis" and dk < 16 * 60 + 10: log(f"ABD piyasası henüz kapanmadı ({simdi_et:%H:%M} ET)."); return
     bot = tg.Bot("abd"); D = Durum("abd")
     if slot == "abd-kapanis" and not zorla:
@@ -604,6 +604,30 @@ def _utc(k):
     return z.to_pydatetime().replace(tzinfo=UTC)
 
 
+def hedef_zaman(slot, simdi_utc):
+    """Zamanlanmış işin veriyi beklemesi gereken an (UTC). GitHub zamanlanmış işleri 5–40 dk gecikmeli başlatabildiği için
+    iş akışları kapanıştan önce başlar ve burada bekler; geç başlarsa beklemeden çalışır."""
+    u = pd.Timestamp(simdi_utc).tz_convert("UTC") if pd.Timestamp(simdi_utc).tzinfo else pd.Timestamp(simdi_utc).tz_localize("UTC")
+    def tsi(saat, dk): return (pd.Timestamp(u.tz_convert("Europe/Istanbul").date(), tz="Europe/Istanbul") + pd.Timedelta(hours=saat, minutes=dk)).tz_convert("UTC")
+    def et(saat, dk): return (pd.Timestamp(u.tz_convert("America/New_York").date(), tz="America/New_York") + pd.Timedelta(hours=saat, minutes=dk)).tz_convert("UTC")
+    def sinir4(ek):   # en yakın 4 saatlik sınır (geç başladıysa geçmiş sınır) + ek dakika
+        s = u.floor("4h")
+        if u - s > pd.Timedelta(minutes=45): s = s + pd.Timedelta(hours=4)
+        return s + pd.Timedelta(minutes=ek)
+    return {"bist-ogle": lambda: tsi(14, 17), "bist-kapanis": lambda: tsi(18, 26), "kripto": lambda: sinir4(2),
+            "emtia-4s": lambda: sinir4(12), "emtia-kapanis": lambda: (u.normalize() + pd.Timedelta(hours=22, minutes=12)),
+            "abd-ogle": lambda: et(13, 34), "abd-kapanis": lambda: et(16, 12)}[slot]()
+
+
+def bekle(slot, sinir_dk=130):
+    simdi = pd.Timestamp.now(tz="UTC"); h = hedef_zaman(slot, simdi)
+    sn = (h - simdi).total_seconds()
+    if 0 < sn <= sinir_dk * 60:
+        log(f"{slot}: veri için {h.tz_convert('Europe/Istanbul'):%H:%M} TSİ bekleniyor ({sn / 60:.0f} dk)…"); time.sleep(sn)
+    else:
+        log(f"{slot}: beklemeden çalışılıyor (hedef {h.tz_convert('Europe/Istanbul'):%H:%M} TSİ).")
+
+
 class _Kayit:
     """Hata olsa bile durum ve Telegram defteri kaydedilsin (gönderilen mesajlar silinebilsin)."""
     nesneler = []
@@ -616,6 +640,8 @@ tg.Bot.__init__, Durum.__init__ = _bot_init, _durum_init
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 2 and sys.argv[1] == "bekle":
+        bekle(sys.argv[2]); sys.exit(0)
     slot = sys.argv[1] if len(sys.argv) > 1 else ""
     zorla = "--zorla" in sys.argv
     ZORLA = zorla

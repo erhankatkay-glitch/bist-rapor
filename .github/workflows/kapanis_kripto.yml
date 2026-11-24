@@ -2,7 +2,10 @@ name: Kripto kapanış turları (fırsat + bülten)
 
 on:
   schedule:
-    - cron: "22 0,4,8,12,16,20 * * *"   # her 4 saatlik mum kapanışından ~22 dk sonra (03:22, 07:22 … TSİ); 03:22'de günlük + bültenler
+    - cron: "25 3,7,11,15,19,23 * * *"   # 4 saatlik mum kapanışından ~35 dk önce başlar, kapanış +2 dk'da çalışır (03:02, 07:02 … TSİ)
+  push:
+    branches: [main]
+    paths: [".github/tetik/kripto"]   # bu dosya değişince hemen bir tur (elle tetikleme)
   workflow_dispatch:
     inputs:
       slot:
@@ -24,7 +27,7 @@ permissions:
 jobs:
   calis:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 210
     env:
       DURUM_KLON: onceki
       DURUM_CIKTI: cikti
@@ -38,17 +41,25 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Önceki durumu al
-        run: git clone -q --depth 1 --branch bulten "$GH_URL" onceki || mkdir -p onceki
-      - name: Turu çalıştır
+      - name: Turu belirle
+        id: t
         run: |
           S="${{ github.event.inputs.slot }}"
           if [ -z "$S" ]; then
-            S=kripto
+            case "${{ github.event.schedule }}" in
+              "25 3,7,11,15,19,23 * * *") S=kripto ;;
+            esac
           fi
+          [ -z "$S" ] && S=kripto
           Z=""; [ "${{ github.event.inputs.zorla }}" = "evet" ] && Z="--zorla"
-          echo "Tur: $S $Z"
-          python kapanis.py $S $Z
+          echo "slot=$S" >> $GITHUB_OUTPUT; echo "zorla=$Z" >> $GITHUB_OUTPUT; echo "Tur: $S $Z"
+      - name: Kapanış verisini bekle (GitHub gecikmesini telafi için iş erken başlar)
+        if: github.event_name == 'schedule'
+        run: python kapanis.py bekle ${{ steps.t.outputs.slot }}
+      - name: Önceki durumu al
+        run: git clone -q --depth 1 --branch bulten "$GH_URL" onceki || mkdir -p onceki
+      - name: Turu çalıştır
+        run: python kapanis.py ${{ steps.t.outputs.slot }} ${{ steps.t.outputs.zorla }}
       - name: Bülten dalına yayınla
         if: always()
         run: python yayinla.py cikti "$(date -u +%FT%H%M) ${{ github.workflow }}"

@@ -20,17 +20,17 @@ Kriptoda AL ve SAT (vadeli), BIST ve emtiada yalnızca AL. Her piyasa ve zaman d
 
 | Tur | Zaman (TSİ) | İş akışı |
 |---|---|---|
-| BIST 4 saatlik | 14:20 · 18:35 | kapanis_bist.yml |
-| BIST günlük + bülten (+ cuma haftalık, ay sonu aylık) | 18:35 | kapanis_bist.yml |
-| Kripto 4 saatlik | 03:22 · 07:22 · 11:22 · 15:22 · 19:22 · 23:22 | kapanis_kripto.yml |
-| Kripto günlük + bültenler (+ pazartesi haftalık ve karne, ayın 1'i aylık) | 03:22 | kapanis_kripto.yml |
-| Emtia 4 saatlik (hafta içi) | 03:25 · 07:25 · 11:25 · 15:25 · 19:25 · 23:25 | kapanis_emtia.yml |
-| Emtia günlük + bülten | 01:35 | kapanis_emtia.yml |
-| ABD 4 saatlik | 13:50 ET (kış 21:50, yaz 20:50 TSİ) | kapanis_abd.yml |
-| ABD günlük + bülten (+H/A) | 16:25 ET (kış 00:25, yaz 23:25 TSİ) | kapanis_abd.yml |
+| BIST 4 saatlik | 14:17 · 18:26 | kapanis_bist.yml |
+| BIST günlük + bülten (+ cuma haftalık, ay sonu aylık) | 18:26 | kapanis_bist.yml |
+| Kripto 4 saatlik | 03:02 · 07:02 · 11:02 · 15:02 · 19:02 · 23:02 | kapanis_kripto.yml |
+| Kripto günlük + bültenler (+ pazartesi haftalık ve karne, ayın 1'i aylık) | 03:02 | kapanis_kripto.yml |
+| Emtia 4 saatlik (hafta içi) | 03:12 · 07:12 · 11:12 · 15:12 · 19:12 · 23:12 | kapanis_emtia.yml |
+| Emtia günlük + bülten | 01:12 | kapanis_emtia.yml |
+| ABD 4 saatlik | 13:34 ET (kış 21:34, yaz 20:34 TSİ) | kapanis_abd.yml |
+| ABD günlük + bülten (+H/A) | 16:12 ET (kış 00:12, yaz 23:12 TSİ) | kapanis_abd.yml |
 | Alarm + haber + Telegram temizliği | 30 dakikada bir | alarm.yml |
 
-GitHub zamanlanmış işleri genellikle 5–15 dakika gecikmeli başlatır.
+İşler kapanıştan 35–100 dk önce başlar ve veri hazır olana kadar bekler; GitHub'ın başlatma gecikmesi mesajları geciktirmez.
 
 **Telegram mesajları** bildirim sesi olmadan gönderilir ve kendiliğinden silinir:
 - Fırsat mesajı: aynı piyasa/zaman diliminde yeni mesaj gelince (yeni mesaj hâlâ açık kurulumları da listeler) ya da kurulumların hepsi kapanınca 1 saat sonra; en geç 46,5 saat.

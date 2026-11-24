@@ -2,8 +2,11 @@ name: Emtia kapanış turları (fırsat + bülten)
 
 on:
   schedule:
-    - cron: "25 0,4,8,12,16,20 * * 1-5"   # hafta içi 4 saatlik mum kapanışları
-    - cron: "35 22 * * 1-5"   # 01:35 TSİ: ABD vadeli kapanışı → günlük (+H/A) + bülten
+    - cron: "25 3,7,11,15,19,23 * * *"   # 4 saatlik mum kapanışından önce başlar, kapanış +12 dk'da çalışır (hafta sonu atlanır)
+    - cron: "30 21 * * 1-5"   # 00:30 TSİ başlar, 01:12 TSİ'de çalışır: günlük (+H/A) + bülten
+  push:
+    branches: [main]
+    paths: [".github/tetik/emtia"]   # bu dosya değişince hemen bir tur (elle tetikleme)
   workflow_dispatch:
     inputs:
       slot:
@@ -25,7 +28,7 @@ permissions:
 jobs:
   calis:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     env:
       DURUM_KLON: onceki
       DURUM_CIKTI: cikti
@@ -39,20 +42,26 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Önceki durumu al
-        run: git clone -q --depth 1 --branch bulten "$GH_URL" onceki || mkdir -p onceki
-      - name: Turu çalıştır
+      - name: Turu belirle
+        id: t
         run: |
           S="${{ github.event.inputs.slot }}"
           if [ -z "$S" ]; then
             case "${{ github.event.schedule }}" in
-              "35 22 * * 1-5") S=emtia-kapanis ;;
-              *) S=emtia-4s ;;
+              "25 3,7,11,15,19,23 * * *") S=emtia-4s ;;
+              "30 21 * * 1-5") S=emtia-kapanis ;;
             esac
           fi
+          [ -z "$S" ] && S=emtia-kapanis
           Z=""; [ "${{ github.event.inputs.zorla }}" = "evet" ] && Z="--zorla"
-          echo "Tur: $S $Z"
-          python kapanis.py $S $Z
+          echo "slot=$S" >> $GITHUB_OUTPUT; echo "zorla=$Z" >> $GITHUB_OUTPUT; echo "Tur: $S $Z"
+      - name: Kapanış verisini bekle (GitHub gecikmesini telafi için iş erken başlar)
+        if: github.event_name == 'schedule'
+        run: python kapanis.py bekle ${{ steps.t.outputs.slot }}
+      - name: Önceki durumu al
+        run: git clone -q --depth 1 --branch bulten "$GH_URL" onceki || mkdir -p onceki
+      - name: Turu çalıştır
+        run: python kapanis.py ${{ steps.t.outputs.slot }} ${{ steps.t.outputs.zorla }}
       - name: Bülten dalına yayınla
         if: always()
         run: python yayinla.py cikti "$(date -u +%FT%H%M) ${{ github.workflow }}"
