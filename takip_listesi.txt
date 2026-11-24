@@ -1,0 +1,5 @@
+# Sabah raporu üretilecek hisseler (her satıra bir kod). # ile başlayan satırlar yok sayılır.
+THYAO
+ASELS
+KCHOL
+AKBNK

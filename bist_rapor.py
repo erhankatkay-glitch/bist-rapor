@@ -24,7 +24,9 @@ warnings.filterwarnings("ignore")
 # PARAMETRELER (Kasım 2026 piyasa koşullarına göre varsayılanlar)
 # =====================================================================
 PARAM = {
-    "RF": 0.36,          # Risksiz faiz: TR 10Y gösterge tahvil (~%36,6, 19.11.2026)
+    "RF": 0.36,
+    "MAKS_POTANSIYEL": 0.80,  # adil değer en fazla fiyatın %80 üstü (temkinli sınır)
+    "MIN_POTANSIYEL": -0.60,          # Risksiz faiz: TR 10Y gösterge tahvil (~%36,6, 19.11.2026)
     "ERP": 0.07,         # Hisse senedi risk primi
     "TERMINAL_G": 0.15,  # DCF uç büyüme (nominal TL)
     "ENFLASYON": 0.2977, # TÜİK yıllık TÜFE (Ekim 2026)
@@ -32,7 +34,9 @@ PARAM = {
     "DCF_YIL": 5,
 }
 
-SURUM = "2026.11.24-2"
+SURUM = "2026.11.24-3"
+
+import bist_veri as BV
 
 # Finansallarını döviz cinsinden raporlayan bilinen şirketler (Yahoo bilgi vermezse yedek)
 DOVIZ_RAPORLAYAN = {"THYAO": "USD", "PGSUS": "USD", "TAVHL": "EUR"}
@@ -268,7 +272,7 @@ def metrikler(d, endeks=None):
     info, h = d["info"], d["hist"]
     A, B, N = d["gelir"], d["bilanco"], d["nakit"]
     qA, qB, qN = d.get("q_gelir"), d.get("q_bilanco"), d.get("q_nakit")
-    m = {"kod": d["kod"], "ad": info.get("longName") or info.get("shortName") or d["kod"],
+    m = {"kod": d["kod"], "ad": BV.ad(d["kod"]) or info.get("longName") or info.get("shortName") or d["kod"],
          "sektor": info.get("sector") or "–", "sanayi": info.get("industry") or "–"}
     m["finansal"] = finansal_mi(info, d["kod"]); m["kur_notu"] = d.get("kur_notu")
     kap = h["Close"].dropna(); p = float(kap.iloc[-1]); m["fiyat"] = p
@@ -402,6 +406,48 @@ def metrikler(d, endeks=None):
         m["dps_ttm"] = float(son.sum()) if len(son) else 0.0
     m["temettu_verim"] = bol(m["dps_ttm"], p) if m["dps_ttm"] else (bol(abs(T["tem_odenen"]), m["piy_deg"]) if T["tem_odenen"] else None)
     m["dagitim_orani"] = bol(abs(T["tem_odenen"]) if T["tem_odenen"] else (m["dps_ttm"] * hs if m["dps_ttm"] and hs else None), pos(T["net"]))
+
+    # --- Banka göstergeleri ---
+    m["banka"] = None
+    if m["finansal"]:
+        nii = ttm(qA, A, "Net Interest Income")
+        ii = ttm(qA, A, "Interest Income", "Interest Income After Provision For Loan Loss")
+        prov = ttm(qA, A, "Credit Losses Provision", "Provision For Doubtful Accounts", "Provision For Loan Losses")
+        gider = ttm(qA, A, "Non Interest Expense", "Selling General And Administration", "Operating Expense")
+        gelir = ttm(qA, A, "Total Revenue", "Operating Revenue")
+        krediler = son_bilanco(qB, B, "Net Loan", "Gross Loan", "Loans Receivable", "Loans And Advances")
+        mevduat = son_bilanco(qB, B, "Total Deposits", "Deposits", "Customer Accounts", "Current Deposits")
+        va = satir(qB, "Total Assets"); va_once = deger(va, 4) if va is not None and len(va) > 4 else deger(satir(B, "Total Assets"), 1)
+        ort_varlik = ((K["varlik"] or 0) + (va_once or K["varlik"] or 0)) / 2 or None
+        m["banka"] = {
+            "nim": bol(nii, ort_varlik), "faiz_geliri_payi": bol(nii, gelir),
+            "risk_maliyeti": bol(abs(prov) if prov else None, krediler),
+            "gider_gelir": bol(abs(gider) if gider else None, gelir),
+            "kredi_mevduat": bol(krediler, mevduat),
+            "ozk_varlik": bol(K["ozk"], K["varlik"]),
+            "kredi_varlik": bol(krediler, K["varlik"]),
+        }
+
+    # --- Veri kalitesi ---
+    def son_tarih(df):
+        try:
+            return max(pd.Timestamp(c) for c in df.columns) if isinstance(df, pd.DataFrame) and not df.empty else None
+        except Exception:
+            return None
+    sb = son_tarih(qB) or son_tarih(B)
+    anahtar = {"Hasılat": T["ciro"], "Net kâr": T["net"], "Özkaynak": K["ozk"], "Toplam varlık": K["varlik"],
+               "İşletme nakit akışı": T["isl_na"], "Hisse sayısı": hs}
+    if not m["finansal"]:
+        anahtar.update({"FAVÖK": T["favok"], "Serbest nakit akışı": T["sna"]})
+    eksik = [k for k, v in anahtar.items() if v is None]
+    qs = satir(qA, "Total Revenue", "Operating Revenue", "Net Income")
+    gun = (m["tarih"] - sb).days if sb is not None else None
+    m["veri"] = {"fiyat_tarihi": m["tarih"], "son_donem": sb, "gun": gun,
+                 "ceyrek": len(qs) if qs is not None else 0,
+                 "yil": len(satir(A, "Total Revenue", "Operating Revenue", "Net Income")) if satir(A, "Total Revenue", "Operating Revenue", "Net Income") is not None else 0,
+                 "eksik": eksik}
+    puan_v = 100 - 12 * len(eksik) - (15 if gun is not None and gun > 200 else 0) - (10 if m["veri"]["ceyrek"] < 4 else 0)
+    m["veri"]["puan"] = max(puan_v, 0)
 
     # --- Fiyat, risk, teknik ---
     m.update(fiyat_analizi(h, endeks))
@@ -578,13 +624,41 @@ def emsal_istatistik(emsaller, alan, alt, ust):
         return None
     return {"med": float(np.median(v)), "q1": float(np.percentile(v, 25)), "q3": float(np.percentile(v, 75)), "n": len(v)}
 
-def degerleme(m, emsaller):
+def nav_hesapla(kod, pd_fn):
+    """Holding net aktif değeri: halka açık iştiraklerin piyasa değeri × holding payı."""
+    paylar = BV.HOLDING_PAYLARI.get(kod)
+    if not paylar:
+        return None
+    kalem = []
+    for ist, pay in paylar.items():
+        try:
+            mc = pd_fn(ist)
+        except Exception:
+            mc = None
+        kalem.append({"kod": ist, "ad": BV.ad(ist) or ist, "pay": pay, "piy_deg": mc,
+                      "deger": mc * pay if mc else None})
+    top = sum(k["deger"] for k in kalem if k["deger"])
+    if not top:
+        return None
+    for k in kalem:
+        k["oran"] = k["deger"] / top if k["deger"] else None
+    return {"kalemler": kalem, "toplam": top, "hedef_iskonto": PARAM.get("HOLDING_ISKONTO", {}).get(kod, BV.HOLDING_ISKONTO.get(kod, 0.35))}
+
+def degerleme(m, emsaller, nav=None):
     p = m["fiyat"]; hs = m["hisse"]; w = wacc_hesap(m); m["wacc"] = w
     Y = []  # (yöntem, değer, düşük, yüksek, ağırlık, not)
     fin = m["finansal"]
+    holding = nav is not None
+    m["nav"] = nav
+    if holding and hs:
+        nav["iskonto"] = 1 - m["piy_deg"] / nav["toplam"] if m["piy_deg"] else None
+        hi = nav["hedef_iskonto"]
+        v = nav["toplam"] * (1 - hi) / hs
+        Y.append(["Net Aktif Değer (NAV)", v, nav["toplam"] * (1 - min(hi + 0.10, 0.9)) / hs, nav["toplam"] * (1 - max(hi - 0.10, 0)) / hs,
+                  0.55, f"Halka açık iştirakler {tl(nav['toplam'])} TL, hedef iskonto {yz(hi, 0)} (mevcut {yz(nav['iskonto'], 0)})"])
     # 1) DCF
     m["dcf"] = None; m["senaryo"] = None; m["duyarlilik"] = None
-    if not fin:
+    if not fin and not holding:
         b = dcf(m, w)
         if b:
             m["dcf"] = b
@@ -605,12 +679,12 @@ def degerleme(m, emsaller):
     if fk and m["hbk"] and m["hbk"] > 0:
         Y.append(["Emsal F/K", fk["med"] * m["hbk"], fk["q1"] * m["hbk"], fk["q3"] * m["hbk"], 0.20 if fin else 0.15,
                   f"Medyan F/K {kat(fk['med'])} (n={fk['n']})"])
-    if ff and m["T"]["favok"] and m["T"]["favok"] > 0 and hs:
+    if ff and m["T"]["favok"] and m["T"]["favok"] > 0 and hs and not holding:
         cev = lambda x: (x * m["T"]["favok"] - m["net_borc"] - m["K"]["azinlik"]) / hs
         Y.append(["Emsal FD/FAVÖK", cev(ff["med"]), cev(ff["q1"]), cev(ff["q3"]), 0.20,
                   f"Medyan FD/FAVÖK {kat(ff['med'])} (n={ff['n']})"])
     if pd_ and m["hbdd"] and m["hbdd"] > 0:
-        Y.append(["Emsal PD/DD", pd_["med"] * m["hbdd"], pd_["q1"] * m["hbdd"], pd_["q3"] * m["hbdd"], 0.20 if fin else 0.10,
+        Y.append(["Emsal PD/DD", pd_["med"] * m["hbdd"], pd_["q1"] * m["hbdd"], pd_["q3"] * m["hbdd"], 0.20 if fin else 0.07,
                   f"Medyan PD/DD {kat(pd_['med'])} (n={pd_['n']})"])
     # 3) Gerekçeli PD/DD (finansal şirketler)
     gT = PARAM["TERMINAL_G"]
@@ -624,24 +698,38 @@ def degerleme(m, emsaller):
         Y.append(["Temettü İndirgeme (Gordon)", m["dps_ttm"] * (1 + gT) / (w["ke"] - gT), None, None, 0.10 if fin else 0.05,
                   f"HBT {tl(m['dps_ttm'])} TL, Ke {yz(w['ke'])}"])
     # 5) Graham
-    if m["hbk"] and m["hbdd"] and m["hbk"] > 0 and m["hbdd"] > 0:
-        Y.append(["Graham Sayısı", math.sqrt(22.5 * m["hbk"] * m["hbdd"]), None, None, 0.05, "√(22,5 × HBK × HBDD)"])
+    if m["hbk"] and m["hbdd"] and m["hbk"] > 0 and m["hbdd"] > 0 and not holding:
+        Y.append(["Graham Sayısı", math.sqrt(22.5 * m["hbk"] * m["hbdd"]), None, None, 0.03, "√(22,5 × HBK × HBDD)"])
     # 6) Analist
     if m["hedef_analist"]:
         Y.append(["Analist Konsensüs Hedefi", m["hedef_analist"], m["hedef_dusuk"], m["hedef_yuksek"], 0.15,
                   f"{m['analist_sayi'] or '?'} analist"])
-    # Aykırı değer filtresi ve ağırlıklı ortalama
+    # Temkinli birleştirme: aykırı filtre (fiyatın %40'ı – 2,5 katı), ağırlıklı ortalama ile
+    # ağırlıklı medyanın ortalaması, ardından potansiyel sınırı.
     for y in Y:
-        y.append(y[1] is not None and 0.25 * p <= y[1] <= 4 * p)
+        y.append(y[1] is not None and (y[0].startswith("Net Aktif") or 0.40 * p <= y[1] <= 2.5 * p))
     gec = [y for y in Y if y[6]]
     tw = sum(y[4] for y in gec)
     m["yontemler"] = Y
+    m["sinirlandi"] = False
     if gec:
-        m["adil"] = sum(y[1] * y[4] for y in gec) / tw
+        ort_ = sum(y[1] * y[4] for y in gec) / tw
+        sirali = sorted(gec, key=lambda y: y[1]); kum = 0; med_ = sirali[-1][1]
+        for y in sirali:
+            kum += y[4]
+            if kum >= tw / 2:
+                med_ = y[1]; break
+        adil = 0.5 * ort_ + 0.5 * med_
+        ust, alt = p * (1 + PARAM["MAKS_POTANSIYEL"]), p * (1 + PARAM["MIN_POTANSIYEL"])
+        if adil > ust or adil < alt:
+            adil = min(max(adil, alt), ust); m["sinirlandi"] = True
+        m["adil"] = adil
         vals = [y[1] for y in gec]
         m["adil_dusuk"], m["adil_yuksek"] = min(vals), max(vals)
         cv = np.std(vals) / np.mean(vals) if len(vals) > 1 else 1
         m["guven"] = "YÜKSEK" if len(gec) >= 4 and cv < 0.25 else "ORTA" if len(gec) >= 3 and cv < 0.45 else "DÜŞÜK"
+        if m["sinirlandi"] or (m.get("veri") and m["veri"]["puan"] < 60):
+            m["guven"] = "DÜŞÜK"
     else:
         m["adil"] = m["adil_dusuk"] = m["adil_yuksek"] = None; m["guven"] = "–"
     m["potansiyel"] = buyume(m["adil"], p) if m["adil"] else None
@@ -658,8 +746,10 @@ def saglik(m):
         return bol(x, st["med"]) if st and x else None
     rel = lambda k: (m["r"].get(k) - m["r_endeks"].get(k)) if m["r"].get(k) is not None and m["r_endeks"].get(k) is not None else None
     enf = PARAM["ENFLASYON"]
+    bk = m.get("banka") or {}
+    kmd = bk.get("kredi_mevduat")
     D = {
-        "Kârlılık": [
+        "Kârlılık": ([("Net faiz marjı (aktif bazlı)", yz(bk.get("nim")), puan(bk.get("nim"), [0.02, 0.035, 0.05, 0.07]))] if fin else []) + [
             ("ROE − enflasyon (reel ROE)", yz(m["roe"] - enf if m["roe"] is not None else None), puan(m["roe"] - enf if m["roe"] is not None else None, [-0.15, 0, 0.1, 0.2])),
             ("Net kâr marjı", yz(m["net_marj"]), puan(m["net_marj"], [0, 0.05, 0.1, 0.2] if not fin else [0, 0.1, 0.2, 0.3])),
             ("Aktif kârlılığı (ROA)", yz(m["roa"]), puan(m["roa"], [0, 0.03, 0.07, 0.12] if not fin else [0, 0.01, 0.02, 0.035])),
@@ -687,6 +777,9 @@ def saglik(m):
             ("Altman Z'' skoru", _tr(f"{m['altman']:.2f}") if m["altman"] is not None else "–", puan(m["altman"], [1.1, 2.0, 2.6, 4.0])),
         ] if not fin else [
             ("Özkaynak / Varlık", yz(bol(m["K"]["ozk"], m["K"]["varlik"])), puan(bol(m["K"]["ozk"], m["K"]["varlik"]), [0.06, 0.08, 0.1, 0.13])),
+            ("Risk maliyeti (karşılık / kredi)", yz(bk.get("risk_maliyeti")), puan(bk.get("risk_maliyeti"), [0.005, 0.01, 0.02, 0.035], ters=True)),
+            ("Kredi / Mevduat", kat(kmd), puan(abs(kmd - 0.9) if kmd else None, [0.1, 0.2, 0.3, 0.45], ters=True)),
+            ("Gider / Gelir", yz(bk.get("gider_gelir")), puan(bk.get("gider_gelir"), [0.35, 0.45, 0.55, 0.7], ters=True)),
         ]) + [("Piotroski F-skoru", f"{_tr(str(m['piotroski']))}/9" if m["piotroski"] is not None else "–", puan(m["piotroski"], [2, 4, 6, 7]))],
         "Fiyat Momentumu": [
             ("1Y getiri – BIST 100 farkı", yz(rel("1Y")), puan(rel("1Y"), [-0.2, -0.05, 0.05, 0.2])),
@@ -766,6 +859,26 @@ def ipuclari(m):
     if m["potansiyel"] is not None:
         if m["potansiyel"] > 0.15: g.append(f"Model bazlı adil değer mevcut fiyatın {yz(m['potansiyel'])} üzerinde.")
         elif m["potansiyel"] < -0.15: z.append(f"Model bazlı adil değer mevcut fiyatın {yz(-m['potansiyel'])} altında.")
+    nav = m.get("nav")
+    if nav and nav.get("iskonto") is not None:
+        if nav["iskonto"] > nav["hedef_iskonto"] + 0.05:
+            g.append(f"Holding, iştiraklerinin piyasa değerine göre {yz(nav['iskonto'], 0)} iskontolu (hedef {yz(nav['hedef_iskonto'], 0)}).")
+        elif nav["iskonto"] < nav["hedef_iskonto"] - 0.05:
+            z.append(f"Holding iskontosu ({yz(nav['iskonto'], 0)}) tarihsel varsayımın ({yz(nav['hedef_iskonto'], 0)}) altında; prim alanı sınırlı.")
+    bk = m.get("banka") or {}
+    if bk.get("nim") is not None and bk["nim"] > 0.05:
+        g.append(f"Net faiz marjı güçlü ({yz(bk['nim'])}).")
+    if bk.get("risk_maliyeti") is not None and bk["risk_maliyeti"] > 0.03:
+        z.append(f"Risk maliyeti yüksek ({yz(bk['risk_maliyeti'])}); aktif kalitesi izlenmeli.")
+    if bk.get("kredi_mevduat") is not None and bk["kredi_mevduat"] > 1.1:
+        z.append(f"Kredi/mevduat oranı {kat(bk['kredi_mevduat'])}; fonlama baskısı olabilir.")
+    v = m.get("veri") or {}
+    if v.get("gun") is not None and v["gun"] > 200:
+        z.insert(0, f"Son finansal dönem {v['gun']} gün önce; veriler güncel olmayabilir.")
+    if v.get("eksik"):
+        z.append("Eksik veri: " + ", ".join(v["eksik"]) + ".")
+    if m.get("sinirlandi"):
+        z.append("Model sonuçları aşırı uçta olduğu için adil değer temkinli sınıra çekildi.")
     m["guclu"], m["zayif"] = g[:9], z[:9]
 
 def yatirim_ozeti(m):
@@ -1009,8 +1122,10 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
 
     # ---------------- SAYFA 2: DEĞERLEME ----------------
     E.append(PageBreak()); E.append(Paragraph("1. Değerleme Analizi", ST["h1"]))
-    E.append(Paragraph("Adil değer; şirketin yapısına uygun yöntemlerin ağırlıklı ortalamasıdır. Fiyatın %25'inin altında veya "
-                       "4 katının üzerinde sonuç veren yöntemler aykırı kabul edilip ortalamaya dahil edilmez (*).", ST["kucuk"]))
+    E.append(Paragraph("Adil değer, şirketin yapısına uygun yöntemlerin ağırlıklı ortalaması ile ağırlıklı medyanının ortalamasıdır. "
+                       "Fiyatın %40'ının altında veya 2,5 katının üzerinde sonuç veren yöntemler aykırı sayılıp hariç tutulur (*). "
+                       f"Temkinli yaklaşım gereği potansiyel {yz(PARAM['MIN_POTANSIYEL'], 0)} ile +{yz(PARAM['MAKS_POTANSIYEL'], 0)} arasında sınırlanır"
+                       + (" — <b>bu raporda sınır uygulandı</b>." if m.get("sinirlandi") else "."), ST["kucuk"]))
     tw_ = sum(y[4] for y in m["yontemler"] if y[6]) or 1
     v = [["Yöntem", "Değer (TL)", "Potansiyel", "Ağırlık", "Açıklama"]]
     for y in m["yontemler"]:
@@ -1020,6 +1135,19 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     E.append(tablo(v, [W * .25, W * .13, W * .12, W * .09, W * .41], kalin_son=True))
     f = g_futbol(m)
     if f: E += [Spacer(1, 6), _img(f, W, (0.45 * len([y for y in m["yontemler"] if y[1]]) + 0.9) / 7.5)]
+    nav = m.get("nav")
+    if nav:
+        v = [["İştirak", "Holding payı", "Piyasa değeri (TL)", "Holdinge düşen (TL)", "NAV payı"]]
+        for k in sorted(nav["kalemler"], key=lambda k: -(k["deger"] or 0)):
+            v.append([f"{k['kod']} – {k['ad']}", yz(k["pay"]), tl(k["piy_deg"]), tl(k["deger"]), yz(k["oran"], 0)])
+        v.append(["Halka açık iştirakler toplamı", "", "", tl(nav["toplam"]), "%100"])
+        ozet = (f"Holdingin piyasa değeri {tl(m['piy_deg'])} TL; halka açık iştiraklerinin holdinge düşen değeri {tl(nav['toplam'])} TL. "
+                f"Mevcut iskonto <b>{yz(nav.get('iskonto'), 0)}</b>, değerlemede kullanılan hedef iskonto <b>{yz(nav['hedef_iskonto'], 0)}</b>. "
+                "Halka açık olmayan şirketler ve holdingin kendi net nakdi dahil edilmediği için hesap temkinlidir. "
+                "Paylar KAP genel bilgi formlarından alınmıştır; değişiklikleri KAP'tan teyit edin.")
+        E.append(KeepTogether([Paragraph("Holding Net Aktif Değer (NAV) Analizi", ST["h2"]),
+                               tablo(v, [W * .36, W * .14, W * .18, W * .18, W * .14], kalin_son=True, font=7.4),
+                               Spacer(1, 3), Paragraph(ozet, ST["kucuk"])]))
     if m["dcf"]:
         b = m["dcf"]; w = m["wacc"]
         E.append(Paragraph("İndirgenmiş Nakit Akışı (İNA / DCF) Detayı", ST["h2"]))
@@ -1089,6 +1217,19 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
         t2 = Table([[dupont]], colWidths=[W]); 
     t2.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)])); t2.hAlign = "LEFT"
     E.append(KeepTogether([Paragraph("Kalite Skorları", ST["h2"]), t2]))
+    bk = m.get("banka")
+    if bk:
+        v = [["Banka Göstergesi", "Değer", "Açıklama"],
+             ["Net faiz marjı (aktif bazlı)", yz(bk["nim"]), "Net faiz geliri / ortalama aktifler"],
+             ["Faiz gelirinin toplam gelirdeki payı", yz(bk["faiz_geliri_payi"]), "Gelir yapısının faize bağımlılığı"],
+             ["Risk maliyeti", yz(bk["risk_maliyeti"]), "Kredi karşılıkları / krediler"],
+             ["Gider / Gelir", yz(bk["gider_gelir"]), "Operasyonel verimlilik (düşük iyi)"],
+             ["Kredi / Mevduat", kat(bk["kredi_mevduat"]), "Fonlama dengesi (~0,8–1,0 sağlıklı)"],
+             ["Kredi / Aktif", yz(bk["kredi_varlik"]), "Bilançonun krediye dönüşümü"],
+             ["Özkaynak / Aktif", yz(bk["ozk_varlik"]), "Sermaye tamponu (SYR yerine yaklaşık gösterge)"]]
+        E.append(KeepTogether([Paragraph("Bankacılık Göstergeleri", ST["h2"]), tablo(v, [W * .35, W * .15, W * .5], font=7.4, hizala_sol=(0, 2)),
+                               Paragraph("Sermaye yeterlilik rasyosu ve takipteki kredi oranı Yahoo verisinde yer almadığı için gösterilemiyor; "
+                                         "bu oranlar için bankanın KAP'taki faaliyet raporuna bakın.", ST["kucuk"])]))
 
     # ---------------- SAYFA 4: FİNANSAL TABLOLAR ----------------
     E.append(CondPageBreak(12 * cm)); E.append(Paragraph("3. Finansal Tablolar ve Trendler", ST["h1"]))
@@ -1205,6 +1346,15 @@ def pdf_olustur(d, m, emsaller, endeks, dosya):
     ]
     for x in met:
         E.append(Paragraph(x, ST["p"])); E.append(Spacer(1, 3))
+    vk = m.get("veri") or {}
+    v = [["Veri Kalitesi Kontrolü", "Durum"],
+         ["Fiyat verisi tarihi", f"{vk.get('fiyat_tarihi'):%d.%m.%Y}" if vk.get("fiyat_tarihi") is not None else "–"],
+         ["Son finansal dönem", (f"{vk['son_donem']:%d.%m.%Y} ({vk['gun']} gün önce)" if vk.get("son_donem") is not None else "–")],
+         ["Kullanılabilir çeyrek / yıl sayısı", f"{vk.get('ceyrek', 0)} / {vk.get('yil', 0)}"],
+         ["Eksik ana kalemler", ", ".join(vk.get("eksik") or []) or "Yok"],
+         ["Para birimi", m.get("kur_notu") or "Finansallar ve fiyat aynı para biriminde (TL)"],
+         ["Veri kalite puanı", f"{vk.get('puan', '–')}/100"]]
+    E.append(KeepTogether([Spacer(1, 4), tablo(v, [W * .35, W * .65], font=7.4)]))
     doc.build(E, onFirstPage=sayfa, onLaterPages=sayfa)
     return dosya
 
@@ -1217,16 +1367,31 @@ def emsal_bul(kod, info):
             return [x for x in liste if x != kod][:6], grup
     return [], None
 
-def rapor(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, log=print, klasor=".", detay=False, **param):
+def piyasa_degeri(kod):
+    """İştirak piyasa değeri (TL). Hızlı kaynak: yfinance fast_info."""
+    import yfinance as yf
+    t = yf.Ticker(kod.upper() + ".IS")
+    try:
+        v = t.fast_info.get("market_cap") if hasattr(t.fast_info, "get") else t.fast_info.market_cap
+        if v:
+            return float(v)
+    except Exception:
+        pass
+    info = t.info or {}
+    return sayi(info.get("marketCap"))
+
+def analiz_et(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, pd_fn=None, log=print, endeks=None, **param):
+    """Veriyi çeker, tüm analizleri yapar; (d, m, emsaller, endeks) döndürür."""
     PARAM.update({k.upper(): v for k, v in param.items()})
-    veri_fn = veri_fn or veri_cek; endeks_fn = endeks_fn or endeks_cek
+    veri_fn = veri_fn or veri_cek; endeks_fn = endeks_fn or endeks_cek; pd_fn = pd_fn or piyasa_degeri
     kod = kod.upper().replace(".IS", "").strip()
     log(f"{kod} verileri çekiliyor...")
     d = veri_fn(kod)
-    try:
-        endeks = endeks_fn()
-    except Exception:
-        endeks = None
+    if endeks is None:
+        try:
+            endeks = endeks_fn()
+        except Exception:
+            endeks = None
     liste = [x.strip().upper() for x in emsal_kodlar.split(",") if x.strip()]
     if not liste:
         liste, grup = emsal_bul(kod, d["info"])
@@ -1239,9 +1404,72 @@ def rapor(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, log=print, klasor=
             log(f"{e} atlandı ({ex})")
     log("Analiz ve değerleme yapılıyor...")
     m = metrikler(d, endeks)
-    degerleme(m, emsaller); saglik(m); ipuclari(m)
-    dosya = os.path.join(klasor, f"{kod}_Arastirma_Raporu_{dt.date.today():%Y%m%d}.pdf")
+    nav = nav_hesapla(kod, pd_fn) if kod in BV.HOLDING_PAYLARI else None
+    degerleme(m, emsaller, nav); saglik(m); ipuclari(m)
+    return d, m, emsaller, endeks
+
+def rapor(kod, emsal_kodlar="", veri_fn=None, endeks_fn=None, log=print, klasor=".", detay=False, pd_fn=None, **param):
+    d, m, emsaller, endeks = analiz_et(kod, emsal_kodlar, veri_fn, endeks_fn, pd_fn, log, **param)
+    dosya = os.path.join(klasor, f"{m['kod']}_Arastirma_Raporu_{dt.date.today():%Y%m%d}.pdf")
     log("PDF oluşturuluyor...")
     pdf_olustur(d, m, emsaller, endeks, dosya)
     log(f"Tamamlandı: {dosya} | Adil değer {tl(m['adil'])} TL | Potansiyel {yz(m['potansiyel'])} | Skor {m['genel_skor']}")
     return (dosya, m) if detay else dosya
+
+def grafikler(d, m, endeks):
+    """Uygulama içinde gösterilecek grafiklerin PNG baytları."""
+    out = {}
+    for ad_, fn in (("saglik", lambda: g_saglik(m) if m["saglik"] else None),
+                    ("degerleme", lambda: g_futbol(m)),
+                    ("fiyat", lambda: g_fiyat(d["hist"], endeks, m["kod"])),
+                    ("goreli", lambda: g_goreli(d["hist"], endeks, m["kod"])),
+                    ("finansal", lambda: g_finansal(m))):
+        try:
+            b = fn()
+            if b: out[ad_] = b.getvalue()
+        except Exception:
+            pass
+    return out
+
+def ozet_satir(m):
+    return {"Kod": m["kod"], "Şirket": m["ad"], "Fiyat": m["fiyat"], "Adil değer": m["adil"],
+            "Potansiyel": m["potansiyel"], "Sağlık skoru": m["genel_skor"], "F/K": m["fk"], "PD/DD": m["pddd"],
+            "ROE": m["roe"], "Temettü verimi": m["temettu_verim"], "1Y getiri": m["r"].get("1Y"),
+            "Görüş": m["gorus"], "Teknik": m["teknik_ozet"], "Veri puanı": (m.get("veri") or {}).get("puan")}
+
+def tara(kodlar, veri_fn=None, endeks_fn=None, pd_fn=None, isci=5, ilerleme=None, **param):
+    """Birden çok hisseyi tarar, özet tablo döndürür. Emsaller tarama içindeki aynı sektör hisseleridir."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    PARAM.update({k.upper(): v for k, v in param.items()})
+    veri_fn = veri_fn or veri_cek; pd_fn = pd_fn or piyasa_degeri
+    try:
+        endeks = (endeks_fn or endeks_cek)()
+    except Exception:
+        endeks = None
+    ham, hatalar = {}, {}
+    def is_(k):
+        for deneme in range(2):
+            try:
+                return k, metrikler(veri_fn(k, hafif=True), endeks), None
+            except Exception as ex:
+                hata = ex
+        return k, None, str(hata)
+    with ThreadPoolExecutor(max_workers=isci) as ex:
+        isler = [ex.submit(is_, k) for k in kodlar]
+        for n, f in enumerate(as_completed(isler), 1):
+            k, mm, h = f.result()
+            if mm: ham[k] = mm
+            else: hatalar[k] = h
+            if ilerleme: ilerleme(n / len(kodlar), k)
+    grup_of = {k: g for g, l in SEKTOR_GRUPLARI.items() for k in l}
+    pdeg = {k: mm["piy_deg"] for k, mm in ham.items()}
+    satirlar = []
+    for k, mm in ham.items():
+        emsal = [ham[e] for e in ham if e != k and grup_of.get(e) and grup_of.get(e) == grup_of.get(k)]
+        nav = nav_hesapla(k, lambda x: pdeg.get(x) or pd_fn(x)) if k in BV.HOLDING_PAYLARI else None
+        try:
+            degerleme(mm, emsal, nav); saglik(mm)
+            satirlar.append(ozet_satir(mm))
+        except Exception as ex:
+            hatalar[k] = str(ex)
+    return satirlar, hatalar
