@@ -1,6 +1,6 @@
 """Sesli sabah özeti — iki sunuculu, doğal Türkçe sohbet (NotebookLM tarzı).
 
-* Metin, veriden sohbet olarak kurulur (Emel ve Ahmet karşılıklı konuşur).
+* Metin, veriden sohbet olarak kurulur (Merve ve Erhan karşılıklı konuşur; sesler: Emel ve Ahmet nöral sesleri).
 * Kısaltmalar, semboller, sayılar ve yüzdeler okunuşlarına çevrilir; böylece hiçbir kelime harf harf okunmaz.
 * Ses: Microsoft Edge'in ücretsiz nöral sesleri (edge-tts, tr-TR-EmelNeural / tr-TR-AhmetNeural).
   Ulaşılamazsa gTTS'e düşülür.
@@ -235,15 +235,16 @@ def senaryo(PV, tk, acik, firs, hab, yab=None, tarih_metni=""):
     S = []
     E = lambda m: S.append(("E", m)); A = lambda m: S.append(("A", m))
 
-    E(sec(f"Günaydın! KATKAY Yatırım sabah özetine hoş geldiniz. Bugün {tarih_metni}.",
-          f"Herkese günaydın, KATKAY Yatırım'la güne başlıyoruz. Bugün {tarih_metni}."))
-    A(sec("Günaydın Emel. Kahveler hazırsa hızlıca piyasalara bakalım.", "Günaydın. Vakit kaybetmeden gelelim piyasalara.",
-          "Günaydın Emel, bugün de konuşacak epey şey var."))
+    E(sec(f"Günaydın! KATKAY Yatırım sabah özetine hoş geldiniz. Ben Merve, yanımda Erhan var. Bugün {tarih_metni}.",
+          f"Herkese günaydın, KATKAY Yatırım'la güne başlıyoruz. Ben Merve; Erhan da burada. Bugün {tarih_metni}."))
+    A(sec("Günaydın Merve, günaydın herkese. Kahveler hazırsa hızlıca piyasalara bakalım.",
+          "Günaydın Merve. Vakit kaybetmeden gelelim piyasalara.",
+          "Günaydın Merve, bugün de konuşacak epey şey var."))
 
     sp, vx, nq = PV.get("S&P 500"), PV.get("VIX"), PV.get("Nasdaq")
     if sp:
         d = sp["d1G"] or 0
-        E(sec("Önce Amerika. Dün kapanış nasıldı?", "Amerika'dan başlayalım, dün nasıl kapandı?"))
+        E(sec("Erhan, önce Amerika. Dün kapanış nasıldı?", "Amerika'dan başlayalım Erhan, dün nasıl kapandı?"))
         c = f"Es en Pi beş yüz {yuzde(d)} {_yon(d, 'yükselişle', 'düşüşle', 'yataya yakın')} kapattı"
         if nq and nq.get("d1G") is not None: c += f", Nazdak tarafında da {yuzde(nq['d1G'])} {_yon(nq['d1G'], 'artı', 'eksi', 'yatay')} var"
         c += "."
@@ -303,7 +304,7 @@ def senaryo(PV, tk, acik, firs, hab, yab=None, tarih_metni=""):
         E("Takvim bugün nasıl?"); A("Bugün yüksek etkili bir veri yok; piyasalar daha çok haber akışına bakacak.")
 
     if firs:
-        E(sec("Peki öne çıkan fırsatlar neler?", "Gelelim fırsatlara. Sistem bu sabah neleri öne çıkarıyor?"))
+        E(sec("Erhan, peki öne çıkan fırsatlar neler?", "Gelelim fırsatlara. Sistem bu sabah neleri öne çıkarıyor?"))
         p = []
         for i, f in enumerate(firs[:3]):
             yer = {"bist": ("Borsa İstanbul'da", "Borsa İstanbul'da"), "kripto": ("Kriptoda", "kriptoda"),
@@ -336,7 +337,8 @@ def senaryo(PV, tk, acik, firs, hab, yab=None, tarih_metni=""):
 
     E(sec("Bugünlük bu kadar. Hatırlatalım, bunlar gösterge bazlı analizlerdir, yatırım tavsiyesi değildir.",
           "Özetimiz bu kadar. Unutmayın, bu bir gösterge bazlı analizdir, yatırım tavsiyesi değildir."))
-    A(sec("Herkese bereketli ve kazançlı bir gün dileriz. Görüşmek üzere!", "İyi günler, yarın sabah yine buradayız!"))
+    A(sec("Teşekkürler Merve. Herkese bereketli ve kazançlı bir gün dileriz, görüşmek üzere!",
+          "Teşekkürler Merve. İyi günler, yarın sabah yine buradayız!"))
     return [(k, normalle(m)) for k, m in S]
 
 
