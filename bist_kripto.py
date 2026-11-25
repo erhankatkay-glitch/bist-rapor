@@ -19,6 +19,21 @@ ESKI = {"BTC": "Bitcoin", "ETH": "Ethereum", "BNB": "BNB", "SOL": "Solana", "XRP
         "AVAX": "Avalanche", "TRX": "TRON", "LINK": "Chainlink", "DOT": "Polkadot", "LTC": "Litecoin"}
 
 
+# Borsalarda kripto gibi listelenen "tokenize hisse / ETF" ürünleri (ör. XQQQ, QQQB, AAPLX, TSLAON) kripto sayılmaz.
+_HISSE = {"SPY", "QQQ", "IVV", "VOO", "VTI", "DIA", "IWM", "TQQQ", "SQQQ", "GLD", "SLV", "TLT", "ARKK", "AAPL", "MSFT", "NVDA",
+          "AMZN", "GOOGL", "GOOG", "META", "TSLA", "NFLX", "AMD", "INTC", "COIN", "MSTR", "HOOD", "CRCL", "PLTR", "ORCL", "AVGO",
+          "BABA", "JPM", "ABBV", "LLY", "UNH", "XOM", "CVX", "ACN", "CSCO", "IBM", "CRM", "ADBE", "PEP", "WMT", "COST", "DIS",
+          "NKE", "BRK", "GME", "AMC", "PYPL", "SHOP", "UBER", "ABNB", "TSM", "ASML", "MU", "QCOM", "SMCI", "ARM", "RDDT", "SNOW",
+          "CRWD", "PANW", "NVO", "MRVL", "APP", "SPOT", "BAC", "GS", "MS", "BLK", "SCHW", "TMO", "MRK", "PFE", "JNJ", "BA", "CAT"}
+
+
+def hisse_tokeni_mu(baz):
+    b = str(baz).upper().split("/")[0].split("@")[0]
+    if b in _HISSE: return True
+    uz = lambda x: x in _HISSE and len(x) >= 3
+    return (b.startswith("X") and uz(b[1:])) or (b[-1:] in "BX" and uz(b[:-1])) or (b.endswith("ON") and uz(b[:-2]))
+
+
 def _get(url, **params):
     import requests
     for deneme in range(3):
@@ -98,6 +113,7 @@ def evren():
         raise ValueError("Borsa listeleri alınamadı: " + "; ".join(notlar))
     p = pd.concat(parca)
     p = p[~p["baz"].isin(STABIL)]
+    p = p[~p["baz"].map(hisse_tokeni_mu)]
     pv = p.assign(var=True).pivot_table(index="baz", columns=["borsa", "parite"], values="var", aggfunc="any", fill_value=False)
     pv.columns = [f"{b} {q}" for b, q in pv.columns]
     for c in ("Binance USDT", "Binance TRY", "OKX USDT", "OKX TRY"):

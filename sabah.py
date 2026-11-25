@@ -32,7 +32,7 @@ def acik_kurulumlar():
             c = k.get("son_fiyat") or k["giris"]; yon = k["yon"]
             hed = k["hedef"][min(k["asama"], 2)]
             yak_h = (hed - c) / c * yon; yak_s = (c - k["stop"]) / c * yon
-            out.append({**k, "yak_h": yak_h, "yak_s": yak_s, "ger": (c - k["giris"]) / k["giris"] * yon})
+            out.append({**k, "pz": p, "yak_h": yak_h, "yak_s": yak_s, "ger": (c - k["giris"]) / k["giris"] * yon})
     return out
 
 
@@ -48,6 +48,12 @@ def en_iyi_firsatlar(n=3):
             except Exception:
                 continue
             for f in x.get("firsatlar", []):
+                if p == "kripto":
+                    try:
+                        import bist_kripto as BK
+                        if BK.hisse_tokeni_mu(f["kod"]): continue   # tokenize hisse/ETF, gerçek kripto değil
+                    except Exception:
+                        pass
                 k = (p, f["kod"])
                 if k not in havuz or f["puan"] > havuz[k]["puan"]: havuz[k] = {**f, "pz": p}
     sirali = {p: sorted([f for (q, _), f in havuz.items() if q == p], key=lambda f: -f["puan"]) for p in ("bist", "kripto", "emtia")}

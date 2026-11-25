@@ -179,12 +179,25 @@ def veri_adi(baslik, ulke=None):
     return (f"{u} {b}" if u and u not in b else b).strip()
 
 
-def varlik_adi(kod, pazar=None):
+HARF = {"A": "a", "B": "be", "C": "ce", "Ç": "çe", "D": "de", "E": "e", "F": "fe", "G": "ge", "H": "he", "I": "ı", "İ": "i",
+        "J": "je", "K": "ka", "L": "le", "M": "me", "N": "ne", "O": "o", "Ö": "ö", "P": "pe", "Q": "kü", "R": "re", "S": "se",
+        "Ş": "şe", "T": "te", "U": "u", "Ü": "ü", "V": "ve", "W": "dabılyu", "X": "iks", "Y": "ye", "Z": "ze"}
+
+
+def _sembol_oku(s):
+    """Adı bulunamayan kısa semboller: insanlar da harf harf söyler (ALC → 'a le ce'); uzunlar kelime gibi okunur."""
+    s = re.sub(r"[^A-ZÇĞİÖŞÜ]", "", s.upper())
+    if 0 < len(s) <= 3 or not re.search(r"[AEIİOÖUÜ]", s):
+        return " ".join(HARF.get(c, c.lower()) for c in s)
+    return s.capitalize()
+
+
+def varlik_adi(kod, pazar=None, ad_=None):
     """Sembol yerine şirket / varlık adı (harf harf okunmasın)."""
     k = str(kod).upper()
     if pazar == "kripto" or "/USDT" in k or "@OKX" in k:
         s = k.replace("/USDT", "").replace("@OKX", "").replace("-USD", "")
-        return KRIPTO.get(s, s.capitalize())
+        return KRIPTO.get(s, _sembol_oku(s))
     if pazar == "emtia" or k in EMTIA:
         return EMTIA.get(k, k.capitalize())
     ad = None
@@ -195,8 +208,10 @@ def varlik_adi(kod, pazar=None):
             import bist_veri as BV; ad = BV.ad(k)
     except Exception:
         ad = None
+    if (not ad or ad.upper() == k.replace(".US", "")) and ad_ and ad_.upper() != k.replace(".US", ""):
+        ad = ad_
     if not ad or ad.upper() == k.replace(".US", ""):
-        return k.replace(".US", "").capitalize()
+        return _sembol_oku(k.replace(".US", ""))
     ad = re.sub(r"\b(A\.?Ş\.?|T\.?A\.?Ş\.?|T\.?A\.?O\.?|SANAYİ VE TİCARET|SAN\.?|TİC\.?|VE|Inc\.?|Corp\.?|Corporation|"
                 r"Holdings?|Ltd\.?|plc|N\.V\.|S\.A\.|Co\.?|Company|Class [A-C]|Common Stock)\b", " ", ad, flags=re.I)
     ad = re.sub(r"[.,]+", " ", ad); ad = re.sub(r"\s{2,}", " ", ad).strip()
@@ -272,11 +287,16 @@ def senaryo(PV, tk, acik, firs, hab, yab=None, tarih_metni=""):
     import datetime as _dt
     if tk:
         E(sec("Bugün takvimde neler var?", "Gün içinde takip etmemiz gereken veriler neler?"))
+        grup = {}
+        for e in tk[:4]:
+            t = _dt.datetime.fromisoformat(e["zaman"]); grup.setdefault((t.hour, t.minute), []).append(veri_adi(e["baslik"], e.get("ulke")))
         sat = []
-        for e in tk[:3]:
-            t = _dt.datetime.fromisoformat(e["zaman"])
-            sat.append(f"saat {ek_de(_saat_metni(t))} {veri_adi(e['baslik'], e.get('ulke'))}")
-        c = ("Bugün " + (sat[0] if len(sat) == 1 else ", ".join(sat[:-1]) + " ve " + sat[-1]) + " verisi var.")
+        for (h, d), adlar in list(grup.items())[:3]:
+            adlar = list(dict.fromkeys(adlar))
+            u = adlar[0].split()[0]
+            adlar = adlar[:1] + [a[len(u) + 1:] if a.startswith(u + " ") else a for a in adlar[1:]]
+            sat.append(f"saat {ek_de(_saat_metni(_dt.time(h, d)))} " + (adlar[0] + " verisi" if len(adlar) == 1 else ", ".join(adlar[:-1]) + " ve " + adlar[-1] + " verileri"))
+        c = "Bugün " + (sat[0] if len(sat) == 1 else ", ".join(sat[:-1]) + "; " + sat[-1]) + " açıklanacak."
         A(c + sec(" Açıklama anlarında altında, dolarda ve borsalarda sert hareketler görebiliriz.",
                   " O saatlerde oynaklık artabilir, dikkatli olmakta fayda var."))
     else:
@@ -288,7 +308,7 @@ def senaryo(PV, tk, acik, firs, hab, yab=None, tarih_metni=""):
         for i, f in enumerate(firs[:3]):
             yer = {"bist": ("Borsa İstanbul'da", "Borsa İstanbul'da"), "kripto": ("Kriptoda", "kriptoda"),
                    "emtia": ("Emtiada", "emtiada"), "abd": ("Amerika'da", "Amerika'da")}.get(f.get("pz"), ("", ""))
-            ad = varlik_adi(f["kod"], f.get("pz"))
+            ad = varlik_adi(f["kod"], f.get("pz"), f.get("ad"))
             yon = "al" if f["yon"] == 1 else "sat"
             p.append((f"{yer[0]} {ad}, {TF.get(f['tf'], '')} grafikte {yon} sinyali veriyor, puanı {tam_oku(round(f['puan']))}"
                       if i == 0 else f"{'bir de ' if i == len(firs[:3]) - 1 else ''}{yer[1]} {ad} {TF.get(f['tf'], '')} grafikte {yon} yönlü, puanı {tam_oku(round(f['puan']))}"))
@@ -298,8 +318,8 @@ def senaryo(PV, tk, acik, firs, hab, yab=None, tarih_metni=""):
     risk = sorted([k for k in acik if k["yak_s"] < 0.02], key=lambda k: k["yak_s"])
     if yakin or risk:
         p = []
-        if yakin: p.append(f"{varlik_adi(yakin[0]['kod'], yakin[0].get('pz'))} hedefine çok yakın, kâr alma seviyesini takip etmek lazım")
-        if risk: p.append(f"{varlik_adi(risk[0]['kod'], risk[0].get('pz'))} ise stop seviyesine yaklaştı, zarar kesme planını gözden geçirmekte fayda var")
+        if yakin: p.append(f"{varlik_adi(yakin[0]['kod'], yakin[0].get('pz'), yakin[0].get('ad'))} hedefine çok yakın, kâr alma seviyesini takip etmek lazım")
+        if risk: p.append(f"{varlik_adi(risk[0]['kod'], risk[0].get('pz'), risk[0].get('ad'))} ise stop seviyesine yaklaştı, zarar kesme planını gözden geçirmekte fayda var")
         A("Açık kurulumlara da bakalım: " + "; ".join(p) + ".")
 
     if hab:
