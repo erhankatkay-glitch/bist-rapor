@@ -29,6 +29,12 @@ def acik_kurulumlar():
     out = []
     for p in ("bist", "abd", "kripto", "emtia"):
         for k in oku(f"firsat/{p}/acik.json", []) or []:
+            if p == "kripto":
+                try:
+                    import bist_kripto as BK
+                    if BK.hisse_tokeni_mu(k["kod"]): continue
+                except Exception:
+                    pass
             c = k.get("son_fiyat") or k["giris"]; yon = k["yon"]
             hed = k["hedef"][min(k["asama"], 2)]
             yak_h = (hed - c) / c * yon; yak_s = (c - k["stop"]) / c * yon
@@ -95,8 +101,9 @@ def izlenecekler(PV, tk, acik, firs, hab):
         pass
     if tk:
         e = tk[0]; t = dt.datetime.fromisoformat(e["zaman"])
-        m.append(f"Saat {t:%H:%M}'de {e['baslik']} verisi açıklanacak; altın, Bitcoin ve borsalarda oynaklık artabilir."
-                 if len(tk) == 1 else f"Bugün {len(tk)} önemli veri var; ilki {t:%H:%M}'de ({e['baslik']}). Açıklama saatlerinde sert hareket olabilir.")
+        import ses as SES; ek = "'" + SES.ek_de(SES._saat_metni(t))[-2:]
+        m.append(f"Saat {t:%H:%M}{ek} {e['baslik']} verisi açıklanacak; altın, Bitcoin ve borsalarda oynaklık artabilir."
+                 if len(tk) == 1 else f"Bugün {len(tk)} önemli veri var; ilki {t:%H:%M}{ek} ({e['baslik']}). Açıklama saatlerinde sert hareket olabilir.")
     yakin = sorted([k for k in acik if k["yak_h"] < 0.02], key=lambda k: k["yak_h"])
     risk = sorted([k for k in acik if k["yak_s"] < 0.02], key=lambda k: k["yak_s"])
     if yakin: m.append(f"{_kod(yakin[0]['kod'])} açık kurulumu hedefe çok yakın; kâr alma seviyesini takip edin.")
@@ -143,14 +150,16 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
             ax.plot(xs, ys, color=renk, lw=1.8)
     y = H - 340 - 2 * (bh + 14) - 40
     # bugün neyi izlemeli
-    K._kutu(ax, 40, y - 250, W - 80, 260, C["panel2"], kenar=C["altin"])
+    satirlar = [textwrap.wrap(mm, 78)[:2] for mm in madde]
+    kh = max(260, 58 + sum(len(x) * 27 + 4 for x in satirlar) + 14)
+    K._kutu(ax, 40, y + 10 - kh, W - 80, kh, C["panel2"], kenar=C["altin"])
     K._t(ax, 68, y - 22, "BUGÜN NEYİ İZLEMELİ", 14, C["altin"], "semibold")
     yy = y - 58
-    for mm in madde:
-        for j, sat in enumerate(textwrap.wrap(mm, 78)[:2]):
+    for sl in satirlar:
+        for j, sat in enumerate(sl):
             K._t(ax, 68 if j == 0 else 92, yy, ("•  " if j == 0 else "") + sat, 17, C["yazi"]); yy -= 27
         yy -= 4
-    y = y - 290
+    y = y - kh - 30
     # takvim
     K._t(ax, 48, y, "BUGÜNÜN VERİLERİ (TSİ)", 14, C["altin"], "semibold"); y -= 38
     if tk:
