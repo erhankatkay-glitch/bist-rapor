@@ -37,16 +37,23 @@ def acik_kurulumlar():
 
 
 def en_iyi_firsatlar(n=3):
-    out = []
-    for p in ("bist", "abd", "kripto", "emtia"):
+    """Öne çıkan fırsatlar: önce Borsa İstanbul ve kripto (her birinin en iyisi), kalan yer emtia ile dolar.
+    ABD hisseleri sabah özetinde gösterilmez (kendi bildirimlerinde zaten var)."""
+    havuz = {}
+    for p in ("bist", "kripto", "emtia"):
         son = oku(f"firsat/{p}/son.json", {}) or {}
         for tf, x in son.items():
             try:
-                if dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(x["zaman"]) > dt.timedelta(hours=30): continue
+                if dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(x["zaman"]) > dt.timedelta(hours=30 if p == "kripto" else 80): continue   # hafta sonu: cuma kapanışı
             except Exception:
                 continue
-            for f in x.get("firsatlar", []): out.append({**f, "pz": p})
-    return sorted(out, key=lambda f: -f["puan"])[:n]
+            for f in x.get("firsatlar", []):
+                k = (p, f["kod"])
+                if k not in havuz or f["puan"] > havuz[k]["puan"]: havuz[k] = {**f, "pz": p}
+    sirali = {p: sorted([f for (q, _), f in havuz.items() if q == p], key=lambda f: -f["puan"]) for p in ("bist", "kripto", "emtia")}
+    out = [sirali[p].pop(0) for p in ("bist", "kripto") if sirali[p]]   # her birinin en iyisi garanti
+    out += sorted(sirali["bist"] + sirali["kripto"] + sirali["emtia"], key=lambda f: -f["puan"])[:max(0, n - len(out))]
+    return out[:n]
 
 
 def haberler(n=3):
@@ -155,7 +162,8 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
     for f in firs[:3]:
         renk = C["yesil"] if f["yon"] == 1 else C["kirmizi"]
         K._t(ax, 48, y, _kod(f["kod"]), 20, weight="bold"); K._t(ax, 210, y, f"{'AL' if f['yon'] == 1 else 'SAT'} · {f['puan']:.0f}", 17, renk, "semibold")
-        K._t(ax, 340, y, {"4S": "4 saatlik", "G": "günlük", "H": "haftalık", "A": "aylık"}.get(f["tf"], ""), 15, C["soluk"]); y -= 36
+        K._t(ax, 340, y, {"bist": "BIST", "kripto": "Kripto", "emtia": "Emtia", "abd": "ABD"}.get(f.get("pz"), "") + " · " +
+             {"4S": "4 saatlik", "G": "günlük", "H": "haftalık", "A": "aylık"}.get(f["tf"], ""), 15, C["soluk"]); y -= 36
     if not firs: K._t(ax, 48, y, "Son kapanışlarda eşiği geçen fırsat yok.", 16, C["soluk"])
     y = y0
     acik_s = sorted(acik, key=lambda k: min(k["yak_h"], k["yak_s"]))[:3]
@@ -178,18 +186,16 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
     return dosya
 
 
-def ses_metni(PV, tk, madde):
+def ses_parcalari(PV, tk, acik, firs, hab):
+    import ses as SES
     t = dt.datetime.now(TSI)
-    s = [f"Günaydın. {t.day} {AYLAR[t.month - 1]} {GUNLER[t.weekday()]} sabah özeti."]
-    for ad in ("BIST 100", "S&P 500", "Bitcoin", "Ons altın", "USD/TRY"):
-        v = PV.get(ad)
-        if v and v.get("d1G") is not None:
-            d = v["d1G"] * 100
-            ad_s = {"S&P 500": "Es en Pi beş yüz", "USD/TRY": "Dolar TL", "BIST 100": "Borsa İstanbul yüz endeksi", "Ons altın": "Ons altın"}.get(ad, ad)
-            s.append(f"{ad_s} yüzde {abs(d):.1f}".replace(".", ",") + (" yükseldi." if d > 0 else " geriledi."))
-    s += [m_.replace("%", "yüzde ") for m_ in madde]
-    s.append("Bu bir gösterge bazlı analizdir, yatırım tavsiyesi değildir. İyi günler.")
-    return " ".join(s)
+    yab = None
+    try:
+        import yabanci_akis as YA
+        yab = YA.ozet(YA.arsiv_oku(KLON))
+    except Exception:
+        pass
+    return SES.senaryo(PV, tk, acik, firs, hab, yab, f"{t.day} {AYLAR[t.month - 1]} {GUNLER[t.weekday()]}")
 
 
 def calistir():
@@ -199,9 +205,11 @@ def calistir():
     yol = kart(PV, tk, acik, firs, hab, madde, os.path.join(CIKTI, "sabah", "kart.png"))
     ses = None
     try:
-        from gtts import gTTS
+        import ses as SES
         ses = os.path.join(CIKTI, "sabah", "ozet.mp3")
-        gTTS(ses_metni(PV, tk, madde), lang="tr").save(ses)
+        parca = ses_parcalari(PV, tk, acik, firs, hab)
+        open(os.path.join(CIKTI, "sabah", "ozet_metin.txt"), "w", encoding="utf-8").write("\n".join(f"{k}: {m}" for k, m in parca))
+        print("ses motoru:", SES.seslendir(parca, ses))
     except Exception as ex:
         print("Sesli özet üretilemedi:", ex, file=sys.stderr); ses = None
     json.dump({"zaman": dt.datetime.now(TSI).isoformat(), "madde": madde}, open(os.path.join(CIKTI, "sabah", "ozet.json"), "w", encoding="utf-8"),

@@ -18,7 +18,7 @@ html, body, .stApp, .stMarkdown, button, input, textarea, select, [data-testid="
    radial-gradient(700px 380px at 100% 0%, rgba(239,68,68,.06), transparent 60%),
    linear-gradient(180deg, #0B0B0C 0%, #070708 100%) !important;}
 #MainMenu, footer, header[data-testid="stHeader"] {visibility:hidden; height:0;}
-.block-container {padding-top:.4rem; padding-bottom:6.5rem; max-width:720px;}
+.block-container {padding-top:.4rem; padding-bottom:10rem; max-width:720px;}
 h1, h2, h3, h4 {color:#F5F5F7 !important; font-weight:800 !important; letter-spacing:-.015em;}
 h3 {font-size:1.25rem !important;}
 [data-testid="stCaptionContainer"], .stCaption {color:var(--soluk) !important;}
@@ -231,12 +231,12 @@ def ust_bant(pv=None):
 
 # ----------------------------------------------------------------------------- canlı saat + alt gezinme (JS)
 NAV_STIL = """
-#kk-nav{position:fixed;left:8px;right:84px;max-width:640px;bottom:max(10px,env(safe-area-inset-bottom));z-index:99990;
-  /* sağ alttaki Streamlit düğmesine yer bırakılır (yanlışlıkla dokunulmasın) */display:flex;justify-content:space-around;align-items:stretch;padding:8px 6px 7px;border-radius:22px;
+#kk-nav{position:fixed;left:10px;right:10px;margin:0 auto;max-width:640px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:999999;
+  /* Streamlit'in sağ alttaki yönetim düğmesinin üstünde durur, onunla çakışmaz */display:flex;justify-content:space-around;align-items:stretch;padding:8px 6px 7px;border-radius:22px;
   background:linear-gradient(180deg,rgba(26,27,30,.94),rgba(12,13,15,.97));border:1px solid rgba(255,255,255,.10);
   box-shadow:0 16px 40px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   font-family:'Inter',-apple-system,sans-serif}
-#kk-nav button{flex:1;background:none;border:none;color:#9A9BA3;display:flex;flex-direction:column;align-items:center;gap:4px;
+#kk-nav button{flex:1;touch-action:manipulation;background:none;border:none;color:#9A9BA3;display:flex;flex-direction:column;align-items:center;gap:4px;
   font-size:11px;font-weight:600;padding:4px 0;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
 #kk-nav button+button:before{content:"";position:absolute;left:0;top:18%;bottom:18%;width:1px;background:rgba(255,255,255,.08)}
 #kk-nav svg{width:24px;height:24px}
@@ -278,24 +278,45 @@ CANLI_JS = """
        const m=D.createElement("meta"); m.name=n; m.content=c; D.head.appendChild(m);});
     D.title="KATKAY YATIRIM A.Ş.";
   }catch(e){}});
-  // ---- alt gezinme çubuğu (ana sayfaya eklenir, sekmeleri tıklar)
+  // ---- alt gezinme çubuğu
+  // Düğmeler ana sayfanın kendi kodu ile çalışır (bu iframe her yenilemede değişse de düğmeler ölmez).
   try{
-    const P=window.parent.document, OGE=__OGE__;
-    if(!P.getElementById("kk-nav-stil")){const s=P.createElement("style"); s.id="kk-nav-stil"; s.textContent=__STIL__; P.head.appendChild(s);}
-    let nav=P.getElementById("kk-nav");
-    if(!nav){
-      nav=P.createElement("nav"); nav.id="kk-nav";
-      OGE.forEach(o=>{const b=P.createElement("button"); b.dataset.sekme=o[1];
-        b.innerHTML='<svg viewBox="0 0 24 24">'+o[2]+'</svg><span>'+o[0]+'</span>';
-        b.onclick=()=>{const t=[...P.querySelectorAll('.stTabs [data-baseweb="tab"]')].find(x=>x.innerText.trim().endsWith(o[1]));
-          if(t){t.click(); window.parent.scrollTo({top:0,behavior:"smooth"});}};
-        nav.appendChild(b);});
-      P.body.appendChild(nav);
+    const W=window.parent, P=W.document, OGE=__OGE__;
+    let st=P.getElementById("kk-nav-stil");
+    if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
+    if(!P.getElementById("kk-nav-js")){
+      const sc=P.createElement("script"); sc.id="kk-nav-js";
+      sc.textContent=`
+        window.kkSekmeler=function(){return [...document.querySelectorAll('.stTabs [data-baseweb="tab"], .stTabs button[role="tab"]')];};
+        window.kkAd=function(t){const p=t.querySelector('[data-testid="stMarkdownContainer"] p')||t; return (p.innerText||p.textContent||"").trim();};
+        window.kkGit=function(ad){
+          const t=window.kkSekmeler().find(x=>window.kkAd(x).endsWith(ad));
+          if(!t) return;
+          t.scrollIntoView({block:"nearest",inline:"center"});
+          t.dispatchEvent(new MouseEvent("mousedown",{bubbles:true})); t.click();
+          const k=document.querySelector('[data-testid="stAppScrollToBottomContainer"],[data-testid="stMain"],section.main,[data-testid="stAppViewContainer"]');
+          try{(k||window).scrollTo({top:0,behavior:"smooth"});}catch(e){} try{window.scrollTo({top:0,behavior:"smooth"});}catch(e){}
+          setTimeout(window.kkIsaretle,80);
+        };
+        window.kkIsaretle=function(){
+          const nav=document.getElementById("kk-nav"); if(!nav) return;
+          const s=window.kkSekmeler().find(x=>x.getAttribute("aria-selected")==="true"); const ad=s?window.kkAd(s):"";
+          nav.querySelectorAll("button").forEach(b=>b.classList.toggle("aktif", ad.endsWith(b.dataset.sekme)));
+        };
+        if(!window.kkIsaretZaman) window.kkIsaretZaman=setInterval(window.kkIsaretle,500);`;
+      P.head.appendChild(sc);
     }
-    const isaretle=()=>{const s=P.querySelector('.stTabs [data-baseweb="tab"][aria-selected="true"]'); const ad=s?s.innerText.trim():"";
-      nav.querySelectorAll("button").forEach(b=>b.classList.toggle("aktif", ad.endsWith(b.dataset.sekme)));};
-    isaretle(); setInterval(isaretle,600);
-  }catch(e){}
+    const eski=P.getElementById("kk-nav"); if(eski) eski.remove();
+    const nav=P.createElement("nav"); nav.id="kk-nav";
+    nav.innerHTML=OGE.map(o=>'<button type="button" data-sekme="'+o[1]+'" onclick="window.kkGit(this.dataset.sekme)">'+
+      '<svg viewBox="0 0 24 24">'+o[2]+'</svg><span>'+o[0]+'</span></button>').join("");
+    P.body.appendChild(nav);
+    if(typeof W.kkGit!=="function"){   // ana sayfaya betik eklenemezse (güvenlik politikası) yedek yol
+      nav.querySelectorAll("button").forEach(b=>{b.removeAttribute("onclick"); b.addEventListener("click",()=>{
+        const t=[...P.querySelectorAll('.stTabs [data-baseweb="tab"]')].find(x=>x.innerText.trim().endsWith(b.dataset.sekme)); if(t) t.click();});});
+    }
+    if(W.kkIsaretle) W.kkIsaretle();
+  }catch(e){console.log("kk-nav",e);}
 })();
 </script>"""
 
