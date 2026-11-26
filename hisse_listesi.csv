@@ -1,579 +1,630 @@
-Kod,Ad,XHARZ
-A1CAP,A1 CAPITAL YATIRIM,False
-A1YEN,A1 YENILENEBILIR ENERJI,False
-AAGYO,AGAOGLU GMYO,True
-ACSEL,ACIPAYAM SELULOZ,False
-ADEL,ADEL KALEMCILIK,False
-ADESE,ADESE GAYRIMENKUL,False
-ADGYO,ADRA GMYO,False
-AEFES,ANADOLU EFES,False
-AFYON,AFYON CIMENTO,False
-AGESA,AGESA HAYAT EMEKLILIK,False
-AGHOL,ANADOLU GRUBU HOLDING,False
-AGROT,AGROTECH TEKNOLOJI,False
-AGYO,ATAKULE GMYO,False
-AHGAZ,AHLATCI DOGALGAZ,False
-AHSGY,AHES GMYO,False
-AKBNK,AKBANK,False
-AKCNS,AKCANSA,False
-AKENR,AKENERJI,False
-AKFGY,AKFEN GMYO,False
-AKFIS,AKFEN INSAAT,True
-AKFYE,AKFEN YEN. ENERJI,False
-AKGRT,AKSIGORTA,False
-AKHAN,AKHAN UN,True
-AKMGY,AKMERKEZ GMYO,False
-AKSA,AKSA,False
-AKSEN,AKSA ENERJI,False
-AKSGY,AKIS GMYO,False
-AKSUE,AKSU ENERJI,False
-AKYHO,AKDENIZ YATIRIM HOLDING,False
-ALARK,ALARKO HOLDING,False
-ALBRK,ALBARAKA TURK,False
-ALBTN,ALBAYRAK BETON SANAYI,True
-ALCAR,ALARKO CARRIER,False
-ALCTL,ALCATEL LUCENT TELETAS,False
-ALFAS,ALFA SOLAR ENERJI,False
-ALGYO,ALARKO GMYO,False
-ALKA,ALKIM KAGIT,False
-ALKIM,ALKIM KIMYA,False
-ALKLC,ALTINKILIC GIDA VE SUT,False
-ALTNY,ALTINAY SAVUNMA,False
-ANELE,ANEL ELEKTRIK,False
-ANGEN,ANATOLIA TANI VE BIYOTEKNOLOJI,False
-ANHYT,ANADOLU HAYAT EMEK.,False
-ANSGR,ANADOLU SIGORTA,False
-ARASE,DOGU ARAS ENERJI,False
-ARCLK,ARCELIK,False
-ARDYZ,ARD BILISIM TEKNOLOJILERI,False
-ARENA,ARENA BILGISAYAR,False
-ARFYE,ARF BIO YENILENEBILIR ENERJI,True
-ARMGD,ARMADA GIDA,True
-ARSAN,ARSAN HOLDING,False
-ARTMS,ARTEMIS HALI,False
-ARZUM,ARZUM EV ALETLERI,False
-ASELS,ASELSAN,False
-ASGYO,ASCE GMYO,False
-ASTOR,ASTOR ENERJI,False
-ASUZU,ANADOLU ISUZU,False
-ATAGY,ATA GMYO,False
-ATAKP,ATAKEY PATATES,False
-ATATP,ATP YAZILIM,False
-ATATR,ATA TURIZM,True
-AVGYO,AVRASYA GMYO,False
-AVHOL,AVRUPA YATIRIM HOLDING,False
-AVOD,A.V.O.D GIDA VE TARIM,False
-AVPGY,AVRUPAKENT GMYO,False
-AVTUR,AVRASYA PETROL VE TUR.,False
-AYCES,ALTINYUNUS CESME,False
-AYDEM,AYDEM ENERJI,False
-AYEN,AYEN ENERJI,False
-AYGAZ,AYGAZ,False
-AZTEK,AZTEK TEKNOLOJI,False
-BAGFS,BAGFAS,False
-BAHKM,BAHADIR KIMYA,False
-BAKAB,BAK AMBALAJ,False
-BALSU,BALSU GIDA,True
-BANVT,BANVIT,False
-BASGZ,BASKENT DOGALGAZ GMYO,False
-BAYRK,BAYRAK TABAN SANAYI,False
-BEGYO,BATI EGE GMYO,False
-BERA,BERA HOLDING,False
-BESLR,BESLER GIDA,False
-BESTE,BEST BRANDS ENERJI,True
-BETAE,BETA ENERJI VE TEKNOLOJI,True
-BEYAZ,BEYAZ FILO,False
-BFREN,BOSCH FREN SISTEMLERI,False
-BIENY,BIEN YAPI URUNLERI,False
-BIGCH,BUYUK SEFLER BIGCHEFS,False
-BIGEN,BIRLESIM GRUP ENERJI,True
-BIGTK,BIG MEDYA TEKNOLOJI,False
-BIMAS,BIM MAGAZALAR,False
-BINBN,BIN ULASIM TEKNOLOJILERI,False
-BINHO,1000 YATIRIMLAR HOL.,False
-BIOEN,BIOTREND CEVRE VE ENERJI,False
-BIZIM,BIZIM MAGAZALARI,False
-BJKAS,BESIKTAS FUTBOL YAT.,False
-BKRGY,BAKIRCI GMYO,True
-BLCYT,BILICI YATIRIM,False
-BLUME,BLUME METAL KIMYA,False
-BMSCH,BMS CELIK HASIR,False
-BMSTL,BMS BIRLESIK METAL,False
-BNTAS,BANTAS AMBALAJ,False
-BOBET,BOGAZICI BETON SANAYI,False
-BORLS,BORLEASE OTOMOTIV,False
-BORSK,BOR SEKER,False
-BOSSA,BOSSA,False
-BRISA,BRISA,False
-BRKSN,BERKOSAN YALITIM,False
-BRKVY,BIRIKIM VARLIK YONETIM,False
-BRLSM,BIRLESIM MUHENDISLIK,False
-BRSAN,BORUSAN BORU SANAYI,False
-BRYAT,BORUSAN YAT. PAZ.,False
-BSOKE,BATICIM CIMENTO,False
-BTCIM,BATICIM BATI ANADOLU,False
-BUCIM,BURSA CIMENTO,False
-BULGS,BULLS GSYO,True
-BURCE,BURCELIK,False
-BURVA,BURCELIK VANA,False
-BVSAN,BULBULOGLU VINC,False
-BYDNR,BAYDONER RESTORANLARI,False
-CANTE,CAN2 TERMIK,False
-CATES,CATES ELEKTRIK,False
-CCOLA,COCA COLA ICECEK,False
-CELHA,CELIK HALAT,False
-CEMAS,CEMAS DOKUM,False
-CEMTS,CEMTAS,False
-CEMZY,CEM ZEYTIN,False
-CEOEM,CEO EVENT MEDYA,False
-CGCAM,CAGDAS CAM,True
-CIMSA,CIMSA,False
-CITAS,CITLEKCI MAGAZACILIK GIDA,True
-CLEBI,CELEBI,False
-CMBTN,CIMBETON,False
-CONSE,CONSUS ENERJI,False
-COSMO,COSMOS YAT. HOLDING,False
-CRDFA,CREDITWEST FAKTORING,False
-CRFSA,CARREFOURSA,False
-CUSAN,CUHADAROGLU METAL,False
-CVKMD,CVK MADEN,False
-CWENE,CW ENERJI,False
-DAGI,DAGI GIYIM,False
-DAPGM,DAP GAYRIMENKUL,False
-DARDL,DARDANEL,False
-DCTTR,DCT TRADING DIS TICARET,False
-DENGE,DENGE HOLDING,False
-DERHL,DERLUKS YATIRIM HOLDING,False
-DERIM,DERIMOD,False
-DESA,DESA DERI,False
-DESPC,DESPEC BILGISAYAR,False
-DEVA,DEVA HOLDING,False
-DGATE,DATAGATE BILGISAYAR,False
-DGGYO,DOGUS GMYO,False
-DGNMO,DOGANLAR MOBILYA,False
-DITAS,DITAS BDY,False
-DMRGD,DMR UNLU MAMULLER,False
-DMSAS,DEMISAS DOKUM,False
-DNISI,DINAMIK ISI MAKINA YALITIM,False
-DOAS,DOGUS OTOMOTIV,False
-DOCO,DO-CO,False
-DOFER,DOFER YAPI MALZEMELERI,False
-DOFRB,DOF ROBOTIK,True
-DOGUB,DOGUSAN,False
-DOHOL,DOGAN HOLDING,False
-DOKTA,DOKTAS DOKUMCULUK,False
-DSTKF,DESTEK FINANS FAKTORING,True
-DUNYH,DUNYA HOLDING,False
-DURDO,DURAN DOGAN BASIM,False
-DURKN,DURUKAN SEKERLEME,False
-DYOBY,DYO BOYA,False
-DZGYO,DENIZ GMYO,False
-EBEBK,EBEBEK MAGAZACILIK,False
-ECILC,ECZACIBASI ILAC,False
-ECOGR,ECOGREEN ENERJI,True
-ECZYT,ECZACIBASI YATIRIM,False
-EDATA,E-DATA TEKNOLOJI,False
-EDIP,EDIP GAYRIMENKUL,False
-EFOR,EFOR YATIRIM,False
-EGEEN,EGE ENDUSTRI,False
-EGEGY,EGEYAPI AVRUPA GMYO,True
-EGEPO,NASMED EGEPOL,False
-EGGUB,EGE GUBRE,False
-EGPRO,EGE PROFIL,False
-EGSER,EGE SERAMIK,False
-EKDMR,EKINCILER DEMIR CELIK,True
-EKGYO,EMLAK KONUT GMYO,False
-EKIM,EKIM TURIZM,True
-EKOS,EKOS TEKNOLOJI,False
-EKSUN,EKSUN GIDA,False
-ELITE,ELITE NATUREL ORGANIK GIDA,False
-EMKEL,EMEK ELEKTRIK,False
-EMPAE,EMPA ELEKTRONIK,True
-ENDAE,ENDA ENERJI HOLDING,True
-ENERY,ENERYA ENERJI,False
-ENJSA,ENERJISA ENERJI,False
-ENKAI,ENKA INSAAT,False
-ENSRI,ENSARI SINAI YATIRIMLAR,False
-ENTRA,IC ENTERRA YEN. ENERJI,False
-EPLAS,EGEPLAST,False
-ERBOS,ERBOSAN,False
-ERCB,ERCIYAS CELIK BORU,False
-EREGL,EREGLI DEMIR CELIK,False
-ERSU,ERSU GIDA,False
-ESCAR,ESCAR FILO,False
-ESCOM,ESCORT TEKNOLOJI,False
-ESEN,ESENBOGA ELEKTRIK,False
-ETILR,ETILER GIDA,False
-EUPWR,EUROPOWER ENERJI,False
-EUREN,EUROPEN ENDUSTRI,False
-EYGYO,EYG GMYO,False
-FADE,FADE GIDA,False
-FENER,FENERBAHCE FUTBOL,False
-FLAP,FLAP KONGRE TOPLANTI HIZ.,False
-FMIZP,F-M IZMIT PISTON,False
-FONET,FONET BILGI TEKNOLOJILERI,False
-FORMT,FORMET METAL VE CAM,False
-FORTE,FORTE BILGI ILETISIM,False
-FRIGO,FRIGO PAK GIDA,False
-FRMPL,FORMUL PLASTIK VE METAL,True
-FROTO,FORD OTOSAN,False
-FZLGY,FUZUL GMYO,False
-GARAN,GARANTI BANKASI,False
-GARFA,GARANTI FAKTORING,False
-GEDIK,GEDIK Y. MEN. DEG.,False
-GEDZA,GEDIZ AMBALAJ,False
-GENIL,GEN ILAC,False
-GENKM,GENTAS KIMYA,True
-GENTS,GENTAS,False
-GEREL,GERSAN ELEKTRIK,False
-GESAN,GIRISIM ELEKTRIK SANAYI,False
-GIPTA,GIPTA OFIS KIRTASIYE,False
-GLBMD,GLOBAL MEN. DEG.,False
-GLCVY,GELECEK VARLIK YONETIMI,False
-GLRMK,GULERMAK AGIR SANAYI,True
-GLRYH,GULER YAT. HOLDING,False
-GLYHO,GLOBAL YAT. HOLDING,False
-GMTAS,GIMAT MAGAZACILIK,False
-GOKNR,GOKNUR GIDA,False
-GOLDA,GOLDA GIDA,True
-GOLTS,GOLTAS CIMENTO,False
-GOODY,GOOD-YEAR,False
-GOZDE,GOZDE GIRISIM,False
-GRSEL,GUR-SEL TURIZM TASIMACILIK,False
-GRTHO,GRAINTURK HOLDING,False
-GSDDE,GSD DENIZCILIK,False
-GSDHO,GSD HOLDING,False
-GSRAY,GALATASARAY SPORTIF,False
-GUBRF,GUBRE FABRIK.,False
-GWIND,GALATA WIND ENERJI,False
-GZNMI,GEZINOMI SEYAHAT,False
-HALKB,T. HALK BANKASI,False
-HATEK,HATAY TEKSTIL,False
-HATSN,HATSAN GEMI,False
-HDFGS,HEDEF GIRISIM,False
-HEDEF,HEDEF HOLDING,False
-HEKTS,HEKTAS,False
-HKTM,HIDROPAR HAREKET KONTROL,False
-HLGYO,HALK GMYO,False
-HOROZ,HOROZ LOJISTIK,False
-HRKET,HAREKET PROJE TASIMACILIGI,False
-HTTBT,HITIT BILGISAYAR,False
-HUBVC,HUB GIRISIM,False
-HUNER,HUN YENILENEBILIR ENERJI,False
-HURGZ,HURRIYET GZT.,False
-ICBCT,ICBC TURKEY BANK,False
-ICUGS,ICU GIRISIM,False
-IDGYO,IDEALIST GMYO,False
-IEYHO,ISIKLAR ENERJI YAPI HOL.,False
-IHAAS,IHLAS HABER AJANSI,False
-IHEVA,IHLAS EV ALETLERI,False
-IHGZT,IHLAS GAZETECILIK,False
-IHLAS,IHLAS HOLDING,False
-IHLGM,IHLAS GAYRIMENKUL,False
-IHYAY,IHLAS YAYIN HOLDING,False
-IMASM,IMAS MAKINA,False
-INDES,INDEKS BILGISAYAR,False
-INFO,INFO YATIRIM,False
-INGRM,INGRAM BILISIM,False
-INTEM,INTEMA,False
-INTET,INTETRA TEKNOLOJI,True
-INVEO,INVEO YATIRIM HOLDING,False
-INVES,INVESTCO HOLDING,False
-ISATR,IS BANKASI (A),False
-ISBTR,IS BANKASI (B),False
-ISCTR,IS BANKASI (C),False
-ISDMR,ISKENDERUN DEMIR CELIK,False
-ISFIN,IS FIN.KIR.,False
-ISGSY,IS GIRISIM,False
-ISGYO,IS GMYO,False
-ISKPL,ISIK PLASTIK,False
-ISMEN,IS Y. MEN. DEG.,False
-ISSEN,ISBIR SENTETIK DOKUMA,False
-ISVEA,ISVEA SERAMIK VE BANYO,True
-IZENR,IZDEMIR ENERJI,False
-IZFAS,IZMIR FIRCA,False
-IZINV,IZ YATIRIM HOLDING,False
-IZMDC,IZMIR DEMIR CELIK,False
-JANTS,JANTSA JANT SANAYI,False
-KAPLM,KAPLAMIN,False
-KARCL,KARDEMIR CELIK,True
-KAREL,KAREL ELEKTRONIK,False
-KARSN,KARSAN OTOMOTIV,False
-KARTN,KARTONSAN,False
-KATMR,KATMERCILER EKIPMAN,False
-KAYSE,KAYSERI SEKER FABRIKASI,False
-KBORU,KUZEY BORU,False
-KCAER,KOCAER CELIK,False
-KCHOL,KOC HOLDING,False
-KFEIN,KAFEIN YAZILIM,False
-KGYO,KORAY GMYO,False
-KIMMR,KIM MARKET-ERSAN ALISVERIS,False
-KLGYO,KILER GMYO,False
-KLKIM,KALEKIM KIMYEVI MADDELER,False
-KLMSN,KLIMASAN KLIMA,False
-KLRHO,KILER HOLDING,False
-KLSER,KALESERAMIK,False
-KLSYN,KOLEKSIYON MOBILYA,False
-KLYPV,KALYON GUNES TEKNOLOJILERI,True
-KMPUR,KIMTEKS POLIURETAN,False
-KNFRT,KONFRUT TARIM,False
-KOCMT,KOC METALURJI,False
-KONKA,KONYA KAGIT,False
-KONYA,KONYA CIMENTO,False
-KOPOL,KOZA POLYESTER,False
-KORDS,KORDSA TEKNIK TEKSTIL,False
-KOTON,KOTON MAGAZACILIK,False
-KPEKS,KAPEKS KIMYA,True
-KRDMA,KARDEMIR (A),False
-KRDMB,KARDEMIR (B),False
-KRDMD,KARDEMIR (D),False
-KRGYO,KORFEZ GMYO,False
-KRONT,KRON TEKNOLOJI,False
-KRPLS,KOROPLAST TEMIZLIK AMBALAJ,False
-KRSTL,KRISTAL KOLA,False
-KRTEK,KARSU TEKSTIL,False
-KRVGD,KERVAN GIDA,False
-KTLEV,KATILIMEVIM TAS. FIN.,False
-KTSKR,KUTAHYA SEKER FABRIKASI,False
-KUTPO,KUTAHYA PORSELEN,False
-KUVVA,KUVVA GIDA,False
-KUYAS,KUYAS YATIRIM,False
-KZBGY,KIZILBUK GYO,False
-KZGYO,KUZUGRUP GMYO,False
-LIDER,LDR TURIZM,False
-LIDFA,LIDER FAKTORING,False
-LILAK,LILA KAGIT,False
-LINK,LINK BILGISAYAR,False
-LKMNH,LOKMAN HEKIM SAGLIK,False
-LMKDC,LIMAK DOGU ANADOLU,False
-LOGO,LOGO YAZILIM,False
-LRSHO,LORAS HOLDING,False
-LUKSK,LUKS KADIFE,False
-LXGYO,LUXERA GMYO,True
-LYDHO,LYDIA HOLDING,False
-LYDYE,LYDIA YESIL ENERJI,False
-MAALT,MARMARIS ALTINYUNUS,False
-MACKO,MACKOLIK INTERNET HIZMETLERI,False
-MAGEN,MARGUN ENERJI,False
-MAKIM,MAKIM MAKINE,False
-MAKTK,MAKINA TAKIM,False
-MANAS,MANAS ENERJI YONETIMI,False
-MARBL,TUREKS TURUNC MADENCILIK,False
-MARMR,MARMARA HOLDING,False
-MARTI,MARTI OTEL,False
-MASFN,MASFEN ENERJI,True
-MAVI,MAVI GIYIM,False
-MCARD,METROPAL KURUMSAL HIZMETLER,True
-MEDTR,MEDITERA TIBBI MALZEME,False
-MEGMT,MEGA METAL,False
-MEKAG,MEKA GLOBAL MAKINE,False
-MEPET,METRO PETROL VE TESISLERI,False
-MERCN,MERCAN KIMYA,False
-MERIT,MERIT TURIZM,False
-MERKO,MERKO GIDA,False
-METEN,METGUN ENERJI,True
-METRO,METRO HOLDING,False
-MEYSU,MEYSU GIDA,True
-MGROS,MIGROS TICARET,False
-MHRGY,MHR GMYO,False
-MIATK,MIA TEKNOLOJI,False
-MNDRS,MENDERES TEKSTIL,False
-MNDTR,MONDI TURKEY,False
-MOBTL,MOBILTEL ILETISIM,False
-MOGAN,MOGAN ENERJI,False
-MOPAS,MOPAS MARKETCILIK,True
-MPARK,MLP SAGLIK,False
-MRGYO,MARTI GMYO,False
-MRSHL,MARSHALL,False
-MSGYO,MISTRAL GMYO,False
-MTRKS,MATRIKS FINANSAL TEKNOLOJILER,False
-MZHLD,MAZHAR ZORLU HOLDING,False
-NATEN,NATUREL ENERJI,False
-NETAS,NETAS TELEKOM.,False
-NETCD,NETCAD YAZILIM,True
-NETGL,NET GLOBAL ENDUSTRIYEL YAT.,True
-NIBAS,NIGBAS NIGDE BETON,False
-NTGAZ,NATURELGAZ,False
-NTHOL,NET HOLDING,False
-NUGYO,NUROL GMYO,False
-NUHCM,NUH CIMENTO,False
-OBAMS,OBA MAKARNACILIK,False
-OBASE,OBASE BILGISAYAR,False
-ODAS,ODAS ELEKTRIK,False
-ODINE,ODINE TEKNOLOJI,False
-OFSYM,OFIS YEM GIDA,False
-ONCSM,ONCOSEM ONKOLOJIK SISTEMLER,False
-ONRYT,ONUR TEKNOLOJI,False
-ORCAY,ORCAY ORTAKOY CAY SANAYI,False
-ORGE,ORGE ENERJI ELEKTRIK,False
-ORZAX,ORZAKS ILAC,True
-OSMEN,OSMANLI MENKUL,False
-OSTIM,OSTIM ENDUSTRIYEL YAT,False
-OTKAR,OTOKAR,False
-OTTO,OTTO HOLDING,False
-OYAKC,OYAK CIMENTO,False
-OYLUM,OYLUM SINAI YATIRIMLAR,False
-OYYAT,OYAK YATIRIM MENKUL,False
-OZATD,OZATA DENIZCILIK,False
-OZGYO,OZDERICI GMYO,False
-OZKGY,OZAK GMYO,False
-OZRDN,OZERDEN AMBALAJ,False
-OZSUB,OZSU BALIK,False
-OZYSR,OZYASAR TEL,False
-PAGYO,PANORA GMYO,False
-PAHOL,PASIFIK HOLDING,True
-PAMEL,PAMEL ELEKTRIK,False
-PAPIL,PAPILON SAVUNMA,False
-PARSN,PARSAN,False
-PASEU,PASIFIK EURASIA LOJISTIK,False
-PATEK,PASIFIK TEKNOLOJI,False
-PCILT,PC ILETISIM MEDYA,False
-PENGD,PENGUEN GIDA,False
-PENTA,PENTA TEKNOLOJI URUNLERI DAGITIM,False
-PETKM,PETKIM,False
-PETUN,PINAR ET VE UN,False
-PGSUS,PEGASUS,False
-PINSU,PINAR SU,False
-PKART,PLASTIKKART,False
-PKENT,PETROKENT TURIZM,False
-PLTUR,PLATFORM TURIZM,False
-PNLSN,PANELSAN CATI CEPHE,False
-PNSUT,PINAR SUT,False
-POLHO,POLISAN HOLDING,False
-POLTK,POLITEKNIK METAL,False
-PRDGS,PARDUS GIRISIM,False
-PRKAB,TURK PRYSMIAN KABLO,False
-PRKME,PARK ELEK.MADENCILIK,False
-PRZMA,PRIZMA PRESS MATBAACILIK,False
-PSDTC,PERGAMON DIS TICARET,False
-PSGYO,PASIFIK GMYO,False
-QUAGR,QUA GRANITE HAYAL YAPI,False
-QUICK,QUICK SIGORTA,True
-RAYSG,RAY SIGORTA,False
-REEDR,REEDER TEKNOLOJI,False
-RGYAS,RONESANS GAYRIMENKUL YAT.,False
-RNPOL,RAINBOW POLIKARBONAT,False
-RODRG,RODRIGO TEKSTIL,False
-RTALB,RTA LABORATUVARLARI,False
-RUBNS,RUBENIS TEKSTIL,False
-RUZYE,RUZY MADENCILIK VE ENERJI,False
-RYGYO,REYSAS GMYO,False
-RYSAS,REYSAS LOJISTIK,False
-SAFKR,SAFKAR EGE SOGUTMACILIK,False
-SAHOL,SABANCI HOLDING,False
-SAMAT,SARAY MATBAACILIK,False
-SANEL,SANEL MUHENDISLIK,False
-SANFM,SANIFOAM ENDUSTRI,False
-SANKO,SANKO PAZARLAMA,False
-SARAE,SA-RA ENERJI,True
-SARKY,SARKUYSAN,False
-SASA,SASA POLYESTER,False
-SAYAS,SAY YENILENEBILIR ENERJI,False
-SDTTR,SDT UZAY VE SAVUNMA,False
-SEGMN,SEGMEN KARDESLER GIDA,False
-SEGYO,SEKER GMYO,False
-SEKFK,SEKER FIN. KIR.,False
-SEKUR,SEKURO PLASTIK,False
-SELEC,SELCUK ECZA DEPOSU,False
-SELVA,SELVA GIDA,False
-SERNT,SERANIT GRANIT SERAMIK,True
-SEYKM,SEYITLER KIMYA,False
-SILVR,SILVERLINE ENDUSTRI,False
-SISE,SISE CAM,False
-SKBNK,SEKERBANK,False
-SKTAS,SOKTAS,False
-SKYLP,SKYALP FINANSAL TEKNOLOJILER,False
-SKYMD,SEKER YATIRIM,False
-SMART,SMARTIKS YAZILIM,False
-SMRTG,SMART GUNES ENERJISI TEK.,False
-SMRVA,SUMER VARLIK YONETIM,True
-SNGYO,SINPAS GMYO,False
-SNICA,SANICA ISI SANAYI,False
-SOHOE,SOHO GIYIM VE ENERJI,True
-SOKE,SOKE DEGIRMENCILIK,False
-SOKM,SOK MARKETLER TICARET,False
-SONME,SONMEZ FILAMENT,False
-SRVGY,SERVET GMYO,False
-SSAAT,SAAT VE SAAT SANAYI,True
-SUNTK,SUN TEKSTIL,False
-SURGY,SUR TATIL EVLERI GMYO,False
-SUWEN,SUWEN TEKSTIL,False
-SVGYO,SAVUR GMYO,True
-TABGD,TAB GIDA,False
-TARKM,TARKIM BITKI KORUMA,False
-TATEN,TATLIPINAR ENERJI URETIM,False
-TATGD,TAT GIDA,False
-TAVHL,TAV HAVALIMANLARI,False
-TBORG,T.TUBORG,False
-TCELL,TURKCELL,False
-TCKRC,KIRAC GALVANIZ,False
-TDGYO,TREND GMYO,False
-TEHOL,TERA YATIRIM TEK. HOL.,False
-TEKTU,TEK-ART TURIZM,False
-TEZOL,EUROPAP TEZOL KAGIT,False
-TGSAS,TGS DIS TICARET,False
-THYAO,TURK HAVA YOLLARI,False
-TKFEN,TEKFEN HOLDING,False
-TKNKA,TEKNIKA PLASTIK,True
-TKNSA,TEKNOSA IC VE DIS TICARET,False
-TLMAN,TRABZON LIMAN,False
-TMPOL,TEMAPOL POLIMER PLASTIK,False
-TMSN,TUMOSAN MOTOR VE TRAKTOR,False
-TNZTP,TAPDI TINAZTEPE,False
-TOASO,TOFAS OTO. FAB.,False
-TRALT,TURK ALTIN ISLETMELERI,False
-TRCAS,TURCAS HOLDING,False
-TRENJ,TR DOGAL ENERJI,False
-TRGYO,TORUNLAR GMYO,False
-TRMET,TR ANADOLU METAL MADENCILIK,False
-TSGYO,TSKB GMYO,False
-TSKB,T.S.K.B.,False
-TSPOR,TRABZONSPOR SPORTIF,False
-TTKOM,TURK TELEKOM,False
-TTRAK,TURK TRAKTOR,False
-TUCLK,TUGCELIK,False
-TUKAS,TUKAS,False
-TUPRS,TUPRAS,False
-TUREX,TUREKS TURIZM TASIMACILIK,False
-TURGG,TURKER PROJE GAYRIMENKUL,False
-TURSG,TURKIYE SIGORTA,False
-UCAYM,UCAY MUHENDISLIK,True
-UFUK,UFUK YATIRIM,False
-ULAS,ULASLAR TURIZM YAT.,False
-ULKER,ULKER BISKUVI,False
-ULUFA,ULUSAL FAKTORING,False
-ULUSE,ULUSOY ELEKTRIK,False
-ULUUN,ULUSOY UN SANAYI,False
-UNLU,UNLU YATIRIM HOLDING,False
-USHOL,US YATIRIM HOLDING,False
-VAKBN,VAKIFLAR BANKASI,False
-VAKFA,VAKIF FAKTORING,True
-VAKFN,VAKIF FIN. KIR.,False
-VAKKO,VAKKO TEKSTIL,False
-VANGD,VANET GIDA,False
-VBTYZ,VBT YAZILIM,False
-VERTU,VERUSATURK GIRISIM,False
-VERUS,VERUSA HOLDING,False
-VESBE,VESTEL BEYAZ ESYA,False
-VESTL,VESTEL,False
-VEYAS,TURKER VANGOLU ENERJI,True
-VKGYO,VAKIF GMYO,False
-VKING,VIKING KAGIT,False
-VRGYO,VERA KONSEPT GMYO,False
-VSNMD,VISNE MADENCILIK,True
-YAPRK,YAPRAK SUT VE BESI CIFT.,False
-YATAS,YATAS,False
-YAYLA,YAYLA EN. UR. TUR. VE INS,False
-YEOTK,YEO TEKNOLOJI ENERJI,False
-YESIL,YESIL YATIRIM HOLDING,False
-YGGYO,YENI GIMAT GMYO,False
-YIGIT,YIGIT AKU,False
-YKBNK,YAPI VE KREDI BANK.,False
-YKSLN,YUKSELEN CELIK,False
-YUNSA,YUNSA,False
-YYLGD,YAYLA GIDA,False
-ZEDUR,ZEDUR ENERJI,False
-ZERGY,ZERAY GMYO,True
-ZGYO,Z GMYO,True
-ZOREN,ZORLU ENERJI,False
-ZRGYO,ZIRAAT GMYO,False
+Kod,Ad,Sektör,PD mn,Halka açıklık %,XHARZ
+A1CAP,A1 Capital,Aracı Kurumlar,1633.5,27.5,False
+A1YEN,Kartal Yenilenebili Enerji,Elektrik Üretim,762.0,74.8,False
+AAGYO,Ağaoğlu GYO,GYO,4893.0,23.2,True
+ACSEL,Acıselsan Acıpayam Selüloz,Kimyasal Ürün,786.4,48.3,False
+ADEL,Adel Kalemcilik,Kırtasiye,4885.7,27.6,False
+ADESE,Adese AVM,GYO,2368.8,92.3,False
+ADGYO,Adra GYO,GYO,23602.7,6.8,False
+AEFES,Anadolu Efes,Meşrubat / İçecek,86565.8,32.1,False
+AFYON,Afyon Çimento,Çimento,4352.0,48.6,False
+AGESA,Agesa Hayat ve Emeklilik,Sigorta,36702.0,18.3,False
+AGHOL,Anadolu Grubu Holding,Holdingler,57328.0,29.6,False
+AGROT,Agrotech Yüksek Teknoloji,Diğer,2520.0,46.5,False
+AGYO,Atakule GYO,GYO,1437.8,18.3,False
+AHGAZ,Ahlatçı Doğalgaz,Elektrik - Doğalgaz Dağıtım,109720.0,11.1,False
+AHSGY,Ahes GYO,GYO,4870.1,11.8,False
+AKBNK,Akbank,Bankacılık,315380.0,52.9,False
+AKCNS,Akçansa,Çimento,31703.6,4.8,False
+AKENR,Akenerji,Elektrik Üretim,5264.6,25.1,False
+AKFGY,Akfen GYO,GYO,8112.0,38.8,False
+AKFIS,Akfen İnşaat,İnşaat- Taahhüt,62257.9,10.0,True
+AKFYE,Akfen Yenilenebilir Enerji,Elektrik Üretim,18385.3,22.5,False
+AKGRT,Aksigorta,Sigorta,6770.4,28.0,False
+AKHAN,Akhan Un,Gıda,6341.7,19.0,True
+AKMGY,Akmerkez GYO,GYO,6744.8,9.1,False
+AKSA,Aksa,Endüstriyel Tekstil,43201.2,29.4,False
+AKSEN,Aksa Enerji,Elektrik Üretim,71372.9,19.1,False
+AKSGY,Akis GYO,GYO,19972.1,49.3,False
+AKSUE,Aksu Enerji,Elektrik Üretim,799.9,80.3,False
+AKYHO,Akdeniz Yatırım Holding,Holdingler,367.3,75.6,False
+ALARK,Alarko Holding,Holdingler,41408.1,33.2,False
+ALBRK,Albaraka Türk,Bankacılık,19700.0,38.9,False
+ALBTN,Albayrak Hazır Beton,Çimento,4900.0,24.2,True
+ALCAR,Alarko Carrier,Dayanıklı Tüketim,5918.4,15.9,False
+ALCTL,Alcatel Teletaş,İletişim Cihazları,2356.9,34.4,False
+ALFAS,Alfa Solar,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,7919.4,22.4,False
+ALGYO,Alarko GYO,GYO,5193.2,43.4,False
+ALKA,Alkim Kağıt,Kağıt Ürünleri,3101.7,19.0,False
+ALKIM,Alkim,Kimyasal Ürün,2988.0,45.9,False
+ALKLC,Altınkılıç Gıda,Gıda,3725.1,36.8,False
+ALTNY,Altınay Savunma,Savunma,9650.0,36.6,False
+ALVES,Alves Kablo,Kablo,736.0,84.9,False
+ANELE,Anel Elektrik,İnşaat Malzemeleri,2475.1,20.8,False
+ANGEN,Anatolia Biyoteknoloji,Sağlık ve İlaç,1199.0,36.4,False
+ANHYT,Anadolu Hayat Emeklilik A.Ş.,Sigorta,35754.5,15.0,False
+ANSGR,Anadolu Sigorta,Sigorta,42120.0,34.7,False
+ARASE,Doğu Aras Enerji,Elektrik - Doğalgaz Dağıtım,13137.5,17.2,False
+ARCLK,Arçelik,Dayanıklı Tüketim,40543.7,17.5,False
+ARDYZ,ARD Grup Bilişim,Teknoloji,14141.4,37.5,False
+ARENA,Arena Bilgisayar,Bilgisayar Toptancılığı,1005.0,50.3,False
+ARFYE,Arf Bio Enerji,Elektrik Üretim,2011.2,25.6,True
+ARMGD,Armada Gıda,Gıda,20973.3,11.7,True
+ARSAN,Arsan Holding,Tekstil Entegre,4986.5,27.1,False
+ARTMS,Artemis Halı,Tekstil Entegre,1484.0,28.3,False
+ARZUM,Arzum Ev Aletleri,Dayanıklı Tüketim,516.0,66.4,False
+ASELS,Aselsan,Savunma,1430700.0,25.8,False
+ASGYO,Asce GYO,GYO,5601.5,20.8,False
+ASTOR,Astor Enerji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,152095.2,42.5,False
+ASUZU,Anadolu Isuzu,Otomotiv,9172.8,14.5,False
+ATAGY,Ata GYO,GYO,314.9,50.8,False
+ATAKP,Atakey Patates,Gıda,4593.2,18.3,False
+ATATP,ATP Bilgisayar,Teknoloji,15937.5,19.0,False
+ATATR,Ata Turizm,Turizm,3299.7,34.3,True
+ATEKS,Akın Tekstil,Tekstil Entegre,1570.0,21.4,False
+ATLAS,Atlas YO,Yatırım Ortaklıkları,256.8,98.1,False
+ATSYH,Atlantis YO,Holdingler,520.0,97.6,False
+AVGYO,Avrasya YO,GYO,1752.1,61.1,False
+AVHOL,Avrupa Yatırım Holding,Holdingler,905.2,66.8,False
+AVOD,Avod Kurutulmuş Gıda,Gıda,477.9,93.8,False
+AVPGY,Avrupakent GYO,GYO,17600.0,19.9,False
+AVTUR,Avrasya Petrol&Turistik Tesis,Turizm,359.1,69.5,False
+AYCES,Altınyunus Çesme,Turizm,7162.5,9.2,False
+AYDEM,Aydem Enerji,Elektrik Üretim,13733.4,16.6,False
+AYEN,Ayen Enerji,Elektrik Üretim,5994.0,15.8,False
+AYES,Ayes Çelik Hasır & Çit,İnşaat Malzemeleri,3180.0,45.3,False
+AYGAZ,Aygaz,Petrol,52972.0,23.6,False
+AZTEK,Aztek Teknoloji,Teknoloji,1990.0,24.2,False
+BAGFS,Bandırma Gübre Fabrikaları A.Ş,Tarım Kimyasalları,1884.6,61.2,False
+BAHKM,Bahadır Kimya,Kimyasal Ürün,9669.0,25.6,False
+BAKAB,Bak Ambalaj,Kağıt Ürünleri,1903.7,16.0,False
+BALAT,Balatacılar Balatacılık,Otomotiv Parçası,680.9,95.8,False
+BALSU,Balsu Gıda,Gıda,6894.4,48.4,True
+BANVT,Banvit,Hayvancılık,9802.3,8.3,False
+BARMA,Barem Ambalaj,Kağıt Ürünleri,1165.5,35.5,False
+BASCM,Baştaş Başkent Çimento Sanayi,Çimento,6230.4,7.5,False
+BASGZ,Başkent Doğalgaz,Elektrik - Doğalgaz Dağıtım,23240.0,25.0,False
+BAYRK,Bayrak EBT Taban,Tekstil Entegre,635.0,72.7,False
+BEGYO,Batı Ege GYO,GYO,2053.8,30.2,False
+BERA,Bera Holding,Holdingler,6292.3,67.1,False
+BESLR,Besler Gıda,Gıda,5871.9,23.6,False
+BESTE,Best Brands Grup,Elektrik Üretim,3026.3,29.0,True
+BETAE,Beta Enerji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,16702.2,13.4,True
+BEYAZ,Beyaz Filo,Ulaştırma-Lojistik,1264.0,24.5,False
+BFREN,Bosch Fren,Otomotiv Parçası,11247.6,15.5,False
+BIENY,Bien Yapı,Seramik,4165.9,22.4,False
+BIGCH,BigChefs,Gıda,1139.6,48.7,False
+BIGEN,Birleşim Grup Enerji,Elektrik Üretim,6733.6,23.4,True
+BIGTK,Big Medya,Medya,1472.8,31.0,False
+BIMAS,Bim Birleşik Mağazalar A.Ş,Perakande - Ticaret,431700.0,67.5,False
+BINBN,BinBin,Ulaştırma-Lojistik,3823.7,10.9,False
+BINHO,1000 Yatırımlar,Holdingler,4373.6,37.2,False
+BIOEN,Biotrend Enerji,Elektrik Üretim,7090.0,48.9,False
+BIZIM,Bizim Toptan,Perakande - Ticaret,1061.5,30.8,False
+BJKAS,Beşiktaş,Spor,4888.3,39.8,False
+BKRGY,Bakırcı GYO,GYO,2458.2,21.1,True
+BLCYT,Bilici Yatırım,Tekstil Entegre,1360.0,31.4,False
+BLUME,Blume Metal Kimya,Turizm,5363.6,52.0,False
+BMSCH,BMS Çelik Hasır,Demir-Çelik Döküm,789.0,59.4,False
+BMSTL,BMS Birleşik Metal,Demir-Çelik Döküm,9420.0,50.5,False
+BNTAS,Bantaş Bandırma Ambalaj,Kimyasal Ürün,1161.0,58.5,False
+BOBET,Boğaziçi Beton,Çimento,5449.2,23.7,False
+BORLS,Borlease Otomotiv,Ulaştırma-Lojistik,1064.0,54.0,False
+BORSK,Bor Şeker,Gıda,4598.4,28.1,False
+BOSSA,Bossa,Tekstil Entegre,6149.0,8.2,False
+BRISA,Brisa,Otomotiv Lastiği,21358.2,9.8,False
+BRKO,Birko Mensucat,Tekstil Entegre,877.8,84.9,False
+BRKSN,Berkosan Yalıtım,İnşaat Malzemeleri,480.2,66.7,False
+BRKVY,Birikim Varlık,Varlık Yönetim,1785.3,24.3,False
+BRLSM,Birlesim Mühendislik,İnşaat Malzemeleri,1702.4,48.2,False
+BRMEN,Birlik Mensucat,Tekstil Entegre,500.7,77.3,False
+BRSAN,Borusan Birleşik Boru Fab.,Demir-Çelik Temel,90308.5,20.9,False
+BRYAT,Borusan Yatırım,Holdingler,31190.6,11.3,False
+BSOKE,Batıçim Çimento,Çimento,10336.0,24.7,False
+BTCIM,Batıçim,Çimento,9095.4,60.7,False
+BUCIM,Bursa Çimento,Çimento,6000.0,49.5,False
+BULGS,Bulls GSYO,Yatırım Ortaklıkları,1441.8,25.6,True
+BURCE,Burçelik,Demir-Çelik Döküm,1264.4,50.4,False
+BURVA,Burçelik Vana Sanayii,İnşaat Malzemeleri,1506.3,37.5,False
+BVSAN,Bülbüloğlu Vinç,İnşaat Malzemeleri,2004.1,35.9,False
+BYDNR,Baydöner,Gıda,1261.7,20.0,False
+CANTE,Çan2 Termik A.S,Elektrik Üretim,8800.0,69.4,False
+CASA,Casa Emtia Petrol Kim.Tür.AŞ,Perakande - Ticaret,180.9,99.3,False
+CATES,Çates Elektrik,Elektrik Üretim,5121.2,19.3,False
+CCOLA,Coca-Cola İçecek A.Ş,Meşrubat / İçecek,205938.6,29.3,False
+CELHA,Çelik Halat,Demir-Çelik Temel,12474.8,16.6,False
+CEMAS,Çemaş Döküm,Demir-Çelik Döküm,1487.1,81.4,False
+CEMTS,Çemtas,Demir-Çelik Temel,2750.0,40.4,False
+CEMZY,Cem Zeytin,Gıda,14536.0,8.7,False
+CEOEM,CEO Event Medya,Medya,716.8,50.5,False
+CGCAM,Çağdaş Cam,Cam,3087.8,25.4,True
+CIMSA,Çimsa,Çimento,35138.2,36.1,False
+CITAS,Çitlekçi Gıda,Gıda,18180.0,7.9,True
+CLEBI,Çelebi,Havayolları ve Hizm.,29646.0,9.5,False
+CMBTN,Çimbeton,Çimento,1598.3,48.1,False
+CMENT,Çimentaş,Çimento,19382.5,2.6,False
+CONSE,Consus Enerji,Elektrik Üretim,971.5,48.7,False
+COSMO,Cosmos Yatırım Holding,Holdingler,480.4,65.6,False
+CRDFA,Creditwest Faktoring,Fin.Kiralama ve Faktoring,2103.0,52.0,False
+CRFSA,Carrefoursa,Perakande - Ticaret,18143.9,10.7,False
+CUSAN,Çuhadaroğlu Metal,Demir-Çelik Döküm,1192.0,25.4,False
+CVKMD,Cvk Maden,Madencilik,40899.6,28.2,False
+CWENE,Cw Enerji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,19193.6,38.2,False
+DAGI,Dagi Giyim,Tekstil Entegre,1996.0,29.4,False
+DAPGM,Dap Gayrimenkul,GYO,6227.5,31.1,False
+DARDL,Dardanel,Gıda,1992.7,31.3,False
+DCTTR,Dct Trading,Diğer,1240.2,36.8,False
+DENGE,Denge Holding,Holdingler,768.0,87.5,False
+DERHL,Derlüks Yatırım Holding,Deri Giyim,1048.5,58.4,False
+DERIM,Derimod,Deri Giyim,1062.2,27.0,False
+DESA,Desa Deri Sanayii,Deri Giyim,3400.6,16.2,False
+DESPC,Despec Bilgisayar,Bilgisayar Toptancılığı,457.7,49.9,False
+DEVA,Deva Holding,Sağlık ve İlaç,13611.3,17.4,False
+DGATE,Datagate,Bilgisayar Toptancılığı,1119.6,39.7,False
+DGGYO,Doğuş GYO,GYO,7158.1,5.6,False
+DGNMO,Doğanlar Mobilya,Mobilya,2184.0,36.2,False
+DIRIT,Diriteks Diriliş Tekstil,Tekstil Entegre,165.8,95.2,False
+DITAS,Ditaş BDY,Otomotiv Parçası,1026.8,31.2,False
+DMRGD,DMR Unlu Mamüller,Gıda,10569.5,58.5,False
+DMSAS,Demisaş,Demir-Çelik Döküm,1102.0,51.2,False
+DNISI,Dinamik Isı Yalıtım,İnşaat Malzemeleri,1903.2,44.3,False
+DOAS,Doğuş Otomotiv,Otomotiv,24332.0,39.4,False
+DOCO,DO & CO Aktiengesellschaft,Ulaştırma-Lojistik,135124.0,71.3,False
+DOFER,Dofer Yapı,Demir-Çelik Temel,976.2,34.1,False
+DOFRB,Dof Robotik,Teknoloji,7467.9,28.4,True
+DOGUB,Doğusan,İnşaat Malzemeleri,1778.4,43.8,False
+DOHOL,Doğan Holding,Holdingler,38967.1,34.0,False
+DOKTA,Döktaş Dökümcülük,Otomotiv Parçası,4438.8,9.7,False
+DSTKF,Destek Finans Faktoring,Fin.Kiralama ve Faktoring,32766.7,14.1,True
+DUNYH,Dünya Holding,Gıda,495.9,62.6,False
+DURDO,Duran Doğan Basım,Kağıt Ürünleri,2740.0,27.6,False
+DURKN,Durukan Şekerleme,Gıda,927.5,31.5,False
+DYOBY,DYO Boya,Boya,2226.0,25.3,False
+DZGYO,Deniz GYO,GYO,2712.0,26.9,False
+EBEBK,Ebebek,Perakande - Ticaret,10312.0,27.8,False
+ECILC,Eczacıbaşı İlaç,Sağlık ve İlaç,30137.7,18.8,False
+ECOGR,Ecogreen,Elektrik Üretim,9061.2,13.8,True
+ECZYT,Eczacıbaşı Yatırım,Holdingler,14479.5,16.7,False
+EDATA,E-Data Teknoloji,Teknoloji,1258.8,29.9,False
+EDIP,Edip Gayrimenkul Yat. San.,GYO,1365.0,47.8,False
+EFOR,Efor Yat. San.,Gıda,24502.5,26.3,False
+EGEEN,Ege Endüstri,Otomotiv Parçası,13245.8,35.9,False
+EGEGY,Egeyapı GYO,GYO,3580.0,29.0,True
+EGEPO,Egepol Hastanesi,Sağlık ve İlaç,1940.0,21.9,False
+EGGUB,Ege Gübre,Tarım Kimyasalları,9100.0,45.4,False
+EGPRO,Ege Profil,İnşaat Malzemeleri,17298.3,13.1,False
+EGSER,Ege Seramik,Seramik,1288.8,34.3,False
+EKDMR,Ekinciler,Demir-Çelik Temel,6547.2,12.7,True
+EKGYO,Emlak Konut GYO,GYO,61940.0,48.1,False
+EKIM,Ekim Turizm,Ulaştırma-Lojistik,12138.9,12.7,True
+EKIZ,Ekiz Yağ ve Sabun,Gıda,312.5,63.7,False
+EKOS,Ekos Teknoloji,Endüstriyel Makine -Teçhizat Üretim,2475.2,27.3,False
+EKSUN,Eksun Gıda,Gıda,2340.0,23.5,False
+ELITE,Elite Organik Gıda,Gıda,2042.5,31.3,False
+EMKEL,Emek Elektrik,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,792.0,77.4,False
+EMNIS,Eminiş Ambalaj,Boya,841.3,29.7,False
+EMPAE,Empa Elektronik,Teknoloji,5310.8,22.3,True
+ENDAE,Enda Enerji,Elektrik Üretim,3034.1,24.3,True
+ENERY,Enerya Enerji,Elektrik - Doğalgaz Dağıtım,125460.0,17.3,False
+ENJSA,Enerjisa Enerji,Elektrik - Doğalgaz Dağıtım,123776.0,20.0,False
+ENKAI,Enka İnşaat,İnşaat- Taahhüt,453300.0,8.0,False
+ENPRA,Enpara,Bankacılık,468322.4,0.1,False
+ENSRI,Ensari Deri,Deri Giyim,1195.7,46.0,False
+ENTRA,Ic Enterra Yenilenebilir,Elektrik Üretim,18020.9,19.8,False
+EPLAS,Egeplast,İnşaat Malzemeleri,863.5,71.6,False
+ERBOS,Erbosan,Demir-Çelik Döküm,1671.0,70.3,False
+ERCB,Erciyas Çelik Boru,Demir-Çelik Temel,2151.1,40.6,False
+EREGL,Ereğli Demir Çelik,Demir-Çelik Temel,200760.0,45.6,False
+ERSU,Ersu Gıda,Meşrubat / İçecek,575.3,64.3,False
+ESCAR,Escar Filo,Ulaştırma-Lojistik,4630.0,14.7,False
+ESCOM,Escort Teknoloji,Teknoloji,2170.9,65.7,False
+ESEN,Esenboğa Elektrik,Elektrik Üretim,3294.2,44.9,False
+ETILR,Etiler Gıda,Gıda,1341.5,53.5,False
+ETYAT,Euro Trend Yatırım,Yatırım Ortaklıkları,486.0,92.4,False
+EUHOL,Euro Yatırım,Holdingler,886.5,88.5,False
+EUKYO,Euro Kapital Yatırım Ortaklığı,Yatırım Ortaklıkları,505.2,99.2,False
+EUPWR,Europower Enerji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,19628.4,37.8,False
+EUREN,Europen Endüstri,Demir-Çelik Döküm,4620.0,48.6,False
+EUYO,Euro Menkul,Yatırım Ortaklıkları,180.0,95.2,False
+EYGYO,EYG Gayrimenkul,GYO,1204.0,35.5,False
+FADE,Fade Gıda Yatırım,Gıda,758.4,49.1,False
+FENER,Fenerbahce Futbol A.Ş.,Spor,11875.0,37.7,False
+FLAP,Flap Kongre Hiz.Oto.Tur.A.Ş,Diğer,880.0,70.6,False
+FMIZP,F-M İzmit Piston,Otomotiv Parçası,2805.4,22.2,False
+FONET,Fonet Bilgi Teknolojileri,Teknoloji,3407.0,60.4,False
+FORMT,Formet Metal ve Cam Sanayii,İnşaat Malzemeleri,969.5,88.6,False
+FORTE,Forte Bilgi İletişim,Teknoloji,5460.5,37.3,False
+FRIGO,Frigo Pak Gıda,Gıda,1972.0,82.7,False
+FRMPL,Formül Plastik,Kimyasal Ürün,2684.8,25.0,True
+FROTO,Ford Otosan,Otomotiv,234758.8,17.5,False
+FZLGY,Fuzul Gayrimenkul,GYO,8125.0,14.1,False
+GARAN,Garanti Bankası,Bankacılık,579180.0,13.5,False
+GARFA,Garanti BBVA Faktoring,Fin.Kiralama ve Faktoring,7997.7,8.4,False
+GATEG,Gate Group,Medya,942.4,67.9,False
+GEDIK,Gedik Yatırım,Aracı Kurumlar,8980.0,5.2,False
+GEDZA,Gediz Ambalaj Sanayi,Kimyasal Ürün,787.6,51.8,False
+GENIL,Gen İlaç,Sağlık ve İlaç,20430.0,22.6,False
+GENKM,Gentaş Kimya,Kimyasal Ürün,3392.1,19.5,True
+GENTS,Gentaş,Mobilya,2100.0,71.4,False
+GEREL,Gersan Elektrik,Kablo,7911.4,50.8,False
+GESAN,Girişim Elektrik,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,13671.2,36.4,False
+GIPTA,Gıpta,Kırtasiye,3041.3,42.1,False
+GLBMD,Global Menkul Değerler,Aracı Kurumlar,699.7,24.3,False
+GLCVY,Gelecek Varlık Yön.,Varlık Yönetim,4350.3,18.8,False
+GLRMK,Gülermak Ağır Sanayi,İnşaat- Taahhüt,36453.8,24.9,True
+GLRYH,Güler Yatırım Holding,Holdingler,660.0,70.7,False
+GLYHO,Global Yatırım Holding,Holdingler,28392.0,58.7,False
+GMTAS,Gimat Mağazacılık,Perakande - Ticaret,13650.0,74.8,False
+GOKNR,Göknur Gıda,Gıda,3822.0,46.3,False
+GOLDA,Golda Gıda,Gıda,1302.5,33.1,True
+GOLTS,Göltaş Çimento,Çimento,3754.8,67.6,False
+GOODY,Goodyear,Otomotiv Lastiği,2523.2,25.2,False
+GOZDE,Gözde Girisim Sermayesi,Yatırım Ortaklıkları,5486.3,23.0,False
+GRNYO,Garanti YO,Yatırım Ortaklıkları,256.9,85.2,False
+GRSEL,Gürsel Taşımacılık,Ulaştırma-Lojistik,23766.0,22.2,False
+GRTHO,GrainTurk Tarım,Perakande - Ticaret,6875.0,25.1,False
+GSDDE,GSD Denizcilik Gayrimenkul İnş,Ulaştırma-Lojistik,1383.0,28.8,False
+GSDHO,GSD Holding A.Ş.,Holdingler,3730.0,49.1,False
+GSRAY,Galatasaray Sportif A.Ş,Spor,9045.0,39.0,False
+GUBRF,Gübre Fabrikaları,Tarım Kimyasalları,89178.0,19.6,False
+GUNDG,Gündoğdu Gıda,Gıda,5896.8,15.3,False
+GWIND,Galata Wind Enerji,Elektrik Üretim,9239.4,29.6,False
+GZNMI,Gezinomi Seyahat,Turizm,1082.9,43.6,False
+HALKB,Halkbank,Bankacılık,266842.7,5.8,False
+HATEK,Hateks Hatay Tekstil,Tekstil Entegre,359.7,71.3,False
+HATSN,Hat-San,Ulaştırma-Lojistik,4766.7,19.6,False
+HDFGS,Hedef Girişim Sermayesi,Yatırım Ortaklıkları,1152.6,78.6,False
+HEDEF,Hedef Holding,Holdingler,13380.0,17.8,False
+HEKTS,Hektaş,Tarım Kimyasalları,13058.9,48.7,False
+HKTM,Hidropar,Endüstriyel Makine -Teçhizat Üretim,1253.7,72.3,False
+HLGYO,Halk GYO,GYO,12403.2,18.4,False
+HOROZ,Horoz Lojistik,Ulaştırma-Lojistik,3029.5,19.4,False
+HRKET,Hareket Proje,Endüstriyel Makine -Teçhizat Üretim,11789.6,27.1,False
+HTTBT,Hitit Bilgisayar,Teknoloji,8700.0,27.6,False
+HUBVC,Hub Girişim Ser. Y.O.,Yatırım Ortaklıkları,576.8,82.7,False
+HUNER,Hun Enerji,Elektrik Üretim,3370.0,69.2,False
+HURGZ,Hürriyet,Medya,1935.8,18.0,False
+ICBCT,ICBC Turkey Bank,Bankacılık,9649.2,7.1,False
+ICUGS,Icu Girişim Ser. Y.O.,Yatırım Ortaklıkları,382.3,93.9,False
+IDGYO,İdealist GYO,GYO,511.5,78.1,False
+IEYHO,Işıklar Enerji ve Yapı Holding,Holdingler,6213.3,28.7,False
+IHAAS,İhlas Haber Ajansı,Medya,1599.0,28.3,False
+IHEVA,İhlas Ev Aletleri,Dayanıklı Tüketim,560.8,72.2,False
+IHGZT,İhlas Gazetecilik,Medya,632.0,58.6,False
+IHLAS,İhlas Holding,Holdingler,2220.0,83.7,False
+IHLGM,İhlas Gayrimenkul,GYO,1440.0,73.6,False
+IHYAY,İhlas Yayın Holding,Medya,387.0,72.7,False
+IMASM,İmaş Makine,Endüstriyel Makine -Teçhizat Üretim,1147.0,70.2,False
+INDES,İndeks Bilgisayar,Bilgisayar Toptancılığı,5887.5,55.7,False
+INFO,İnfo Yatırım,Aracı Kurumlar,1402.1,56.2,False
+INGRM,İngram Bilişim,Bilgisayar Toptancılığı,4485.6,8.4,False
+INTEK,Innosa Teknoloji,Teknoloji,1055.2,24.8,False
+INTEM,İntema,İnşaat Malzemeleri,2822.7,12.7,False
+INTET,Intetra Teknoloji,Teknoloji,5552.0,20.4,True
+INVEO,İnveo Yatırım Holding,Holdingler,3540.0,15.8,False
+INVES,Investco Holding,Holdingler,120937.5,18.3,False
+ISATR,İş Bankası (A),Bankacılık,4950.0,23.5,False
+ISBIR,İşbir Holding,Holdingler,1531.9,42.2,False
+ISBTR,İş Bankası (B),Bankacılık,10793.4,25.5,False
+ISCTR,İş Bankası (C),Bankacılık,295499.6,30.5,False
+ISDMR,İskenderun Demir Çelik,Demir-Çelik Temel,130732.0,5.0,False
+ISFIN,İş Finansal Kiralama,Fin.Kiralama ve Faktoring,9650.8,39.0,False
+ISGSY,İş Girişim,Yatırım Ortaklıkları,5230.0,36.7,False
+ISGYO,İş GYO,GYO,17142.5,37.7,False
+ISKPL,Işıklar Plastik,Kimyasal Ürün,4305.0,33.3,False
+ISKUR,İş Bankası Kurucu,Bankacılık,0.0,28.0,False
+ISMEN,İş Yatırım,Aracı Kurumlar,37410.0,29.2,False
+ISSEN,İşbir Sentetik,Tekstil Entegre,1892.8,19.4,False
+ISVEA,İsvea Seramik,Seramik,5468.4,22.7,True
+ISYAT,İs YO,Yatırım Ortaklıkları,867.2,63.1,False
+IZENR,İzdemir Enerji,Elektrik Üretim,8504.3,22.7,False
+IZFAS,İzmir Fırça,Boya,1880.0,55.0,False
+IZINV,İz Yatırım Holding,Gıda,418.5,69.9,False
+IZMDC,İzmir Demir Çelik,Demir-Çelik Temel,8700.0,19.5,False
+JANTS,Jantsa Jant,Otomotiv Parçası,7035.0,16.9,False
+KAPLM,Kaplamin,Kağıt Ürünleri,2012.0,26.3,False
+KARCL,Kardemir Çelik Sanayi,Demir-Çelik Temel,37848.0,13.4,True
+KAREL,Karel Elektronik,İletişim Cihazları,2909.2,38.2,False
+KARSN,Karsan Otomotiv,Otomotiv,6111.0,38.8,False
+KARTN,Kartonsan,Kağıt Ürünleri,6045.0,31.2,False
+KATMR,Katmerciler Araç Üstü Ekipman,Otomotiv Parçası,2627.0,79.6,False
+KAYSE,Kayseri Şeker,Gıda,6150.0,23.5,False
+KBORU,Kuzey Boru,İnşaat Malzemeleri,6090.0,21.0,False
+KCAER,Kocaer Çelik Sanayi,Demir-Çelik Temel,18728.7,25.8,False
+KCHOL,Koç Holding,Holdingler,463055.0,26.2,False
+KENT,Kent Gıda,Gıda,74844.0,0.5,False
+KERVN,Kervansaray Yat. Holding,Holdingler,3678.2,36.6,False
+KFEIN,Kafein Yazılım,Teknoloji,898.6,71.3,False
+KGYO,Koray GYO,GYO,6770.0,27.8,False
+KIMMR,Ersan Alışveriş Hizmetleri,Perakande - Ticaret,2424.0,24.3,False
+KLGYO,Kiler GYO,GYO,4491.9,39.0,False
+KLKIM,Kalekim Kimyevi Maddeler,Seramik,8197.2,25.3,False
+KLMSN,Klimasan,Dayanıklı Tüketim,1286.2,32.6,False
+KLNMA,T. Kalkınma Bankası,Bankacılık,65600.0,0.9,False
+KLRHO,Kiler Holding,Holdingler,29250.0,12.0,False
+KLSER,Kaleseramik,Seramik,7119.4,21.3,False
+KLSYN,Koleksiyon Mobilya,Mobilya,5643.0,21.0,False
+KLYPV,Kalyon Güneş Teknolojileri,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,21734.1,6.5,True
+KMPUR,Kimteks Poliüretan,Kimyasal Ürün,4871.7,24.2,False
+KNFRT,Konfrut Gıda,Meşrubat / İçecek,1610.4,22.0,False
+KOCMT,Koç Metalurji,Demir-Çelik Temel,5325.0,21.9,False
+KONKA,Konya Kağıt,Kağıt Ürünleri,2394.6,17.3,False
+KONTR,Kontrolmatik Teknoloji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,2977.0,88.0,False
+KONYA,Konya Çimento,Çimento,13414.1,16.6,False
+KOPOL,Koza Polyester,Endüstriyel Tekstil,3475.9,21.5,False
+KORDS,Kordsa Teknik Tekstil,Endüstriyel Tekstil,7909.1,27.6,False
+KOTON,Koton,Tekstil Entegre,6255.6,13.1,False
+KPEKS,Kapeks Kimya,Kimyasal Ürün,5459.4,17.5,True
+KRDMA,Kardemir (A),Demir-Çelik Temel,7089.0,98.1,False
+KRDMB,Kardemir (B),Demir-Çelik Temel,4676.1,91.6,False
+KRDMD,Kardemir (D),Demir-Çelik Temel,26761.8,91.7,False
+KRGYO,Korfez GYO,GYO,3227.4,25.8,False
+KRONT,Kron Teknoloji,Teknoloji,2540.9,65.2,False
+KRPLS,Koroplast Temizlik Ambalaj,Kağıt Ürünleri,1772.2,43.1,False
+KRSTL,Kristal Kola,Meşrubat / İçecek,1006.1,82.6,False
+KRTEK,Karsu Tekstil,Tekstil Entegre,575.4,50.3,False
+KRVGD,Kervan Gıda,Gıda,3520.8,24.4,False
+KSTUR,Kuştur Turizm,Turizm,5314.2,12.0,False
+KTLEV,Katılımevim,Diğer,46410.0,29.8,False
+KTSKR,Kütahya Şeker,Gıda,2159.2,31.8,False
+KUTPO,Kütahya Porselen,Seramik,2025.8,25.5,False
+KUVVA,Kuvva Gıda,Gıda,1645.2,82.4,False
+KUYAS,Kuyas Yatırım AŞ,İnşaat- Taahhüt,3908.0,76.0,False
+KZBGY,Kızılbük GYO,GYO,4160.0,34.8,False
+KZGYO,Kuzugrup GYO,GYO,2964.0,22.8,False
+LIDER,Lider Turizm,Ulaştırma-Lojistik,5082.0,15.8,False
+LIDFA,Lider Faktoring,Fin.Kiralama ve Faktoring,2475.0,41.1,False
+LILAK,Lila Kağıt,Kağıt Ürünleri,10325.0,17.0,False
+LINK,Link Bilgisayar,Teknoloji,2184.8,58.9,False
+LKMNH,Lokman Hekim Engurusag,Sağlık ve İlaç,1989.4,59.7,False
+LMKDC,Limak Doğu Anadolu Çimento,Çimento,10153.3,26.2,False
+LOGO,Logo Yazılım,Teknoloji,10668.5,61.1,False
+LRSHO,Loras Holding,Holdingler,1075.2,82.9,False
+LUKSK,Lüks Kadife,Tekstil Entegre,1354.1,17.0,False
+LXGYO,Luxera GYO,GYO,1613.7,31.1,True
+LYDHO,Lydia Holding,Holdingler,6349.9,10.2,False
+LYDYE,Lydia Yeşil Enerji,Gıda,4631.2,19.1,False
+MAALT,Marmaris Altınyunus,Turizm,5845.0,18.9,False
+MACKO,Maçkolik,Eğlence Hizmetleri,2002.0,29.7,False
+MAGEN,Margün Enerji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,12183.5,12.0,False
+MAKIM,Makim Makina,Endüstriyel Makine -Teçhizat Üretim,1198.4,34.7,False
+MAKTK,Makina Takım,İnşaat Malzemeleri,1006.0,52.3,False
+MANAS,Manas Enerji Yönetimi,Teknoloji,1383.8,63.6,False
+MARBL,Tureks Turunç,Madencilik,1835.7,26.8,False
+MARMR,Marmara Holding,Kimyasal Ürün,3257.6,28.9,False
+MARTI,Martı Otel İşletmeleri,Turizm,1500.0,71.0,False
+MASFN,Masfen Enerji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,15373.5,11.2,True
+MAVI,Mavi Giyim Sanayi Tic.A.S,Tekstil Entegre,25186.0,69.4,False
+MCARD,MetropolCard,Teknoloji,9584.1,16.3,True
+MEDTR,Meditera Tıbbi Malzeme,Sağlık ve İlaç,2027.8,20.2,False
+MEGAP,Mega Polietilen Köpük,Tekstil Entegre,244.8,84.5,False
+MEGMT,Mega Metal,İnşaat Malzemeleri,8471.5,31.2,False
+MEKAG,Meka Beton,İnşaat Malzemeleri,1088.0,37.0,False
+MEPET,MEPET Metro,Petrol,1143.1,46.7,False
+MERCN,Mercan Kimya,Kimyasal Ürün,1661.9,35.6,False
+MERIT,Merit Turizm Yatırım,Turizm,3527.6,26.4,False
+MERKO,Merko Gıda,Gıda,722.5,81.4,False
+METEN,Metgün Enerji,Elektrik Üretim,12738.1,13.3,True
+METRO,Metro Tic. Mali Yat.,Holdingler,4833.0,56.5,False
+MEYSU,Meysu Gıda,Gıda,5646.3,18.3,True
+MGROS,Migros,Perakande - Ticaret,72557.5,49.0,False
+MHRGY,Mhr GYO,GYO,3219.1,16.2,False
+MIATK,Mia Teknoloji,Teknoloji,21742.8,30.5,False
+MMCAS,MMC San.ve Tic. Yatırımlar A.Ş,Holdingler,170.7,84.5,False
+MNDRS,Menderes Tekstil,Tekstil Entegre,2345.9,45.9,False
+MNDTR,Mondi Tire,Kağıt Ürünleri,3010.7,15.3,False
+MOBTL,Mobitel İletişim,İletişim,8476.8,18.9,False
+MOGAN,Mogan Enerji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,19228.1,9.4,False
+MOPAS,Mopaş,Perakande - Ticaret,3644.6,19.8,True
+MPARK,MLP Sağlık Hizmetleri,Sağlık ve İlaç,79747.6,39.5,False
+MRGYO,Martı GYO,GYO,2376.2,70.5,False
+MRSHL,Marshall,Boya,11203.0,6.4,False
+MSGYO,Mistral GYO,GYO,1841.5,27.8,False
+MTRKS,Matriks Finansal Teknolojiler,Teknoloji,1134.6,40.5,False
+MTRYO,Metro YO,Yatırım Ortaklıkları,264.2,92.6,False
+MZHLD,Mazhar Zorlu Holding,İnşaat Malzemeleri,374.5,66.4,False
+NATEN,Naturel Yenilenebilir Enerji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,2178.0,45.0,False
+NETAS,Netaş,İletişim Cihazları,2972.1,32.8,False
+NETCD,Netcad Yazılım,Teknoloji,11199.8,28.3,True
+NETGL,Net Global,Kimyasal Ürün,4140.6,21.7,True
+NIBAS,Niğde Beton Sanayi,Çimento,657.7,82.4,False
+NTGAZ,Naturel Gaz,Petrol,5464.8,38.2,False
+NTHOL,Net Holding,Holdingler,16150.0,18.0,False
+NUGYO,Nurol GYO,GYO,2065.7,50.1,False
+NUHCM,Nuh Çimento,Çimento,24094.3,17.2,False
+OBAMS,Oba Makarnacılık,Gıda,8946.0,25.6,False
+OBASE,Obase Bilgisayar Danışmanlık,Teknoloji,744.4,34.3,False
+ODAS,Odaş Elektrik Üretim,Elektrik Üretim,5572.0,75.0,False
+ODINE,Odine Solutions,Teknoloji,6845.5,30.4,False
+OFSYM,Ofis Yem,Gıda,5864.6,14.2,False
+ONCSM,Oncosem,Sağlık ve İlaç,2151.3,42.3,False
+ONRYT,Onur Yüksek Teknoloji,Savunma,1734.1,35.4,False
+ORCAY,Ortaköy Çay Sanayi,Meşrubat / İçecek,372.0,60.7,False
+ORGE,ORGE Enerji Elektrik,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,7032.0,47.5,False
+ORMA,Orma Orman Mahsulleri,Kağıt Ürünleri,3087.2,13.3,False
+ORZAX,Orzaks İlaç,Sağlık ve İlaç,22171.8,12.8,True
+OSMEN,Osmanlı Menkul Değ.,Aracı Kurumlar,1710.0,33.2,False
+OSTIM,Ostim Endüst. Yatırımlar,Diğer,732.8,84.8,False
+OTKAR,Otokar,Otomotiv,36240.0,25.9,False
+OTTO,Otto Holding,Gıda,548.6,74.3,False
+OYAKC,Oyak Çimento,Çimento,86051.3,19.3,False
+OYAYO,Oyak Yatırım Ortaklığı,Yatırım Ortaklıkları,535.6,52.8,False
+OYLUM,Oylum Sınai Yatırımlar,Gıda,516.8,71.1,False
+OYYAT,Oyak Yatırım,Aracı Kurumlar,6708.0,6.4,False
+OZATD,Özata Denizcilik,Endüstriyel Makine -Teçhizat Üretim,7548.8,15.7,False
+OZGYO,Özderici GYO,GYO,1420.0,32.5,False
+OZKGY,Özak GYO,GYO,16423.7,17.4,False
+OZRDN,Özerden Plastik,Kimyasal Ürün,970.2,45.8,False
+OZSUB,Özsu Balık,Hayvancılık,3196.8,38.3,False
+OZYSR,Özyaşar Tel,Demir-Çelik Temel,5915.2,25.3,False
+PAGYO,Panora GYO,GYO,9335.1,39.9,False
+PAHOL,Pasifik Holding,Holdingler,14200.0,19.2,True
+PAMEL,Pamel Yenilenebilir Elekt.,Elektrik Üretim,1089.0,23.9,False
+PAPIL,Papilon Savunma,Teknoloji,1080.8,98.2,False
+PARSN,Parsan,Otomotiv Parçası,3808.3,28.2,False
+PASEU,Pasifik Eurasia,Ulaştırma-Lojistik,18950.4,10.7,False
+PATEK,Pasifik Teknoloji,Teknoloji,5332.0,42.5,False
+PCILT,PC İletişim ve Medya,Medya,3060.5,29.3,False
+PEKGY,Peker GYO,GYO,9850.0,49.2,False
+PENGD,Penguen Gıda,Gıda,997.5,69.9,False
+PENTA,Penta Teknoloji,Bilgisayar Toptancılığı,3636.1,39.4,False
+PETKM,Petkim,Petrol,37433.1,48.4,False
+PETUN,Pınar Et ve Un,Gıda,2578.4,30.8,False
+PGSUS,Pegasus Hava Taşımacılığı,Havayolları ve Hizm.,75500.0,46.1,False
+PINSU,Pınar Su,Meşrubat / İçecek,1810.9,34.6,False
+PKART,Plastikkart A.Ş,Teknoloji,1758.6,33.8,False
+PKENT,Petrokent,Turizm,2563.0,32.7,False
+PLTUR,Platform Turizm,Ulaştırma-Lojistik,3360.4,20.2,False
+PNLSN,Panelsan Çatı Cephe,İnşaat Malzemeleri,2233.5,25.1,False
+PNSUT,Pınar Süt,Meşrubat / İçecek,2555.0,37.3,False
+POLHO,Polisan Holding,Holdingler,9815.0,21.0,False
+POLTK,Politeknik Metal,Kimyasal Ürün,8295.0,13.2,False
+PRDGS,Pardus Girişim,Yatırım Ortaklıkları,654.6,56.0,False
+PRKAB,Prysmian Kablo,Kablo,3608.6,15.7,False
+PRKME,Park Elek. Madencilik,Madencilik,1503.6,30.2,False
+PRZMA,Prizma Pres Matbaacılık,Kağıt Ürünleri,558.4,69.8,False
+PSDTC,Pergamon Status,Perakande - Ticaret,465.5,74.9,False
+PSGYO,Pasifik GYO,GYO,8281.0,36.0,False
+QNBFK,QNB Finans Fin. Kir.,Fin.Kiralama ve Faktoring,81250.0,0.6,False
+QNBTR,QNB Bank,Bankacılık,731500.0,0.1,False
+QUAGR,QUA Granite,İnşaat Malzemeleri,3511.2,46.4,False
+QUICK,Quick Sigorta,Sigorta,20507.1,7.6,True
+RALYH,Ral Yatırım Holding,Tekstil Entegre,1778.2,35.5,False
+RAYSG,Ray Sigorta,Sigorta,15353.0,5.7,False
+REEDR,Reeder,İletişim Cihazları,2137.5,68.9,False
+RGYAS,Rönesans Gayrimenkul,GYO,49418.3,24.5,False
+RNPOL,Rainbow Polikarbonat,Kimyasal Ürün,1194.0,50.1,False
+RODRG,Rodrigo Tekstil,Tekstil Entegre,318.3,50.8,False
+RTALB,RTA laboratuvarlari,Sağlık ve İlaç,880.0,84.5,False
+RUBNS,Rubenis Tekstil,Tekstil Entegre,984.2,51.5,False
+RUZYE,Ruzy Madencilik ve Enerji,Madencilik,918.5,67.3,False
+RYGYO,Reysaş GYO,GYO,85640.0,24.5,False
+RYSAS,Reysaş Taşımacılık,Ulaştırma-Lojistik,48160.0,30.6,False
+SAFKR,Safkar Ege Soğutmacılık,Dayanıklı Tüketim,2564.0,69.5,False
+SAHOL,Sabancı Holding,Holdingler,155637.9,51.0,False
+SAMAT,Saray Matbaacılık,Kağıt Ürünleri,365.3,78.9,False
+SANEL,San-El Muhendislik,Endüstriyel Makine -Teçhizat Üretim,511.1,80.2,False
+SANFM,Sanifoam Sünger Sanayi,Kimyasal Ürün,1942.5,44.3,False
+SANKO,Sanko Pazarlama,Pazarlama,2947.5,11.8,False
+SARAE,Şa-Ra Enerji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,14304.0,16.7,True
+SARKY,Sarkuysan,İnşaat Malzemeleri,13030.0,70.7,False
+SASA,Sasa Polyester Sanayi A.Ş.,Endüstriyel Tekstil,72977.7,45.2,False
+SAYAS,Say Yenilenebilir Enerji,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,3128.6,54.3,False
+SDTTR,SDT Uzay,Savunma,5901.5,23.7,False
+SEGMN,Seğmen Gıda,Gıda,2753.0,20.3,False
+SEGYO,Şeker GYO,GYO,1928.1,24.6,False
+SEKFK,Şeker Finansal Kiralama A.Ş,Fin.Kiralama ve Faktoring,554.0,47.7,False
+SEKUR,Sekuro Plastik,Kimyasal Ürün,531.0,70.7,False
+SELEC,Selçuk Ecza Deposu,Sağlık ve İlaç,57753.0,12.3,False
+SELVA,Selva Gıda,Gıda,884.5,72.7,False
+SERNT,Seranit Granit,İnşaat Malzemeleri,1891.5,27.4,True
+SEYKM,Seyitler Kimya,Kimyasal Ürün,466.0,78.0,False
+SILVR,Silverline,Endüstriyel Makine -Teçhizat Üretim,497.0,57.3,False
+SISE,Şişecam,Cam,92570.3,43.4,False
+SKBNK,Şekerbank,Bankacılık,10920.0,49.1,False
+SKTAS,Söktaş,Tekstil Entegre,615.0,60.1,False
+SKYLP,Skyalp Fin. Tek.ve Danışmanlık,Diğer,585.2,52.5,False
+SKYMD,Şeker Yatırım,Aracı Kurumlar,1506.6,33.8,False
+SMART,Smartiks Yazılım,Teknoloji,474.4,93.2,False
+SMRTG,Smart Güneş Enerjisi,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,6997.9,35.5,False
+SMRVA,Sümer Varlık Yönetim,Varlık Yönetim,2418.0,26.6,True
+SNGYO,Sinpas GYO,GYO,9120.0,55.1,False
+SNICA,Sanica Isı Sanayi,Dayanıklı Tüketim,1158.0,53.1,False
+SNPAM,Sönmez Pamuklu,Tekstil Entegre,5807.1,4.1,False
+SODSN,Sodaş Sodyum Sanayii,Kimyasal Ürün,649.2,35.1,False
+SOHOE,Soho Giyim,Tekstil Entegre,1803.8,31.0,True
+SOKE,Söke Değirmencilik,Gıda,2473.6,21.8,False
+SOKM,Şok Marketler,Perakande - Ticaret,23802.8,51.0,False
+SONME,Sönmez Filament,Tekstil Entegre,7185.4,5.7,False
+SRVGY,Servet GYO,GYO,5492.5,24.4,False
+SSAAT,Saat ve Saat,Perakande - Ticaret,12811.5,7.0,True
+SUMAS,Sumas Mobilya,Mobilya,932.4,22.1,False
+SUNTK,Sun Tekstil,Tekstil Entegre,6658.6,23.6,False
+SURGY,Sur GYO,GYO,2512.5,29.3,False
+SUWEN,Suwen Tekstil,Tekstil Entegre,2559.2,48.7,False
+SVGYO,Savur GYO,GYO,3021.6,12.2,True
+TABGD,Tab Gıda,Gıda,43270.0,31.6,False
+TARKM,Tarkim,Tarım Kimyasalları,6441.8,23.6,False
+TATEN,Tatlıpınar Enerji,Elektrik Üretim,3927.0,27.2,False
+TATGD,Tat Gıda,Gıda,3238.7,43.6,False
+TAVHL,TAV Holding,Havayolları ve Hizm.,101900.4,49.1,False
+TBORG,Tuborg,Meşrubat / İçecek,36443.4,4.5,False
+TCELL,Turkcell,İletişim,191290.0,36.0,False
+TCKRC,Kıraç Galvaniz,Diğer,19584.0,32.5,False
+TDGYO,Trend GYO,GYO,347.1,84.6,False
+TEHOL,Tera Holding,Holdingler,4271.1,49.2,False
+TEKTU,Tek-Art Turizm,Turizm,984.0,62.5,False
+TEZOL,Europap Tezol,Kağıt Ürünleri,3325.0,22.8,False
+TGSAS,TGS Dış Ticaret,Pazarlama,1651.5,68.4,False
+THYAO,Türk Hava Yolları,Havayolları ve Hizm.,429870.0,49.1,False
+TKFEN,Tekfen Holding,İnşaat- Taahhüt,67969.0,19.1,False
+TKNKA,Teknika Plastik,Petrol,4275.0,14.2,True
+TKNSA,Teknosa İç ve Dış Tic.,Perakande - Ticaret,2030.1,50.0,False
+TLMAN,Trabzon Liman İşletmeciliği,Ulaştırma-Lojistik,957.2,39.5,False
+TMPOL,TE-MAPOL Polimer Plastik,Kimyasal Ürün,1039.0,63.6,False
+TMSN,Tümosan Motor ve Traktör,Otomotiv,4924.3,28.6,False
+TNZTP,Tapdi Oksijen,Sağlık ve İlaç,8056.0,19.0,False
+TOASO,Tofaş Fabrika,Otomotiv,116400.0,24.0,False
+TRALT,Türk Altın,Madencilik,102800.3,24.5,False
+TRCAS,Turcas Holding,Petrol,9809.9,23.1,False
+TRENJ,TR Doğal Enerji Kaynakları,Elektrik Üretim,16639.3,32.9,False
+TRGYO,Torunlar GYO,GYO,81300.0,12.9,False
+TRHOL,Tera Finansal Yat. Holding,Holdingler,2491.5,27.0,False
+TRILC,Turk İlaç ve Serum Sanayi,Sağlık ve İlaç,694.8,73.1,False
+TRMET,TR Anadolu Metal,Madencilik,36984.0,40.6,False
+TSGYO,TSKB GYO,GYO,2489.5,11.4,False
+TSKB,TSKB,Bankacılık,25788.0,40.3,False
+TSPOR,Trabzonspor A.Ş,Spor,5325.0,48.8,False
+TTKOM,Türk Telekom,İletişim,156310.0,13.1,False
+TTRAK,Türk Traktör,Otomotiv,32621.8,24.1,False
+TUCLK,Tuğçelik Alüminyum ve Metal,Otomotiv Parçası,687.6,79.0,False
+TUKAS,Tukaş,Gıda,8010.0,48.6,False
+TUPRS,Tüpraş,Petrol,612721.0,49.0,False
+TUREX,Tureks Tur.Taşımacılık,Ulaştırma-Lojistik,4676.4,36.6,False
+TURGG,Türker Proje Gay.Gel.,GYO,2819.8,23.3,False
+TURSG,Türkiye Sigorta,Sigorta,55800.0,21.9,False
+UCAYM,Üçay Mühendislik,Diğer,2337.8,26.7,True
+UFUK,Ufuk Yat.Yön.ve Gay. AŞ.,Fin.Kiralama ve Faktoring,5916.8,21.3,False
+ULAS,Ulaşlar Turizm Yatırımları,Turizm,263.7,87.3,False
+ULKER,Ülker Bisküvi,Gıda,22876.6,44.0,False
+ULUFA,Ulusal Faktoring,Fin.Kiralama ve Faktoring,1479.6,48.6,False
+ULUSE,Ulusoy Elektrik,Elektrik Enerji Ürt.Teçh/Tesis Kurulum,9760.0,5.7,False
+ULUUN,Ulusoy Un,Gıda,4117.5,28.8,False
+UNLU,Ünlü Yatırım Holding,Aracı Kurumlar,1539.5,32.4,False
+USAK,Uşak Seramik,Seramik,955.5,81.7,False
+USHOL,Marka Yatırım Holding,Holdingler,923.6,99.1,False
+VAKBN,Vakıfbank,Bankacılık,307393.6,5.8,False
+VAKFA,Vakıf Faktoring,Fin.Kiralama ve Faktoring,7155.0,23.0,True
+VAKFN,Vakıf Fin. Kir.,Fin.Kiralama ve Faktoring,4800.0,34.4,False
+VAKKO,Vakko Tekstil,Perakande - Ticaret,7264.0,11.1,False
+VANGD,Vanet Gıda Sanayi,Gıda,1280.0,97.2,False
+VBTYZ,VBT Yazılım,Teknoloji,2092.0,45.3,False
+VERTU,Verusatürk Girişim Sermayesi,Yatırım Ortaklıkları,1232.4,33.8,False
+VERUS,Verusa Holding,Holdingler,30380.0,9.3,False
+VESBE,Vestel Beyaz Esya,Dayanıklı Tüketim,5200.0,22.6,False
+VESTL,Vestel Elektronik,Dayanıklı Tüketim,4028.8,47.2,False
+VEYAS,Vangölü Enerj,Elektrik - Doğalgaz Dağıtım,35740.2,2.3,True
+VKFYO,Vakıf YO,Yatırım Ortaklıkları,443.1,48.3,False
+VKGYO,Vakıf GYO,GYO,6248.0,26.3,False
+VKING,Viking Kağıt,Kağıt Ürünleri,432.2,41.1,False
+VRGYO,Vera GYO,GYO,729.8,72.2,False
+VSNMD,Vişne Madencilik,Madencilik,3387.6,21.3,True
+YAPRK,Yaprak Süt & Besi Çiftlikleri,Gıda,2042.7,28.1,False
+YATAS,Yataş Yatak,Mobilya,2718.9,46.1,False
+YAYLA,Yayla Enerji Uretim Turizm,Elektrik Üretim,435.9,74.1,False
+YBTAS,Yibitaş İnş. Malzemeleri,İnşaat Malzemeleri,2742.0,9.2,False
+YEOTK,YEO Teknoloji,İnşaat- Taahhüt,20567.4,36.2,False
+YESIL,Yeşil Yatırım Holding,Holdingler,464.4,91.5,False
+YGGYO,Yeni Gimat GYO,GYO,40811.9,73.7,False
+YIGIT,Yiğit Akü,Otomotiv Parçası,3582.0,28.6,False
+YKBNK,Yapı Kredi Bankası,Bankacılık,287537.6,38.6,False
+YKSLN,Yükselen Çelik,Demir-Çelik Temel,835.0,35.2,False
+YONGA,Yonga Mobilya Sanayi,Mobilya,411.6,39.5,False
+YUNSA,Yünsa,Tekstil Entegre,2937.6,40.5,False
+YYAPI,Yesil Yapi,İnşaat- Taahhüt,801.4,83.2,False
+YYLGD,Yayla Agro Gıda,Gıda,6130.6,22.3,False
+ZEDUR,Zedur Enerji,Elektrik Üretim,667.5,39.9,False
+ZERGY,Zeray GYO,GYO,2316.2,24.3,True
+ZGYO,Z GYO,GYO,3153.2,23.6,True
+ZOREN,Zorlu Enerji,Elektrik Üretim,6450.0,37.3,False
+ZRGYO,Ziraat GYO,GYO,87911.5,5.0,False
