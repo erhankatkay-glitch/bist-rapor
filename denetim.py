@@ -24,10 +24,11 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(4000); bekle()
     pg.screenshot(path="denetim_graf/tarayici1.png")
     try:
-        sel = [e for e in pg.locator('div[data-baseweb="select"]').all() if e.is_visible()]
+        sel = [e for e in pg.locator('[data-testid=stSelectbox]').all() if e.is_visible()]
         print("görünür seçim kutusu:", len(sel), [e.inner_text()[:30] for e in sel])
-        hedef = next(e for e in sel if "Boş" in e.inner_text())
-        hedef.click(); pg.wait_for_timeout(1000); pg.keyboard.type("Güçlü trend"); pg.wait_for_timeout(800); pg.keyboard.press("Enter")
+        hedef = next(e for e in sel if "Şablon" in e.inner_text())
+        print("iç:", hedef.inner_html()[:600])
+        hedef.locator("input, [role=combobox]").first.click(force=True); pg.wait_for_timeout(1000); pg.keyboard.type("Güçlü trend"); pg.wait_for_timeout(800); pg.keyboard.press("Enter")
         pg.wait_for_timeout(3000); bekle()
         print("HATA KUTUSU:", pg.evaluate("document.querySelectorAll('[data-testid=stException]').length"))
         print("SONUÇ:", pg.evaluate("[...document.querySelectorAll('.bb')].filter(x=>x.offsetParent).map(x=>x.innerText)"))
