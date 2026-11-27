@@ -1,0 +1,200 @@
+"""Aşama 2 araştırması: fırsat motorundaki her kurulumun geçmiş sonuçlarını, önerilen teyit filtreleriyle karşılaştırır.
+
+Hiçbir şey göndermez. Test dalında çalıştırılır:  python arastirma_firsat.py [kripto4s|kriptog|bistg] ...
+Çıktı: her kurulum × yön için olay sayısı, ilk hedef oranı (p1), ortalama R; filtreli ve filtresiz.
+
+Filtreler (yalnızca o ana kadarki veriyi kullanır, ileriye bakmaz):
+  rejim   : piyasa öncüsü (kripto: BTC, BIST: XU100) aynı yönde trendde (kapanış EMA50'nin, EMA20 EMA50'nin o tarafında)
+  yapi    : piyasa yapısı işlem yönünde — AL için son teyitli dip bir öncekinden yüksek (HL) ya da kapanış son teyitli tepenin üstünde (BOS)
+  mum     : tetik mumunda price action teyidi — yutan mum, iğne (pin bar) ya da mumun en iyi %25'lik bölgesinde kapanış
+  oda     : işlem yönündeki en yakın karşı salınım seviyesi en az 1R uzakta (H1'e yer var)
+  kume    : aynı mumda aynı yönde tetiklenen varlık sayısı piyasanın %15'ini geçmiyor (toplu, birbirine bağlı sinyal değil)
+  genis   : stop en az 1,5 ATR (gürültüye karşı)
+"""
+import sys, time, json, itertools
+import numpy as np
+import pandas as pd
+import bist_teknik as T
+import firsat as F
+
+RLER = (1.0, 2.0, 3.0)
+PIV = 3   # salınım teyidi için iki yanda gereken mum sayısı
+
+
+def log(*a):
+    print(*a, flush=True)
+
+
+# ------------------------------------------------------------------ veri
+def kripto_veri(aralik, adet=80):
+    import kapanis as K
+    ev = sorted(K.kripto_evren(), key=lambda e: -e["hacim"])[:adet]
+    out = {}
+    for e in ev:
+        try:
+            d = K.kripto_mum(e["baz"], e["borsa"], aralik, 1000)
+            if len(d) >= 300: out[e["baz"]] = d
+        except Exception as ex:
+            log("veri", e["baz"], ex)
+        time.sleep(0.05)
+    return out, "BTC"
+
+
+def bist_veri(adet=150):
+    import yfinance as yf, bist_evren as EV
+    df, _, _ = EV.bist_listesi()
+    kodlar = sorted(df["Kod"])
+    v = yf.download([k + ".IS" for k in kodlar] + ["XU100.IS"], period="6y", interval="1d", auto_adjust=True,
+                    progress=False, group_by="ticker", threads=True)
+    out = {}
+    for k in kodlar + ["XU100"]:
+        try:
+            d = v[k + ".IS"].dropna(subset=["Close"])
+            d.index = d.index.tz_localize(None) if d.index.tz is not None else d.index
+            if len(d) >= 400: out[k] = d
+        except Exception:
+            pass
+    # likiditeye göre en büyük 'adet' hisse + endeks
+    hac = {k: float((d["Close"] * d["Volume"]).tail(60).mean()) for k, d in out.items() if k != "XU100"}
+    sec = sorted(hac, key=lambda k: -hac[k])[:adet]
+    return {k: out[k] for k in sec + ["XU100"] if k in out}, "XU100"
+
+
+# ------------------------------------------------------------------ özellikler
+def rejim_serisi(d):
+    G = T.gostergeler(d)
+    c, e20, e50 = d["Close"], G["EMA20"], G["EMA50"]
+    r = np.where((c > e50) & (e20 > e50), 1, np.where((c < e50) & (e20 < e50), -1, 0))
+    return pd.Series(r, index=d.index)
+
+
+def salinimlar(H, L):
+    """Teyitli salınımlar: t anında yalnızca t-PIV'e kadar teyit edilmiş tepe/dipler bilinir. Döner: her t için
+    (son tepe, önceki tepe, son dip, önceki dip) dizileri."""
+    n = len(H)
+    tepe = np.full(n, np.nan); tepe2 = np.full(n, np.nan); dip = np.full(n, np.nan); dip2 = np.full(n, np.nan)
+    st, st2, sd, sd2 = np.nan, np.nan, np.nan, np.nan
+    for t in range(n):
+        i = t - PIV
+        if i >= PIV:
+            w = slice(i - PIV, i + PIV + 1)
+            if H[i] == np.max(H[w]): st2, st = st, H[i]
+            if L[i] == np.min(L[w]): sd2, sd = sd, L[i]
+        tepe[t], tepe2[t], dip[t], dip2[t] = st, st2, sd, sd2
+    return tepe, tepe2, dip, dip2
+
+
+def ozellikler(M, stop, t, sal, at):
+    """Aynalanmış (AL yönlü) dizilerde t anındaki teyitler."""
+    O, H, L, C = M["Open"], M["High"], M["Low"], M["Close"]
+    tepe, tepe2, dip, dip2 = sal
+    risk = C[t] - stop[t]
+    yapi = (np.isfinite(dip[t]) and np.isfinite(dip2[t]) and dip[t] > dip2[t]) or (np.isfinite(tepe[t]) and C[t] > tepe[t])
+    rng = H[t] - L[t]
+    if rng <= 0:
+        mum = False
+    else:
+        clv = (C[t] - L[t]) / rng
+        govde = abs(C[t] - O[t])
+        alt_f = min(O[t], C[t]) - L[t]
+        yutan = C[t] > O[t] and O[t] <= min(O[t - 1], C[t - 1]) and C[t] >= max(O[t - 1], C[t - 1])
+        igne = alt_f >= 2 * govde and clv >= 0.6
+        mum = bool(yutan or igne or clv >= 0.75)
+    # yukarıdaki en yakın karşı seviye: son iki teyitli tepeden giriş üstündeki en yakını
+    adaylar = [x for x in (tepe[t], tepe2[t]) if np.isfinite(x) and x > C[t]]
+    oda = (min(adaylar) - C[t]) >= risk if adaylar else True
+    genis = risk >= 1.5 * at[t]
+    return {"yapi": bool(yapi), "mum": mum, "oda": bool(oda), "genis": bool(genis)}
+
+
+# ------------------------------------------------------------------ olaylar
+def olaylar(veri, onder, tf):
+    rejim = rejim_serisi(veri[onder]) if onder in veri else None
+    kayit = []
+    for kod, d in veri.items():
+        if kod == onder: continue
+        try:
+            G = T.gostergeler(d); A = F.diziler(d, G)
+        except Exception as ex:
+            log("gösterge", kod, ex); continue
+        n = len(A["Close"]); bas = max(220, n - F.GECMIS_BAR)
+        rj = rejim.reindex(d.index, method="ffill").to_numpy() if rejim is not None else np.zeros(n)
+        for yon in (1, -1):
+            M = F.ayna(A, yon); tet = F.tetikler(M)
+            sal = salinimlar(M["High"], M["Low"])
+            H, L, C, O = M["High"].tolist(), M["Low"].tolist(), M["Close"].tolist(), M["Open"].tolist()
+            for k, (m, stop) in tet.items():
+                for t in np.flatnonzero(m):
+                    if t < bas or t >= n - 1: continue
+                    s = F.simule(H, L, C, t, C[t], stop[t], RLER, F.MAKS_BAR[tf], O)
+                    if not s: continue
+                    oz = ozellikler(M, stop, t, sal, M["ATR"])
+                    kayit.append({"kod": kod, "zaman": d.index[t], "kurulum": k, "yon": yon, "R": s[0], "asama": s[1],
+                                  "rejim": int(rj[t] * yon) if np.isfinite(rj[t]) else 0, **oz})
+    df = pd.DataFrame(kayit)
+    if len(df):
+        evren = max(1, len(veri) - 1)
+        say = df.groupby(["zaman", "yon"])["kod"].transform("count")
+        df["kume"] = (say / evren) <= 0.15
+    return df
+
+
+def ozet(df, maske=None):
+    x = df if maske is None else df[maske]
+    if not len(x): return {"n": 0}
+    return {"n": int(len(x)), "p1": round(float((x["asama"] >= 1).mean()), 3), "ortR": round(float(x["R"].mean()), 3),
+            "kazanc": round(float((x["R"] > 0).mean()), 3)}
+
+
+def rapor(df, ad):
+    log(f"\n==================== {ad}: {len(df)} olay ====================")
+    if not len(df): return {}
+    filtreler = {
+        "taban": None,
+        "rejim": df["rejim"] > 0,
+        "rejim≥0": df["rejim"] >= 0,
+        "yapi": df["yapi"],
+        "mum": df["mum"],
+        "oda": df["oda"],
+        "kume": df["kume"],
+        "genis": df["genis"],
+        "rejim+yapi": (df["rejim"] > 0) & df["yapi"],
+        "rejim+yapi+mum": (df["rejim"] > 0) & df["yapi"] & df["mum"],
+        "rejim+yapi+oda": (df["rejim"] > 0) & df["yapi"] & df["oda"],
+        "rejim≥0+yapi+mum+oda+kume": (df["rejim"] >= 0) & df["yapi"] & df["mum"] & df["oda"] & df["kume"],
+        "hepsi": (df["rejim"] > 0) & df["yapi"] & df["mum"] & df["oda"] & df["kume"],
+    }
+    sonuc = {}
+    for (k, y), g in df.groupby(["kurulum", "yon"]):
+        satir = {}
+        for fa, mk in filtreler.items():
+            satir[fa] = ozet(g, None if mk is None else mk.loc[g.index])
+        sonuc[f"{k}|{'AL' if y == 1 else 'SAT'}"] = satir
+    satir = {fa: ozet(df, mk) for fa, mk in filtreler.items()}
+    sonuc["TÜMÜ"] = satir
+    # Aşırı uyum kontrolü: filtre hem eski hem yeni yarıda işe yarıyor mu?
+    orta = df["zaman"].sort_values().iloc[len(df) // 2]
+    for yari, mk_y in (("ESKİ YARI", df["zaman"] < orta), ("YENİ YARI", df["zaman"] >= orta)):
+        sonuc[f"TÜMÜ · {yari}"] = {fa: ozet(df, mk_y if mk is None else (mk & mk_y)) for fa, mk in filtreler.items()}
+    for anahtar, satir in sonuc.items():
+        log(f"\n-- {anahtar}")
+        for fa, o in satir.items():
+            if o.get("n", 0) >= 15: log(f"   {fa:28s} n={o['n']:5d}  p1={o['p1']:.2f}  ortR={o['ortR']:+.3f}  kazanç={o['kazanc']:.2f}")
+    return sonuc
+
+
+if __name__ == "__main__":
+    isler = sys.argv[1:] or ["kripto4s", "kriptog", "bistg"]
+    tum = {}
+    for i in isler:
+        t0 = time.time()
+        if i == "kripto4s": veri, onder = kripto_veri("4h"); tf = "4S"
+        elif i == "kriptog": veri, onder = kripto_veri("1d"); tf = "G"
+        elif i == "bistg": veri, onder = bist_veri(); tf = "G"
+        else: continue
+        log(f"{i}: {len(veri)} varlık, veri {time.time() - t0:.0f} sn")
+        df = olaylar(veri, onder, tf)
+        tum[i] = rapor(df, i)
+        df.to_csv(f"arastirma_{i}.csv", index=False)
+        log(f"{i} süre {time.time() - t0:.0f} sn")
+    json.dump(tum, open("arastirma_ozet.json", "w"), ensure_ascii=False, indent=1, default=str)
