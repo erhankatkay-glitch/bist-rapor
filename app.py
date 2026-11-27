@@ -952,6 +952,7 @@ with tab_r:
                 else:
                     st.session_state.sonuc = analiz(_rk, "", tuple(PRM.items()), ZAMAN, br.SURUM)
                 s_.update(label="Hazır ✓", state="complete", expanded=False)
+            _bil.html("<script>setTimeout(function(){try{window.parent.kkSekmeGit && window.parent.kkSekmeGit('Hisse','.vb')}catch(e){}},600)</script>", height=0)
         except Exception as e:
             st.error(f"{_rk} raporu hazırlanamadı: {e}")
     if r_tur in ("Kripto", "Emtia"):
