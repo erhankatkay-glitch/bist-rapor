@@ -38,6 +38,30 @@ def _degisim(s, gun):
     return float(s.iloc[-1] / once.iloc[-1] - 1) if len(once) else None
 
 
+def _tazele(h, gi, kod):
+    """Günlük kapanış serisinin son gününü gün içi son fiyatla günceller ya da eksik günü ekler."""
+    try:
+        if gi is None or kod not in gi.columns.get_level_values(0):
+            return h
+        g = gi[kod]["Close"].dropna()
+        if g.empty:
+            return h
+        t = g.index[-1]
+        yerel = t.tz_convert("Europe/Istanbul" if kod.endswith(".IS") else "America/New_York") if t.tzinfo else t
+        gun = pd.Timestamp(yerel.date())
+        if kod.endswith("-USD"):          # kripto: Yahoo günlük barı UTC gününe göredir
+            gun = pd.Timestamp((t.tz_convert("UTC") if t.tzinfo else t).date())
+        son = float(g.iloc[-1])
+        h = h.copy()
+        if gun > h.index[-1]:
+            h.loc[gun] = son
+        elif gun == h.index[-1]:
+            h.iloc[-1] = son
+        return h.sort_index()
+    except Exception:
+        return h
+
+
 def piyasa_paneli():
     import yfinance as yf
     out = {}
@@ -46,6 +70,12 @@ def piyasa_paneli():
         df = yf.download(kodlar, period="2y", interval="1d", auto_adjust=True, progress=False, group_by="ticker", threads=True)
     except Exception:
         df = None
+    # Yahoo'nun günlük barı bazı piyasalarda (özellikle XU100) bir gün geride kalabiliyor.
+    # Son fiyat ve son gün, gün içi 15 dakikalık verilerle tazelenir.
+    try:
+        gi = yf.download(kodlar, period="5d", interval="15m", auto_adjust=True, progress=False, group_by="ticker", threads=True)
+    except Exception:
+        gi = None
     for ad, (kod, birim) in PIYASA.items():
         try:
             if df is not None and kod in df.columns.get_level_values(0):
@@ -53,6 +83,7 @@ def piyasa_paneli():
             else:
                 h = yf.Ticker(kod).history(period="2y")["Close"].dropna()
             h.index = h.index.tz_localize(None) if getattr(h.index, "tz", None) is not None else h.index
+            h = _tazele(h, gi, kod)
             if len(h) < 5: continue
             yb = h[h.index < pd.Timestamp(h.index[-1].year, 1, 1)]
             out[ad] = {"deger": float(h.iloc[-1]), "birim": birim, "seri": h,
