@@ -1178,7 +1178,7 @@ with tab_v:
 with tab_p:
     sabah_k = gorsel_oku("sabah/kart.png", ZAMAN)
     if sabah_k:
-        with st.expander(":material/wb_sunny: Bugünün sabah özeti", expanded=True):
+        with st.expander(":material/wb_sunny: Bugünün sabah özeti (kart + sesli)", expanded=False):
             st.image(sabah_k, use_container_width=True)
             ses = gorsel_oku("sabah/ozet.mp3", ZAMAN)
             if ses: st.audio(ses, format="audio/mp3")
