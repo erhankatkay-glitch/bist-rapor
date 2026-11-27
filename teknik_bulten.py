@@ -222,6 +222,12 @@ def _yaz(piyasa, analizler, endeks, ref, klasor, hata=None):
     TR.bulten_pdf(BASLIK[piyasa], satir, bulten_secim, os.path.join(hedef, "bulten.pdf"), endeks=endeks, ekler=ekler,
                   sym="₺" if piyasa in ("bist", "kripto_tl") else "$")
     pd.DataFrame(satir).to_csv(os.path.join(hedef, "ozet.csv"), index=False)
+    try:   # Aşama 8: kendi taramanı kur — her varlık için tarama satırı
+        import tarayici as TRY
+        os.makedirs(os.path.join(klasor, "tarama"), exist_ok=True)
+        TRY.tablo(analizler, "kripto" if piyasa == "kripto_tl" else piyasa, satir).to_csv(os.path.join(klasor, "tarama", f"{piyasa}.csv"), index=False)
+    except Exception as ex:
+        print("Tarama tablosu yazılamadı:", ex, file=sys.stderr)
     gorsel = []
     by = {s["kod"]: s for s in analizler}
     if endeks: by[ref] = endeks
@@ -310,9 +316,9 @@ def telegram_gonder(piyasa, meta, satir, klasor="cikti", bot=None):
         import kart as KT
         yol = os.path.join(klasor, piyasa, "kapanis_karti.png"); os.makedirs(os.path.dirname(yol), exist_ok=True)
         KT.bulten_karti(meta, satir, yol, ad)
-        alt = f"📊 <b>{tg.buyuk(ad)} · KAPANIŞ ÖZETİ</b> · {meta['kapanis']}\n{KT.piyasa_yorumu(pd.DataFrame(satir), meta)}"
+        alt = f"📊 <b>{ad} kapanış özeti</b> · {meta['kapanis']} · tam liste PDF'te"
         bot.sil_anahtar(anahtar)
-        ids = bot.foto(yol, alt[:1000], anahtar, 30)
+        ids = bot.foto(yol, alt, anahtar, 30)
     except Exception as ex:
         print("Bülten kartı çizilemedi:", ex, file=sys.stderr)
     if not ids: ids = bot.mesaj(metin, anahtar, 30, yerine=True)

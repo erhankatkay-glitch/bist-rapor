@@ -16,8 +16,8 @@ FONT = "Fira Sans"
 
 # Uygulamayla aynı kimlik: siyah/antrasit zemin, altın vurgu, neon yeşil–kırmızı
 C = {"bg": "#0B0B0C", "panel": "#17181B", "panel2": "#1E1F23", "cizgi": "#2A2B30", "yazi": "#F4F4F5", "soluk": "#A1A1AA",
-     "silik": "#71717A", "altin": "#E8B84A", "yesil": "#22C55E", "yesil2": "#16A34A", "kirmizi": "#EF4444", "mavi": "#60A5FA",
-     "mor": "#C4B5FD", "turkuaz": "#5EEAD4"}
+     "silik": "#71717A", "altin": "#E8B84A", "yesil": "#22C55E", "yesil2": "#16A34A", "kirmizi": "#EF4444", "mavi": "#F5D27A",
+     "mor": "#C4B5FD", "turkuaz": "#E8B84A"}
 W, H = 1080, 1500
 
 

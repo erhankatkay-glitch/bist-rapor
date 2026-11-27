@@ -268,7 +268,7 @@ def kart_gonder(bot, anahtar, omur, ust, baslik, alt, bolumler, aciklama, vurgu=
         yol = os.path.join(CIKTI, "kartlar", re.sub(r"[^a-z0-9]+", "_", anahtar.lower()) + ".png")
         KT.bildirim_karti(ust, baslik, alt, bolumler, yol, vurgu=KT.C.get(vurgu, vurgu), not_=not_)
         bot.sil_anahtar(anahtar)
-        if bot.foto(yol, aciklama[:1000], anahtar, omur, bag=bag): return True
+        if bot.foto(yol, aciklama, anahtar, omur, bag=bag): return True
     except Exception as ex:
         log("kart çizilemedi:", anahtar, ex)
     if yedek: return bool(bot.mesaj(yedek, anahtar, omur, bag=bag, yerine=True))
@@ -311,7 +311,7 @@ def takip_mesaji(bot, D):
                     "alt": f"{z:%d.%m %H:%M} · {kk['alt']}"})
     bol = [{"baslik": "Son gelişmeler", "renk": C["altin"], "satirlar": sat}]
     if D.acik: bol.append({"baslik": f"Açık kurulumlar ({len(D.acik)})", "renk": C["mavi"], "satirlar": acik_kart_satirlari(D.acik)})
-    aciklama = f"📌 <b>{tg.buyuk(PIYASA_AD[D.p])} · KURULUM TAKİBİ</b>\n" + "\n".join(_duz(o["metin"])[:140] for o in reversed(son[-6:]))
+    aciklama = f"📌 <b>{PIYASA_AD[D.p]} kurulum takibi</b> · {len(son)} yeni gelişme"
     kart_gonder(bot, f"takip:{D.p}", TAKIP_OMUR, f"{tg.buyuk(PIYASA_AD[D.p])}  ·  KURULUM TAKİBİ", "Hedef ve stop gelişmeleri",
                 f"Son {TAKIP_OMUR} saat", bol, aciklama, "altin", yedek="\n".join(satir))
 
@@ -399,14 +399,15 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
         if any(f["yon"] == -1 for f in secilen): not_ += " SAT fırsatları vadeli (kaldıraçlı) işlem içindir; spotta açığa satış yapılamaz."
         ids = kart_gonder(bot, anahtar, OMUR[tf], f"{tg.buyuk(PIYASA_AD[D.p])}  ·  {tg.buyuk(T.TF_AD[tf])} FIRSATLAR",
                           f"{len(secilen)} yeni fırsat", f"Mum: {mum_metni(D.p, tf, mum)} · {len(varliklar):,} likit varlık tarandı".replace(",", "."),
-                          bol, "\n".join(bas), "altin", not_=not_, yedek="\n".join(bas), bag=bag)
+                          bol, f"🎯 <b>{PIYASA_AD[D.p]} · {T.TF_AD[tf].lower()} fırsatlar</b> · {len(secilen)} yeni · ayrıntılı kartlar aşağıda",
+                          "altin", not_=not_, yedek="\n".join(bas), bag=bag)
         if ids:
             for f in secilen:
                 ek = []
                 if tl_fn and tl_fn(f): ek.append("💱 " + F._e(tl_fn(f)))
                 if f["ekstra"].get("turev"): ek.append("📊 " + F._e(f["ekstra"]["turev"]))
                 alt = KT.baslik_metni(f) + ("\n" + "\n".join(ek) if ek else "")
-                if f["kod"] in grafik: bot.foto(os.path.join(D.kok, grafik[f["kod"]]), alt[:1000], anahtar, OMUR[tf], bag=bag)
+                if f["kod"] in grafik: bot.foto(os.path.join(D.kok, grafik[f["kod"]]), alt, anahtar, OMUR[tf], bag=bag)
                 else: sade_firsat_gonder(bot, f, anahtar, OMUR[tf], bag, alt, tl_fn)
     D.acik += yeni
     return secilen
@@ -430,7 +431,7 @@ def sade_firsat_gonder(bot, f, anahtar, omur, bag, alt, tl_fn=None):
                           f"{F.gorunen(f['kod'], f.get('ad'))} · {'AL' if f['yon'] == 1 else 'SAT'} · puan {f['puan']:.0f}",
                           f["kurulum_ad"][:70], bol, yol, vurgu=C["yesil"] if f["yon"] == 1 else C["kirmizi"],
                           not_=KT.basitce(f))
-        if bot.foto(yol, alt[:1000], anahtar, omur, bag=bag): return True
+        if bot.foto(yol, alt, anahtar, omur, bag=bag): return True
     except Exception as ex:
         log("sade fırsat kartı çizilemedi:", f.get("kod"), ex)
     return bool(bot.mesaj(F.firsat_metni(f, tl_fn(f) if tl_fn else None), anahtar, omur, bag=bag, yerine=False, notlu=False))
@@ -473,7 +474,7 @@ def portfoy_uyari(bot, D, tf, varliklar, adaylar):
         sat.append({"sol": F.gorunen(a["kod"], a.get("ad")), "sag": f"puan {a['puan']:.0f}", "sag_renk": C["kirmizi"], "nokta": C["kirmizi"],
                     "alt": f"{a['kurulum_ad'][:60]} · fiyat {F.fy(p_['giris'])} · aşağı hedefler {F.fy(p_['hedef'][0]['fiyat'])} / "
                            f"{F.fy(p_['hedef'][1]['fiyat'])} · yükseliş teyidi (geçersizlik) {F.fy(p_['stop'])}"})
-    aciklama = f"💼 <b>PORTFÖY UYARISI · {tg.buyuk(T.TF_AD[tf])}</b>\n" + "\n".join(f"🔴 <b>{F._e(F.gorunen(a['kod'], a.get('ad')))}</b>: {F._e(a['kurulum_ad'][:50])}" for a in sat_liste[:6])
+    aciklama = f"💼 <b>Portföy uyarısı</b> · {T.TF_AD[tf].lower()} · {len(sat_liste)} varlıkta satış yönlü kurulum"
     kart_gonder(bot, f"portfoy:{D.p}:{tf}", 24, f"PORTFÖY UYARISI  ·  {tg.buyuk(T.TF_AD[tf])}", "Satış yönlü kurulum",
                 "Portföyünüzdeki varlıklarda ters sinyal oluştu", [{"baslik": "Dikkat edilmesi gerekenler", "renk": C["kirmizi"], "satirlar": sat}],
                 aciklama, "kirmizi", not_="Pozisyonu korumak için stop seviyenizi gözden geçirmeniz, kısmi kâr almanız ya da yükseliş teyidi beklemeniz düşünülebilir.",
@@ -797,7 +798,7 @@ def karne_mesaji(bot, D_kripto):
         satir.append(f"• <b>{PIYASA_AD[p]}</b>: {alt} · ort. {sag}")
     satir.append("\n<i>R: stop mesafesi kadar risk birimi.</i>")
     kart_gonder(bot, "karne", 46.5, "HAFTALIK FIRSAT KARNESİ", "Sistem nasıl performans gösterdi?", f"{t.astimezone(TSI):%d.%m.%Y} itibarıyla",
-                [{"baslik": "Piyasalara göre", "renk": C["altin"], "satirlar": kart_s}], "\n".join(satir), "altin",
+                [{"baslik": "Piyasalara göre", "renk": C["altin"], "satirlar": kart_s}], f"📈 <b>Haftalık fırsat karnesi</b> · {t.astimezone(TSI):%d.%m.%Y}", "altin",
                 not_="R: stop mesafesi kadar risk birimi. +1R, riske edilen tutar kadar kazanç; −1R, stop olunca kaybedilen tutardır. "
                      "Ortalama R sıfırın üzerindeyse sistem uzun vadede kazandırıyor demektir.", yedek="\n".join(satir))
 

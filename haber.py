@@ -453,8 +453,8 @@ def takvim_karti_gonder(b, liste, bugun, metin, arsiv=None):
                          not_="Beklentiden güçlü ABD verisi: dolar ve faiz beklentisi yukarı, altın ve kripto üzerinde baskı. Zayıf veri: tersi. "
                               "Açıklama anlarında oynaklık artar; stoplar sık tetiklenebilir.")
         b.sil_anahtar("takvim")
-        alt = "🗓 <b>BUGÜNÜN ÖNEMLİ VERİLERİ</b>\n" + "\n".join(f"{dt.datetime.fromisoformat(e['zaman']):%H:%M} · {esc(ULKE_AD.get(e['ulke'], e['ulke']))} – {esc(e['baslik'])}" for e in gun[:10])
-        return bool(b.foto(yol, alt[:1000], "takvim", 20))
+        alt = f"🗓 <b>Ekonomik takvim</b> · {bugun:%d.%m.%Y} · {len(gun)} önemli veri"
+        return bool(b.foto(yol, alt, "takvim", 20))
     except Exception as ex:
         print("Takvim kartı çizilemedi:", ex, file=sys.stderr); return False
 
@@ -595,10 +595,10 @@ def haber_karti_gonder(b, analizler, simdi):
         K.bildirim_karti(f"HABER ETKİSİ  ·  {simdi.astimezone(TSI):%d.%m %H:%M}",
                          f"{len(analizler)} önemli haber", "Etkilenen varlıklar, beklenen yön ve piyasanın tepkisi",
                          [kart_bolumu(a) for a in analizler], yol, vurgu=K.C["turkuaz"])
-        alt = f"📰 <b>HABER ETKİSİ</b> · {simdi.astimezone(TSI):%H:%M}\n" + "\n".join(
-            f"{'🟢' if a['yon'] > 0 else '🔴'} <b>{esc(a['tur'])}</b>: " + (f'<a href="{esc(a["link"])}">{esc(a["baslik"][:90])}</a>' if a.get("link") else esc(a["baslik"][:90]))
-            for a in analizler)
-        return bool(b.foto(yol, alt[:1000], f"haber:{simdi:%Y%m%d%H%M}", 12))
+        alt = f"📰 <b>Haber etkisi</b> · {simdi.astimezone(TSI):%d.%m %H:%M}\n" + "\n".join(
+            f"{'🟢' if a['yon'] > 0 else '🔴'} " + (f'<a href="{esc(a["link"])}">{esc(a["baslik"][:70])}</a>' if a.get("link") else esc(a["baslik"][:70]))
+            for a in analizler[:6])
+        return bool(b.foto(yol, alt, f"haber:{simdi:%Y%m%d%H%M}", 12))
     except Exception as ex:
         print("Haber kartı çizilemedi:", ex, file=sys.stderr); return False
 

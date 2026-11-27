@@ -306,9 +306,9 @@ def gonder(mesajlar):
             K.bildirim_karti(f"ALARMLAR  ·  {z:%d.%m %H:%M}", f"{len(parca)} yeni alarm" if not pf else "Portföy uyarısı",
                              "Fiyat, formasyon ve şirket haberleri", bol, yol, vurgu=K.C["altin"])
             linkler = [(x[1]["sol"], x[2]) for x in sat if x[2]]
-            alt = f"🔔 <b>{len(parca)} yeni alarm</b> · {z:%H:%M}\n" + "\n".join(tg_kac(m.split("⟦")[0])[:150] for m in parca[:6])
-            if linkler: alt += "\n" + " · ".join(f'<a href="{u}">{tg_kac(s_)[:20]}</a>' for s_, u in linkler[:5])
-            gonderildi = bool(b.foto(yol, alt[:1000], anahtar, 12))
+            alt = f"🔔 <b>{len(parca)} yeni alarm</b> · {z:%d.%m %H:%M}"
+            if linkler: alt += "\n📰 " + " · ".join(f'<a href="{u}">{tg_kac(s_)[:24]}</a>' for s_, u in linkler[:6])
+            gonderildi = bool(b.foto(yol, alt, anahtar, 12))
         except Exception as ex:
             print("Alarm kartı çizilemedi:", ex, file=sys.stderr)
         if not gonderildi:

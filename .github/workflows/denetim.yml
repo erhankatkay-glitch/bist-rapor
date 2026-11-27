@@ -11,7 +11,7 @@ permissions:
 jobs:
   denetim:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     env:
       GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
     steps:

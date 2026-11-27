@@ -1612,29 +1612,142 @@ with tab_p:
         st.info("Backtest her Pazar sabahı otomatik çalışır; ilk sonuç ilk Pazar günü burada görünecek.")
 
 # ================= TARAYICI =================
+@st.cache_data(ttl=900, show_spinner=False)
+def tarama_tablosu(piyasa, zaman):
+    import requests
+    r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/tarama/{piyasa}.csv?t={zaman}", timeout=20)
+    return pd.read_csv(io.BytesIO(r.content)) if r.status_code == 200 else None
+
+
+def _sablonlar():
+    import tarayici as TRY
+    return TRY.coz(st.query_params.get("tarama", "")) or {}
+
+
+def teknik_tarayici():
+    import tarayici as TRY, logolar as LG
+    pz = st.radio("Piyasa", ["BIST", "ABD", "Kripto", "Emtia"], horizontal=True, key="tt_pz")
+    p = {"BIST": "bist", "ABD": "abd", "Kripto": "kripto", "Emtia": "emtia"}[pz]
+    df = tarama_tablosu(p, ZAMAN)
+    if df is None or not len(df):
+        st.info("Bu piyasanın tarama tablosu bir sonraki kapanış bülteninde oluşacak."); return
+    st.caption(f"{len(df)} varlık · veri: son kapanış ({df['Veri zamanı'].max()}) · günlük mumlar. "
+               "Tablo her kapanışta otomatik yenilenir; filtreler anında uygulanır.")
+    kayitli = _sablonlar()
+    secenek = ["— Boş (kendin kur) —"] + [f"Hazır: {k}" for k in TRY.HAZIR] + [f"Kayıtlı: {k}" for k in kayitli]
+    sec = st.selectbox("Şablon", secenek, key="tt_sablon")
+    if st.session_state.get("_tt_son") != sec:
+        st.session_state["_tt_son"] = sec
+        kos = TRY.HAZIR.get(sec[7:], []) if sec.startswith("Hazır: ") else kayitli.get(sec[9:], []) if sec.startswith("Kayıtlı: ") else []
+        st.session_state["tt_alanlar"] = [k["alan"] for k in kos if k["alan"] in df.columns]
+        for k in kos:
+            for x in ("min", "max", "deger"):
+                st.session_state.pop(f"tt_{x}_{k['alan']}", None)
+            if "min" in k: st.session_state[f"tt_min_{k['alan']}"] = float(k["min"])
+            if "max" in k: st.session_state[f"tt_max_{k['alan']}"] = float(k["max"])
+            if isinstance(k.get("deger"), list): st.session_state[f"tt_deger_{k['alan']}"] = k["deger"]
+    mevcut = [a for a in TRY.ALANLAR if a in df.columns]
+    alanlar = st.multiselect("Koşullar (hepsi birlikte sağlanmalı)", mevcut, key="tt_alanlar",
+                             format_func=lambda a: TRY.ALANLAR[a][0], placeholder="Filtre ekleyin: RSI, RVOL, harmonik, sinyal yaşı…")
+    kosullar = []
+    for a in alanlar:
+        et, tur, carp = TRY.ALANLAR[a]
+        if tur == "sayi":
+            c1, c2 = st.columns(2)
+            kw = lambda k_: {} if k_ in st.session_state else {"value": None}
+            mn = c1.number_input(f"{et} · en az", key=f"tt_min_{a}", placeholder="sınır yok", **kw(f"tt_min_{a}"))
+            mx = c2.number_input(f"{et} · en çok", key=f"tt_max_{a}", placeholder="sınır yok", **kw(f"tt_max_{a}"))
+            kosullar.append({"alan": a, **({"min": mn} if mn is not None else {}), **({"max": mx} if mx is not None else {})})
+        elif tur == "secim":
+            ops = sorted(x for x in df[a].dropna().astype(str).unique() if x and x != "–")
+            if f"tt_deger_{a}" in st.session_state:
+                st.session_state[f"tt_deger_{a}"] = [x for x in st.session_state[f"tt_deger_{a}"] if x in ops]
+            dg = st.multiselect(et, ops, key=f"tt_deger_{a}")
+            kosullar.append({"alan": a, "deger": dg})
+        else:
+            st.caption(f"✓ {et}"); kosullar.append({"alan": a, "deger": True})
+    sonuc = TRY.uygula(df, kosullar)
+    sira = st.selectbox("Sırala", ["Teknik puan", "Sinyal yaşı", "RVOL", "RS", "Değişim", "Hacim", "RSI"], key="tt_sira")
+    if sira in sonuc.columns:
+        sonuc = sonuc.sort_values(sira, ascending=(sira in ("Sinyal yaşı", "RSI")), na_position="last")
+    st.markdown(TS.bb(f"{len(sonuc)} sonuç"), unsafe_allow_html=True)
+    if len(sonuc):
+        g = sonuc.copy()
+        lp = {"BIST": "bist", "ABD": "abd", "Kripto": "kripto"}.get(pz)
+        g.insert(0, "Logo", [LG.logo_url(k, lp) if lp else None for k in g["Kod"]])
+        for c in ("Değişim", "1A", "ATR %", "Sinyalden beri", "Desteğe uzaklık", "Dirence uzaklık"):
+            if c in g: g[c] = pd.to_numeric(g[c], errors="coerce") * 100
+        goster = [c for c in ("Logo", "Kod", "Ad", "Fiyat", "Değişim", "Hacim", "RVOL", "RSI", "ATR %", "Trend", "Teknik puan", "RS",
+                              "Sinyal yönü", "Sinyal", "Sinyal tarihi", "Sinyal fiyatı", "Sinyal yaşı", "Sinyalden beri",
+                              "Harmonik", "Emir bloğu içinde", "Veri zamanı") if c in g]
+        sec_ = st.dataframe(g[goster], hide_index=True, use_container_width=True, on_select="rerun", selection_mode="single-row", key="tt_tablo",
+                            column_config={"Logo": st.column_config.ImageColumn("", width="small"),
+                                           "Fiyat": st.column_config.NumberColumn(format="%.2f"),
+                                           "Değişim": st.column_config.NumberColumn("Gün %", format="%+.1f"),
+                                           "Hacim": st.column_config.NumberColumn("Hacim", format="compact"),
+                                           "RVOL": st.column_config.NumberColumn(format="%.1fx"), "RSI": st.column_config.NumberColumn(format="%.0f"),
+                                           "ATR %": st.column_config.NumberColumn(format="%.1f"),
+                                           "Teknik puan": st.column_config.ProgressColumn("Puan", min_value=0, max_value=100, format="%.0f"),
+                                           "RS": st.column_config.NumberColumn(format="%.0f"),
+                                           "Sinyal fiyatı": st.column_config.NumberColumn(format="%.2f"),
+                                           "Sinyal yaşı": st.column_config.NumberColumn("Yaş (mum)", format="%d"),
+                                           "Sinyalden beri": st.column_config.NumberColumn("Sinyalden %", format="%+.1f")})
+        st.caption("Satıra dokunup teknik analizini açabilirsiniz. Sinyal: fırsat motorunun son 60 mumdaki en yeni kurulumu "
+                   "(BIST, ABD ve emtiada SAT sinyalleri geçmişte kârsızdı; bilgi amaçlıdır).")
+        try:
+            rows = sec_.selection.rows
+        except Exception:
+            rows = []
+        if rows:
+            kod_s = str(g.iloc[rows[0]]["Kod"])
+            tur_s = {"BIST": "Hisse", "ABD": "ABD", "Kripto": "Kripto", "Emtia": "Emtia"}[pz]
+            def _tt_ac(k_, t_):
+                st.session_state["kk_istek"] = f"{k_}|{t_}|teknik|{dt.datetime.now().timestamp():.0f}"
+                st.session_state["_kk_git"] = True
+            st.button(f":material/candlestick_chart: {kod_s} teknik analizini aç", type="primary", key="tt_ac", on_click=_tt_ac, args=(kod_s, tur_s))
+    with st.expander(":material/bookmark_add: Bu taramayı şablon olarak kaydet"):
+        ad_s = st.text_input("Şablon adı", key="tt_ad", placeholder="ör. Benim kırılım taramam")
+        if st.button("Kaydet", key="tt_kaydet", disabled=not (ad_s and kosullar)):
+            k_ = dict(kayitli); k_[ad_s.strip()[:40]] = [{x: (float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else v)
+                                                       for x, v in k.items()} for k in kosullar]
+            st.query_params["tarama"] = TRY.kodla(k_)
+            st.success("Kaydedildi. Şablonlar sayfa adresinde saklanır: bu sayfayı yer imlerine ekleyin ya da ana ekrana yeniden ekleyin.")
+        if kayitli:
+            sil = st.selectbox("Kayıtlı şablonu sil", ["—"] + list(kayitli), key="tt_sil")
+            if sil != "—" and st.button("Sil", key="tt_sil_btn"):
+                k_ = dict(kayitli); k_.pop(sil, None)
+                if k_: st.query_params["tarama"] = TRY.kodla(k_)
+                else: st.query_params.pop("tarama", None)
+                st.rerun()
+
+
 with tab_t:
-    st.caption(f"Hisse evreni: {len(EVREN)} BIST hissesi ({EVREN_NOT}). Seçtiğiniz gruptaki hisseleri tarar; sağlık skoru ve potansiyele göre sıralar. "
-               "Hisse sayısına göre 1–5 dakika sürebilir; sonuç en fazla 2 saat saklanır.")
-    gruplar = {"Büyük hisseler (30)": bv.BUYUK_HISSELER}
-    gruplar.update({f"Sektör: {k}": v for k, v in br.SEKTOR_GRUPLARI.items()})
-    gruplar["Bebek şirketler (BIST Halka Arz Endeksi)"] = sorted(HARZ) if HARZ else []
-    gruplar[f"Tüm BIST ({len(EVREN)} hisse – 15–30 dk)"] = sorted(EVREN["Kod"])
-    gruplar = {k: v for k, v in gruplar.items() if v}
-    secim = st.selectbox("Evren", list(gruplar), key="t_grup")
-    sirala = st.selectbox("Sırala", ["Sağlık skoru", "Potansiyel", "F/K", "PD/DD", "Temettü verimi", "1Y getiri"], key="t_sira")
-    if st.button(":material/search: Taramayı Başlat", type="primary", key="t_btn"):
-        with st.spinner(f"{len(gruplar[secim])} hisse taranıyor… Ekranı kapatmayın."):
-            try:
-                satirlar, hatalar = tarama(tuple(gruplar[secim]), tuple(PRM.items()), SAAT2, br.SURUM)
-                st.session_state.tarama = (secim, satirlar, hatalar)
-            except Exception as e:
-                st.error(f"Tarama yapılamadı: {e}")
-    if "tarama" in st.session_state:
-        ad_, satirlar, hatalar = st.session_state.tarama
-        st.markdown(f"**{ad_}** – {len(satirlar)} hisse")
-        tablo_goster(satirlar, sirala)
-        if hatalar:
-            st.caption("Veri alınamayanlar: " + ", ".join(hatalar))
+  t_mod = st.radio("Tarama türü", ["Teknik tarama (kendi filtren)", "Temel tarama (sağlık skoru)"], horizontal=True, key="t_mod")
+  if t_mod.startswith("Teknik"):
+    teknik_tarayici()
+  else:
+      st.caption(f"Hisse evreni: {len(EVREN)} BIST hissesi ({EVREN_NOT}). Seçtiğiniz gruptaki hisseleri tarar; sağlık skoru ve potansiyele göre sıralar. "
+                 "Hisse sayısına göre 1–5 dakika sürebilir; sonuç en fazla 2 saat saklanır.")
+      gruplar = {"Büyük hisseler (30)": bv.BUYUK_HISSELER}
+      gruplar.update({f"Sektör: {k}": v for k, v in br.SEKTOR_GRUPLARI.items()})
+      gruplar["Bebek şirketler (BIST Halka Arz Endeksi)"] = sorted(HARZ) if HARZ else []
+      gruplar[f"Tüm BIST ({len(EVREN)} hisse – 15–30 dk)"] = sorted(EVREN["Kod"])
+      gruplar = {k: v for k, v in gruplar.items() if v}
+      secim = st.selectbox("Evren", list(gruplar), key="t_grup")
+      sirala = st.selectbox("Sırala", ["Sağlık skoru", "Potansiyel", "F/K", "PD/DD", "Temettü verimi", "1Y getiri"], key="t_sira")
+      if st.button(":material/search: Taramayı Başlat", type="primary", key="t_btn"):
+          with st.spinner(f"{len(gruplar[secim])} hisse taranıyor… Ekranı kapatmayın."):
+              try:
+                  satirlar, hatalar = tarama(tuple(gruplar[secim]), tuple(PRM.items()), SAAT2, br.SURUM)
+                  st.session_state.tarama = (secim, satirlar, hatalar)
+              except Exception as e:
+                  st.error(f"Tarama yapılamadı: {e}")
+      if "tarama" in st.session_state:
+          ad_, satirlar, hatalar = st.session_state.tarama
+          st.markdown(f"**{ad_}** – {len(satirlar)} hisse")
+          tablo_goster(satirlar, sirala)
+          if hatalar:
+              st.caption("Veri alınamayanlar: " + ", ".join(hatalar))
 
 # ================= BEBEK ŞİRKETLER =================
 
