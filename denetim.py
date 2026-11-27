@@ -27,6 +27,11 @@ with sync_playwright() as pw:
     print("menü:", pg.evaluate("[...document.querySelectorAll('#kk-nav button')].map(x=>x.innerText.trim())"), "aktif:", pg.evaluate(akt))
     print("bant:", pg.evaluate("(document.querySelector('.kk-uyari')||{}).innerText"))
     pg.screenshot(path="denetim_graf/m0_ana.png")
+    try:
+        pg.locator(".fl-b").first.scroll_into_view_if_needed(); pg.wait_for_timeout(1200); pg.screenshot(path="denetim_graf/firsat.png")
+        print("fırsat grupları:", pg.evaluate("[...document.querySelectorAll('.fl-b')].map(x=>x.innerText.replace(/\\n/g,' '))"),
+              "satır:", pg.evaluate("document.querySelectorAll('.fl').length"))
+    except Exception as ex: print("fırsat:", ex)
     for i, ad in enumerate(["Piyasalar", "Harita", "Seçki", "BIST", "Haberler", "Ana sayfa"]):
         pg.locator(f"#kk-nav button:has-text('{ad}')").first.click(); pg.wait_for_timeout(2500); bekle(90); pg.wait_for_timeout(1500)
         print(f"{ad:10} seçili:", pg.evaluate(sec)[:3], "| aktif:", pg.evaluate(akt), "| hata:", pg.evaluate("document.querySelectorAll('[data-testid=stException]').length"))

@@ -897,6 +897,24 @@ def gunun_firsatlari(zaman, n=8):
     return sec[:n + 4]
 
 
+def firsat_satir(f):
+    """Günün fırsatları listesinde tek satır (dikey liste; piyasa başlığı altında)."""
+    import logolar as LG
+    al = f["yon"] == 1; renk = "#22C55E" if al else "#EF4444"
+    u = LG.logo_url(f["kod"], f["pz"]); lg = f'<img src="{u}" alt="" class="mk-l">' if u else ""
+    p = f.get("plan") or {}; g = p.get("giris"); st_ = p.get("stop"); h1 = (p.get("hedef") or [{}])[0].get("fiyat")
+    rr = (p.get("hedef") or [{}, {}])[1].get("r") if len(p.get("hedef") or []) > 1 else None
+    puan = float(f.get("puan", 0))
+    kis = str(f["kod"]).replace(".US", "").split("/")[0].split("@")[0]
+    plan = f"Giriş {FR.fy(g)} · Stop {FR.fy(st_)} · H1 {FR.fy(h1)}" if g else ""
+    return (f'<div class="fl" style="--v:{renk}"><div class="fl-u"><b>{lg}{kis}</b>'
+            f'<span class="fl-k">{TK.TF_AD.get(f["tf"], f["tf"])} · {f.get("kurulum_ad", "")[:30]}</span>'
+            f'<span class="fk-e" style="background:{renk}">{"AL" if al else "SAT"}</span></div>'
+            f'<div class="fl-a"><span class="fl-p">{plan}</span><span class="fl-n">{puan:.0f}'
+            f'{f" · 1:{rr:.1f}".replace(".", ",") if rr else ""}</span></div>'
+            f'<div class="fk-c"><div style="width:{min(puan, 100):.0f}%"></div></div></div>')
+
+
 def firsat_mini(f):
     import logolar as LG
     al = f["yon"] == 1; renk = "#22C55E" if al else "#EF4444"
@@ -1871,8 +1889,12 @@ with tab_p:
         _gf = gunun_firsatlari(ZAMAN)
         if _gf:
             st.markdown(TS.bb("Günün fırsatları"), unsafe_allow_html=True)
-            st.markdown('<div class="serit-k">' + "".join(firsat_mini(f) for f in _gf) + "</div>", unsafe_allow_html=True)
-            st.caption("Ayrıntılar: Keşfet › Fırsatlar. Puan, işlem planı ve teyitler Telegram kartlarında da var.")
+            _pa = {"bist": "BIST hisseleri", "kripto": "Kripto", "abd": "ABD hisseleri", "emtia": "Emtia"}
+            st.markdown("".join(
+                f'<div class="fl-b">{_pa[pz]}<span>{sum(f["pz"] == pz for f in _gf)} fırsat</span></div>'
+                + "".join(firsat_satir(f) for f in _gf if f["pz"] == pz)
+                for pz in _pa if any(f["pz"] == pz for f in _gf)), unsafe_allow_html=True)
+            st.caption("Sağdaki sayı puan (100 üzerinden) · K/R oranı. Ayrıntılar: Seçki sekmesi. Puan, işlem planı ve teyitler Telegram kartlarında da var.")
     except Exception as ex:
         st.caption(f"Fırsatlar okunamadı: {ex}")
     sabah_k = gorsel_oku("sabah/kart.png", ZAMAN)
