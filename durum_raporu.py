@@ -110,7 +110,7 @@ def kart(donem, sonuc, dosya, bugun):
         for r in [x for x in sonuc if x["grup"] == grup]:
             hd = " / ".join(fy(x) for x in r["yukari"][:2]) or "zirvede"; ds = " / ".join(fy(x) for x in r["asagi"][:2]) or "–"
             et = r["etiket"] if r["kod"] != "VIX" else ("YÜKSELİŞTE" if "AL" in r["etiket"] else "DÜŞÜŞTE" if "SAT" in r["etiket"] else "NÖTR")
-            sat.append({"sol": f"{r['ad']} · {et}", "nokta": renk(r["etiket"]) if r["kod"] != "VIX" else C["altin"],
+            sat.append({"logo": ("BTC/USDT", "kripto") if r["kod"] == "BTC" else None, "sol": f"{r['ad']} · {et}", "nokta": renk(r["etiket"]) if r["kod"] != "VIX" else C["altin"],
                         "sag": f"{fy(r['fiyat'])}  {yz(r['degisim'])}", "sag_renk": C["yesil"] if (r["degisim"] or 0) > 0 else C["kirmizi"],
                         "alt": f"Hedef {hd} · Destek {ds}. {r['senaryo']}"})
         if sat: bolumler.append({"baslik": grup, "renk": C["altin"], "satirlar": sat})

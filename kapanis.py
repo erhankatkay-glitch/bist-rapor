@@ -249,7 +249,7 @@ def acik_kart_satirlari(acik, n=10):
     for k in acik[:n]:
         c = k.get("son_fiyat", k["giris"]); ger = (c - k["giris"]) / k["giris"] * k["yon"]
         durum = " · ".join(f"H{i + 1} {'görüldü' if i < k['asama'] else F.fy(k['hedef'][i])}" for i in range(3))
-        out.append({"sol": f"{F.gorunen(k['kod'], k.get('ad'))} · {'AL' if k['yon'] == 1 else 'SAT'} · {T.TF_AD[k['tf']].lower()}",
+        out.append({"logo": (k["kod"], k.get("piyasa")), "sol": f"{F.gorunen(k['kod'], k.get('ad'))} · {'AL' if k['yon'] == 1 else 'SAT'} · {T.TF_AD[k['tf']].lower()}",
                     "sag": F.yz(ger), "sag_renk": C["yesil"] if ger >= 0 else C["kirmizi"], "nokta": C["yesil"] if k["yon"] == 1 else C["kirmizi"],
                     "alt": f"giriş {F.fy(k['giris'])} · stop {'girişte' if k['asama'] else F.fy(k['stop'])} · {durum}"})
     return out
@@ -357,7 +357,7 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
         anahtar = f"firsat:{D.p}:{tf}"
         import kart as KT
         C = KT.C
-        satl = [{"sol": f"{F.gorunen(f['kod'], f.get('ad'))} · {'AL' if f['yon'] == 1 else 'SAT'}", "sag": f"puan {f['puan']:.0f}",
+        satl = [{"logo": (f["kod"], D.p), "sol": f"{F.gorunen(f['kod'], f.get('ad'))} · {'AL' if f['yon'] == 1 else 'SAT'}", "sag": f"puan {f['puan']:.0f}",
                  "sag_renk": C["yesil"] if f["yon"] == 1 else C["kirmizi"], "nokta": C["yesil"] if f["yon"] == 1 else C["kirmizi"],
                  "alt": f"{f['kurulum_ad'][:60]} · giriş {F.fy(f['plan']['giris'])} · stop {F.fy(f['plan']['stop'])} · H1 {F.fy(f['plan']['hedef'][0]['fiyat'])}"}
                 for f in secilen]

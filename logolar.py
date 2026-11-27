@@ -7,6 +7,7 @@ logo.dev'e göre tarayıcı kodunda açıkça kullanılması güvenlidir; gizli 
 import base64
 import functools
 import os
+import re
 import tempfile
 import urllib.request
 
@@ -75,6 +76,7 @@ def logo_url(kod, piyasa):
 @functools.lru_cache(maxsize=512)
 def logo_dosya(kod, piyasa):
     """Kart çizimi için yerel PNG yolu (hisseler indirilip önbelleğe alınır) ya da None."""
+    if piyasa not in ("kripto", "bist", "abd"): return None
     if piyasa == "kripto":
         u = kripto_logo_url(kod); ad = "kripto_" + kripto_baz(kod)
     else:
@@ -90,3 +92,17 @@ def logo_dosya(kod, piyasa):
         return yol
     except Exception:
         return kripto_logo(kod) if piyasa == "kripto" else None   # kriptoda yedek: yerel CC0 set
+
+
+_LOGOSUZ = {"XU100", "XU030", "XBANK", "XUSIN", "XHOLD", "XUTEK", "SP500", "NASDAQ", "DOW", "VIX", "DAX", "USDTRY", "EURTRY", "DXY", "US10Y",
+            "ALTIN", "GRAMALTIN", "GUMUS", "BRENT", "WTI", "BAKIR", "PLATIN", "PALADYUM", "DOGALGAZ", "BUGDAY", "MISIR", "SOYA", "KAHVE",
+            "KAKAO", "SEKER", "PAMUK"}
+
+
+def tahmin_piyasa(kod):
+    """Koddan piyasa: 'BTC/USDT' → kripto, 'AAPL.US' → abd, 'THYAO' → bist; endeks ve emtia → None (logo yok)."""
+    k = str(kod).upper()
+    if "/" in k or k.endswith("-USD") or "@" in k: return "kripto"
+    if k.endswith(".US"): return "abd"
+    if k in _LOGOSUZ: return None
+    return "bist" if re.fullmatch(r"[A-Z0-9]{3,6}", k.replace(".IS", "")) else None

@@ -1708,15 +1708,20 @@ with tab_al:
                "Son tetiklenen alarmlar aşağıda da görünür.")
     son_al, kontrol = alarm_son(ZAMAN)
     if kontrol: st.caption(f"Son kontrol: {kontrol.get('kontrol')} · {kontrol.get('kural')} kural")
-    st.markdown("**Son alarmlar**")
+    st.markdown(TS.bb("Son alarmlar"), unsafe_allow_html=True)
     if son_al:
-        import re as _re
+        import re as _re, html as _h
+        _kart = []
         for x in son_al[:20]:
-            m_ = _re.sub(r"⟦(.+?)⟧$", r" · [habere git](\1)", x["mesaj"])
-            st.markdown(f"- `{x['zaman']}` {m_}")
+            m_ = x["mesaj"]; link = _re.search(r"⟦(.+?)⟧$", m_); m_ = _re.sub(r"⟦(.+?)⟧$", "", m_).strip()
+            ik = m_[:1]; renk = "#22C55E" if ("+" in m_ and "%" in m_) or ik == "🟢" else "#EF4444" if ik in ("🔴", "⛔") or "-%" in m_ else "#E8B84A"
+            _kart.append(f'<div class="hb" style="--v:{renk}"><div class="hb-u"><span class="vb-e">{_h.escape(x["zaman"])}</span></div>'
+                         f'<div class="hb-b" style="font-size:.9rem">{_h.escape(m_)}</div>'
+                         + (f'<a class="hb-l" href="{_h.escape(link.group(1))}" target="_blank" rel="noopener">Habere git ›</a>' if link else "") + "</div>")
+        st.markdown("".join(_kart), unsafe_allow_html=True)
     else:
         st.info("Henüz tetiklenen alarm yok.")
-    st.markdown("**Kurallar**")
+    st.markdown(TS.bb("Kurallar"), unsafe_allow_html=True)
     mevcut = open("alarmlar.txt", encoding="utf-8").read() if os.path.exists("alarmlar.txt") else ""
     st.code("\n".join(s for s in mevcut.splitlines() if s.strip() and not s.startswith("#")) or "(kural yok)")
     with st.expander(":material/add: Yeni alarm ekle"):

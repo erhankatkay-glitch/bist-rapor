@@ -231,6 +231,14 @@ GRUP = [("💼", "💼 <b>PORTFÖYÜNÜZ</b>"), ("⚡🔔", "⚡ <b>Sert hareket
 
 
 def _satir(m):
+    g, sat, url = _satir_ham(m)
+    if isinstance(sat, dict) and not sat.get("logo"):
+        ilk = str(sat.get("sol", "")).split(" ")[0].strip("()·")
+        if ilk: sat["logo"] = (ilk, None)
+    return g, sat, url
+
+
+def _satir_ham(m):
     """Alarm metnini kart satırına çevirir: (grup, satır sözlüğü, bağlantı)."""
     import kart as K
     C = K.C; url = None
