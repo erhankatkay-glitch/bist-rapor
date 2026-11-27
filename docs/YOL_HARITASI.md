@@ -54,7 +54,7 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 - ~~7. Teknik motoru tamamla: WMA, HMA, Heikin Ashi, RVOL, order block/breaker, harmonik formasyonlar~~ (27.11.2026 tamam)
 - ~~8. Kendi taramanı kur: filtre birleştirme, kayıtlı şablonlar, sinyal yaşı / sinyalden beri değişim~~ (27.11.2026 tamam)
 - ~~9. Risk hesaplayıcı (pozisyon büyüklüğü, komisyon) + sanal işlem portföyü~~ (27.11.2026 tamam)
-- 10. Kullanıcı tanımlı alarmlar (RSI, EMA kesişimi, seviye kırılımı) + alarm geçmişi.
+- ~~10. Kullanıcı tanımlı alarmlar (RSI, EMA kesişimi, seviye kırılımı) + alarm geçmişi~~ (27.11.2026 tamam)
 - 10b. QuantDinger (kullanıcının fork'u, Apache-2.0) kütüphanesinden aktarım (27.11 değerlendirmesi):
   - Platformun kendisi kurulmaz: Docker, PostgreSQL, Redis ve sürekli açık sunucu gerekir; BIST desteği yok; canlı emir modülü var.
   - Alınacaklar: library/indicators (54 gösterge: OTT, Mavilim, AlphaTrend, QQE, Half Trend, Schaff vb.) ve library/strategies (206 strateji).
