@@ -993,7 +993,7 @@ with tab_r:
             c1, c2 = st.columns(2)
             kart(c1, "SON FİYAT", f"{br.tl(o['Fiyat'])} {r.get('pb', 'TL')}", f"F/K {br.kat(o['F/K'])} · PD/DD {br.kat(o['PD/DD'])}")
             kart(c2, "ADİL DEĞER", f"{br.tl(o['Adil değer'])} {r.get('pb', 'TL')}" if o["Adil değer"] else "–",
-                 f"Güven: {r['guven']}" + (" · sınırlandı" if r.get("sinirlandi") else ""), "#2F6DB5")
+                 f"Güven: {r['guven']}" + (" · sınırlandı" if r.get("sinirlandi") else ""), "#E8B84A")
             c1, c2 = st.columns(2)
             kart(c1, "POTANSİYEL", br.yz(o["Potansiyel"]), o["Görüş"], renk_pot(o["Potansiyel"]))
             kart(c2, "SAĞLIK SKORU", f"{br.ond(o['Sağlık skoru'], 2)}/5" if o["Sağlık skoru"] else "–", r["skor_etiket"],
@@ -1033,7 +1033,7 @@ with tab_r:
                 if sv.get("direnc"): kart(c2, "EN YAKIN DİRENÇ", f"{br.tl(sv['direnc'][0][0])} {r.get('pb', 'TL')}", br.yz(sv["direnc"][0][0] / o["Fiyat"] - 1), "#C0392B")
                 if u.get("r"):
                     c1, c2 = st.columns(2)
-                    kart(c1, "DOLAR FİYAT", f"${br.ond(u['fiyat_usd'], 2)}", f"Kur {br.ond(u['kur'], 2)}", "#2F6DB5")
+                    kart(c1, "DOLAR FİYAT", f"${br.ond(u['fiyat_usd'], 2)}", f"Kur {br.ond(u['kur'], 2)}", "#E8B84A")
                     kart(c2, "1Y GETİRİ ($)", br.yz(u["r"].get("1Y")), f"TL reel: {br.yz(br.reel(o['1Y getiri']))}",
                          "#1E8E5A" if (u["r"].get("1Y") or 0) > 0 else "#C0392B")
                 if r.get("baslik"):
