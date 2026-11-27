@@ -101,6 +101,13 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - SAT yönü ABD, emtia ve BIST'te her filtreyle zararlı (ABD G −0,14, ABD H −0,23, emtia −0,14, BIST H −0,23); bu piyasalarda SAT taranmaya devam etmeyecek (zaten taranmıyordu).
 - Aylık (A) dilimde örnek az; filtre yok.
 
+## Kod haritası (graphify, 27.11.2026)
+- graphify GitHub Actions'ta yalnızca kod modunda çalıştırıldı (yapay zekâ anahtarı gerekmez; kod dışarı gitmez): 44 dosya, 1.379 düğüm, 2.799 bağlantı, 54 alt sistem.
+- En merkezi dosyalar: bist_rapor.py, app.py, kapanis.py, bist_varlik.py, tasarim.py, firsat.py.
+- Aynı işi gören tekrarlı yardımcılar (Aşama 5'te tek yere toplanacak):
+  - Biçimleme: yz(), _img(), _png(), _yon()
+  - Analiz girişleri: tara(), analiz()
+
 ## Sıradaki aşamalar
 1. ~~Aşama 1: envanter ve veri denetimi~~ (bu dosya)
 2. Aşama 2: Fırsat motoru
