@@ -542,7 +542,7 @@ def piyasa_karti(ad_, v):
     birim = {"puan": "", "TL": " ₺", "$": " $", "%": "%"}.get(v["birim"], "")
     alt = " · ".join(x for x in (f"1A {br.yz(v['d1A'])}" if v.get("d1A") is not None else "", f"YBB {br.yz(v['YBB'])}" if v.get("YBB") is not None else "") if x)
     import logolar as LG
-    lg = LG.kripto_logo_uri({"Bitcoin": "BTC", "Ethereum": "ETH"}.get(ad_, "")) if ad_ in ("Bitcoin", "Ethereum") else None
+    lg = LG.logo_url({"Bitcoin": "BTC", "Ethereum": "ETH"}.get(ad_, ""), "kripto") if ad_ in ("Bitcoin", "Ethereum") else None
     if lg: ad_ = f'<img src="{lg}" alt="" style="width:18px;height:18px;vertical-align:-3px;margin-right:6px">{ad_}'
     return (f'<div class="pk"><div><div class="pk-ad">{ad_}</div><div class="pk-d">{deger}{birim}</div>'
             f'<span class="rozet {sinif}">{ok} {br.yz(d)}</span><div class="pk-alt">{alt}</div></div>'

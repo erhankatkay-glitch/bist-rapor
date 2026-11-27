@@ -20,18 +20,9 @@ with sync_playwright() as pw:
     print("mini kart:", pg.evaluate("document.querySelectorAll('.mk').length"), "fırsat kartı:", pg.evaluate("document.querySelectorAll('.fk').length"))
     pg.screenshot(path="denetim_graf/ana.png", full_page=False)
     pg.mouse.wheel(0, 700); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/ana2.png")
-    sayfalar = [("Keşfet", ["Fırsatlar", "Hisse", "Teknik", "Tarayıcı", "Emtia & Kripto", "Bebek", "Karşılaştır"]),
-                ("Portföy", ["Varlıklarım", "Performans"]), ("Takip", ["Favoriler", "Alarmlar"])]
-    for bol, alt in sayfalar:
-        pg.locator(f"#kk-nav button[data-sekme='{bol}']").tap(); pg.wait_for_timeout(1500)
-        for ad in alt:
-            try:
-                pg.locator('[data-testid="stTab"]:visible', has_text=ad).first.click(); pg.wait_for_timeout(1800)
-                pg.evaluate("window.scrollTo(0,0)"); pg.wait_for_timeout(300)
-                pg.screenshot(path=f"denetim_graf/{bol}_{ad.replace(' ', '').replace('&', '')}.png")
-                print("ekran:", bol, ad)
-            except Exception as ex:
-                print("HATA", bol, ad, str(ex)[:120])
+    pg.locator("#kk-nav button[data-sekme='Keşfet']").tap(); pg.wait_for_timeout(1500)
+    print("RADYO:", pg.evaluate("""(()=>{const r=[...document.querySelectorAll('[data-testid=stRadio]')].find(x=>x.offsetParent); return r? r.outerHTML.slice(0,2500):'yok'})()"""))
+    print("SECIM:", pg.evaluate("""(()=>{const r=[...document.querySelectorAll('[data-testid=stSelectbox]')].find(x=>x.offsetParent); return r? r.outerHTML.slice(0,1500):'yok'})()"""))
     b.close()
 p.terminate()
 print(open("st_log.txt").read()[-2500:])
