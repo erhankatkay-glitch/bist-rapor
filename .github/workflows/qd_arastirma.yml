@@ -34,8 +34,33 @@ jobs:
             qd_*.csv
             log_*.txt
 
+  boya:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        parca: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt ta
+      - run: |
+          git clone -q --depth 1 https://github.com/erhankatkay-glitch/QuantDinger.git /tmp/qd
+          echo "QD_KLASOR=/tmp/qd/library/indicators" >> $GITHUB_ENV
+      - run: python arastirma_qd.py boya ${{ matrix.parca }} 12 2>&1 | tee log_boya_${{ matrix.parca }}.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qd-boya-${{ matrix.parca }}
+          path: |
+            qd_boya_*.json
+            log_boya_*.txt
+
   ozet:
-    needs: olay
+    needs: [olay, boya]
     if: always()
     runs-on: ubuntu-latest
     env:
@@ -53,7 +78,7 @@ jobs:
           merge-multiple: true
       - name: Özet
         run: |
-          cp parcalar/qd_*.csv . ; mkdir -p cikti; cp parcalar/log_*.txt cikti/ || true
+          cp parcalar/qd_*.csv parcalar/qd_boya_*.json . ; mkdir -p cikti; cp parcalar/log_*.txt cikti/ || true
           for p in bistg abdg kriptog kripto4s; do python arastirma_qd.py ozet $p 2>&1 | tee cikti/ozet_$p.txt || true; done
           cp qd_sonuc_*.json cikti/ || true
           cd cikti && git init -q -b arastirma-cikti && git config user.name arastirma && git config user.email actions@users.noreply.github.com
