@@ -217,6 +217,12 @@ div[role="radiogroup"] > label:has(input:checked) p {color:var(--altin-a) !impor
 .serit-mk .mk {width:calc((100% - 27px) / 4); min-width:80px; padding:8px 7px 3px; border-radius:14px;}
 .serit-mk .mk-d {font-size:.92rem;} .serit-mk .mk-y {font-size:.66rem;} .serit-mk .mk-a {font-size:.68rem;}
 .serit-mk .mk svg {width:100%; height:34px;}
+.kk-kutu {margin-top:-12px;}
+/* Öne çıkanlar: açıklama + kalem + liste seçimi referanstaki gibi tek satırda */
+[data-testid="stHorizontalBlock"]:has(.kk-alt2) {flex-wrap:nowrap !important; gap:8px !important; align-items:center !important;}
+[data-testid="stHorizontalBlock"]:has(.kk-alt2) > [data-testid="stColumn"] {min-width:0 !important; width:auto !important; flex:1.25 1 0 !important;}
+[data-testid="stHorizontalBlock"]:has(.kk-alt2) > [data-testid="stColumn"]:last-child {flex:1 1 0 !important;}
+[data-testid="stHorizontalBlock"]:has(.kk-alt2) .kk-alt2 {font-size:.78rem; line-height:1.3;}
 .mk-n {width:6px; height:6px; border-radius:50%; flex:none; display:inline-block;}
 /* arama kutusu: referanstaki gibi düz, ok yok */
 .st-key-ana_ara [data-baseweb="select"] > div {border-radius:24px !important; background:#141517 !important;}
