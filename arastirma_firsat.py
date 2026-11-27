@@ -59,6 +59,53 @@ def bist_veri(adet=150):
     return {k: out[k] for k in sec + ["XU100"] if k in out}, "XU100"
 
 
+def abd_veri(adet=200):
+    import yfinance as yf, bist_abd as AB
+    lk, _ = AB.likit_hisseler(AB.tum_hisseler())
+    lk = lk.sort_values("Dolar hacim", ascending=False).head(adet)
+    sem = list(lk["Sembol"]) + ["^GSPC"]
+    v = yf.download(sem, period="6y", interval="1d", auto_adjust=True, progress=False, group_by="ticker", threads=True)
+    out = {}
+    for s in sem:
+        try:
+            d = v[s].dropna(subset=["Close"]); d.index = d.index.tz_localize(None) if d.index.tz is not None else d.index
+            if len(d) >= 400: out["SPX" if s == "^GSPC" else s] = d
+        except Exception:
+            pass
+    return out, "SPX"
+
+
+def bist4s_veri(adet=150):
+    import kapanis as K, bist_evren as EV
+    df, _, _ = EV.bist_listesi()
+    h1 = K.yahoo_saatlik([k + ".IS" for k in sorted(df["Kod"])] + ["XU100.IS"], "Europe/Istanbul", sure="730d")
+    simdi = pd.Timestamp.now(tz="Europe/Istanbul").tz_localize(None)
+    out = {s[:-3]: K.bist_4s(d, simdi) for s, d in h1.items()}
+    out = {k: d for k, d in out.items() if len(d) >= 300}
+    hac = {k: float((d["Close"] * d["Volume"]).tail(120).mean()) for k, d in out.items() if k != "XU100"}
+    sec = sorted(hac, key=lambda k: -hac[k])[:adet]
+    return {k: out[k] for k in sec + ["XU100"] if k in out}, "XU100"
+
+
+def emtia_veri():
+    import yfinance as yf, bist_varlik as V
+    sem = {k: v[0] for k, v in V.VARLIKLAR.items() if v[2] == "emtia" and v[0]}
+    v = yf.download(list(sem.values()), period="10y", interval="1d", auto_adjust=True, progress=False, group_by="ticker", threads=True)
+    out = {}
+    for k, s in sem.items():
+        try:
+            d = v[s].dropna(subset=["Close"]); d.index = d.index.tz_localize(None) if d.index.tz is not None else d.index
+            if len(d) >= 400: out[k] = d
+        except Exception:
+            pass
+    return out, None
+
+
+def haftalik(veri):
+    agg = {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
+    return {k: d[list(agg)].resample("W-FRI").agg(agg).dropna(subset=["Close"]) for k, d in veri.items()}
+
+
 # ------------------------------------------------------------------ özellikler
 def rejim_serisi(d):
     G = T.gostergeler(d)
@@ -87,7 +134,7 @@ def olaylar(veri, onder, tf):
             G = T.gostergeler(d); A = F.diziler(d, G)
         except Exception as ex:
             log("gösterge", kod, ex); continue
-        n = len(A["Close"]); bas = max(220, n - F.GECMIS_BAR)
+        n = len(A["Close"]); bas = max(60 if tf in ("H", "A") else 220, n - F.GECMIS_BAR)
         rj = rejim.reindex(d.index, method="ffill").to_numpy() if rejim is not None else np.zeros(n)
         for yon in (1, -1):
             M = F.ayna(A, yon); tet = F.tetikler(M)
@@ -161,6 +208,11 @@ if __name__ == "__main__":
         if i == "kripto4s": veri, onder = kripto_veri("4h"); tf = "4S"
         elif i == "kriptog": veri, onder = kripto_veri("1d"); tf = "G"
         elif i == "bistg": veri, onder = bist_veri(); tf = "G"
+        elif i == "bist4s": veri, onder = bist4s_veri(); tf = "4S"
+        elif i == "bisth": veri, onder = bist_veri(); veri = haftalik(veri); tf = "H"
+        elif i == "abdg": veri, onder = abd_veri(); tf = "G"
+        elif i == "abdh": veri, onder = abd_veri(); veri = haftalik(veri); tf = "H"
+        elif i == "emtiag": veri, onder = emtia_veri(); tf = "G"
         else: continue
         log(f"{i}: {len(veri)} varlık, veri {time.time() - t0:.0f} sn")
         df = olaylar(veri, onder, tf)
