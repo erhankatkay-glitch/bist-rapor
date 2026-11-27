@@ -776,7 +776,10 @@ def satir_html(x, seri=None):
     zem = "rgba(34,197,94,.16)" if d > 0 else "rgba(239,68,68,.16)" if d < 0 else "rgba(255,255,255,.06)"
     kis = x["kod"].replace(".US", "").replace("/USDT", "")
     lg_u = LG.logo_url(x["kod"], x["pz"]) if x["pz"] in ("bist", "abd", "kripto") else None
-    lg = f'<img src="{lg_u}" alt="" class="oc-l">' if lg_u else f'<span class="oc-h">{kis[:4]}</span>'
+    EM_IK = {"GRAMALTIN": "🥇", "ALTIN": "🥇", "GUMUS": "🥈", "PLATIN": "⚪", "PALADYUM": "⚪", "BAKIR": "🟠", "BRENT": "🛢️", "WTI": "🛢️",
+             "DOGALGAZ": "🔥", "BUGDAY": "🌾", "MISIR": "🌽", "SOYA": "🫘", "KAHVE": "☕", "KAKAO": "🍫", "SEKER": "🍬", "PAMUK": "☁️"}
+    lg = (f'<img src="{lg_u}" alt="" class="oc-l">' if lg_u else
+          f'<span class="oc-h" style="font-size:1.3rem">{EM_IK[x["kod"]]}</span>' if x["kod"] in EM_IK else f'<span class="oc-h">{kis[:4]}</span>')
     ok = f'<u style="color:{renk};text-decoration:none;font-size:.7rem;margin-left:4px">{"▲" if d > 0 else "▼" if d < 0 else ""}</u>'
     sp = spark_svg(seri, "#22C55E" if d >= 0 else "#EF4444", 96, 24) if seri is not None and len(seri) > 5 else ""
     istek = f"{x['kod']}|{TUR_ISTEK[x['pz']]}"
@@ -883,10 +886,13 @@ def gunun_firsatlari(zaman, n=8):
                         "plan": {"giris": k["giris"], "stop": k["stop"],
                                  "hedef": [{"fiyat": h, "r": r_} for h, r_ in zip(k.get("hedef") or [], k.get("r") or [])]}})
     # her piyasadan en iyi 3 (puana göre), sonra genel sıralama
+    gruplar = {pz: sorted([f for f in out if f["pz"] == pz], key=lambda f: (f.get("acik", False), -f.get("puan", 0)))[:3]
+               for pz in ("bist", "kripto", "abd", "emtia")}
     sec = []
-    for pz in ("bist", "kripto", "abd", "emtia"):
-        sec += sorted([f for f in out if f["pz"] == pz], key=lambda f: (f.get("acik", False), -f.get("puan", 0)))[:3]
-    return sorted(sec, key=lambda f: (f.get("acik", False), -f.get("puan", 0)))[:n + 4]
+    for i in range(3):                     # sırayla her piyasadan birer tane: BIST, kripto, ABD, emtia
+        for pz in ("bist", "kripto", "abd", "emtia"):
+            if i < len(gruplar[pz]): sec.append(gruplar[pz][i])
+    return sec[:n + 4]
 
 
 def firsat_mini(f):
