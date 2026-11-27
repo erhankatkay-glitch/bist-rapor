@@ -299,6 +299,9 @@ def mum_metni(p, tf, mum):
     return f"{m:%d.%m.%Y}"
 
 
+REJIM = {}   # (piyasa, tf) → piyasa öncüsünün yönü (+1/0/-1); fırsat filtresi için (firsat.FILTRE)
+
+
 def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
     """Bir zaman dilimi için tarama → seçim → takip kaydı → grafik → Telegram."""
     if not varliklar: log(f"{D.p} {tf}: taranacak varlık yok"); return []
@@ -307,7 +310,9 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
         log(f"{D.p} {tf}: {son_mum} mumu zaten işlendi, atlandı."); return []
     D.islenen[f"{tf}_mum"] = son_mum
     t0 = time.time()
-    secilen, adaylar, pist = F.tara(varliklar, tf, D.p, YONLER[D.p], adet=ADET + 4)
+    rj = REJIM.get((D.p, tf))
+    if (D.p, tf) in F.FILTRE: log(f"{D.p} {tf}: piyasa yönü {rj}")
+    secilen, adaylar, pist = F.tara(varliklar, tf, D.p, YONLER[D.p], adet=ADET + 4, ilerleme=log, rejim_degeri=rj)
     try: portfoy_uyari(bot, D, tf, varliklar, adaylar)
     except Exception as ex: log("portföy uyarısı:", ex)
     acik_anahtar = {(k["kod"], k["tf"], k["yon"]) for k in D.acik}
@@ -481,12 +486,16 @@ def bist(slot, zorla):
     kodlar = TB.evren("bist")
     acik_kod = {k["kod"] for k in D.acik}
     log(f"BIST: {len(kodlar)} hisse için saatlik veri indiriliyor…")
-    h1 = {s[:-3]: d for s, d in yahoo_saatlik([k + ".IS" for k in list(kodlar) + list(acik_kod)], "Europe/Istanbul").items()}
+    h1 = {s[:-3]: d for s, d in yahoo_saatlik([k + ".IS" for k in list(kodlar) + list(acik_kod) + ["XU100"]], "Europe/Istanbul").items()}
+    xu = h1.pop("XU100", None)
     log(f"Saatlik veri: {len(h1)} hisse")
     # 1) takip
     olay = takip_et(D, lambda k: h1.get(k["kod"]), simdi)
     # 2) 4 saatlik
     h4 = {k: bist_4s(d, simdi) for k, d in h1.items()}
+    if xu is not None and len(xu):
+        try: REJIM[("bist", "4S")] = F.rejim(bist_4s(xu, simdi))
+        except Exception as ex: log("BIST 100 4S yönü:", ex)
     son_bitis = max((d.index[-1] + pd.Timedelta(hours=4) for d in h4.values() if len(d)), default=None)
     if tazelik_tamam(son_bitis, simdi, zorla):
         V_ = []
@@ -502,6 +511,8 @@ def bist(slot, zorla):
         r = TB.calistir("bist", klasor=CIKTI, zorla=zorla)
         if r:
             analizler = TB.SON["bist"]["analizler"]
+            try: REJIM[("bist", "G")] = F.rejim(TB.SON["bist"]["endeks"]["tf"]["G"]["h"])
+            except Exception as ex: log("BIST 100 günlük yönü:", ex)
             likit = lambda s: float((s["tf"]["G"]["h"]["Close"] * s["tf"]["G"]["h"]["Volume"]).iloc[-20:].median()) >= MIN_TL_HACIM
             gunluk_tf_turu(bot, D, analizler, ("G", "H", "A"), zorla, False, lambda s: "₺", likit, ekstra_fn=bist_bilanco_riski)
             TB.telegram_gonder("bist", *r, klasor=CIKTI, bot=bot)
@@ -564,6 +575,7 @@ def kripto(zorla):
             return e, None
     with ThreadPoolExecutor(max_workers=6) as ex: veri4 = list(ex.map(al4, ev))
     son_bitis = max((d.index[-1] + pd.Timedelta(hours=4) for _, d in veri4 if d is not None and len(d)), default=None)
+    REJIM[("kripto", "4S")] = next((F.rejim(d) for e, d in veri4 if e["baz"] == "BTC" and d is not None and len(d) > 60), None)
     if tazelik_tamam(son_bitis, simdi, zorla):
         V_ = [{"kod": KR.kod_yap(e["baz"], "USDT", e["borsa"]), "ad": e["baz"], "para": "$", "a": F.hafif(d, "4S"),
                "ust_fn": (lambda dd=d: ust_gunluk(dd, "kripto"))}
@@ -579,6 +591,7 @@ def kripto(zorla):
                 return e, None
         with ThreadPoolExecutor(max_workers=6) as ex: veri1 = list(ex.map(al1, ev))
         dun = simdi.normalize() - pd.Timedelta(days=1)
+        REJIM[("kripto", "G")] = next((F.rejim(d) for e, d in veri1 if e["baz"] == "BTC" and d is not None and len(d) > 60), None)
         V_ = [{"kod": KR.kod_yap(e["baz"], "USDT", e["borsa"]), "ad": e["baz"], "para": "$", "a": F.hafif(d, "G"),
                "ust_fn": (lambda dd=d: T.tf_analiz(T.yeniden_ornekle(dd, "H", "kripto"), "H"))}
               for e, d in veri1 if d is not None and len(d) >= 120 and (zorla or d.index[-1] == dun)]

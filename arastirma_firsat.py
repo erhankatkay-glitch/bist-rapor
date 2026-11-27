@@ -18,7 +18,6 @@ import bist_teknik as T
 import firsat as F
 
 RLER = (1.0, 2.0, 3.0)
-PIV = 3   # salınım teyidi için iki yanda gereken mum sayısı
 
 
 def log(*a):
@@ -68,43 +67,14 @@ def rejim_serisi(d):
     return pd.Series(r, index=d.index)
 
 
-def salinimlar(H, L):
-    """Teyitli salınımlar: t anında yalnızca t-PIV'e kadar teyit edilmiş tepe/dipler bilinir. Döner: her t için
-    (son tepe, önceki tepe, son dip, önceki dip) dizileri."""
-    n = len(H)
-    tepe = np.full(n, np.nan); tepe2 = np.full(n, np.nan); dip = np.full(n, np.nan); dip2 = np.full(n, np.nan)
-    st, st2, sd, sd2 = np.nan, np.nan, np.nan, np.nan
-    for t in range(n):
-        i = t - PIV
-        if i >= PIV:
-            w = slice(i - PIV, i + PIV + 1)
-            if H[i] == np.max(H[w]): st2, st = st, H[i]
-            if L[i] == np.min(L[w]): sd2, sd = sd, L[i]
-        tepe[t], tepe2[t], dip[t], dip2[t] = st, st2, sd, sd2
-    return tepe, tepe2, dip, dip2
+salinimlar = F.salinimlar
 
 
 def ozellikler(M, stop, t, sal, at):
-    """Aynalanmış (AL yönlü) dizilerde t anındaki teyitler."""
-    O, H, L, C = M["Open"], M["High"], M["Low"], M["Close"]
-    tepe, tepe2, dip, dip2 = sal
-    risk = C[t] - stop[t]
-    yapi = (np.isfinite(dip[t]) and np.isfinite(dip2[t]) and dip[t] > dip2[t]) or (np.isfinite(tepe[t]) and C[t] > tepe[t])
-    rng = H[t] - L[t]
-    if rng <= 0:
-        mum = False
-    else:
-        clv = (C[t] - L[t]) / rng
-        govde = abs(C[t] - O[t])
-        alt_f = min(O[t], C[t]) - L[t]
-        yutan = C[t] > O[t] and O[t] <= min(O[t - 1], C[t - 1]) and C[t] >= max(O[t - 1], C[t - 1])
-        igne = alt_f >= 2 * govde and clv >= 0.6
-        mum = bool(yutan or igne or clv >= 0.75)
-    # yukarıdaki en yakın karşı seviye: son iki teyitli tepeden giriş üstündeki en yakını
-    adaylar = [x for x in (tepe[t], tepe2[t]) if np.isfinite(x) and x > C[t]]
-    oda = (min(adaylar) - C[t]) >= risk if adaylar else True
-    genis = risk >= 1.5 * at[t]
-    return {"yapi": bool(yapi), "mum": mum, "oda": bool(oda), "genis": bool(genis)}
+    """Canlı motorla aynı price action teyitleri (firsat.pa_ozellik) + geniş stop."""
+    oz = F.pa_ozellik(M, stop[t], t, sal)
+    oz["genis"] = bool(M["Close"][t] - stop[t] >= 1.5 * at[t])
+    return oz
 
 
 # ------------------------------------------------------------------ olaylar

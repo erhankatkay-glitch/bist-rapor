@@ -52,6 +52,63 @@ PIYASA_ONCEL = 15                           # varlık örneği azken piyasa gene
 
 
 # ------------------------------------------------------------------ biçim
+# Aşama 2 teyit filtreleri — her biri geçmiş testle seçildi (arastirma_firsat.py, 27.11.2026; eski ve yeni yarıda ayrı ayrı olumlu).
+#   rejim: 1 = piyasa öncüsü (kripto BTC, BIST XU100) işlem yönünde trendde olmalı; 0 = ters trendde olmamalı
+#   yapi: piyasa yapısı işlem yönünde (HL ya da BOS) · mum: tetik mumunda price action teyidi
+#   oda: H1'den önce karşı salınım seviyesi yok · kume: aynı mumda piyasanın %15'inden fazlası aynı yönde tetiklenmemiş
+FILTRE = {
+    ("kripto", "4S"): {"rejim": 1, "yapi": True, "mum": True, "oda": True, "kume": True},   # ortR +0,005 → +0,104
+    ("kripto", "G"): {"rejim": 0, "yapi": True},                                          # +0,010 → +0,058
+    ("bist", "G"): {"rejim": 1},                                                           # +0,048 → +0,250
+    ("bist", "4S"): {"rejim": 1},                                                          # günlükteki kanıta dayanır (4S testi sırada)
+}
+KUME_ORAN = 0.15
+PIV = 3
+
+
+def salinimlar(H, L):
+    """Teyitli salınımlar (ileriye bakmadan): her t için (son tepe, önceki tepe, son dip, önceki dip)."""
+    n = len(H)
+    out = [np.full(n, np.nan) for _ in range(4)]
+    st, st2, sd, sd2 = np.nan, np.nan, np.nan, np.nan
+    for t in range(n):
+        i = t - PIV
+        if i >= PIV:
+            w = slice(i - PIV, i + PIV + 1)
+            if H[i] == np.max(H[w]): st2, st = st, H[i]
+            if L[i] == np.min(L[w]): sd2, sd = sd, L[i]
+        out[0][t], out[1][t], out[2][t], out[3][t] = st, st2, sd, sd2
+    return out
+
+
+def pa_ozellik(M, stop, t, sal=None):
+    """Aynalanmış (AL yönlü) dizilerde t anındaki price action teyitleri."""
+    O, H, L, C = M["Open"], M["High"], M["Low"], M["Close"]
+    tepe, tepe2, dip, dip2 = sal if sal is not None else salinimlar(H, L)
+    risk = C[t] - stop
+    yapi = (np.isfinite(dip[t]) and np.isfinite(dip2[t]) and dip[t] > dip2[t]) or (np.isfinite(tepe[t]) and C[t] > tepe[t])
+    rng = H[t] - L[t]
+    if rng <= 0 or t < 1:
+        mum = False
+    else:
+        clv = (C[t] - L[t]) / rng; govde = abs(C[t] - O[t]); alt_f = min(O[t], C[t]) - L[t]
+        yutan = C[t] > O[t] and O[t] <= min(O[t - 1], C[t - 1]) and C[t] >= max(O[t - 1], C[t - 1])
+        igne = alt_f >= 2 * govde and clv >= 0.6
+        mum = bool(yutan or igne or clv >= 0.75)
+    adaylar = [x for x in (tepe[t], tepe2[t]) if np.isfinite(x) and x > C[t]]
+    oda = (min(adaylar) - C[t]) >= risk if adaylar else True
+    return {"yapi": bool(yapi), "mum": mum, "oda": bool(oda)}
+
+
+def rejim(h):
+    """Piyasa öncüsünün son mumdaki yönü: +1 yükseliş, -1 düşüş, 0 kararsız (kapanış ve EMA20, EMA50'nin aynı tarafında mı)."""
+    try:
+        G = T.gostergeler(h); c, e20, e50 = float(h["Close"].iloc[-1]), float(G["EMA20"].iloc[-1]), float(G["EMA50"].iloc[-1])
+        return 1 if (c > e50 and e20 > e50) else -1 if (c < e50 and e20 < e50) else 0
+    except Exception:
+        return None
+
+
 def fy(x):
     """Fiyat biçimi: büyüklüğe göre ondalık, Türkçe ayraçlar."""
     if x is None or not np.isfinite(x): return "–"
@@ -372,7 +429,7 @@ def varlik_tara(v, tf, yonler, pist, olay_topla=True):
     return bulunan
 
 
-def degerlendir(v, tf, bulunan, pist, piyasa):
+def degerlendir(v, tf, bulunan, pist, piyasa, baglam=None):
     """Aynı varlıktaki kurulumları yön bazında birleştirir, plan kurar, geçmişi test eder, puanlar."""
     a = v["a"]; out = []
     for yon in (1, -1):
@@ -381,6 +438,21 @@ def degerlendir(v, tf, bulunan, pist, piyasa):
         # en sıkı (en yakın) geçerli stop yerine en anlamlı kurulumun stopu: kaliteye göre sırala
         ks.sort(key=lambda b: -KALITE[b["kod_k"]])
         ana = ks[0]; form = next((b["form"] for b in ks if b["kod_k"] == "FORM"), None)
+        # Aşama 2 teyitleri (piyasa yönü, yapı, mum, oda, toplu sinyal)
+        flt = FILTRE.get((piyasa, tf), {})
+        Mt = ana.get("M") or ayna(diziler(a["h"], a["G"]), yon); son = len(Mt["Close"]) - 1
+        pa = pa_ozellik(Mt, ana["stop"] * yon, son)
+        rj = baglam.get("rejim") if baglam else None
+        rj_yon = None if rj is None else rj * yon
+        kume_ok = (baglam or {}).get("kume", {}).get(yon, 0) <= KUME_ORAN
+        eleme = []
+        if "rejim" in flt and rj_yon is not None and rj_yon < flt["rejim"]: eleme.append("piyasa yönü ters")
+        for k_ in ("yapi", "mum", "oda"):
+            if flt.get(k_) and not pa[k_]: eleme.append(k_)
+        if flt.get("kume") and not kume_ok: eleme.append("toplu sinyal")
+        if eleme:
+            if baglam is not None: baglam.setdefault("elenen", []).append((v["kod"], yon, ana["kod_k"], eleme))
+            continue
         p = plan_kur(a, ana["kod_k"], yon, ana["stop"], form.get("hedef") if form else None)
         if not p or p["risk"] / p["giris"] > MAKS_RISK[tf]: continue   # stop çok uzak: bu zaman dilimi için makul değil
         rler = tuple(round(x["r"], 2) for x in p["hedef"])
@@ -438,6 +510,13 @@ def degerlendir(v, tf, bulunan, pist, piyasa):
         teyit.append((f"RSI {rsi:.0f}", (50 <= rsi < 75) if yon == 1 else (25 < rsi <= 50)))
         teyit.append((f"ADX {adx:.0f}", adx >= 20))
         if trend_uyum: teyit.append(("EMA50/SMA200 trend uyumlu", True))
+        if rj_yon is not None:
+            teyit.append((f"Piyasa yönü ({'BTC' if piyasa == 'kripto' else 'BIST 100' if piyasa == 'bist' else 'endeks'}) "
+                          f"{'uyumlu' if rj_yon > 0 else 'kararsız' if rj_yon == 0 else 'ters'}", rj_yon > 0))
+        teyit.append(("Piyasa yapısı işlem yönünde (yükselen dip / kırılım)" if yon == 1 else "Piyasa yapısı işlem yönünde (alçalan tepe / kırılım)", pa["yapi"]))
+        teyit.append(("Tetik mumunda price action teyidi", pa["mum"]))
+        teyit.append(("1. hedefe kadar karşı seviye yok", pa["oda"]))
+        if (baglam or {}).get("kume"): teyit.append(("Toplu (birbirine bağlı) sinyal değil", kume_ok))
         if v.get("rs") is not None: teyit.append((f"RS {v['rs']:.0f}", (v["rs"] >= 60) if yon == 1 else (v["rs"] <= 40)))
         adlar = []
         for b in ks:
@@ -454,8 +533,9 @@ def degerlendir(v, tf, bulunan, pist, piyasa):
     return out
 
 
-def tara(varliklar, tf, piyasa, yonler=(1,), adet=5, min_puan=MIN_PUAN, ilerleme=None):
-    """varliklar: [{kod, ad, para, a, ust, rs}] → (seçilen fırsatlar, tüm adaylar, piyasa istatistiği)."""
+def tara(varliklar, tf, piyasa, yonler=(1,), adet=5, min_puan=MIN_PUAN, ilerleme=None, rejim_degeri=None):
+    """varliklar: [{kod, ad, para, a, ust, rs}] → (seçilen fırsatlar, tüm adaylar, piyasa istatistiği).
+    rejim_degeri: piyasa öncüsünün yönü (+1/0/-1, bkz. rejim()); None ise rejim filtresi uygulanmaz."""
     pist = PiyasaIstatistik(); bulunanlar = []
     for i, v in enumerate(varliklar):
         try:
@@ -463,13 +543,19 @@ def tara(varliklar, tf, piyasa, yonler=(1,), adet=5, min_puan=MIN_PUAN, ilerleme
             if b: bulunanlar.append((v, b))
         except Exception as ex:
             if ilerleme: ilerleme(f"{v.get('kod')}: {str(ex)[:60]}")
+    evren = max(1, len(varliklar))
+    baglam = {"rejim": rejim_degeri,
+              "kume": {y: sum(1 for _, b in bulunanlar if any(x["yon"] == y and x["kod_k"] != "FORM" for x in b)) / evren for y in (1, -1)}}
     adaylar = []
     for v, b in bulunanlar:
         try:
             if "sr" not in v["a"]: v["a"] = T.tf_analiz(v["a"]["h"], tf)   # hafif ön tarama → tam analiz
-            adaylar += degerlendir(v, tf, b, pist, piyasa)
+            adaylar += degerlendir(v, tf, b, pist, piyasa, baglam)
         except Exception as ex:
             if ilerleme: ilerleme(f"{v.get('kod')} değerlendirme: {str(ex)[:60]}")
+    if ilerleme and baglam.get("elenen"):
+        ilerleme(f"teyit filtresi {len(baglam['elenen'])} kurulumu eledi (rejim {rejim_degeri}, küme "
+                 f"AL %{baglam['kume'][1] * 100:.0f} / SAT %{baglam['kume'][-1] * 100:.0f})")
     adaylar.sort(key=lambda x: -x["puan"])
     secilen = [x for x in adaylar if x["puan"] >= min_puan][:adet]
     return secilen, adaylar, pist
