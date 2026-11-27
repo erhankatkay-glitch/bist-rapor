@@ -37,6 +37,11 @@ jobs:
         run: python kapanis.py bekle sabah
       - name: Önceki durumu al
         run: git clone -q --depth 1 --branch bulten "$GH_URL" onceki || mkdir -p onceki
+      - name: Türkiye makro verisi (TCMB enflasyon + politika faizi)
+        continue-on-error: true
+        env:
+          EVDS_KEY: ${{ secrets.EVDS_KEY }}
+        run: python makro_tr.py cikti
       - name: Sabah özetini üret ve gönder
         run: python sabah.py
       - name: Yayınla

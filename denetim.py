@@ -1,21 +1,19 @@
 """Arayüz testi: Streamlit'i başlatır, telefon boyutunda ana sayfayı ve alt menüyü dener."""
 import subprocess, time, sys, os
+p0 = 0
+_bas = time.time()
 p = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "app.py", "--server.headless", "true", "--server.port", "8501"],
                      stdout=open("st_log.txt", "w"), stderr=subprocess.STDOUT)
 time.sleep(20)
-import kart as K
-C = K.C
 os.makedirs("denetim_graf", exist_ok=True)
-K.bildirim_karti("TAKİP · AÇIK KURULUMLAR", "Açık kurulumlar", "Örnek",
- [{"baslik": "Kurulumlar", "renk": C["altin"], "satirlar": [
-   {"logo": ("BTC/USDT", "kripto"), "sol": "Bitcoin · AL", "sag": "+1,8R", "sag_renk": C["yesil"], "nokta": C["yesil"], "alt": "logo.dev kripto"},
-   {"logo": ("SOL/USDT", "kripto"), "sol": "Solana · AL", "sag": "+0,6R", "nokta": C["yesil"], "alt": "logo.dev kripto"},
-   {"logo": ("THYAO", None), "sol": "THYAO · AL", "sag": "+0,9R", "nokta": C["yesil"], "alt": "logo.dev BIST"},
-   {"logo": ("AAPL.US", "abd"), "sol": "Apple · AL", "sag": "+0,3R", "nokta": C["yesil"], "alt": "logo.dev ABD"},
-   {"logo": ("XU100", None), "sol": "BIST 100", "sag": "%0,8", "nokta": C["altin"], "alt": "endeks: nokta"}]}],
- "denetim_graf/kart_logolu.png", C["altin"])
-import logolar as LG
-for k, pz in [("BTC/USDT","kripto"),("SOL/USDT","kripto"),("THYAO","bist"),("AAPL.US","abd")]: print("LOGO", k, LG.logo_dosya(k, pz))
+print(subprocess.run([sys.executable, "makro_tr.py", "cikti_mk"], capture_output=True, text=True).stdout[-1500:])
+print(subprocess.run([sys.executable, "yayinla.py", "cikti_mk", "Makro (TCMB) ilk yükleme"], capture_output=True, text=True).stdout[-400:])
+import bist_makro as mk, veri_kalite as VK
+_pv = mk.piyasa_paneli()
+for ad, v in _pv.items():
+    e = VK.etiket(v.get("zaman"), v.get("tur"))
+    print(f"ETIKET {ad:14s} {v.get('kaynak',''):20s} {str(v.get('zaman'))[:25]:26s} {e['durum']:10s} {e['kisa']}")
+time.sleep(5)
 from playwright.sync_api import sync_playwright
 with sync_playwright() as pw:
     b = pw.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
@@ -32,11 +30,20 @@ with sync_playwright() as pw:
     print("mini kart:", pg.evaluate("document.querySelectorAll('.mk').length"), "fırsat kartı:", pg.evaluate("document.querySelectorAll('.fk').length"))
     pg.screenshot(path="denetim_graf/ana.png", full_page=False)
     pg.mouse.wheel(0, 700); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/ana2.png")
-    pg.locator("#kk-nav button[data-sekme='Keşfet']").tap(); pg.wait_for_timeout(1500)
-    pg.screenshot(path="denetim_graf/kesfet.png")
-    pg.mouse.wheel(0, 600); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/kesfet2.png")
-    print("RADYO:", pg.evaluate("""(()=>{const r=[...document.querySelectorAll('[data-testid=stRadio]')].find(x=>x.offsetParent); return r? r.outerHTML.slice(0,2500):'yok'})()"""))
-    print("SECIM:", pg.evaluate("""(()=>{const r=[...document.querySelectorAll('[data-testid=stSelectbox]')].find(x=>x.offsetParent); return r? r.outerHTML.slice(0,1500):'yok'})()"""))
+    try:
+        el = pg.locator("text=Yıllık enflasyon (TÜFE)").first
+        el.scroll_into_view_if_needed(); pg.wait_for_timeout(800); pg.mouse.wheel(0, -120); pg.wait_for_timeout(500)
+        pg.screenshot(path="denetim_graf/makro.png")
+    except Exception as ex:
+        print("makro kartı yok:", ex)
+    print("ETIKET SAYISI:", pg.evaluate("document.querySelectorAll('.vk').length"))
+    pg.locator("#kk-nav button[data-sekme='Takip']").tap(); pg.wait_for_timeout(2000)
+    try:
+        pg.locator("summary:has-text('Veri kaynakları')").first.click(); pg.wait_for_timeout(1200)
+        pg.locator("summary:has-text('Veri kaynakları')").first.scroll_into_view_if_needed(); pg.wait_for_timeout(500)
+        pg.screenshot(path="denetim_graf/kaynaklar.png")
+    except Exception as ex:
+        print("kaynaklar açılamadı:", ex)
     b.close()
 p.terminate()
 print(open("st_log.txt").read()[-2500:])

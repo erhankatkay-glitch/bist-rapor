@@ -99,6 +99,14 @@ def izlenecekler(PV, tk, acik, firs, hab):
         if c_: m.append(c_)
     except Exception:
         pass
+    try:
+        import makro_tr as MT
+        yol_ = os.path.join(CIKTI, "makro", "tr_makro.json")
+        mm = json.load(open(yol_, encoding="utf-8")) if os.path.exists(yol_) else MT.oku()
+        oz = MT.ozet_satiri(mm)
+        if oz: m.append(f"Türkiye: {oz}" + (" (son kayıtlı değer)" if (mm.get("tufe") or {}).get("bayat") else "") + ".")
+    except Exception:
+        pass
     if tk:
         e = tk[0]; t = dt.datetime.fromisoformat(e["zaman"])
         import ses as SES; ek = "'" + SES.ek_de(SES._saat_metni(t))[-2:]

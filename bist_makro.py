@@ -3,6 +3,7 @@
 import datetime as dt
 import numpy as np
 import pandas as pd
+import veri_kalite as VK
 
 PIYASA = {  # ad: (yahoo kodu, birim)
     "BIST 100": ("XU100.IS", "puan"),
@@ -88,6 +89,40 @@ def _tazele(h, gi, kod):
         return h
 
 
+
+def _son_zaman(gi, kod):
+    """Gün içi (15 dk) verideki son mumun KAPANIŞ zamanı, UTC ISO."""
+    try:
+        if gi is None or kod not in gi.columns.get_level_values(0): return None
+        g = gi[kod]["Close"].dropna()
+        if g.empty: return None
+        t = g.index[-1]
+        t = t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC")
+        return (t + pd.Timedelta(minutes=15)).to_pydatetime().isoformat()
+    except Exception:
+        return None
+
+
+def _gun_sonu_zaman(gun, kod):
+    """Gün içi veri yoksa: o günün seans kapanış saati (UTC)."""
+    from zoneinfo import ZoneInfo
+    tur = VK.tur_bul(kod)
+    tz, saat = ((ZoneInfo("Europe/Istanbul"), dt.time(18, 10)) if tur == "bist" else
+                (ZoneInfo("UTC"), dt.time(23, 59)) if tur == "kripto" else (ZoneInfo("America/New_York"), dt.time(16, 0)))
+    try:
+        return dt.datetime.combine(pd.Timestamp(gun).date(), saat, tz).astimezone(dt.timezone.utc).isoformat()
+    except Exception:
+        return None
+
+
+def binance_fiyat(sym, zaman_asimi=8):
+    """Binance herkese açık 24 saatlik özet: {"fiyat", "d24", "zaman"} (anahtarsız; ABD sunucularında da çalışan uç)."""
+    import json, urllib.request
+    u = f"https://data-api.binance.vision/api/v3/ticker/24hr?symbol={sym}"
+    d = json.loads(urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"}), timeout=zaman_asimi).read())
+    return {"fiyat": float(d["lastPrice"]), "d24": float(d["priceChangePercent"]) / 100,
+            "zaman": dt.datetime.fromtimestamp(int(d["closeTime"]) / 1000, dt.timezone.utc)}
+
 def piyasa_paneli():
     import yfinance as yf
     out = {}
@@ -112,23 +147,37 @@ def piyasa_paneli():
             h = _tazele(h, gi, kod)
             if len(h) < 5: continue
             yb = h[h.index < pd.Timestamp(h.index[-1].year, 1, 1)]
-            out[ad] = {"deger": float(h.iloc[-1]), "birim": birim, "seri": h,
+            zaman = _son_zaman(gi, kod) or _gun_sonu_zaman(h.index[-1], kod)
+            out[ad] = {"deger": float(h.iloc[-1]), "birim": birim, "seri": h, "zaman": zaman, "kaynak": "Yahoo", "tur": VK.tur_bul(kod),
                        "d1G": float(h.iloc[-1] / h.iloc[-2] - 1), "d1A": _degisim(h, 30), "d1Y": _degisim(h, 365),
                        "YBB": float(h.iloc[-1] / yb.iloc[-1] - 1) if len(yb) else None}
         except Exception:
             continue
+    for ad, sym in (("Bitcoin", "BTCUSDT"), ("Ethereum", "ETHUSDT")):   # kripto: birincil Binance (anlık), yedek Yahoo
+        try:
+            b = binance_fiyat(sym)
+            if b and ad in out:
+                o = out[ad]; s_ = o["seri"].copy()
+                gun = pd.Timestamp(b["zaman"].astimezone(dt.timezone.utc).date())
+                s_.loc[gun] = b["fiyat"]; s_ = s_.sort_index()
+                o.update(deger=b["fiyat"], seri=s_, zaman=b["zaman"].isoformat(), kaynak="Binance",
+                         d1G=b["d24"], d1A=_degisim(s_, 30), d1Y=_degisim(s_, 365))
+        except Exception:
+            pass
     # Türetilmiş: gram altın (TL) ve BIST 100 dolar bazlı
     try:
         ons, kur = out["Ons altın"]["seri"], out["USD/TRY"]["seri"]
         g = (ons / 31.1035 * kur.reindex(ons.index, method="ffill")).dropna()
-        out["Gram altın"] = {"deger": float(g.iloc[-1]), "birim": "TL", "seri": g, "d1G": _degisim(g, 1),
+        out["Gram altın"] = {"deger": float(g.iloc[-1]), "birim": "TL", "seri": g, "d1G": _degisim(g, 1), "tur": "emtia",
+                             "zaman": min(out["Ons altın"].get("zaman") or "", out["USD/TRY"].get("zaman") or "") or None, "kaynak": "Yahoo (hesaplanan)",
                              "d1A": _degisim(g, 30), "d1Y": _degisim(g, 365), "YBB": None}
     except Exception:
         pass
     try:
         b, kur = out["BIST 100"]["seri"], out["USD/TRY"]["seri"]
         bu = (b / kur.reindex(b.index, method="ffill")).dropna()
-        out["BIST 100 ($)"] = {"deger": float(bu.iloc[-1]), "birim": "$", "seri": bu, "d1G": _degisim(bu, 1),
+        out["BIST 100 ($)"] = {"deger": float(bu.iloc[-1]), "birim": "$", "seri": bu, "d1G": _degisim(bu, 1), "tur": "bist",
+                               "zaman": out["BIST 100"].get("zaman"), "kaynak": "Yahoo (hesaplanan)",
                                "d1A": _degisim(bu, 30), "d1Y": _degisim(bu, 365), "YBB": None}
     except Exception:
         pass
