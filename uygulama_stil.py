@@ -79,6 +79,16 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 .stTabs .stTabs .stTabs [data-testid="stTab"] {border:none !important; background:transparent !important; border-radius:0 !important; padding:8px 12px !important;}
 .stTabs .stTabs .stTabs [aria-selected="true"] {background:transparent !important; box-shadow:inset 0 -2px 0 var(--altin) !important;}
 .stTabs .stTabs .stTabs [aria-selected="true"] p {color:var(--altin) !important;}
+/* Yatay seçimler (Piyasa: BIST / ABD / Kripto / Emtia …) → tasarımdaki hap düğmeler */
+[data-testid="stRadio"] [role="radiogroup"] {display:flex; flex-wrap:nowrap; overflow-x:auto; gap:8px; scrollbar-width:none; padding-bottom:2px;}
+[data-testid="stRadio"] [role="radiogroup"]::-webkit-scrollbar {display:none;}
+[data-testid="stRadio"] [role="radiogroup"] > label {flex:none; margin:0 !important; padding:7px 14px !important; border-radius:20px;
+       border:1px solid #2A2B30; background:#17181B; cursor:pointer;}
+[data-testid="stRadio"] [role="radiogroup"] > label > div:first-child {display:none !important;}
+[data-testid="stRadio"] [role="radiogroup"] > label p {font-weight:700 !important; font-size:.86rem !important; color:#E4E4E7;}
+[data-testid="stRadio"] [role="radiogroup"] > label:has(input:checked) {background:#E8B84A; border-color:#E8B84A;}
+[data-testid="stRadio"] [role="radiogroup"] > label:has(input:checked) p {color:#0B0B0C !important;}
+[data-testid="stRadio"] > label p {font-size:.72rem !important; letter-spacing:.1em; text-transform:uppercase; color:var(--soluk) !important; font-weight:800 !important;}
 /* gizli istek kutusu (satır düğmeleri) */
 .st-key-kk_gizli {position:absolute !important; left:-9999px !important; height:0 !important; overflow:hidden !important;}
 .oc-d {display:flex; flex-direction:column; gap:5px; flex:none;}

@@ -221,12 +221,25 @@ def sirket_bul(baslik, sozluk):
     return bulunan[:2]
 
 
+OLUMSUZLAMA = (r"geri çek", r"iptal", r"vazgeç", r"ertele", r"reddedil", r"red(di| kararı)", r"onaylanmadı", r"onay verilmedi",
+               r"durdur", r"askıya", r"feshed", r"fesih", r"sona erdi", r"dağıtmayacak", r"dağıtmama", r"ödemeyecek", r"yapılmayacak",
+               r"gerçekleşmedi", r"başarısız", r"kaybetti")
+
+
+def olumsuzlama(baslik):
+    b = kk(baslik)
+    return any(re.search(d, b) for d in OLUMSUZLAMA)
+
+
 def sirket_sinifla(baslik, sozluk):
     import bist_borsa as BB
     konu, yon = BB.kap_siniflandir(baslik)
     if not konu or yon == 0: return None
     s = sirket_bul(baslik, sozluk)
     if not s: return None
+    # Olumsuzlayan ifadeler yönü tersine çevirir: "bedelsiz başvurusunu geri çekti", "temettü dağıtmayacak", "sözleşme iptal edildi"
+    olumsuz = olumsuzlama(baslik)
+    if olumsuz: yon = -yon
     gerekce = {"Bedelsiz sermaye artırımı": "bedelsiz kararı genellikle kısa vadeli talep yaratır",
                "Bedelli sermaye artırımı": "bedelli artırım pay sulanması ve nakit ihtiyacı sinyali",
                "Temettü / kâr payı": "nakit getiri ve güçlü bilanço sinyali",
