@@ -53,7 +53,7 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 - ~~6. Veri kalite etiketi + yedek kaynak tablosu + TCMB enflasyonu ve politika faizi~~ (27.11.2026 tamam)
 - ~~7. Teknik motoru tamamla: WMA, HMA, Heikin Ashi, RVOL, order block/breaker, harmonik formasyonlar~~ (27.11.2026 tamam)
 - ~~8. Kendi taramanı kur: filtre birleştirme, kayıtlı şablonlar, sinyal yaşı / sinyalden beri değişim~~ (27.11.2026 tamam)
-- 9. Risk hesaplayıcı (pozisyon büyüklüğü, komisyon) + sanal işlem portföyü.
+- ~~9. Risk hesaplayıcı (pozisyon büyüklüğü, komisyon) + sanal işlem portföyü~~ (27.11.2026 tamam)
 - 10. Kullanıcı tanımlı alarmlar (RSI, EMA kesişimi, seviye kırılımı) + alarm geçmişi.
 - 11. Korelasyon ve göreceli güç modülü (BTC/Nasdaq, altın/DXY, BIST/S&P…).
 - 12. Dünya borsaları, döviz majörleri, getiri eğrisi, emtia vade yapısı.
