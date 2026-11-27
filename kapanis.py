@@ -375,9 +375,33 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
                 if f["ekstra"].get("turev"): ek.append("📊 " + F._e(f["ekstra"]["turev"]))
                 alt = KT.baslik_metni(f) + ("\n" + "\n".join(ek) if ek else "")
                 if f["kod"] in grafik: bot.foto(os.path.join(D.kok, grafik[f["kod"]]), alt[:1000], anahtar, OMUR[tf], bag=bag)
-                else: bot.mesaj(F.firsat_metni(f, tl_fn(f) if tl_fn else None), anahtar, OMUR[tf], bag=bag, yerine=False, notlu=False)
+                else: sade_firsat_gonder(bot, f, anahtar, OMUR[tf], bag, alt, tl_fn)
     D.acik += yeni
     return secilen
+
+
+def sade_firsat_gonder(bot, f, anahtar, omur, bag, alt, tl_fn=None):
+    """Grafikli fırsat kartı çizilemediğinde: grafiksiz KATKAY kartı; o da olmazsa düz metin."""
+    import kart as KT
+    C = KT.C; p = f["plan"]; g = p["giris"]
+    try:
+        plan = [{"sol": f"H{i + 1}", "sag": f"{F.fy(z['fiyat'])}  {F.yz((z['fiyat'] - g) / g)}", "sag_renk": C["yesil"], "nokta": C["yesil"],
+                 "alt": f"{F.rr(z['r'])} · {z['etiket']}"} for i, z in enumerate(p["hedef"])]
+        plan = [{"sol": "Giriş", "sag": F.fy(g), "nokta": C["mavi"], "alt": f"bölge {F.fy(p['bolge'][0])} – {F.fy(p['bolge'][1])}"},
+                {"sol": "Stop", "sag": f"{F.fy(p['stop'])}  {F.yz((p['stop'] - g) / g)}", "sag_renk": C["kirmizi"], "nokta": C["kirmizi"]}] + plan
+        tey = [{"sol": t, "sag": "evet" if ok else "hayır", "sag_renk": C["yesil"] if ok else C["soluk"]} for t, ok in f["teyit"]]
+        bol = [{"baslik": "İşlem planı", "renk": C["altin"], "satirlar": plan}, {"baslik": "Teyitler", "renk": C["mavi"], "satirlar": tey}]
+        if f.get("risk"): bol.append({"baslik": "Riskler", "renk": C["kirmizi"], "satirlar": [{"sol": f"Risk {i_ + 1}", "nokta": C["altin"], "alt": r_} for i_, r_ in enumerate(f["risk"][:4])]})
+        os.makedirs(os.path.join(CIKTI, "kartlar"), exist_ok=True)
+        yol = os.path.join(CIKTI, "kartlar", re.sub(r"[^A-Za-z0-9]+", "_", f"sade_{f['kod']}_{f['tf']}") + ".png")
+        KT.bildirim_karti(f"{tg.buyuk(PIYASA_AD.get(f['piyasa'], f['piyasa']))}  ·  {tg.buyuk(T.TF_AD[f['tf']])}  ·  FIRSAT",
+                          f"{F.gorunen(f['kod'], f.get('ad'))} · {'AL' if f['yon'] == 1 else 'SAT'} · puan {f['puan']:.0f}",
+                          f["kurulum_ad"][:70], bol, yol, vurgu=C["yesil"] if f["yon"] == 1 else C["kirmizi"],
+                          not_=KT.basitce(f))
+        if bot.foto(yol, alt[:1000], anahtar, omur, bag=bag): return True
+    except Exception as ex:
+        log("sade fırsat kartı çizilemedi:", f.get("kod"), ex)
+    return bool(bot.mesaj(F.firsat_metni(f, tl_fn(f) if tl_fn else None), anahtar, omur, bag=bag, yerine=False, notlu=False))
 
 
 def _pf_anahtar(kod):

@@ -137,7 +137,14 @@ def _grafik(fig, f, a, kutu):
 
 def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     import firsat as F
-    H = 1660; OF = 160   # alttaki "Basitçe" kutusu için ek alan
+    # teyit rozetlerinin kaç satır tutacağı (yeni teyitlerle 3 satıra çıkabilir) → kart buna göre uzar
+    sat_, x_ = 1, 48
+    for metin, _ in f["teyit"]:
+        w_ = 30 + 11.2 * len(metin)
+        if x_ + w_ > W - 40: sat_, x_ = sat_ + 1, 48
+        x_ += w_ + 10
+    ek = 50 * max(0, sat_ - 2)
+    H = 1660 + ek; OF = 160 + ek   # alttaki "Basitçe" kutusu ve teyit satırları için ek alan
     fig = plt.figure(figsize=(W / 100, H / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
     yon = f["yon"]; ana = C["yesil"] if yon == 1 else C["kirmizi"]; p = f["plan"]; g = p["giris"]

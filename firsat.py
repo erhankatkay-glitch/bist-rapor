@@ -515,12 +515,12 @@ def degerlendir(v, tf, bulunan, pist, piyasa, baglam=None):
         teyit.append((f"ADX {adx:.0f}", adx >= 20))
         if trend_uyum: teyit.append(("EMA50/SMA200 trend uyumlu", True))
         if rj_yon is not None:
-            teyit.append((f"Piyasa yönü ({'BTC' if piyasa == 'kripto' else 'BIST 100' if piyasa == 'bist' else 'endeks'}) "
+            teyit.append((f"{'BTC' if piyasa == 'kripto' else 'BIST 100' if piyasa == 'bist' else 'S&P 500' if piyasa == 'abd' else 'Endeks'} yönü "
                           f"{'uyumlu' if rj_yon > 0 else 'kararsız' if rj_yon == 0 else 'ters'}", rj_yon > 0))
-        teyit.append(("Piyasa yapısı işlem yönünde (yükselen dip / kırılım)" if yon == 1 else "Piyasa yapısı işlem yönünde (alçalan tepe / kırılım)", pa["yapi"]))
-        teyit.append(("Tetik mumunda price action teyidi", pa["mum"]))
-        teyit.append(("1. hedefe kadar karşı seviye yok", pa["oda"]))
-        if (baglam or {}).get("kume"): teyit.append(("Toplu (birbirine bağlı) sinyal değil", kume_ok))
+        teyit.append(("Yapı: yükselen dip" if yon == 1 else "Yapı: alçalan tepe", pa["yapi"]))
+        teyit.append(("Mum teyidi", pa["mum"]))
+        teyit.append(("H1'e yer var", pa["oda"] and not p.get("engel")))
+        if (baglam or {}).get("kume"): teyit.append(("Toplu sinyal değil", kume_ok))
         if v.get("rs") is not None: teyit.append((f"RS {v['rs']:.0f}", (v["rs"] >= 60) if yon == 1 else (v["rs"] <= 40)))
         adlar = []
         for b in ks:
