@@ -557,6 +557,7 @@ def _degisim_metni(v):
 
 def spark_svg(seri, renk, w=150, h=58):
     """Son 60 günün mini fiyat grafiği: parlak çizgi + aşağı doğru solan alan."""
+    if not hasattr(seri, "dropna"): seri = pd.Series(list(seri or []), dtype=float)
     v = [float(x) for x in seri.dropna().iloc[-60:]]
     if len(v) < 2: return ""
     lo, hi = min(v), max(v); hi = hi if hi > lo else lo + 1
