@@ -213,6 +213,14 @@ div[role="radiogroup"] > label:has(input:checked) p {color:var(--altin-a) !impor
 .vk {display:inline-flex; align-items:center; gap:4px; font-size:.6rem; font-weight:800; letter-spacing:.3px; border:1px solid; border-radius:20px; padding:1px 6px; vertical-align:1px; text-transform:uppercase; white-space:nowrap;}
 .vk i {width:5px; height:5px; border-radius:50%; display:inline-block;}
 .mk-l {width:15px; height:15px; border-radius:50%; vertical-align:-3px; margin-right:5px; background:#fff;}
+/* referans: 4 mini kart tek ekranda */
+.serit-mk .mk {width:calc((100% - 27px) / 4); min-width:80px; padding:8px 7px 3px; border-radius:14px;}
+.serit-mk .mk-d {font-size:.92rem;} .serit-mk .mk-y {font-size:.66rem;} .serit-mk .mk-a {font-size:.68rem;}
+.serit-mk .mk svg {width:100%; height:34px;}
+.mk-n {width:6px; height:6px; border-radius:50%; flex:none; display:inline-block;}
+/* arama kutusu: referanstaki gibi düz, ok yok */
+.st-key-ana_ara [data-baseweb="select"] > div {border-radius:24px !important; background:#141517 !important;}
+.st-key-ana_ara svg {display:none !important;}
 .fk {flex:none; width:228px; background:linear-gradient(160deg, color-mix(in srgb, var(--v) 14%, #17181B), #121315 60%);
      border:1px solid color-mix(in srgb, var(--v) 45%, transparent); border-radius:16px; padding:11px 12px; scroll-snap-align:start;}
 .fk-u {display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:.98rem;}
@@ -409,8 +417,20 @@ NAV_STIL = """
   font-size:10px;font-weight:600;padding:4px 0;min-width:0;white-space:nowrap;letter-spacing:-.1px;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
 #kk-nav button+button:before{content:"";position:absolute;left:0;top:18%;bottom:18%;width:1px;background:rgba(255,255,255,.08)}
 #kk-nav svg{width:21px;height:21px}
-#kk-nav button.aktif{color:#0B0B0C;background:radial-gradient(circle at 50% 30%,#F5D27A,#E8B84A 60%,#C99A2E);border-radius:16px;
-  box-shadow:0 6px 18px rgba(232,184,74,.45);margin:-2px 1px}
+#kk-cek{position:fixed;left:0;top:42%;z-index:999998;width:22px;height:74px;border-radius:0 14px 14px 0;border:none;cursor:pointer;
+  background:linear-gradient(180deg,#F5D27A,#C99A2E);box-shadow:4px 6px 18px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:0}
+#kk-cek i{display:block;width:10px;height:2px;background:#0B0B0C;border-radius:2px;box-shadow:0 -5px 0 #0B0B0C,0 5px 0 #0B0B0C}
+#kk-ckm{position:fixed;inset:0;z-index:1000000;display:none}
+#kk-ckm.acik{display:block}
+#kk-ckm .ort{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+#kk-ckm .pan{position:absolute;left:0;top:0;bottom:0;width:min(78vw,300px);background:linear-gradient(180deg,#18191C,#0E0F11);
+  border-right:1px solid rgba(232,184,74,.35);padding:22px 14px;overflow-y:auto;font-family:'Inter',-apple-system,sans-serif;box-shadow:10px 0 40px rgba(0,0,0,.6)}
+#kk-ckm h4{margin:0 0 6px;color:#E8B84A;font-size:13px;letter-spacing:1.4px;font-weight:900}
+#kk-ckm small{display:block;color:#71717A;font-size:10.5px;font-weight:800;letter-spacing:1.2px;margin:16px 4px 6px}
+#kk-ckm a{display:block;color:#F4F4F5;text-decoration:none;font-size:14.5px;font-weight:650;padding:11px 10px;border-radius:12px;cursor:pointer}
+#kk-ckm a:active,#kk-ckm a:hover{background:rgba(232,184,74,.14);color:#F5D27A}
+#kk-nav button.aktif{color:#0B0B0C;background:radial-gradient(circle at 50% 30%,#F5D27A,#E8B84A 60%,#C99A2E);border-radius:50%;
+  flex:none;width:66px;height:66px;margin:-16px 0 -6px;justify-content:center;box-shadow:0 8px 22px rgba(232,184,74,.5),0 0 0 4px #0E0F11}
 #kk-nav button.aktif:before{display:none}
 #kk-nav button.aktif svg [fill]:not([fill="none"]){fill:#0B0B0C} #kk-nav button.aktif svg [stroke]{stroke:#0B0B0C}
 """
@@ -420,13 +440,13 @@ NAV_STIL = """
 NAV_OGE = [
     ("Ana sayfa", "Ana Sayfa|Piyasalar", '<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="#E8B84A"/>',
      ["Ana Sayfa|Piyasalar", "Ana Sayfa|Takvim", "Ana Sayfa|Ekonomi"]),
-    ("Piyasalar", "Keşfet|Emtia & Kripto", '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2" fill="none" stroke="#E8B84A" stroke-width="2.4" stroke-linecap="round"/>',
+    ("Piyasalar", "Keşfet|Emtia & Kripto", '<path d="M3 20h18" stroke="#E8B84A" stroke-width="2.2" stroke-linecap="round"/><path d="M6 17v-6M10 17V7M14 17v-4M18 17V5" stroke="#E8B84A" stroke-width="2.6" stroke-linecap="round"/>',
      ["Keşfet|Emtia & Kripto", "Keşfet|Karşılaştır"]),
-    ("Harita", "Keşfet|Teknik", '<path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" fill="none" stroke="#E8B84A" stroke-width="2.1" stroke-linejoin="round"/><path d="M9 4v13.5M15 6.5V20" stroke="#E8B84A" stroke-width="2.1"/>',
+    ("Harita", "Keşfet|Teknik", '<path d="M3 3v18h18" fill="none" stroke="#E8B84A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 17v-3M11 17v-7M14.5 17v-5M18 17V7" stroke="#E8B84A" stroke-width="2.4" stroke-linecap="round"/>',
      ["Keşfet|Teknik", "Keşfet|Tarayıcı"]),
-    ("Seçki", "Keşfet|Fırsatlar", '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" fill="#E8B84A"/>',
+    ("Seçki", "Keşfet|Fırsatlar", '<circle cx="12" cy="12" r="9" fill="none" stroke="#E8B84A" stroke-width="2.2"/><circle cx="12" cy="12" r="5" fill="none" stroke="#E8B84A" stroke-width="2.2"/><circle cx="12" cy="12" r="1.8" fill="#E8B84A"/>',
      ["Keşfet|Fırsatlar"]),
-    ("BIST", "Keşfet|Hisse", '<rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="#E8B84A" stroke-width="2.1"/><path d="m7 15 3-3.5 2.5 2L17 8" fill="none" stroke="#E8B84A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>',
+    ("BIST", "Keşfet|Hisse", '<path d="M3 9.5 12 4l9 5.5M4.5 20h15M3 22h18" fill="none" stroke="#E8B84A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 11v7M10.5 11v7M13.5 11v7M17.5 11v7" stroke="#E8B84A" stroke-width="2.2" stroke-linecap="round"/>',
      ["Keşfet|Hisse", "Keşfet|Bebek"]),
     ("Haberler", "Ana Sayfa|Haberler", '<path d="M4 5h13a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2z" fill="none" stroke="#E8B84A" stroke-width="2"/><path d="M8 9h7M8 13h7M8 17h4" stroke="#E8B84A" stroke-width="2" stroke-linecap="round"/>',
      ["Ana Sayfa|Haberler"]),
@@ -559,6 +579,19 @@ CANLI_JS = """
     nav.innerHTML=OGE.map(o=>'<button type="button" data-sekme="'+o[1]+'" data-es="'+JSON.stringify(o[3]).replace(/"/g,"&quot;")+'" onclick="window.kkGitAlt(this.dataset.sekme)">'+
       '<svg viewBox="0 0 24 24">'+o[2]+'</svg><span>'+o[0]+'</span></button>').join("");
     P.body.appendChild(nav);
+    // sol kenar çekmecesi: alt menüde olmayan bölümler
+    ["kk-cek","kk-ckm"].forEach(i=>{const e=P.getElementById(i); if(e) e.remove();});
+    const CK=[["PORTFÖY",[["Varlıklarım","Portföy|Varlıklarım"],["Performans","Portföy|Performans"],["Sanal işlem","Portföy|Sanal işlem"],["Risk hesaplayıcı","Portföy|Risk hesaplayıcı"]]],
+              ["TAKİP",[["Favoriler","Takip|Favoriler"],["Alarmlar ve bildirimler","Takip|Alarmlar"]]],
+              ["ARAÇLAR",[["Tarayıcı","Keşfet|Tarayıcı"],["Karşılaştır","Keşfet|Karşılaştır"],["Yeni başlayanlar","Keşfet|Bebek"]]],
+              ["PİYASA",[["Ekonomi","Ana Sayfa|Ekonomi"],["Takvim","Ana Sayfa|Takvim"],["Haberler","Ana Sayfa|Haberler"]]]];
+    const cek=P.createElement("button"); cek.id="kk-cek"; cek.type="button"; cek.setAttribute("aria-label","Menü"); cek.innerHTML="<i></i>";
+    const ckm=P.createElement("div"); ckm.id="kk-ckm";
+    ckm.innerHTML='<div class="ort"></div><div class="pan"><h4>KATKAY · MENÜ</h4>'+CK.map(g=>'<small>'+g[0]+'</small>'+
+      g[1].map(x=>'<a data-yol="'+x[1]+'">'+x[0]+'</a>').join("")).join("")+'</div>';
+    cek.addEventListener("click",()=>ckm.classList.add("acik"));
+    ckm.addEventListener("click",e=>{const a=e.target.closest("a[data-yol]"); ckm.classList.remove("acik"); if(a && W.kkGitAlt) W.kkGitAlt(a.dataset.yol);});
+    P.body.appendChild(cek); P.body.appendChild(ckm);
     if(typeof W.kkGit!=="function"){   // ana sayfaya betik eklenemezse (güvenlik politikası) yedek yol
       nav.querySelectorAll("button").forEach(b=>{b.removeAttribute("onclick"); b.addEventListener("click",()=>{
         const t=[...P.querySelectorAll('.stTabs [data-testid="stTab"], .stTabs [role="tab"], .stTabs [data-baseweb="tab"]')].find(x=>x.innerText.trim().endsWith(b.dataset.sekme.split("|")[0])); if(t) t.click();});});

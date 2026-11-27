@@ -553,7 +553,7 @@ def _vk_tam(v):
 def piyasa_karti(ad_, v):
     d = v.get("d1G") or 0; renk = "#22C55E" if d > 0 else "#EF4444" if d < 0 else "#A1A1AA"
     sinif = "y" if d > 0 else "k" if d < 0 else "n"; ok = "▲" if d > 0 else "▼" if d < 0 else "■"
-    deger = br.ond(v["deger"], 2 if v["deger"] < 10000 else 0)
+    deger = br.ond(v["deger"], 2 if v["deger"] < 1000 else 0)
     birim = {"puan": "", "TL": " ₺", "$": " $", "%": "%"}.get(v["birim"], "")
     alt = " · ".join(x for x in (f"1A {br.yz(v['d1A'])}" if v.get("d1A") is not None else "", f"YBB {br.yz(v['YBB'])}" if v.get("YBB") is not None else "") if x)
     import logolar as LG
@@ -603,9 +603,13 @@ def mini_kart(ad_, v):
         import logolar as LG
         u = LG.logo_url(*MINI_LOGO[ad_])
         if u: lg = f'<img src="{u}" alt="" class="mk-l">'
-    vk = VK.rozet_kucuk(VK.etiket(v.get("zaman"), v.get("tur"))) if v.get("tur") else ""
+    vk = ""
+    if v.get("tur"):
+        _e = VK.etiket(v.get("zaman"), v.get("tur"))
+        vk = f'<i class="mk-n" title="{_e["durum"]}: {_e["aciklama"]}" style="background:{_e["renk"]}"></i>'
+
     return (f'<div class="mk"><div class="mk-a"><span class="mk-ad">{lg}{KISA_AD.get(ad_, ad_)}</span>{vk}</div><div class="mk-d">{deger}</div>'
-            f'<div class="mk-y" style="color:{renk}">{ok} {br.yz(d)}</div>{spark_svg(v["seri"], renk, 116, 30)}</div>')
+            f'<div class="mk-y" style="color:{renk}">{ok} {br.yz(d)}</div>{spark_svg(v["seri"], renk, 116, 34)}</div>')
 
 
 def _arama_secenekleri():
@@ -1259,6 +1263,11 @@ if _ist and _ist != st.session_state.get("_kk_son"):
         st.session_state["tk_tur"] = _p[1] if _p[1] in ("Hisse", "ABD", "Emtia", "Kripto") else "Hisse"
         st.session_state["_kk_analiz"] = (_p[0], _p[2])
 with _ust_yer.container():
+    try:   # tetiklenmiş bildirim (iğne / önemli alarm): referanstaki gibi en üstte; yoksa hiç görünmez
+        _uy = akilli_uyari()
+        if _uy: st.markdown(_uy, unsafe_allow_html=True)
+    except Exception:
+        pass
     try: _hb_ust = json_oku("haber/son.json", ZAMAN) or []
     except Exception: _hb_ust = []
     _bil.html(TS.ust_kompakt_sayfa(_pv_ust, _hb_ust), height=160)
@@ -1836,11 +1845,6 @@ with tab_v:
 
 
 with tab_p:
-    try:
-        _uy = akilli_uyari()
-        if _uy: st.markdown(_uy, unsafe_allow_html=True)
-    except Exception:
-        pass
     if st.session_state.pop("_kk_git", None):
         _bil.html(f"<script>try{{window.parent.kkTeknikGit && window.parent.kkTeknikGit('')}}catch(e){{}}</script>", height=0)
     try:
@@ -1849,10 +1853,11 @@ with tab_p:
         PV = {}; st.caption(f"Piyasa verisi alınamadı: {e}")
     sira = ["VIX", "Dow Jones", "S&P 500", "Nasdaq", "BIST 100", "Bitcoin", "Ethereum", "USD/TRY", "Gram altın", "Ons altın", "Gümüş",
             "Brent petrol", "WTI petrol", "Doğal gaz", "EUR/TRY", "Dolar endeksi", "ABD 10Y faiz", "BIST 100 ($)"]
+    _kart_yer = st.empty()
     kat_ad = st.radio("Kategori", list(KATEGORI), horizontal=True, key="ana_kat", label_visibility="collapsed")
     KAT = KATEGORI[kat_ad]
     goster = [x for x in sira if x in PV and (KAT is None or PV_KAT.get(x) == KAT)] or [x for x in sira if x in PV]
-    st.markdown('<div class="serit-k">' + "".join(mini_kart(ad_, PV[ad_]) for ad_ in goster) + "</div>", unsafe_allow_html=True)
+    _kart_yer.markdown('<div class="serit-k serit-mk">' + "".join(mini_kart(ad_, PV[ad_]) for ad_ in goster) + "</div>", unsafe_allow_html=True)
     # ---- hızlı erişim kutuları
     _ik = {"e": '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
            "b": '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
