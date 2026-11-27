@@ -1,0 +1,60 @@
+name: Aşama 10b — QuantDinger gösterge testi
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  olay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        pazar: [bistg, abdg, kriptog, kripto4s]
+        parca: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt ta
+      - name: QuantDinger kütüphanesi (Apache-2.0, kullanıcının fork'u)
+        run: |
+          git clone -q --depth 1 https://github.com/erhankatkay-glitch/QuantDinger.git /tmp/qd
+          echo "QD_KLASOR=/tmp/qd/library/indicators" >> $GITHUB_ENV
+      - run: python arastirma_qd.py olay ${{ matrix.pazar }} ${{ matrix.parca }} 8 2>&1 | tee log_${{ matrix.pazar }}_${{ matrix.parca }}.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qd-${{ matrix.pazar }}-${{ matrix.parca }}
+          path: |
+            qd_*.csv
+            log_*.txt
+
+  ozet:
+    needs: olay
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt ta
+      - uses: actions/download-artifact@v4
+        with:
+          path: parcalar
+          merge-multiple: true
+      - name: Özet
+        run: |
+          cp parcalar/qd_*.csv . ; mkdir -p cikti; cp parcalar/log_*.txt cikti/ || true
+          for p in bistg abdg kriptog kripto4s; do python arastirma_qd.py ozet $p 2>&1 | tee cikti/ozet_$p.txt || true; done
+          cp qd_sonuc_*.json cikti/ || true
+          cd cikti && git init -q -b arastirma-cikti && git config user.name arastirma && git config user.email actions@users.noreply.github.com
+          git add -A && git commit -qm "qd $(date -u +%FT%H%M)" && git push -qf "$GH_URL" arastirma-cikti
