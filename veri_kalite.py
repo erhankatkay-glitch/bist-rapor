@@ -27,6 +27,27 @@ def tur_bul(kod):
     return "abd"
 
 
+# Tatil ve yarım günler (kaynak: borsaistanbul.com resmi tatil tablosu, nyse.com holidays & trading hours).
+# 2027 BIST dini bayram tarihleri tahminidir; Borsa İstanbul duyurusu çıkınca güncellenmeli.
+TATIL = {
+    "bist": {"2026-01-01", "2026-03-20", "2026-04-23", "2026-05-01", "2026-05-19", "2026-05-27", "2026-05-28", "2026-05-29",
+             "2026-07-15", "2026-10-29",
+             "2027-01-01", "2027-03-09", "2027-03-10", "2027-03-11", "2027-04-23", "2027-05-17", "2027-05-18", "2027-05-19",
+             "2027-07-15", "2027-08-30", "2027-10-29"},
+    "abd": {"2026-01-01", "2026-01-19", "2026-02-16", "2026-04-03", "2026-05-25", "2026-06-19", "2026-07-03", "2026-09-07",
+            "2026-11-26", "2026-12-25",
+            "2027-01-01", "2027-01-18", "2027-02-15", "2027-03-26", "2027-05-31", "2027-06-18", "2027-07-05", "2027-09-06",
+            "2027-11-25", "2027-12-24"},
+}
+TATIL["faiz"] = TATIL["abd"]
+YARIM = {   # erken kapanış (yerel saat)
+    "bist": {"2026-03-19": dt.time(13, 0), "2026-05-26": dt.time(13, 0), "2026-10-28": dt.time(13, 0),
+             "2027-03-08": dt.time(13, 0), "2027-10-28": dt.time(13, 0)},
+    "abd": {"2026-11-27": dt.time(13, 0), "2026-12-24": dt.time(13, 0), "2027-11-26": dt.time(13, 0)},
+}
+YARIM["faiz"] = YARIM["abd"]
+
+
 def _seans(tur):
     """(saat dilimi, açılış, kapanış, 7/24 mü, gün içi mola yok mu)"""
     if tur == "bist": return TSI, dt.time(10, 0), dt.time(18, 10)
@@ -40,6 +61,9 @@ def piyasa_acik(tur, simdi=None):
     tz, ac, ka = _seans(tur)
     y = t.astimezone(tz)
     if ac is not None:
+        g = y.date().isoformat()
+        if g in TATIL.get(tur, ()): return False
+        ka = YARIM.get(tur, {}).get(g, ka)
         return y.weekday() < 5 and ac <= y.time() < ka
     # emtia / döviz
     if y.weekday() == 5: return False                                   # cumartesi
@@ -56,8 +80,8 @@ def son_kapanis(tur, simdi=None):
     y = t.astimezone(tz)
     for g in range(0, 8):
         gun = (y - dt.timedelta(days=g)).date()
-        if gun.weekday() >= 5: continue
-        k = dt.datetime.combine(gun, ka, tz)
+        if gun.weekday() >= 5 or gun.isoformat() in TATIL.get(tur, ()): continue
+        k = dt.datetime.combine(gun, YARIM.get(tur, {}).get(gun.isoformat(), ka), tz)
         if k <= y: return k.astimezone(UTC)
     return t - dt.timedelta(days=3)
 

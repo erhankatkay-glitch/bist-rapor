@@ -63,6 +63,16 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
     - İki yarı yerine ileriye yürüyen test (walk-forward) ve son kör dönem.
     - Çoklu deneme düzeltmesi (Benjamini-Hochberg) ve Monte Carlo.
     - Böylece çok sayıda kural denendiğinde şans eseri iyi görünenler elenir.
+- 10c. claude-trading-skills (kullanıcının fork'u, MIT) değerlendirmesi (27.11):
+  - Bu repo Claude için yazılmış iş akışı talimatları (74 skill); ABD odaklı.
+    20 skill ücretli FMP/Finviz verisi istiyor. Kod olarak kurulmaz; yöntemleri kendi ücretsiz verimizle uyarlanır.
+  - Piyasa rejimi paneli (Aşama 11 ile):
+    - Piyasa genişliği: BIST'te 50/200 günlük ortalamanın üstündeki hisse oranı, yeni zirve/dip sayısı.
+    - Dağıtım günleri ve takip günü (O'Neil FTD) — XU100 ve S&P 500.
+    - Tepe uyarısı ve "maruziyet koçu" (hisse oranı önerisi %0–100).
+  - Kurulumlar (Aşama 10b testinden geçerse): VCP (Minervini), momentum patlaması, episodic pivot.
+  - Disiplin: işlem öncesi kontrol listesi, düşüş sigortası (sanal portföyde %X kayıpta yeni işlem uyarısı),
+    işlem günlüğü ve kapanan işlem sonrası değerlendirme (bölüm 29), haftalık performans özeti.
 - 11. Korelasyon ve göreceli güç modülü (BTC/Nasdaq, altın/DXY, BIST/S&P…).
 - 12. Dünya borsaları, döviz majörleri, getiri eğrisi, emtia vade yapısı.
 - 13. Opsiyon: BTC/ETH için Deribit'in herkese açık verisi (IV, Greeks).
