@@ -978,7 +978,7 @@ def radar_png(S):
     return b.getvalue()
 
 
-# Dört ana bölüm (alt menüyle aynı): Ana Sayfa · Keşfet · Portföy · Takip. Eski sekmeler bunların altında.
+# Dört ana bölüm: Ana Sayfa · Keşfet · Portföy · Takip (şeritleri gizli). Alttaki 6'lı menü bunların alt sekmelerine gider.
 ana_b, kesfet_b, portfoy_b, takip_b = st.tabs([":material/home: Ana Sayfa", ":material/explore: Keşfet",
                                                ":material/account_balance_wallet: Portföy", ":material/star: Takip"])
 with ana_b:

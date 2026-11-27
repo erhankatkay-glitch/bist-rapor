@@ -389,26 +389,36 @@ def ust_bant(pv=None):
 
 # ----------------------------------------------------------------------------- canlı saat + alt gezinme (JS)
 NAV_STIL = """
-#kk-nav{position:fixed;left:10px;right:10px;margin:0 auto;max-width:640px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:999999;
-  /* Streamlit'in sağ alttaki yönetim düğmesinin üstünde durur, onunla çakışmaz */display:flex;justify-content:space-around;align-items:stretch;padding:8px 6px 7px;border-radius:22px;
+#kk-nav{position:fixed;left:6px;right:6px;margin:0 auto;max-width:640px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:999999;
+  /* Streamlit'in sağ alttaki yönetim düğmesinin üstünde durur, onunla çakışmaz */display:flex;justify-content:space-around;align-items:stretch;padding:7px 4px 6px;border-radius:22px;
   background:linear-gradient(180deg,rgba(26,27,30,.94),rgba(12,13,15,.97));border:1px solid rgba(255,255,255,.10);
   box-shadow:0 16px 40px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   font-family:'Inter',-apple-system,sans-serif}
 #kk-nav button{flex:1;touch-action:manipulation;background:none;border:none;color:#9A9BA3;display:flex;flex-direction:column;align-items:center;gap:4px;
-  font-size:11px;font-weight:600;padding:4px 0;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
+  font-size:10px;font-weight:600;padding:4px 0;min-width:0;white-space:nowrap;letter-spacing:-.1px;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
 #kk-nav button+button:before{content:"";position:absolute;left:0;top:18%;bottom:18%;width:1px;background:rgba(255,255,255,.08)}
-#kk-nav svg{width:24px;height:24px}
-#kk-nav button.aktif{color:#0B0B0C;background:radial-gradient(circle at 50% 30%,#F5D27A,#E8B84A 60%,#C99A2E);border-radius:18px;
-  box-shadow:0 6px 18px rgba(232,184,74,.45);margin:-2px 2px}
+#kk-nav svg{width:21px;height:21px}
+#kk-nav button.aktif{color:#0B0B0C;background:radial-gradient(circle at 50% 30%,#F5D27A,#E8B84A 60%,#C99A2E);border-radius:16px;
+  box-shadow:0 6px 18px rgba(232,184,74,.45);margin:-2px 1px}
 #kk-nav button.aktif:before{display:none}
 #kk-nav button.aktif svg [fill]:not([fill="none"]){fill:#0B0B0C} #kk-nav button.aktif svg [stroke]{stroke:#0B0B0C}
 """
 
+# Alt menü (referansla aynı 6 sekme). (etiket, gidilecek "Üst|Alt", simge, aktif sayılacağı alt sekmeler)
+# Portföy ve Takip ana sayfadaki "Benim" / "Bildirimler" kutularından açılır.
 NAV_OGE = [
-    ("Ana Sayfa", "Ana Sayfa", '<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="#E8B84A"/>'),
-    ("Keşfet", "Keşfet", '<circle cx="11" cy="11" r="6.5" fill="none" stroke="#E8B84A" stroke-width="2.4"/><path d="m16 16 4.5 4.5" stroke="#E8B84A" stroke-width="2.6" stroke-linecap="round"/>'),
-    ("Portföy", "Portföy", '<rect x="3" y="7" width="18" height="13" rx="2.5" fill="#E8B84A"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7" fill="none" stroke="#E8B84A" stroke-width="2"/>'),
-    ("Takip", "Takip", '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" fill="#E8B84A"/>'),
+    ("Ana sayfa", "Ana Sayfa|Piyasalar", '<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="#E8B84A"/>',
+     ["Ana Sayfa|Piyasalar", "Ana Sayfa|Takvim", "Ana Sayfa|Ekonomi"]),
+    ("Piyasalar", "Keşfet|Emtia & Kripto", '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2" fill="none" stroke="#E8B84A" stroke-width="2.4" stroke-linecap="round"/>',
+     ["Keşfet|Emtia & Kripto", "Keşfet|Karşılaştır"]),
+    ("Harita", "Keşfet|Teknik", '<path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" fill="none" stroke="#E8B84A" stroke-width="2.1" stroke-linejoin="round"/><path d="M9 4v13.5M15 6.5V20" stroke="#E8B84A" stroke-width="2.1"/>',
+     ["Keşfet|Teknik", "Keşfet|Tarayıcı"]),
+    ("Seçki", "Keşfet|Fırsatlar", '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" fill="#E8B84A"/>',
+     ["Keşfet|Fırsatlar"]),
+    ("BIST", "Keşfet|Hisse", '<rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="#E8B84A" stroke-width="2.1"/><path d="m7 15 3-3.5 2.5 2L17 8" fill="none" stroke="#E8B84A" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>',
+     ["Keşfet|Hisse", "Keşfet|Bebek"]),
+    ("Haberler", "Ana Sayfa|Haberler", '<path d="M4 5h13a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2z" fill="none" stroke="#E8B84A" stroke-width="2"/><path d="M8 9h7M8 13h7M8 17h4" stroke="#E8B84A" stroke-width="2" stroke-linecap="round"/>',
+     ["Ana Sayfa|Haberler"]),
 ]
 
 CANLI_JS = """
@@ -444,8 +454,8 @@ CANLI_JS = """
     const W=window.parent, P=W.document, OGE=__OGE__;
     let st=P.getElementById("kk-nav-stil");
     if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
-    if(!P.getElementById("kk-nav-js5")){
-      const sc=P.createElement("script"); sc.id="kk-nav-js5";
+    if(!P.getElementById("kk-nav-js6")){
+      const sc=P.createElement("script"); sc.id="kk-nav-js6";
       sc.textContent=`
         window.kkSekmeler=function(){return [...document.querySelectorAll('.stTabs [data-testid="stTab"], .stTabs [role="tab"], .stTabs [data-baseweb="tab"]')];};
         window.kkAd=function(t){const p=t.querySelector('[data-testid="stMarkdownContainer"] p')||t; return (p.innerText||p.textContent||"").trim();};
@@ -522,20 +532,25 @@ CANLI_JS = """
           });
           try{ const kp=localStorage.getItem("kk_uyari_kapali"); if(kp) document.querySelectorAll('.kk-uyari[data-id="'+kp+'"]').forEach(u=>u.style.display="none"); }catch(x){}
           const nav=document.getElementById("kk-nav"); if(!nav) return;
-          const s=window.kkSekmeler().find(x=>x.getAttribute("aria-selected")==="true"); const ad=s?window.kkAd(s):"";
-          nav.querySelectorAll("button").forEach(b=>b.classList.toggle("aktif", ad.endsWith(b.dataset.sekme)));
+          // seçili sekme yolu: üst sekme + açık paneldeki seçili alt sekme ("Keşfet|Teknik")
+          const gorunur=function(t){let e=t; while(e){ if(e.getAttribute && e.getAttribute("role")==="tabpanel" && (e.hidden||e.style.display==="none")) return false; e=e.parentElement;} return true;};
+          const sec=window.kkSekmeler().filter(x=>x.getAttribute("aria-selected")==="true" && gorunur(x)).map(window.kkAd);
+          const ust=["Ana Sayfa","Keşfet","Portföy","Takip"].find(u=>sec.some(x=>x.endsWith(u)))||"";
+          const alt=sec.filter(x=>!["Ana Sayfa","Keşfet","Portföy","Takip"].some(u=>x.endsWith(u)));
+          const yol=t=>{const p=t.split("|"); return ust.length && p[0]===ust && alt.some(x=>x.endsWith(p[1]));};
+          nav.querySelectorAll("button").forEach(b=>b.classList.toggle("aktif", JSON.parse(b.dataset.es).some(yol)));
         };
         if(!window.kkIsaretZaman) window.kkIsaretZaman=setInterval(window.kkIsaretle,500);`;
       P.head.appendChild(sc);
     }
     const eski=P.getElementById("kk-nav"); if(eski) eski.remove();
     const nav=P.createElement("nav"); nav.id="kk-nav";
-    nav.innerHTML=OGE.map(o=>'<button type="button" data-sekme="'+o[1]+'" onclick="window.kkGit(this.dataset.sekme)">'+
+    nav.innerHTML=OGE.map(o=>'<button type="button" data-sekme="'+o[1]+'" data-es=\''+JSON.stringify(o[3])+'\' onclick="window.kkGitAlt(this.dataset.sekme)">'+
       '<svg viewBox="0 0 24 24">'+o[2]+'</svg><span>'+o[0]+'</span></button>').join("");
     P.body.appendChild(nav);
     if(typeof W.kkGit!=="function"){   // ana sayfaya betik eklenemezse (güvenlik politikası) yedek yol
       nav.querySelectorAll("button").forEach(b=>{b.removeAttribute("onclick"); b.addEventListener("click",()=>{
-        const t=[...P.querySelectorAll('.stTabs [data-testid="stTab"], .stTabs [role="tab"], .stTabs [data-baseweb="tab"]')].find(x=>x.innerText.trim().endsWith(b.dataset.sekme)); if(t) t.click();});});
+        const t=[...P.querySelectorAll('.stTabs [data-testid="stTab"], .stTabs [role="tab"], .stTabs [data-baseweb="tab"]')].find(x=>x.innerText.trim().endsWith(b.dataset.sekme.split("|")[0])); if(t) t.click();});});
     }
     if(W.kkIsaretle) W.kkIsaretle();
   }catch(e){console.log("kk-nav",e);}
