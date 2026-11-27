@@ -337,7 +337,12 @@ def rejim_turu(p, analizler, endeks, bot):
         import rejim as RJ
         r = RJ.hesapla(p, analizler, endeks["tf"]["G"]["h"], CIKTI, vix=RJ.vix_al() if p == "abd" else None)
         log("Rejim:", r["ozet"])
-        RJ.telegram(p, r, CIKTI, bot)
+        try: eski = json.load(open(os.path.join(KLON, "rejim", f"{p}.json"), encoding="utf-8"))
+        except Exception: eski = None
+        # kart yalnız anlamlı değişimde ya da Cuma özetinde (her kapanışta aynı kart kalabalık yapmasın)
+        if (eski is None or eski.get("durum") != r["durum"] or abs(eski.get("maruziyet", 0) - r["maruziyet"]) >= 20
+                or (r.get("tepe_uyarisi") and not eski.get("tepe_uyarisi")) or dt.date.today().weekday() == 4):
+            RJ.telegram(p, r, CIKTI, bot, onceki=eski)
     except Exception as ex:
         log("rejim:", ex)
 

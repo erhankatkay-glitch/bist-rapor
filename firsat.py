@@ -41,6 +41,15 @@ KURULUM = {
     "HARM": ("Harmonik dönüş", "Harmonik tepe dönüşü",
              "Fiyat harmonik formasyonun dönüş bölgesine (PRZ) geldi ve aynı mumda alıcı onayı oluştu.",
              "Fiyat harmonik formasyonun dönüş bölgesine (PRZ) geldi ve aynı mumda satıcı onayı oluştu."),
+    "VCP": ("VCP kırılımı (Minervini)", "Ters VCP aşağı kırılımı",
+            "Güçlü yükseliş trendinde giderek daralan üç geri çekilme ve kuruyan hacimden sonra tabanın tepesi hacimle kırıldı.",
+            "Düşüş trendinde daralan üç tepki ve kuruyan hacimden sonra tabanın dibi hacimle kırıldı."),
+    "MOMENTUM": ("Momentum patlaması", "Aşağı momentum patlaması",
+                 "Sakin bir günün ardından en az %4 ve 1,5 ATR'lik yükseliş, artan hacim ve mumun tepesine yakın kapanış.",
+                 "Sakin bir günün ardından en az %4 ve 1,5 ATR'lik düşüş, artan hacim ve mumun dibine yakın kapanış."),
+    "EP": ("Episodic pivot (haber boşluğu)", "Aşağı haber boşluğu",
+           "Fiyat en az %6 boşlukla açıldı, hacim ortalamanın 3 katını aştı ve boşluk gün boyu korundu (genellikle önemli bir habere tepki).",
+           "Fiyat en az %6 aşağı boşlukla açıldı, hacim ortalamanın 3 katını aştı ve boşluk gün boyu korundu."),
 }
 # Aşama 7 kurulumları (arastirma_firsat.py, 27.11.2026): yalnızca canlı filtreyle birlikte ESKİ ve YENİ yarıda ayrı ayrı
 # ortalama sonucu +0,02R'nin üzerinde olan (piyasa, tf) → {(kurulum, yön)} açılır. Parantezde eski / yeni yarı ortR.
@@ -51,10 +60,14 @@ EK_KURULUM = {
     ("abd", "H"): {("BREAKER", 1), ("HARM", 1)},                # BREAKER +0,358/+0,228 · HARM +0,237/+0,177
     ("kripto", "G"): {("HARM", -1)},                            # HARM SAT +0,641/+0,563
 }
+# Aşama 10c (28.11.2026, arastirma_qd.py QD_KAYNAK=10c: boyama testi, tarih eşlemeli Monte Carlo, 4 dönem, BH-FDR, kör %20).
+# Parantez: geliştirme dönemi rastgele girişe göre fazla R / kör dönem fazla R. VCP: 5 yılda < 50 olay (test edilemedi, kapalı).
+EK_KURULUM[("bist", "G")] |= {("EP", -1), ("MOMENTUM", -1)}   # EP SAT +0,75/+0,39 · MOMENTUM SAT +0,17/+0,23 (BIST SAT tabanı −0,26R)
+EK_KURULUM[("abd", "G")] |= {("MOMENTUM", 1)}                 # MOMENTUM AL +0,055/+0,079
 # Elenenler: kripto 4S'te hepsi; OB BIST 4S, ABD G/H'de (eski yarı ≤ 0); tüm SAT yönleri (kripto G harmonik hariç).
 # RVOL: göreli hacim zaten "Hacim x" teyidi ve hacim puanı olarak (medyana göre) skorlanıyor; ayrı filtre eklenmedi.
 DURUM_AD = {"TEYİT": "teyit", "YUKARI KIRILIM": "yukarı kırılım", "AŞAĞI KIRILIM": "aşağı kırılım", "KIRILIM": "kırılım"}
-KALITE = {"FORM": 15, "UYUMSUZ": 12, "KIRILIM": 12, "GERI": 12, "SIKISMA": 10, "AVI": 10, "ST": 8, "OB": 12, "BREAKER": 10, "HARM": 12}
+KALITE = {"VCP": 13, "MOMENTUM": 9, "EP": 11, "FORM": 15, "UYUMSUZ": 12, "KIRILIM": 12, "GERI": 12, "SIKISMA": 10, "AVI": 10, "ST": 8, "OB": 12, "BREAKER": 10, "HARM": 12}
 # Aşama 10b: QuantDinger kütüphanesinden sıkı testi geçen göstergeler (qd_kabul.json; arastirma_qd.py).
 # {"bist|G": [{"ad", "yon", "baslik", "aciklama"}]} — betikler qd_kutuphane/ altında (Apache-2.0, NOTICE).
 try:
@@ -107,6 +120,21 @@ def qd_durumlar(h, piyasa, tf, pencere=10):
         n = len(h); son = int(idx[-1]) if len(idx) else None
         yas = (n - 1 - son) if son is not None and n - 1 - son < pencere else None
         out.append({"baslik": q["baslik"], "yon": q["yon"], "yas": yas, "aciklama": q["aciklama"], "fazla": q["test"]["fazla"]})
+    return out
+
+
+YENI_10C = ("VCP", "MOMENTUM", "EP")
+
+
+def yeni_kurulum_durumu(h, G, piyasa, tf, pencere=10):
+    """Teknik analiz sayfası/PDF: bu piyasada açık (EK_KURULUM) 10c kurulumlarının son tetiği → [{baslik, yon, yas, aciklama}]."""
+    acik = [(k, y) for k, y in EK_KURULUM.get((piyasa, tf), set()) if k in YENI_10C]
+    if not acik: return []
+    A = diziler(h, G); n = len(A["Close"]); out = []
+    for k, y in sorted(acik):
+        m, _ = tetikler(ayna(A, y), ek={k})[k]
+        ii = np.flatnonzero(m); yas = (n - 1 - int(ii[-1])) if len(ii) and n - 1 - int(ii[-1]) < pencere else None
+        out.append({"baslik": KURULUM[k][0 if y == 1 else 1], "yon": y, "yas": yas, "aciklama": KURULUM[k][2 if y == 1 else 3]})
     return out
 
 
@@ -298,6 +326,9 @@ def tetikler(M, ek=None):
         if "OB" in ek: out["OB"] = TE.ob_tetik(M, sal)
         if "BREAKER" in ek: out["BREAKER"] = TE.breaker_tetik(M, sal)
         if "HARM" in ek: out["HARM"] = TE.harmonik_tetik(M)[:2]
+        if "VCP" in ek: out["VCP"] = TE.vcp_tetik(M)
+        if "MOMENTUM" in ek: out["MOMENTUM"] = TE.momentum_tetik(M)
+        if "EP" in ek: out["EP"] = TE.ep_tetik(M)
     # tekrarları ayıkla (son 3 mumda aynı kurulum varsa yeni sayma), risk aralığı 1–3,5 ATR
     for k, (m, stop) in out.items():
         m = np.nan_to_num(m.astype(float)).astype(bool)

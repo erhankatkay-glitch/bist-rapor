@@ -224,6 +224,12 @@ def _yon(y):
 
 
 SOZLUK_TEKNIK = [
+    ("VCP (Minervini)", "Volatilite daralma formasyonu: güçlü yükseliş trendinde her geri çekilme bir öncekinden sığdır ve hacim kurur; "
+     "tabanın tepesi hacimle kırılınca alım noktası (pivot) oluşur."),
+    ("Momentum patlaması", "Sakin bir günün ardından gelen sert (%4+), hacimli ve günün tepesine yakın kapanan yükseliş; kısa vadeli "
+     "devam hareketinin başlangıcı olabilir."),
+    ("Episodic pivot", "Önemli bir habere tepkiyle %6+ boşlukla açılış ve olağanüstü (ortalamanın 3+ katı) hacim; boşluğun gün boyu "
+     "korunması kurumsal alımın işareti sayılır."),
     ("QuantDinger göstergeleri", "Açık kaynak QuantDinger kütüphanesinden (Apache-2.0) alınıp her piyasada ayrı sıkı geçmiş testten geçen göstergeler "
      "(ör. Mavilim, AlphaTrend, Pivot SuperTrend, fincan formasyonu). Sinyali geriye dönük çizenler elendi; yalnız rastgele girişten "
      "4 dönemin en az 3'ünde ve son kör dönemde daha iyi olanlar kullanılır."),

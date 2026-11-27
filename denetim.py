@@ -1,41 +1,36 @@
-"""10c-1: gerçek veriyle rejim hesabı + ilk yayın + uygulama görünümü."""
-import os, sys, json, subprocess, time, shutil
-import pandas as pd, yfinance as yf
-import rejim as RJ, arastirma_firsat as AF
-os.makedirs("denetim_graf", exist_ok=True); os.makedirs("cikti", exist_ok=True)
-def an(veri): return [{"kod": k, "tf": {"G": {"h": d}}} for k, d in veri.items()]
-def endeks(sem):
-    d = yf.download(sem, period="3y", interval="1d", auto_adjust=False, progress=False)
-    d.columns = [c[0] if isinstance(c, tuple) else c for c in d.columns]; d.index = d.index.tz_localize(None) if d.index.tz else d.index
-    return d.dropna(subset=["Close"])
-for p, veri_fn, sem in (("bist", lambda: AF.bist_veri(700), "XU100.IS"), ("abd", lambda: AF.abd_veri(200), "^GSPC")):
-    t = time.time(); veri, onder = veri_fn(); veri.pop(onder, None)
-    h = endeks(sem)
-    r = RJ.hesapla(p, an(veri), h, "cikti", vix=RJ.vix_al() if p == "abd" else None)
-    print(p, len(veri), "hisse,", round(time.time() - t), "sn ·", r["ozet"])
-    print("  ", r["gerekce"], "| dağıtım günleri:", r["dagitim_gunleri"], "| FTD:", r["ftd"], "| hacim:", r["hacim_var"])
-    import collections; print("   son 130 gün:", collections.Counter(r["durum_gecmis"]["durum"]))
-    RJ.kart_ciz(r, f"denetim_graf/rejim_{p}.png")
-subprocess.run([sys.executable, "yayinla.py", "cikti", "rejim ilk yayın (denetim)"], check=False)
-# uygulama: Ekonomi paneli
-time.sleep(5)
-p = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "app.py", "--server.headless", "true", "--server.port", "8501"],
-                     stdout=open("st_log.txt", "w"), stderr=subprocess.STDOUT)
-time.sleep(20)
-from playwright.sync_api import sync_playwright
-with sync_playwright() as pw:
-    br = pw.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
-    pg = br.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=2).new_page()
-    pg.on("pageerror", lambda e: print("pageerror:", str(e)[:300]))
-    pg.goto("http://localhost:8501", timeout=120000); pg.wait_for_selector('[data-testid="stTab"]', timeout=180000); pg.wait_for_timeout(12000)
-    pg.evaluate("localStorage.setItem('kk_gorulen', JSON.stringify(Array(1)))")
-    pg.evaluate("window.kkGitAlt('Ana Sayfa|Ekonomi')"); pg.wait_for_timeout(6000)
-    el = pg.locator(".rj").first
-    try:
-        el.scroll_into_view_if_needed(); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/ekonomi_rejim.png")
-    except Exception as ex: print("panel yok:", ex)
-    print("panel sayısı:", pg.evaluate("document.querySelectorAll('.rj').length"))
-    pg.evaluate("window.kkGitAlt('Keşfet|Fırsatlar')"); pg.wait_for_timeout(6000); pg.screenshot(path="denetim_graf/secki_rejim.png")
-    print("seçki satırı:", pg.evaluate("(document.querySelector('.rj-k')||{}).innerText"))
-    br.close()
-p.terminate()
+"""10c-2 entegrasyon kontrolü (gönderim yok)."""
+import os, numpy as np
+import bist_teknik as T, bist_teknik_rapor as TR, firsat as F, tarayici as TRY
+os.makedirs("denetim_graf", exist_ok=True)
+for kod in ("NVDA.US", "TSLA.US", "THYAO", "SASA"):
+    s = T.analiz(kod); g = s["tf"]["G"]
+    print(kod, "karne:", [(d[0], d[1]) for d in g["durum"] if d[0] in ("Momentum patlaması", "Aşağı momentum patlaması", "Aşağı haber boşluğu")],
+          "| sinyal:", [x[0] for x in g["sinyal"] if x[0].startswith("Kurulum:")])
+    if kod == "NVDA.US":
+        f = TR.teknik_pdf(s, "denetim_graf/NVDA.pdf")
+        import pypdf; t = "".join(p.extract_text() for p in pypdf.PdfReader(f).pages); print("  PDF: momentum satırı", "Momentum patlaması" in t, "| sözlük VCP", "VCP (Minervini)" in t)
+# son 250 günde kaç tetik (piyasada ne sıklıkla çıkıyor) + tarayıcı + motor geçmiş istatistiği
+ABD = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AMD", "NFLX", "AVGO", "PLTR", "COIN", "SHOP", "UBER", "CRM", "ORCL", "INTC", "MU", "SMCI", "ARM"]
+v = []; tet = 0
+for k in ABD:
+    h, _ = T.gunluk_veri(k + ".US"); h = h.iloc[-1600:]
+    a = F.hafif(h, "G"); v.append({"kod": k + ".US", "ad": k, "para": "$", "a": a, "ust": T.tf_analiz(T.yeniden_ornekle(h, "H"), "H")})
+    A = F.diziler(a["h"], a["G"]); m, _ = F.tetikler(A, ek={"MOMENTUM"})["MOMENTUM"]; tet += int(m[-250:].sum())
+    x = TRY.son_sinyal(a["h"], a["G"], "abd", pencere=250)
+print("ABD 20 hisse son 250 günde momentum tetiği:", tet)
+sec, aday, pist = F.tara(v, "G", "abd", yonler=(1,), adet=5)
+print("motor:", len(aday), "aday ·", [(f["kod"], f["kurulum_ad"][:40]) for f in aday[:6]])
+for kk, s_ in pist.__dict__.items():
+    if isinstance(s_, dict):
+        for k2, val in s_.items():
+            if "MOMENTUM" in str(k2): print("  geçmiş olay", k2, len(val) if hasattr(val, "__len__") else val)
+# portföy SAT taraması (BIST): EP/MOMENTUM SAT varlik_tara ile
+pv = []
+for k in ("THYAO", "SASA", "ASELS", "HEKTS", "KONTR", "ASTOR", "PGSUS", "TUPRS"):
+    h, _ = T.gunluk_veri(k); pv.append({"kod": k, "ad": k, "para": "₺", "a": F.hafif(h.iloc[-1600:], "G")})
+say = 0
+for x in pv:
+    A = F.diziler(x["a"]["h"], x["a"]["G"]); M = F.ayna(A, -1)
+    t_ = F.tetikler(M, ek=F.ek_kurulumlar("bist", "G", -1))
+    say += sum(int(t_[k][0][-250:].sum()) for k in ("EP", "MOMENTUM") if k in t_)
+print("BIST 8 hisse son 250 günde EP/MOMENTUM SAT tetiği:", say, "| açık:", sorted(F.ek_kurulumlar("bist", "G", -1)))

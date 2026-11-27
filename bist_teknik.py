@@ -819,6 +819,17 @@ def tf_analiz(h, tf, tur=None):
     dr = durumlar(h, G)
     # Sinyal listesi (yön: +1/-1/0, güç 0–3)
     sinyal = []
+    # Aşama 10c: bu piyasada testi geçen VCP / momentum patlaması / episodic pivot kurulumları (karne + taze sinyal)
+    if tur in QD_PIYASA:
+        try:
+            import firsat as _F
+            for q in _F.yeni_kurulum_durumu(h, G, QD_PIYASA[tur], tf):
+                dr.append((q["baslik"], (f"{'AL' if q['yon'] == 1 else 'SAT'} · {'bu mum' if q['yas'] == 0 else str(q['yas']) + ' mum önce'}"
+                                         if q["yas"] is not None else "Kurulum yok"), q["aciklama"], q["yon"] if q["yas"] is not None else 0))
+                if q["yas"] is not None and q["yas"] <= 2:
+                    sinyal.append((f"Kurulum: {q['baslik']}", q["yon"], q["aciklama"], 2))
+        except Exception:
+            pass
     # Aşama 10b: bu piyasada geçmiş testi geçen QuantDinger göstergeleri (gösterge karnesi + taze sinyal)
     if tur in QD_PIYASA:
         try:

@@ -569,7 +569,7 @@ MINI_LOGO = {"Bitcoin": ("BTC", "kripto"), "Ethereum": ("ETH", "kripto")}
 
 def rejim_paneli(p, kisa=False):
     """Aşama 10c: piyasa rejimi (kapanış taramasında hesaplanır: rejim/{p}.json)."""
-    import html as _h
+    import html as _h, rejim as RJ_
     try:
         r = json_oku(f"rejim/{p}.json", ZAMAN)
     except Exception:
@@ -593,8 +593,7 @@ def rejim_paneli(p, kisa=False):
     ger = "".join(f"<li>{_h.escape(x)}</li>" for x in r.get("gerekce", []))
     return (f'<div class="rj" style="--v:{renk}">'
             f'<div class="rj-u"><div><small>{_h.escape(r["endeks"])} · PİYASA REJİMİ</small><b>{_h.escape(r["durum_ad"])}</b>'
-            f'<span>{r["dagitim"]} dağıtım günü' + (f' · son takip günü {r["ftd"][8:10]}.{r["ftd"][5:7]}' if r.get("ftd") else "")
-            + (f' · ralli {r["ralli_gunu"]}. gün' if r.get("ralli_gunu") else "") + '</span></div>'
+            f'<span>{_h.escape(RJ_.durum_alt(r))}</span></div>'
             f'<div class="rj-m"><b>%{r["maruziyet"]}</b><span>önerilen<br>hisse oranı</span></div></div>'
             f'<div class="rj-b"><div style="width:{r["maruziyet"]}%"></div></div>'
             + ('<div class="rj-t">⚠ Tepe uyarısı: endeks zirveye yakınken genişlik bozuluyor ve dağıtım günleri artıyor.</div>' if r.get("tepe_uyarisi") else "")
@@ -604,7 +603,7 @@ def rejim_paneli(p, kisa=False):
             f'<p>Dağıtım günü: endeksin önceki güne göre artan hacimle %0,2+ düştüğü gün (kurumsal satış izi). Son 25 seansta 4+ gün baskı, '
             f'6+ gün düzeltme işaretidir. Takip günü: düzeltmeden sonra rallinin 4. gününden itibaren güçlü ve hacimli yükseliş; yeni '
             f'yükseliş trendinin teyidi sayılır. Yatırım tavsiyesi değildir.</p>'
-            + (f'<p>Dağıtım günleri: {", ".join(x[8:10] + "." + x[5:7] for x in gun)}</p>' if gun else "") + '</details></div>')
+            + (f'<p>Dağıtım günleri: {", ".join(x[8:10] + "." + x[5:7] for x in gun)}</p>' if gun and r["durum"] in ("yukselis", "baski") else "") + '</details></div>')
 
 
 def makro_karti(m):
@@ -1941,6 +1940,8 @@ with tab_p:
         _gf = gunun_firsatlari(ZAMAN)
         if _gf:
             st.markdown(TS.bb("Günün fırsatları"), unsafe_allow_html=True)
+            _rjk = "".join(rejim_paneli(p_, kisa=True) for p_ in ("bist", "abd"))
+            if _rjk: st.markdown(_rjk.replace('<div class="rj-k"', '<div class="rj-k" role="button" data-git="Ana Sayfa|Ekonomi"'), unsafe_allow_html=True)
             _pa = {"bist": "BIST hisseleri", "kripto": "Kripto", "abd": "ABD hisseleri", "emtia": "Emtia"}
             st.markdown("".join(
                 f'<div class="fl-b">{_pa[pz]}<span>{sum(f["pz"] == pz for f in _gf)} fırsat</span></div>'

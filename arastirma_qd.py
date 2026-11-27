@@ -30,6 +30,29 @@ import arastirma_firsat as AF
 
 STOP_ATR = 2.0
 RLER = (1.0, 2.0, 3.0)
+KAYNAK = os.environ.get("QD_KAYNAK", "qd")       # "qd": QuantDinger betikleri · "10c": yerli VCP/MOMENTUM/EP kurulumları
+YERLI = ["VCP", "MOMENTUM", "EP"]
+
+
+def kaynak_listesi():
+    return [f"10c:{k}" for k in YERLI] if KAYNAK == "10c" else Q.betikler()
+
+
+def kaynak_ad(b):
+    return b[4:] if b.startswith("10c:") else Q.ad(b)
+
+
+def kaynak_sinyal(b, d):
+    """→ ((al_idx, sat_idx), {(yon, t): kurulumun kendi stopu (aynalı)} ya da None)."""
+    if not b.startswith("10c:"): return Q.sinyaller(b, d), None
+    k = b[4:]; G = T.gostergeler(d); A = F.diziler(d, G); idx = []; stoplar = {}
+    for y in (1, -1):
+        m, st = F.tetikler(F.ayna(A, y), ek={k})[k]
+        ii = np.flatnonzero(m); idx.append(ii)
+        for t in ii: stoplar[(y, int(t))] = float(st[t])
+    return (idx[0], idx[1]), stoplar
+
+
 PZ = {"bistg": "G", "abdg": "G", "kriptog": "G", "kripto4s": "4S"}
 
 
@@ -38,17 +61,29 @@ def log(*a):
 
 
 def veri_al(pazar):
-    if pazar == "bistg": return AF.bist_veri(120)
-    if pazar == "abdg": return AF.abd_veri(120)
+    genis = KAYNAK == "10c"          # nadir kurulumlar (VCP, EP) için daha geniş evren
+    if pazar == "bistg": return AF.bist_veri(400 if genis else 120)
+    if pazar == "abdg": return AF.abd_veri(200 if genis else 120)
     if pazar == "kriptog": return AF.kripto_veri("1d", 60)
     if pazar == "kripto4s": return AF.kripto_veri("4h", 60)
     raise SystemExit("pazar?")
 
 
+def bozuk(d):
+    """Bozuk fiyat verisi: sıfır/negatif fiyat ya da tek günde ±%60'tan büyük sıçrama (bölünme/veri hatası)."""
+    c = d["Close"].to_numpy(float)
+    if (c <= 0).any() or (d["Low"].to_numpy(float) <= 0).any(): return True
+    r = np.abs(np.diff(np.log(c)))
+    return bool(np.nanmax(r) > np.log(1.6)) if len(r) else True
+
+
 def hazirla(veri, tf):
     """Her varlık için motor dizileri ve iki yönün aynalanmış hali."""
     out = {}
+    atilan = [k for k, d in veri.items() if bozuk(d)]
+    if atilan: log(f"bozuk veri, atlandı ({len(atilan)}): {', '.join(atilan[:15])}")
     for kod, d in veri.items():
+        if kod in atilan: continue
         try:
             G = T.gostergeler(d); A = F.diziler(d, G)
         except Exception as ex:
@@ -62,12 +97,14 @@ def hazirla(veri, tf):
     return out
 
 
-def olc(yon_dizi, t, tf):
+def olc(yon_dizi, t, tf, stop=None):
     H, L, C, O, at = yon_dizi
     if not np.isfinite(at[t]) or at[t] <= 0: return None
-    stop = C[t] - STOP_ATR * at[t]
+    if stop is None or not np.isfinite(stop): stop = C[t] - STOP_ATR * at[t]
     if (C[t] - stop) / abs(C[t]) > F.MAKS_RISK[tf]: return None
-    return F.simule(H, L, C, t, C[t], stop, RLER, F.MAKS_BAR[tf], O)
+    s = F.simule(H, L, C, t, C[t], stop, RLER, F.MAKS_BAR[tf], O)
+    if s: s = (float(np.clip(s[0], -5.0, 3.0)),) + tuple(s[1:])   # gerçekçi aralık: en çok 3. hedef, boşluklu stopta en çok −5R
+    return s
 
 
 def olay(pazar, parca, toplam):
@@ -84,13 +121,13 @@ def olay(pazar, parca, toplam):
                     if s: tb.append((kod, d.index[t], y, round(s[0], 4)))
         pd.DataFrame(tb, columns=["kod", "zaman", "yon", "R"]).to_csv(f"qd_taban_{pazar}.csv", index=False)
         log(f"taban {len(tb)} olay, {time.time() - t0:.0f} sn")
-    betik = [b for i, b in enumerate(Q.betikler()) if i % toplam == parca]
+    betik = [b for i, b in enumerate(kaynak_listesi()) if i % toplam == parca]
     kayit = []
     for b in betik:
-        t1 = time.time(); ad = Q.ad(b); say = 0; hata = 0
+        t1 = time.time(); ad = kaynak_ad(b); say = 0; hata = 0
         for kod, (d, n, bas, yon) in V.items():
             try:
-                r = Q.sinyaller(b, d)
+                r, stoplar = kaynak_sinyal(b, d)
             except Exception:
                 hata += 1
                 if hata >= 3: break
@@ -99,7 +136,7 @@ def olay(pazar, parca, toplam):
             for y, idx in ((1, r[0]), (-1, r[1])):
                 for t in idx:
                     if t < bas or t >= n - 1: continue
-                    s = olc(yon[y], int(t), tf)
+                    s = olc(yon[y], int(t), tf, (stoplar or {}).get((y, int(t))))
                     if s: kayit.append((ad, kod, d.index[int(t)], y, round(s[0], 4), s[1])); say += 1
             if time.time() - t1 > 900: log("  süre sınırı", ad); break
         log(f"  {ad:42s} olay {say:6d}  hata {hata}  {time.time() - t1:5.1f} sn")
@@ -110,19 +147,22 @@ def olay(pazar, parca, toplam):
 def boyama(parca, toplam):
     """Göstergelerin gerçek zaman uyumu: tam veri olaylarının, yalnız o mumdaki veriye kadar çalıştırıldığında da çıkma oranı."""
     import yfinance as yf
-    v = yf.download(["THYAO.IS", "GARAN.IS", "AAPL", "MSFT", "BTC-USD"], period="6y", interval="1d", auto_adjust=True,
-                    progress=False, group_by="ticker", threads=True)
+    sem = ["THYAO.IS", "GARAN.IS", "AAPL", "MSFT", "BTC-USD"]
+    if KAYNAK == "10c":   # nadir kurulumlar için daha çok varlık (yeterli olay)
+        sem += ["ASELS.IS", "KCHOL.IS", "BIMAS.IS", "EREGL.IS", "SASA.IS", "HEKTS.IS", "KONTR.IS", "ASTOR.IS", "PGSUS.IS", "TUPRS.IS",
+                "NVDA", "TSLA", "AMD", "META", "NFLX", "PLTR", "SMCI", "COIN", "SHOP", "MSTR", "ETH-USD", "SOL-USD"]
+    v = yf.download(sem, period="6y", interval="1d", auto_adjust=True, progress=False, group_by="ticker", threads=True)
     veri = {}
-    for k in ("THYAO.IS", "GARAN.IS", "AAPL", "MSFT", "BTC-USD"):
+    for k in sem:
         d = v[k].dropna(subset=["Close"]); d.index = d.index.tz_localize(None) if d.index.tz is not None else d.index
         veri[k] = d.tail(1200)
     rng = np.random.default_rng(11); out = {}
-    for i, b in enumerate(Q.betikler()):
+    for i, b in enumerate(kaynak_listesi()):
         if i % toplam != parca: continue
-        ad = Q.ad(b); t1 = time.time(); es = top = fazla = rast = 0
+        ad = kaynak_ad(b); t1 = time.time(); es = top = fazla = rast = 0
         for k, d in veri.items():
             try:
-                r = Q.sinyaller(b, d)
+                r = kaynak_sinyal(b, d)[0]
             except Exception:
                 continue
             if r is None: break
@@ -132,7 +172,7 @@ def boyama(parca, toplam):
             bos = [t for t in rng.integers(300, len(d) - 1, 8) if t not in olay]
             for t in sec + bos:
                 try:
-                    p = Q.sinyaller(b, d.iloc[:t + 1])
+                    p = kaynak_sinyal(b, d.iloc[:t + 1])[0]
                 except Exception:
                     continue
                 son = p is not None and (t in set(p[0].tolist()) | set(p[1].tolist()))
