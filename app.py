@@ -567,6 +567,46 @@ def piyasa_karti(ad_, v):
 MINI_LOGO = {"Bitcoin": ("BTC", "kripto"), "Ethereum": ("ETH", "kripto")}
 
 
+def rejim_paneli(p, kisa=False):
+    """Aşama 10c: piyasa rejimi (kapanış taramasında hesaplanır: rejim/{p}.json)."""
+    import html as _h
+    try:
+        r = json_oku(f"rejim/{p}.json", ZAMAN)
+    except Exception:
+        r = None
+    if not r: return ""
+    renk = {"yukselis": "#22C55E", "baski": "#E8B84A", "ralli": "#E8B84A", "duzeltme": "#EF4444"}[r["durum"]]
+    if kisa:
+        return (f'<div class="rj-k" style="--v:{renk}"><b>{_h.escape(r["endeks"])}</b><span>{_h.escape(r["durum_ad"])}</span>'
+                f'<em>önerilen hisse oranı %{r["maruziyet"]}</em>{"<i>⚠ tepe uyarısı</i>" if r.get("tepe_uyarisi") else ""}</div>')
+    g = r.get("genislik") or {}; ge = r.get("gecmis") or {}
+    yz = lambda x: f"%{x * 100:.0f}" if x is not None else "–"
+    seri = ge.get("ust50") or []
+    sp = ""
+    if len(seri) > 5:
+        w, h = 320, 70; mn, mx = 0.0, 1.0
+        pts = " ".join(f"{i * w / (len(seri) - 1):.1f},{h - (v - mn) / (mx - mn) * h:.1f}" for i, v in enumerate(seri))
+        sp = (f'<svg viewBox="0 0 {w} {h}" preserveAspectRatio="none" class="rj-sp"><line x1="0" x2="{w}" y1="{h * .5}" y2="{h * .5}" stroke="#3F3F46" stroke-dasharray="3 4"/>'
+              f'<polyline points="{pts}" fill="none" stroke="#E8B84A" stroke-width="2"/></svg>'
+              f'<div class="rj-alt">50 günlüğün üstündeki hisse oranı · son {len(seri)} seans (kesikli çizgi %50)</div>')
+    gun = r.get("dagitim_gunleri") or []
+    ger = "".join(f"<li>{_h.escape(x)}</li>" for x in r.get("gerekce", []))
+    return (f'<div class="rj" style="--v:{renk}">'
+            f'<div class="rj-u"><div><small>{_h.escape(r["endeks"])} · PİYASA REJİMİ</small><b>{_h.escape(r["durum_ad"])}</b>'
+            f'<span>{r["dagitim"]} dağıtım günü' + (f' · son takip günü {r["ftd"][8:10]}.{r["ftd"][5:7]}' if r.get("ftd") else "")
+            + (f' · ralli {r["ralli_gunu"]}. gün' if r.get("ralli_gunu") else "") + '</span></div>'
+            f'<div class="rj-m"><b>%{r["maruziyet"]}</b><span>önerilen<br>hisse oranı</span></div></div>'
+            f'<div class="rj-b"><div style="width:{r["maruziyet"]}%"></div></div>'
+            + ('<div class="rj-t">⚠ Tepe uyarısı: endeks zirveye yakınken genişlik bozuluyor ve dağıtım günleri artıyor.</div>' if r.get("tepe_uyarisi") else "")
+            + f'<div class="rj-g"><div><b>{yz(g.get("ust50"))}</b><span>50 günlük üstü</span></div><div><b>{yz(g.get("ust200"))}</b><span>200 günlük üstü</span></div>'
+              f'<div><b>{g.get("zirve", "–")} / {g.get("dip", "–")}</b><span>yeni zirve / dip</span></div></div>'
+            f'{sp}<details><summary>Neden bu oran?</summary><ul>{ger}</ul>'
+            f'<p>Dağıtım günü: endeksin önceki güne göre artan hacimle %0,2+ düştüğü gün (kurumsal satış izi). Son 25 seansta 4+ gün baskı, '
+            f'6+ gün düzeltme işaretidir. Takip günü: düzeltmeden sonra rallinin 4. gününden itibaren güçlü ve hacimli yükseliş; yeni '
+            f'yükseliş trendinin teyidi sayılır. Yatırım tavsiyesi değildir.</p>'
+            + (f'<p>Dağıtım günleri: {", ".join(x[8:10] + "." + x[5:7] for x in gun)}</p>' if gun else "") + '</details></div>')
+
+
 def makro_karti(m):
     """TÜFE + politika faizi + reel faiz kartı (TCMB)."""
     t = m["tufe"]["seri"]; s = t[0]
@@ -826,7 +866,9 @@ def akilli_uyari():
         if m[:1] not in ("⚡", "🔴", "🟢", "💼", "🗓"): continue
         kirmizi = m[:1] in ("🔴", "💼") or "-%" in m or "−" in m
         bas, _, gov = m[1:].strip().partition(":")
-        oge.append((t, kirmizi, bas.strip(), gov.strip() or m[1:], hashlib.md5((x["zaman"] + m).encode()).hexdigest()[:10], 9000))
+        if not gov.strip():   # "ASELS bugün +%5,4 hareket etti" → başlık varlık kodu, gövde mesajın kendisi (tekrar olmasın)
+            bas, gov = m[1:].strip().split()[0], m[1:].strip()
+        oge.append((t, kirmizi, bas.strip(), gov.strip(), hashlib.md5((x["zaman"] + m).encode()).hexdigest()[:10], 9000))
     if not oge: return ""
     oge.sort(key=lambda o: o[0], reverse=True)
     return '<div class="kk-bild">' + "".join(
@@ -1571,6 +1613,9 @@ with tab_f:
                "geçmiş başarı ve balina izleriyle. Aynı içerik Telegram'a sessiz gönderilir ve süresi dolunca oradan silinir; burada kalır.")
     fp = st.radio("Piyasa", ["BIST", "ABD", "Kripto", "Emtia"], horizontal=True, key="fr_p")
     fk = {"BIST": "bist", "ABD": "abd", "Kripto": "kripto", "Emtia": "emtia"}[fp]
+    if fk in ("bist", "abd"):
+        _rk = rejim_paneli(fk, kisa=True)
+        if _rk: st.markdown(_rk.replace('<div class="rj-k"', '<div class="rj-k" role="button" data-git="Ana Sayfa|Ekonomi"'), unsafe_allow_html=True)
     with st.spinner("Fırsatlar yükleniyor…"):
         FD = firsat_oku(fk, ZAMAN)
     son = FD.get("son") or {}
@@ -1918,6 +1963,11 @@ with tab_p:
     with tab_ek:
         st.markdown('<span role="button" data-git="Ana Sayfa|Piyasalar" class="kk-geri">‹ Ana sayfa</span> &nbsp; '
                     '<span role="button" data-git="Ana Sayfa|Haberler" class="kk-geri">Haberler ›</span>', unsafe_allow_html=True)
+        # ---- Piyasa rejimi (Aşama 10c)
+        _rj = [rejim_paneli(p_) for p_ in ("bist", "abd")]
+        if any(_rj):
+            st.markdown(TS.bb("Piyasa rejimi"), unsafe_allow_html=True)
+            st.markdown("".join(x for x in _rj if x), unsafe_allow_html=True)
         # ---- Yabancı yatırımcı akışı (TCMB haftalık)
         try:
             import yabanci_akis as YA

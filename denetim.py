@@ -1,29 +1,41 @@
-"""Bildirim kuyruğu + çekmece testi."""
-import os, sys, subprocess, time
-os.makedirs("denetim_graf", exist_ok=True)
+"""10c-1: gerçek veriyle rejim hesabı + ilk yayın + uygulama görünümü."""
+import os, sys, json, subprocess, time, shutil
+import pandas as pd, yfinance as yf
+import rejim as RJ, arastirma_firsat as AF
+os.makedirs("denetim_graf", exist_ok=True); os.makedirs("cikti", exist_ok=True)
+def an(veri): return [{"kod": k, "tf": {"G": {"h": d}}} for k, d in veri.items()]
+def endeks(sem):
+    d = yf.download(sem, period="3y", interval="1d", auto_adjust=False, progress=False)
+    d.columns = [c[0] if isinstance(c, tuple) else c for c in d.columns]; d.index = d.index.tz_localize(None) if d.index.tz else d.index
+    return d.dropna(subset=["Close"])
+for p, veri_fn, sem in (("bist", lambda: AF.bist_veri(700), "XU100.IS"), ("abd", lambda: AF.abd_veri(200), "^GSPC")):
+    t = time.time(); veri, onder = veri_fn(); veri.pop(onder, None)
+    h = endeks(sem)
+    r = RJ.hesapla(p, an(veri), h, "cikti", vix=RJ.vix_al() if p == "abd" else None)
+    print(p, len(veri), "hisse,", round(time.time() - t), "sn ·", r["ozet"])
+    print("  ", r["gerekce"], "| dağıtım günleri:", r["dagitim_gunleri"], "| FTD:", r["ftd"], "| hacim:", r["hacim_var"])
+    import collections; print("   son 130 gün:", collections.Counter(r["durum_gecmis"]["durum"]))
+    RJ.kart_ciz(r, f"denetim_graf/rejim_{p}.png")
+subprocess.run([sys.executable, "yayinla.py", "cikti", "rejim ilk yayın (denetim)"], check=False)
+# uygulama: Ekonomi paneli
+time.sleep(5)
 p = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "app.py", "--server.headless", "true", "--server.port", "8501"],
                      stdout=open("st_log.txt", "w"), stderr=subprocess.STDOUT)
 time.sleep(20)
 from playwright.sync_api import sync_playwright
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
-    pg = br.new_context(viewport={"width": 390, "height": 700}, is_mobile=True, has_touch=True, device_scale_factor=2).new_page()
+    pg = br.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=2).new_page()
     pg.on("pageerror", lambda e: print("pageerror:", str(e)[:300]))
-    pg.goto("http://localhost:8501", timeout=120000); pg.wait_for_selector('[data-testid="stTab"]', timeout=180000); pg.wait_for_timeout(15000)
-    print("gerçek bildirim sayısı:", pg.evaluate("document.querySelectorAll('.kk-bild .kk-uyari').length"),
-          "toast:", pg.evaluate("!!document.getElementById('kk-toast') && document.getElementById('kk-toast').className"))
-    pg.evaluate("""localStorage.removeItem('kk_gorulen'); const d=document.createElement('div'); d.className='kk-bild';
-      d.innerHTML='<div class="kk-uyari kk-uyari-k" data-id="t2" data-sure="4000" data-git="Takip|Alarmlar" style="--sure:4000ms"><span class="kk-x" data-kapat="t2">×</span><b>⚡ BTC\\'de kısa süreli aşağı iğne bekleniyor</b><div>Şu an 61.992 · olası iğne bölgeleri 60.828 / 60.800 · 00:31</div></div>'+
-      '<div class="kk-uyari" data-id="t1" data-sure="4000" data-git="Takip|Alarmlar" style="--sure:4000ms"><span class="kk-x" data-kapat="t1">×</span><b>⚡ S&P 500</b><div>İkili dip – TEYİT · 21:46</div></div>';
-      document.querySelector('[data-testid=stMain]').appendChild(d);""")
-    pg.wait_for_timeout(1800); pg.screenshot(path="denetim_graf/t1.png"); print("1:", pg.evaluate("document.getElementById('kk-toast').innerText.slice(0,40)"))
-    pg.wait_for_timeout(4600); pg.screenshot(path="denetim_graf/t2.png"); print("2:", pg.evaluate("document.getElementById('kk-toast').innerText.slice(0,40)"))
-    pg.wait_for_timeout(4800); print("bitti, açık mı:", pg.evaluate("document.getElementById('kk-toast').classList.contains('acik')"))
-    print("görülen:", pg.evaluate("localStorage.getItem('kk_gorulen')"))
-    # yeniden aynı liste → düşmemeli
-    pg.evaluate("document.querySelectorAll('.kk-bild').forEach(x=>{const y=x.cloneNode(true); y.removeAttribute('data-kkb'); x.remove(); document.querySelector('[data-testid=stMain]').appendChild(y);})")
-    pg.wait_for_timeout(2000); print("tekrar düştü mü:", pg.evaluate("document.getElementById('kk-toast').classList.contains('acik')"))
-    pg.locator("#kk-cek").click(); pg.wait_for_timeout(900)
-    pg.evaluate("document.querySelector('#kk-ckm .pan').scrollTo(0, 99999)"); pg.wait_for_timeout(500); pg.screenshot(path="denetim_graf/cek_alt.png")
+    pg.goto("http://localhost:8501", timeout=120000); pg.wait_for_selector('[data-testid="stTab"]', timeout=180000); pg.wait_for_timeout(12000)
+    pg.evaluate("localStorage.setItem('kk_gorulen', JSON.stringify(Array(1)))")
+    pg.evaluate("window.kkGitAlt('Ana Sayfa|Ekonomi')"); pg.wait_for_timeout(6000)
+    el = pg.locator(".rj").first
+    try:
+        el.scroll_into_view_if_needed(); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/ekonomi_rejim.png")
+    except Exception as ex: print("panel yok:", ex)
+    print("panel sayısı:", pg.evaluate("document.querySelectorAll('.rj').length"))
+    pg.evaluate("window.kkGitAlt('Keşfet|Fırsatlar')"); pg.wait_for_timeout(6000); pg.screenshot(path="denetim_graf/secki_rejim.png")
+    print("seçki satırı:", pg.evaluate("(document.querySelector('.rj-k')||{}).innerText"))
     br.close()
 p.terminate()
