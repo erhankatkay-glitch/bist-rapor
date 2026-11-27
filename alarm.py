@@ -111,6 +111,15 @@ def anlik(kod):
         d = yf.Ticker(y).history(period="10d")
         if g is None or g.empty or d is None or d.empty: raise ValueError(f"{kod} fiyatı alınamadı")
         g = g.dropna(subset=["Close"]); son = float(g["Close"].iloc[-1]); gun = g.index[-1].date()
+        gd0 = d["Close"].dropna()
+        if len(gd0) and gd0.index[-1].date() > gun:
+            # Gün içi akış durmuş (ör. vadeli metallerde tatil sonrası 15 dk veri gelmiyor) ama günlük bar daha yeni:
+            # son fiyat anlık özetten / günlükten, önceki kapanış günlük seriden alınır.
+            gun = gd0.index[-1].date()
+            try: son = float(yf.Ticker(y).fast_info["lastPrice"]) or float(gd0.iloc[-1])
+            except Exception: son = float(gd0.iloc[-1])
+            once = gd0[[t.date() < gun for t in gd0.index]]
+            return son, (float(once.iloc[-1]) if len(once) else son)
         # önceki kapanış: son işlem gününden ÖNCEKİ işlem gününün kapanışı. Yahoo günlük verisi o günü henüz içermiyorsa
         # (XU100'de sık olur) gün içi verideki o günün son fiyatı kullanılır.
         gunler = sorted({t.date() for t in g.index if t.date() < gun})
