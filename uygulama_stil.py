@@ -446,8 +446,12 @@ CANLI_JS = """
           setTimeout(function(){
             const t=window.kkSekmeler().find(x=>window.kkAd(x).endsWith(sekme)); if(t) t.click();
             let n=0; const iv=setInterval(function(){ n++;
+              const calisiyor=!!document.querySelector('[data-testid="stStatusWidget"]');
               const hs=[...document.querySelectorAll(secici)].filter(x=>x.offsetParent);
-              if(hs.length){hs[0].scrollIntoView({behavior:"smooth",block:"start"}); clearInterval(iv);} if(n>110) clearInterval(iv); },700);
+              if(hs.length && !calisiyor){
+                hs[0].scrollIntoView({behavior:"smooth",block:"start"}); clearInterval(iv);
+                setTimeout(function(){ try{hs[0].scrollIntoView({behavior:"smooth",block:"start"});}catch(e){} },1500);
+              } if(n>140) clearInterval(iv); },700);
           },350);
         };
         window.kkIstek=function(deger){
