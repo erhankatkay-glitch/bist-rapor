@@ -426,19 +426,36 @@ NAV_STIL = """
 #kk-cek{position:fixed;left:0;top:42%;z-index:999998;width:22px;height:74px;border-radius:0 14px 14px 0;border:none;cursor:pointer;
   background:linear-gradient(180deg,#F5D27A,#C99A2E);box-shadow:4px 6px 18px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:0}
 #kk-cek i{display:block;width:10px;height:2px;background:#0B0B0C;border-radius:2px;box-shadow:0 -5px 0 #0B0B0C,0 5px 0 #0B0B0C}
-#kk-ckm{position:fixed;inset:0;z-index:1000000;display:none}
-#kk-ckm.acik{display:block}
-#kk-ckm .ort{position:absolute;inset:0;background:rgba(0,0,0,.55)}
-#kk-ckm .pan{position:absolute;left:0;top:0;bottom:0;width:min(78vw,300px);background:linear-gradient(180deg,#18191C,#0E0F11);
-  border-right:1px solid rgba(232,184,74,.35);padding:22px 14px;overflow-y:auto;font-family:'Inter',-apple-system,sans-serif;box-shadow:10px 0 40px rgba(0,0,0,.6)}
-#kk-ckm h4{margin:0 0 6px;color:#E8B84A;font-size:13px;letter-spacing:1.4px;font-weight:900}
-#kk-ckm small{display:block;color:#71717A;font-size:10.5px;font-weight:800;letter-spacing:1.2px;margin:16px 4px 6px}
-#kk-ckm a{display:block;color:#F4F4F5;text-decoration:none;font-size:14.5px;font-weight:650;padding:11px 10px;border-radius:12px;cursor:pointer}
-#kk-ckm a:active,#kk-ckm a:hover{background:rgba(232,184,74,.14);color:#F5D27A}
-#kk-nav button.aktif{color:#0B0B0C;background:radial-gradient(circle at 50% 30%,#F5D27A,#E8B84A 60%,#C99A2E);border-radius:50%;
-  flex:none;width:66px;height:66px;margin:-16px 0 -6px;justify-content:center;box-shadow:0 8px 22px rgba(232,184,74,.5),0 0 0 4px #0E0F11}
-#kk-nav button.aktif:before{display:none}
-#kk-nav button.aktif svg [fill]:not([fill="none"]){fill:#0B0B0C} #kk-nav button.aktif svg [stroke]{stroke:#0B0B0C}
+#kk-ckm{position:fixed;inset:0;z-index:1000000;visibility:hidden}
+#kk-ckm.acik{visibility:visible}
+#kk-ckm .ort{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .25s}
+#kk-ckm.acik .ort{opacity:1}
+#kk-ckm .pan{position:absolute;left:0;top:0;bottom:0;width:min(84vw,330px);overflow-y:auto;font-family:'Inter',-apple-system,sans-serif;
+  background:radial-gradient(120% 60% at 0% 0%,rgba(232,184,74,.16),transparent 60%),linear-gradient(180deg,#141518,#0B0B0C);
+  border-right:1px solid rgba(232,184,74,.45);border-radius:0 26px 26px 0;box-shadow:16px 0 50px rgba(0,0,0,.7);
+  transform:translateX(-104%);transition:transform .28s cubic-bezier(.2,.8,.2,1);padding:0 12px calc(110px + env(safe-area-inset-bottom))}
+#kk-ckm.acik .pan{transform:none}
+#kk-ckm .bas{display:flex;align-items:center;gap:11px;padding:calc(18px + env(safe-area-inset-top)) 6px 16px;border-bottom:1px solid rgba(232,184,74,.22);margin-bottom:4px}
+#kk-ckm .bas img{width:42px;height:42px;border-radius:13px;border:1px solid rgba(232,184,74,.6);box-shadow:0 4px 14px rgba(232,184,74,.25)}
+#kk-ckm .bas b{display:block;color:#F4F4F5;font-size:16px;font-weight:900;letter-spacing:.2px}#kk-ckm .bas b span{color:#E8B84A}
+#kk-ckm .bas i{display:block;font-style:normal;color:#8E8F96;font-size:9.5px;font-weight:800;letter-spacing:1.3px;margin-top:2px}
+#kk-ckm .kap{margin-left:auto;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:#1B1C20;color:#D4D4D8;
+  font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#kk-ckm small{display:flex;align-items:center;gap:8px;color:#E8B84A;font-size:10px;font-weight:900;letter-spacing:1.6px;margin:16px 6px 7px}
+#kk-ckm small:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(232,184,74,.45),transparent)}
+#kk-ckm a{display:flex;align-items:center;gap:12px;text-decoration:none;padding:8px 10px;margin:0 0 5px;border-radius:15px;cursor:pointer;
+  background:linear-gradient(180deg,#18191C,#121315);border:1px solid rgba(255,255,255,.06);-webkit-tap-highlight-color:transparent}
+#kk-ckm a .ik{flex:none;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  background:rgba(232,184,74,.10);border:1px solid rgba(232,184,74,.28)}
+#kk-ckm a .ik svg{width:19px;height:19px}
+#kk-ckm a .yz{min-width:0;flex:1}#kk-ckm a .yz b{display:block;color:#F4F4F5;font-size:14px;font-weight:750}
+#kk-ckm a .yz em{display:block;font-style:normal;color:#8E8F96;font-size:11px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#kk-ckm a .ok{color:#5A5B62;font-size:18px}
+#kk-ckm a:active{transform:scale(.985)}
+#kk-ckm a.aktif{background:linear-gradient(135deg,rgba(232,184,74,.22),rgba(232,184,74,.06));border-color:rgba(232,184,74,.6)}
+#kk-ckm a.aktif .ik{background:linear-gradient(180deg,#F5D27A,#C99A2E);border-color:transparent}
+#kk-ckm a.aktif .ik svg{stroke:#0B0B0C}#kk-ckm a.aktif .yz b{color:#F5D27A}#kk-ckm a.aktif .ok{color:#E8B84A}
+#kk-ckm .alt{margin:18px 8px 0;color:#5F6068;font-size:10.5px;line-height:1.45;text-align:center}
 """
 
 # Alt menü (referansla aynı 6 sekme). (etiket, gidilecek "Üst|Alt", simge, aktif sayılacağı alt sekmeler)
@@ -488,7 +505,7 @@ CANLI_JS = """
   // ---- alt gezinme çubuğu
   // Düğmeler ana sayfanın kendi kodu ile çalışır (bu iframe her yenilemede değişse de düğmeler ölmez).
   try{
-    const W=window.parent, P=W.document, OGE=__OGE__;
+    const W=window.parent, P=W.document, OGE=__OGE__, SIMGE=__SIMGE__;
     let st=P.getElementById("kk-nav-stil");
     if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
     if(!P.getElementById("kk-nav-js7")){
@@ -588,16 +605,41 @@ CANLI_JS = """
     P.body.appendChild(nav);
     // sol kenar çekmecesi: alt menüde olmayan bölümler
     ["kk-cek","kk-ckm"].forEach(i=>{const e=P.getElementById(i); if(e) e.remove();});
-    const CK=[["PORTFÖY",[["Varlıklarım","Portföy|Varlıklarım"],["Performans","Portföy|Performans"],["Sanal işlem","Portföy|Sanal işlem"],["Risk hesaplayıcı","Portföy|Risk hesaplayıcı"]]],
-              ["TAKİP",[["Favoriler","Takip|Favoriler"],["Alarmlar ve bildirimler","Takip|Alarmlar"]]],
-              ["ARAÇLAR",[["Tarayıcı","Keşfet|Tarayıcı"],["Karşılaştır","Keşfet|Karşılaştır"],["Yeni başlayanlar","Keşfet|Bebek"]]],
-              ["PİYASA",[["Ekonomi","Ana Sayfa|Ekonomi"],["Takvim","Ana Sayfa|Takvim"],["Haberler","Ana Sayfa|Haberler"]]]];
+    const IK={pie:'<path d="M12 3v9h9"/><path d="M20.5 15A9 9 0 1 1 9 3.5"/>',
+      perf:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>', sanal:'<path d="M7 7h13l-4-4M17 17H4l4 4"/>',
+      risk:'<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7h7M8.5 11h1M12 11h1M15.5 11h0M8.5 14.5h1M12 14.5h1M8.5 18h1M12 18h1M15.5 14.5V18"/>',
+      fav:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+      alarm:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+      tara:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6M7.5 10.5h6M10.5 7.5v6"/>',
+      kars:'<path d="M12 3v18M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0zM8 21h8"/>',
+      okul:'<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v5c3 2.5 9 2.5 12 0v-5M22 9v6"/>',
+      eko:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/>',
+      tak:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+      hab:'<path d="M4 5h13a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2z"/><path d="M8 9h7M8 13h7M8 17h4"/>'};
+    const CK=[["PORTFÖY",[["Varlıklarım","Portföy|Varlıklarım","pie","Pozisyonlar, dağılım, kâr/zarar"],["Performans","Portföy|Performans","perf","Getiri, risk ve kıyas"],
+                          ["Sanal işlem","Portföy|Sanal işlem","sanal","Parasız deneme defteri"],["Risk hesaplayıcı","Portföy|Risk hesaplayıcı","risk","Lot, stop ve risk tutarı"]]],
+              ["TAKİP",[["Favoriler","Takip|Favoriler","fav","İzleme listen"],["Alarmlar ve bildirimler","Takip|Alarmlar","alarm","Fiyat, teknik ve iğne uyarıları"]]],
+              ["ARAÇLAR",[["Tarayıcı","Keşfet|Tarayıcı","tara","Kurala göre hisse/coin süz"],["Karşılaştır","Keşfet|Karşılaştır","kars","Varlıkları yan yana koy"],
+                          ["Yeni başlayanlar","Keşfet|Bebek","okul","Adım adım, sade anlatım"]]],
+              ["PİYASA",[["Ekonomi","Ana Sayfa|Ekonomi","eko","Faiz, enflasyon, yabancı akışı"],["Takvim","Ana Sayfa|Takvim","tak","Önemli veri ve bilanço günleri"],
+                         ["Haberler","Ana Sayfa|Haberler","hab","Son dakika ve KAP özetleri"]]]];
     const cek=P.createElement("button"); cek.id="kk-cek"; cek.type="button"; cek.setAttribute("aria-label","Menü"); cek.innerHTML="<i></i>";
     const ckm=P.createElement("div"); ckm.id="kk-ckm";
-    ckm.innerHTML='<div class="ort"></div><div class="pan"><h4>KATKAY · MENÜ</h4>'+CK.map(g=>'<small>'+g[0]+'</small>'+
-      g[1].map(x=>'<a data-yol="'+x[1]+'">'+x[0]+'</a>').join("")).join("")+'</div>';
-    cek.addEventListener("click",()=>ckm.classList.add("acik"));
-    ckm.addEventListener("click",e=>{const a=e.target.closest("a[data-yol]"); ckm.classList.remove("acik"); if(a && W.kkGitAlt) W.kkGitAlt(a.dataset.yol);});
+    ckm.innerHTML='<div class="ort"></div><div class="pan"><div class="bas"><img src='+JSON.stringify(SIMGE)+' alt=""><div><b>KATKAY <span>YATIRIM</span></b>'+
+      '<i>BIST · ABD · KRİPTO · EMTİA</i></div><span class="kap" role="button" aria-label="Kapat">×</span></div>'+
+      CK.map(g=>'<small>'+g[0]+'</small>'+g[1].map(x=>'<a data-yol="'+x[1]+'"><span class="ik"><svg viewBox="0 0 24 24" fill="none" stroke="#E8B84A" '+
+        'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+IK[x[2]]+'</svg></span><span class="yz"><b>'+x[0]+'</b><em>'+x[3]+
+        '</em></span><span class="ok">›</span></a>').join("")).join("")+
+      '<div class="alt">Veriler bilgilendirme amaçlıdır, yatırım tavsiyesi değildir.</div></div>';
+    const isaretle=function(){   // açık bölümü vurgula
+      const sec=[...P.querySelectorAll('.stTabs [role="tab"][aria-selected="true"]')].filter(t=>{let e=t; while(e){ if(e.getAttribute&&e.getAttribute("role")==="tabpanel"&&(e.hidden||e.style.display==="none")) return false; e=e.parentElement;} return true;})
+        .map(t=>(t.innerText||"").trim());
+      ckm.querySelectorAll("a[data-yol]").forEach(a=>{const p=a.dataset.yol.split("|");
+        a.classList.toggle("aktif", sec.some(x=>x.endsWith(p[0])) && sec.some(x=>x.endsWith(p[1])));});
+    };
+    cek.addEventListener("click",()=>{isaretle(); ckm.classList.add("acik");});
+    ckm.addEventListener("click",e=>{const a=e.target.closest("a[data-yol]");
+      if(a||e.target.closest(".ort")||e.target.closest(".kap")){ ckm.classList.remove("acik"); if(a && W.kkGitAlt) setTimeout(()=>W.kkGitAlt(a.dataset.yol),120); }});
     P.body.appendChild(cek); P.body.appendChild(ckm);
     if(typeof W.kkGit!=="function"){   // ana sayfaya betik eklenemezse (güvenlik politikası) yedek yol
       nav.querySelectorAll("button").forEach(b=>{b.removeAttribute("onclick"); b.addEventListener("click",()=>{
