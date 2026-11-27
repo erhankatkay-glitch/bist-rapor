@@ -272,3 +272,27 @@ def test_sanal_defter():
     import pytest as _pt
     with _pt.raises(ValueError): S.islem_ac(d, "THYAO", "bist", -1, 1, 300)   # BIST'te açığa satış yok
     assert S.dogrula({"olaylar": []})["baslangic"] == 100_000
+
+
+# ---------------------------------------------------------------- Aşama 10: kullanıcı tanımlı alarmlar
+def test_alarm_kurallari_ayristirma():
+    import alarm as AL
+    K = AL.kurallar("THYAO EMA 20/50\nASELS HACIM > 2\nBTC/USDT FIB 0.618\nGARAN DESTEK\nTUPRS DİRENÇ\nAKBNK KIRILIM\n"
+                    "XU100 FVG\nNVDA.US BOS\nETH/USDT HARMONİK\nKCHOL SİNYAL\nTHYAO TEMEL\nTAKVİM USD\nTAKVIM\nPORTFÖY RİSK 8\nTHYAO > 350")
+    tip = [k["tip"] for k in K]
+    assert tip == ["ema", "hacim", "fib", "destek", "direnc", "kirilim", "fvg", "bos", "harmonik", "sinyal", "temel", "takvim", "takvim", "pfrisk", "fiyat"]
+    assert K[0]["hizli"] == 20 and K[0]["yavas"] == 50 and K[1]["deger"] == 2 and K[11]["kod"] == "USD" and abs(K[13]["deger"] - 0.08) < 1e-12
+
+
+def test_teknik_alarm_ema_kesisimi():
+    import numpy as np, pandas as pd, alarm as AL, bist_teknik as T
+    # düşüş sonra son mumda sert yükseliş: EMA5, EMA10'u yukarı keser
+    c = np.r_[np.linspace(120, 100, 80), [100.5, 101, 120]]
+    h = pd.DataFrame({"Open": c, "High": c * 1.01, "Low": c * 0.99, "Close": c, "Volume": np.r_[np.full(82, 1000.0), [5000.0]]},
+                     index=pd.bdate_range("2026-06-01", periods=len(c)))
+    g = T.tf_analiz(h, "G")
+    olay = AL.teknik_alarm({"tip": "ema", "kod": "TEST", "hizli": 5, "yavas": 10}, g)
+    assert olay and olay[0][0] == "🟢" and "yukarı kesti" in olay[0][1]
+    hv = AL.teknik_alarm({"tip": "hacim", "kod": "TEST", "deger": 2.0}, g)
+    assert hv and hv[0][0] == "📊"
+    assert AL.teknik_alarm({"tip": "hacim", "kod": "TEST", "deger": 9.0}, g) == []

@@ -6,7 +6,14 @@
 # Formasyon:   THYAO FORMASYON    (yeni teyit / kırılım / yapı kırılımı / altın-ölüm kesişimi)
 # KAP haberi:  ASELS KAP
 # OTOMATIK:    takip listelerindeki tüm varlıklar için formasyon + KAP alarmları
+# EMA kesişimi: THYAO EMA 20/50        Göreli hacim: ASELS HACIM > 2
+# Fibonacci:   BTC/USDT FIB 0.618     Destek/direnç kırılımı: GARAN DESTEK | TUPRS DIRENC | AKBNK KIRILIM
+# Yapı:        XU100 FVG | NVDA.US BOS     Harmonik: ETH/USDT HARMONIK     Yeni kurulum: KCHOL SINYAL
+# Temel:       THYAO TEMEL (yeni finansal tablo açıklanınca)
+# Takvim:      TAKVIM (tüm önemli veriler, 75 dk önce) | TAKVIM USD
+# Portföy:     PORTFOY RISK 10 (portfoy.txt toplam zararı %10'u aşarsa)
 OTOMATIK
+TAKVIM
 
 # ---------------- PİYASA BELİRLEYİCİLER ----------------
 # Endeksler ve kur: sert günlük hareket + yeni formasyon/kırılım
