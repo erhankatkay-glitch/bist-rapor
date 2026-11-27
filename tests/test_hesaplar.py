@@ -296,3 +296,15 @@ def test_teknik_alarm_ema_kesisimi():
     hv = AL.teknik_alarm({"tip": "hacim", "kod": "TEST", "deger": 2.0}, g)
     assert hv and hv[0][0] == "📊"
     assert AL.teknik_alarm({"tip": "hacim", "kod": "TEST", "deger": 9.0}, g) == []
+
+
+def test_tatil_ve_yarim_gun():
+    import datetime as dt, veri_kalite as VK
+    U = dt.timezone.utc
+    # 27.11.2026: ABD 13:00 ET (18:00 UTC) erken kapanış; 18:30 UTC'de kapalı, son kapanış 18:00 UTC
+    t = dt.datetime(2026, 11, 27, 18, 30, tzinfo=U)
+    assert VK.piyasa_acik("abd", t) is False and VK.piyasa_acik("abd", dt.datetime(2026, 11, 27, 17, 0, tzinfo=U)) is True
+    assert VK.etiket("2026-11-27T18:00:00+00:00", "abd", t)["durum"] == "gün sonu"
+    assert VK.piyasa_acik("abd", dt.datetime(2026, 11, 26, 16, 0, tzinfo=U)) is False        # Şükran Günü
+    assert VK.piyasa_acik("bist", dt.datetime(2026, 10, 29, 9, 0, tzinfo=U)) is False        # 29 Ekim
+    assert VK.piyasa_acik("bist", dt.datetime(2026, 10, 28, 10, 30, tzinfo=U)) is False      # 13:30 TSİ, yarım gün bitti
