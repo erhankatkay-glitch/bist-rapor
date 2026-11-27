@@ -176,7 +176,7 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
     y0 = y
     for f in firs[:3]:
         renk = C["yesil"] if f["yon"] == 1 else C["kirmizi"]
-        kx = 82 if f.get("pz") == "kripto" and K.logo_ciz(ax, f["kod"], 48, y - 6, 26) else 48
+        kx = 82 if f.get("pz") in ("kripto", "bist", "abd") and K.logo_ciz(ax, f["kod"], 48, y - 6, 26, f["pz"]) else 48
         K._t(ax, kx, y, _kod(f["kod"]), 20, weight="bold"); K._t(ax, 210, y, f"{'AL' if f['yon'] == 1 else 'SAT'} · {f['puan']:.0f}", 17, renk, "semibold")
         K._t(ax, 340, y, {"bist": "BIST", "kripto": "Kripto", "emtia": "Emtia", "abd": "ABD"}.get(f.get("pz"), "") + " · " +
              {"4S": "4 saatlik", "G": "günlük", "H": "haftalık", "A": "aylık"}.get(f["tf"], ""), 15, C["soluk"]); y -= 36

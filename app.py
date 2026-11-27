@@ -872,13 +872,13 @@ with tab_f:
         if not ac: st.info("Açık kurulum yok.")
         else:
             import logolar as LG
-            st.dataframe(pd.DataFrame([{**({"": LG.kripto_logo_uri(k["kod"])} if fk == "kripto" else {}), "Kod": k["kod"], "Dilim": TK.TF_AD[k["tf"]], "Yön": "AL" if k["yon"] == 1 else "SAT", "Kurulum": k["kurulum"],
+            st.dataframe(pd.DataFrame([{**({"": LG.logo_url(k["kod"], fk)} if fk != "emtia" else {}), "Kod": k["kod"], "Dilim": TK.TF_AD[k["tf"]], "Yön": "AL" if k["yon"] == 1 else "SAT", "Kurulum": k["kurulum"],
                                         "Giriş": FR.fy(k["giris"]), "Stop": FR.fy(k["stop"]) + (" (girişte)" if k["asama"] else ""),
                                         "H1": FR.fy(k["hedef"][0]), "H2": FR.fy(k["hedef"][1]), "H3": FR.fy(k["hedef"][2]),
                                         "Görülen hedef": k["asama"], "Son fiyat": FR.fy(k.get("son_fiyat")),
                                         "Getiri": FR.yz((k.get("son_fiyat", k["giris"]) - k["giris"]) / k["giris"] * k["yon"]),
                                         "Bitiş": str(k["bitis"])[:16].replace("T", " ")} for k in ac]), hide_index=True, use_container_width=True,
-                         column_config={"": st.column_config.ImageColumn("", width="small")} if fk == "kripto" else None)
+                         column_config={"": st.column_config.ImageColumn("", width="small")} if fk != "emtia" else None)
     with f3:
         gc = FD.get("gecmis") or []
         pf = FR.performans(gc)
@@ -1026,14 +1026,16 @@ with tab_pr:
                 st.dataframe(t_.sort_values("Adet", ascending=False), hide_index=True, use_container_width=True,
                              column_config={"Ort. R": st.column_config.NumberColumn(format="%+.2f")})
         st.markdown("**Kapanan kurulumlar** (en yeniden eskiye)")
+        import logolar as LG
         _sebep = {"stop": "Stop", "tüm hedefler": "Tüm hedefler", "süre doldu": "Süre doldu"}
         st.dataframe(pd.DataFrame([{
+            "": LG.logo_url(r.kod, {"BIST": "bist", "ABD": "abd", "Kripto": "kripto"}.get(r.Piyasa, "")),
             "Kapanış": r.kapanis_t.strftime("%d.%m %H:%M") if pd.notna(r.kapanis_t) else "", "Piyasa": r.Piyasa,
             "Varlık": FR.gorunen(r.kod, r.ad), "Dilim": TK.TF_AD.get(r.tf, r.tf), "Yön": "AL" if r.yon == 1 else "SAT",
             "Kurulum": r.kurulum, "Giriş": r.giris, "Çıkış": r.cikis, "Sonuç": _sebep.get(r.sebep, str(r.sebep).capitalize()),
             "R": r.R, "Açılış": str(r.olusma)[:16].replace("T", " ")} for r in df_.iloc[::-1].itertuples()]),
             hide_index=True, use_container_width=True,
-            column_config={"R": st.column_config.NumberColumn(format="%+.2f"), "Giriş": st.column_config.NumberColumn(format="%.4g"),
+            column_config={"": st.column_config.ImageColumn("", width="small"), "R": st.column_config.NumberColumn(format="%+.2f"), "Giriş": st.column_config.NumberColumn(format="%.4g"),
                            "Çıkış": st.column_config.NumberColumn(format="%.4g")})
         en_ = df_.nlargest(3, "R"); kt_ = df_.nsmallest(3, "R")
         c1, c2 = st.columns(2)

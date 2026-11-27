@@ -68,11 +68,11 @@ def _marka(ax, H, x=48, boy=36):
 _LOGO_ON = {}
 
 
-def logo_ciz(ax, kod, x, y_alt, boy):
-    """Kripto varlık logosu (varsa) — (x, y_alt) sol alt köşe, boy piksel. Çizildiyse True."""
+def logo_ciz(ax, kod, x, y_alt, boy, piyasa="kripto"):
+    """Varlık logosu (kripto: yerel set, hisse: logo.dev) — (x, y_alt) sol alt köşe, boy piksel. Çizildiyse True."""
     try:
         import logolar, matplotlib.image as mpimg
-        yol = logolar.kripto_logo(kod)
+        yol = logolar.logo_dosya(kod, piyasa)
         if not yol: return False
         if yol not in _LOGO_ON: _LOGO_ON[yol] = mpimg.imread(yol)
         xl, yl = ax.get_xlim(), ax.get_ylim()
@@ -153,7 +153,7 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     import tg
     _t(ax, _marka(ax, H), H - 58, f"{tg.buyuk(piyasa_ad)}  ·  {tg.buyuk(tf_ad)}  ·  FIRSAT", 15, C["altin"], "semibold")
     bx = 48
-    if f.get("piyasa") == "kripto" and logo_ciz(ax, f["kod"], 48, H - 152, 64): bx = 128
+    if f.get("piyasa") in ("kripto", "bist", "abd") and logo_ciz(ax, f["kod"], 48, H - 152, 64, f["piyasa"]): bx = 128
     _t(ax, bx, H - 140, F.gorunen(f["kod"], None), 54, weight="bold")
     ad = f.get("ad") or ""
     if ad and ad not in f["kod"]: _t(ax, bx, H - 180, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
