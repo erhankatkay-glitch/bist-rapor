@@ -308,3 +308,14 @@ def test_tatil_ve_yarim_gun():
     assert VK.piyasa_acik("abd", dt.datetime(2026, 11, 26, 16, 0, tzinfo=U)) is False        # Şükran Günü
     assert VK.piyasa_acik("bist", dt.datetime(2026, 10, 29, 9, 0, tzinfo=U)) is False        # 29 Ekim
     assert VK.piyasa_acik("bist", dt.datetime(2026, 10, 28, 10, 30, tzinfo=U)) is False      # 13:30 TSİ, yarım gün bitti
+
+
+def test_igne_seviyeleri():
+    import numpy as np, igne as IG
+    # yatay seyir: 61.000 civarı, altında süpürülmemiş iki dip (60.830 ve 60.640), üstte seviye yok
+    C = np.full(60, 61900.0); H = C + 60; L = C - 60
+    L[20] = 60640; L[40] = 60830; C[-1] = 61990; H[-1] = 62010
+    u = IG.uyari(H, L, C)
+    assert u and u["yon"] == -1 and 60830 in u["seviyeler"] and 60640 in u["seviyeler"]
+    b, a = IG.metin(u)
+    assert "aşağı iğne" in b and "60.830" in a and "yatırım tavsiyesi değildir" in a

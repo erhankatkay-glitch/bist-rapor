@@ -17,6 +17,9 @@ with sync_playwright() as pw:
     pg.screenshot(path="denetim_graf/ana1.png")
     pg.mouse.wheel(0, 650); pg.wait_for_timeout(1200); pg.screenshot(path="denetim_graf/ana2.png")
     pg.mouse.wheel(0, 700); pg.wait_for_timeout(1200); pg.screenshot(path="denetim_graf/ana3.png")
+    print("fırsat piyasaları:", pg.evaluate("[...document.querySelectorAll('.fk .fk-s:first-of-type')].map(x=>x.innerText.split(' · ')[0])"))
+    print("kart başlıkları:", pg.evaluate("[...document.querySelectorAll('.mk-ad')].map(x=>x.innerText).slice(0,6)"))
+    print("uyarı metni:", pg.evaluate("(document.querySelector('.kk-uyari')||{}).innerText"))
     print("öne çıkan satır:", pg.evaluate("[...document.querySelectorAll('.oc')].filter(x=>x.offsetParent).length"),
           "| mini grafik:", pg.evaluate("[...document.querySelectorAll('.oc-sp svg')].length"),
           "| kutu:", pg.evaluate("document.querySelectorAll('.kk-kutu span').length"),
@@ -24,14 +27,14 @@ with sync_playwright() as pw:
           "| gizli alt sekme:", pg.evaluate("[...document.querySelectorAll('[role=tablist]')].filter(t=>t.style.display==='none').length"))
     # kategori: Kripto
     try:
-        pg.locator("label:has-text('Kripto')").first.click(); pg.wait_for_timeout(3000); bekle(60)
+        pg.locator("label:has-text('Enerji')").first.click(); pg.wait_for_timeout(3000); bekle(60)
         print("kripto satırları:", pg.evaluate("[...document.querySelectorAll('.oc b')].filter(x=>x.offsetParent).map(x=>x.innerText).slice(0,8)"))
         pg.evaluate("window.scrollTo(0,0)"); pg.screenshot(path="denetim_graf/ana_kripto.png")
     except Exception as ex: print("kategori:", ex)
     # Takvim kutusu
     try:
-        pg.locator(".kk-kutu span[data-git='Ana Sayfa|Takvim']").first.click(); pg.wait_for_timeout(2500)
-        print("takvim seçili:", pg.evaluate("[...document.querySelectorAll('[data-testid=stTab]')].filter(x=>x.getAttribute('aria-selected')==='true').map(x=>x.innerText.trim()).slice(0,3)"))
+        pg.locator(".kk-kutu span[data-git='Ana Sayfa|Ekonomi']").first.click(); pg.wait_for_timeout(3500)
+        print("ekonomi seçili:", pg.evaluate("[...document.querySelectorAll('[data-testid=stTab]')].filter(x=>x.getAttribute('aria-selected')==='true').map(x=>x.innerText.trim()).slice(0,3)"))
         pg.screenshot(path="denetim_graf/takvim.png")
         pg.locator(".kk-geri:visible").first.click(); pg.wait_for_timeout(2500)
         print("geri sonrası:", pg.evaluate("[...document.querySelectorAll('[data-testid=stTab]')].filter(x=>x.getAttribute('aria-selected')==='true').map(x=>x.innerText.trim()).slice(0,3)"))
