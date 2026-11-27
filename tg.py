@@ -65,6 +65,24 @@ def _parcala(metin, sinir=3900):
     return out
 
 
+def guvenli_aciklama(s, limit=1000):
+    """Görsel açıklaması: Telegram sınırına (1024) satır sonundan kesilir, açık kalan HTML etiketleri kapatılır.
+    (Ortadan kesilen etiket 'can't parse entities' hatasıyla kartın hiç gitmemesine yol açıyordu.)"""
+    s = str(s or "")
+    if len(s) > limit:
+        kes = s.rfind("\n", 0, limit - 20)
+        s = (s[:kes] if kes > 0 else s[:limit - 20]).rstrip() + "\n…"
+    s = re.sub(r"<[^>]*$", "", s); s = re.sub(r"&[a-z]{0,5}$", "", s)   # yarım kalmış etiket / varlık
+    acik = []
+    for m in re.finditer(r"<(/?)([a-z]+)[^>]*>", s):
+        kapa, ad = m.group(1), m.group(2)
+        if kapa:
+            if ad in acik: acik.remove(ad) if acik[-1] != ad else acik.pop()
+        elif ad not in ("br",):
+            acik.append(ad)
+    return s + "".join(f"</{a}>" for a in reversed(acik))
+
+
 class Bot:
     def __init__(self, kaynak):
         self.kaynak = kaynak
@@ -117,6 +135,10 @@ class Bot:
         return ids
 
     def album(self, dosyalar, anahtar, omur_saat, bag=None, yerine=False):
+        dosyalar = [(y, guvenli_aciklama(b)) for y, b in dosyalar]
+        return self._album(dosyalar, anahtar, omur_saat, bag, yerine)
+
+    def _album(self, dosyalar, anahtar, omur_saat, bag=None, yerine=False):
         """dosyalar: [(yol, başlık)] — en fazla 10 görsel tek albümde."""
         if not self.aktif or not dosyalar: return []
         ids = []
@@ -129,6 +151,10 @@ class Bot:
                 if len(medya) == 1:
                     j = self._api("sendPhoto", {"chat_id": self.chat, "caption": medya[0]["caption"], "parse_mode": "HTML", "disable_notification": True},
                                   files={"photo": files["f0"]}, timeout=120)
+                    if not j.get("ok") and "parse" in str(j.get("description", "")).lower():   # HTML hatası: düz metinle tekrar
+                        files["f0"].seek(0)
+                        j = self._api("sendPhoto", {"chat_id": self.chat, "caption": re.sub("<[^>]+>", "", medya[0]["caption"]),
+                                                    "disable_notification": True}, files={"photo": files["f0"]}, timeout=120)
                     if j.get("ok"): ids.append(j["result"]["message_id"])
                 else:
                     j = self._api("sendMediaGroup", {"chat_id": self.chat, "media": json.dumps(medya, ensure_ascii=False),
@@ -147,7 +173,7 @@ class Bot:
     def belge(self, yol, ad, baslik, anahtar, omur_saat, yerine=False):
         if not self.aktif: return []
         with open(yol, "rb") as f:
-            j = self._api("sendDocument", {"chat_id": self.chat, "caption": baslik[:1000], "disable_notification": True},
+            j = self._api("sendDocument", {"chat_id": self.chat, "caption": re.sub("<[^>]+>", "", baslik)[:1000], "disable_notification": True},
                           files={"document": (ad, f)}, timeout=180)
         ids = [j["result"]["message_id"]] if j.get("ok") else []
         if not ids: print("Telegram belgesi gönderilemedi:", j.get("description"), file=sys.stderr)

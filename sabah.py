@@ -240,9 +240,9 @@ def calistir():
               ensure_ascii=False)
     b = tg.Bot("sabah")
     t = dt.datetime.now(TSI)
-    alt = f"☀️ <b>SABAH ÖZETİ</b> · {t:%d.%m.%Y}\n" + "\n".join("• " + tg_kac(m_) for m_ in madde)
+    alt = f"☀️ <b>Sabah özeti</b> · {t:%d.%m.%Y} · sesli özet aşağıda"
     b.sil_anahtar("sabah")
-    if b.foto(yol, alt[:1000], "sabah", 20) and ses:
+    if b.foto(yol, alt, "sabah", 20) and ses:
         try:
             with open(ses, "rb") as f:
                 j = b._api("sendAudio", {"chat_id": b.chat, "title": f"Sabah özeti {t:%d.%m}", "performer": "KATKAY Yatırım",

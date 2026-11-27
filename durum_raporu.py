@@ -148,10 +148,9 @@ def calistir(donem, gonder=True):
         import tg
         b = tg.Bot("durum"); ad = DONEM[donem]["ad"]; omur = 24 * 8 if donem == "haftalik" else 24 * 32
         al = [r["ad"] for r in sonuc if "AL" in r["etiket"] and r["kod"] != "VIX"]; zay = [r["ad"] for r in sonuc if "SAT" in r["etiket"] and r["kod"] != "VIX"]
-        alt = (f"📊 <b>{ad.upper()} DURUM RAPORU</b>\nOlumlu: {', '.join(al) or '–'}\nZayıf: {', '.join(zay) or '–'}\n"
-               f"Ayrıntılar ve grafikler PDF'te.")
+        alt = f"📊 <b>{ad} durum raporu</b> · {bugun:%d.%m.%Y} · ayrıntılar PDF'te"
         b.sil_anahtar(f"durum_{donem}")
-        b.foto(png, alt[:1000], f"durum_{donem}", omur)
+        b.foto(png, alt, f"durum_{donem}", omur)
         if pd_: b.belge(pd_, f"KATKAY_{ad}_Durum_{bugun:%Y%m%d}.pdf", f"{ad} durum raporu (PDF)", f"durum_{donem}", omur)
         b.kaydet()
     print(f"{donem} durum raporu üretildi: {len(sonuc)} varlık")
