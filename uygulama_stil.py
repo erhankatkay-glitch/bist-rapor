@@ -68,6 +68,30 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 .stTabs .stTabs [aria-selected="true"] {background:transparent !important; clip-path:none; box-shadow:inset 0 -2px 0 var(--altin);}
 .stTabs .stTabs [aria-selected="true"] p {color:var(--altin) !important;}
 
+/* Bölüm içi sekmeler (Piyasalar / Haberler / Takvim …): tasarımdaki hap düğmeler */
+.stTabs .stTabs [role="tablist"] {gap:8px !important; padding:2px 0 8px !important;}
+.stTabs .stTabs [data-testid="stTab"] {border-radius:20px !important; border:1px solid #2A2B30 !important; background:#17181B !important;
+       padding:7px 14px !important; clip-path:none !important;}
+.stTabs .stTabs [data-testid="stTab"]:before {display:none !important;}
+.stTabs .stTabs [aria-selected="true"] {background:#E8B84A !important; border-color:#E8B84A !important; box-shadow:none !important;}
+.stTabs .stTabs [aria-selected="true"] p, .stTabs .stTabs [aria-selected="true"] [data-testid="stIconMaterial"] {color:#0B0B0C !important;}
+/* üçüncü düzey (ör. Fırsatlar içi) alt çizgili kalır */
+.stTabs .stTabs .stTabs [data-testid="stTab"] {border:none !important; background:transparent !important; border-radius:0 !important; padding:8px 12px !important;}
+.stTabs .stTabs .stTabs [aria-selected="true"] {background:transparent !important; box-shadow:inset 0 -2px 0 var(--altin) !important;}
+.stTabs .stTabs .stTabs [aria-selected="true"] p {color:var(--altin) !important;}
+/* tasarımdaki bölüm başlığı: ÖNE ÇIKANLAR ———— */
+.bb {display:flex; align-items:center; gap:10px; margin:18px 2px 8px; font-size:.8rem; font-weight:850; letter-spacing:.14em;}
+.bb:after {content:""; flex:1; height:1px; background:linear-gradient(90deg, rgba(232,184,74,.6), transparent);}
+/* Öne çıkanlar listesi */
+.oc {display:flex; align-items:center; gap:10px; background:linear-gradient(180deg,#18191C,#111214); border:1px solid var(--cizgi);
+     border-radius:16px; padding:10px 12px; margin-bottom:8px;}
+.oc-l {width:38px; height:38px; border-radius:11px; background:#fff; object-fit:contain; flex:none;}
+.oc-h {width:38px; height:38px; border-radius:11px; background:#1F2937; color:var(--altin); font-weight:850; font-size:.72rem;
+       display:flex; align-items:center; justify-content:center; flex:none;}
+.oc-a {flex:1; min-width:0;} .oc-a b {font-size:.98rem;} .oc-a div {font-size:.72rem; color:var(--soluk); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.oc-f {text-align:right;} .oc-f b {font-size:1rem; font-variant-numeric:tabular-nums;}
+.oc-p {display:inline-block; margin-top:3px; font-size:.74rem; font-weight:800; border-radius:8px; padding:2px 8px;}
+
 /* ---------- Butonlar ---------- */
 div.stButton > button, div.stDownloadButton > button, div.stLinkButton > a, div.stFormSubmitButton > button {
        width:100%; min-height:3rem; border-radius:14px; font-weight:700; font-size:.96rem;
@@ -361,6 +385,9 @@ CANLI_JS = """
           setTimeout(window.kkIsaretle,80);
         };
         window.kkIsaretle=function(){
+          const ilk=document.querySelector('.stTabs [role="tablist"]');
+          if(ilk&&!ilk.dataset.kkGizli){ilk.dataset.kkGizli="1"; ilk.style.display="none";
+            const ust=ilk.parentElement; if(ust) ust.querySelectorAll(':scope > [data-baseweb="tab-border"], :scope > [data-baseweb="tab-highlight"]').forEach(e=>e.style.display="none");}
           const nav=document.getElementById("kk-nav"); if(!nav) return;
           const s=window.kkSekmeler().find(x=>x.getAttribute("aria-selected")==="true"); const ad=s?window.kkAd(s):"";
           nav.querySelectorAll("button").forEach(b=>b.classList.toggle("aktif", ad.endsWith(b.dataset.sekme)));
@@ -383,11 +410,71 @@ CANLI_JS = """
 </script>"""
 
 
+KOMPAKT_STIL = """<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap');
+*{box-sizing:border-box} body{margin:0;background:transparent;font-family:'Inter',-apple-system,sans-serif;color:#F4F4F5}
+.ku{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 10px}
+.km{display:flex;align-items:center;gap:10px;min-width:0}
+.km img{width:40px;height:40px;border-radius:11px;border:1px solid rgba(232,184,74,.5);flex:none}
+.ka{font-weight:900;font-size:17px;letter-spacing:.2px;white-space:nowrap}.ka span{color:#E8B84A}
+.kt{font-size:9.5px;color:#A1A1AA;letter-spacing:1.5px;font-weight:700;white-space:nowrap}
+.ks{display:flex;align-items:center;gap:7px;flex:none}
+.saat{font-weight:800;font-size:15px;text-align:right;line-height:1.05}.saat small{display:block;font-size:9px;color:#A1A1AA;font-weight:600}
+.canli{display:flex;align-items:center;gap:5px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.45);color:#4ADE80;
+  font-size:10.5px;font-weight:800;border-radius:20px;padding:5px 9px}.canli i{width:7px;height:7px;border-radius:50%;background:#22C55E;box-shadow:0 0 8px #22C55E}
+.sd{display:flex;align-items:center;height:36px;background:#17181B;border:1px solid #2A2B30;border-radius:13px;overflow:hidden}
+.sd b.e{background:#EF4444;color:#fff;font-size:10.5px;font-weight:900;letter-spacing:1px;padding:0 11px;height:100%;display:flex;align-items:center;flex:none;z-index:2}
+.sd .k{overflow:hidden;flex:1;mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+.sd .ic{display:inline-flex;gap:26px;white-space:nowrap;padding-left:100%;animation:kay 70s linear infinite;font-size:12.5px;color:#E4E4E7}
+.sd .ic em{font-style:normal;color:#E8B84A;font-weight:800;margin-right:6px}
+@keyframes kay{to{transform:translateX(-100%)}}
+.hap{display:none}
+</style>"""
+
+
+def ust_kompakt(pv=None, haberler=None):
+    """Tasarımdaki kompakt üst kısım: logo + KATKAY + saat + CANLI, altında kayan SON DAKİKA şeridi."""
+    import html as _h
+    t = dt.datetime.now(ZoneInfo("Europe/Istanbul"))
+    gun = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"][t.weekday()]
+    ay = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"][t.month - 1]
+    kim = {"BIST": "d_bist", "ABD": "d_abd", "Kripto 7/24": "d_kr"}
+    dur = "".join(f'<span class="hap" id="{kim[ad]}"><span></span></span>' for ad in kim)
+    hab = []
+    for x in sorted(haberler or [], key=lambda x: x.get("zaman", ""), reverse=True)[:10]:
+        try:
+            z = dt.datetime.fromisoformat(x["zaman"]).astimezone(ZoneInfo("Europe/Istanbul"))
+            hab.append(f'<span><em>{z:%H:%M}</em>{_h.escape(x["baslik"][:110])}</span>')
+        except Exception:
+            continue
+    if not hab and pv:
+        for ad_ in ("BIST 100", "S&P 500", "Bitcoin", "Ons altın", "USD/TRY"):
+            v = pv.get(ad_)
+            if v: hab.append(f'<span><em>{ad_}</em>{v["deger"]:,.2f} ({(v.get("d1G") or 0) * 100:+.2f}%)</span>'.replace(",", "X").replace(".", ",").replace("X", "."))
+    logo = f'<img src="{_logo_url()}" alt="KATKAY">' if _logo_url() else ""
+    return (f'<div class="ku"><div class="km">{logo}<div><div class="ka">KATKAY <span>YATIRIM</span></div>'
+            f'<div class="kt">BIST · ABD · KRİPTO · EMTİA</div></div></div>'
+            f'<div class="ks"><div class="saat" id="saat">{t:%H:%M}<small id="tarih">{t.day} {ay} {gun} · TSİ</small></div>'
+            f'<span class="canli"><i></i>CANLI</span></div></div>'
+            f'<div class="sd"><b class="e">SON DAKİKA</b><div class="k"><div class="ic">{"".join(hab) or "<span>Haber akışı yükleniyor…</span>"}</div></div></div>{dur}')
+
+
+def ust_kompakt_sayfa(pv=None, haberler=None):
+    import json
+    js = (CANLI_JS.replace("__OGE__", json.dumps(NAV_OGE)).replace("__STIL__", json.dumps(NAV_STIL))
+          .replace("__SIMGE__", json.dumps(SIMGE_URL)))
+    return "<!DOCTYPE html><html><head><meta charset='utf-8'>" + KOMPAKT_STIL + "</head><body>" + ust_kompakt(pv, haberler) + js + "</body></html>"
+
+
 def ust_bant_sayfa(pv=None):
     import json
     js = (CANLI_JS.replace("__OGE__", json.dumps(NAV_OGE)).replace("__STIL__", json.dumps(NAV_STIL))
           .replace("__SIMGE__", json.dumps(SIMGE_URL)))
     return ("<!DOCTYPE html><html><head><meta charset='utf-8'>" + BANT_STIL + "</head><body>" + ust_bant(pv) + js + "</body></html>")
+
+
+def bb(baslik):
+    return f'<div class="bb">{baslik.upper()}</div>'
 
 
 def bolum(baslik, ikon="public"):

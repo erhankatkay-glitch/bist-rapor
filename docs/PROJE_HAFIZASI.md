@@ -130,6 +130,24 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - Fırsat kartı: yeni teyitler gösteriliyor ve kart teyit satırı arttıkça uzuyor. Grafik çizilemezse `kapanis.sade_firsat_gonder` grafiksiz kart gönderir.
 - Kripto logoları: `logolar.py` + `varlik/kripto/` (CC0).
 
+## Aşama 5 — Arayüz ve kod sağlığı (27.11.2026)
+- Uygulama dört ana bölümde; alt menü bunlara gidiyor:
+  - Ana Sayfa: Piyasalar, Haberler, Takvim
+  - Keşfet: Fırsatlar, Hisse, Teknik, Tarayıcı, Emtia & Kripto, Bebek, Karşılaştır
+  - Portföy: Varlıklarım, Performans
+  - Takip: Favoriler, Alarmlar
+- Ana sayfa: yatay piyasa şeridi (`mini_kart`), günün fırsatları (`gunun_firsatlari`, `firsat_mini`).
+- Varlık sayfası (Keşfet › Teknik): `varlik_baslik`, `seviye_karti`, `katkay_notu`. Stiller `uygulama_stil.py` içinde (.vb, .sv, .kn, .mk, .fk).
+- Testler: `tests/test_hesaplar.py` (pytest).
+  - Kapsam: veri tazeliği, işlem simülasyonu (boşluklu stop dahil), rejim, ileriye bakmama, logolar, sesli özet okunuşu, biçimler.
+  - Her push'ta `testler.yml` içinde ruff (tanımsız ad, sözdizimi) ile birlikte çalışır.
+- Ortak biçimler: `bicim.py` (yuzde, sayi). firsat.yz, haber.yz ve durum_raporu bunu kullanır.
+- Veri katmanı kararı: ayrı bir katman kurulmadı.
+  - Uygulamada her veri okuması `st.cache_data` ile zaten önbellekte.
+  - GitHub işleri birbirinden bağımsız süreçler; aynı süreç içinde aynı veri iki kez indirilmiyor.
+  - Gerçek sorun veri tazeliğiydi; o `gun_ici_tamamla` ile tek yerde çözüldü.
+- Arayüz testleri GitHub Actions'ta gerçek tarayıcıyla (playwright, 390 px telefon) yapıldı.
+
 ## Sıradaki aşamalar
 1. ~~Aşama 1: envanter ve veri denetimi~~ (bu dosya)
 2. Aşama 2: Fırsat motoru
@@ -139,5 +157,5 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
    - BIST kapanış özeti uygulamada.
    - 10 varlık için haftalık ve aylık durum raporu, hedef fiyatlarla.
 4. Aşama 4: Tüm Telegram bildirimleri KATKAY tasarımında.
-5. Aşama 5: Ortak veri katmanı, 4 ana bölüm (Ana Sayfa, Keşfet, Portföy, Takip), testler (pytest, ruff).
+5. ~~Aşama 5: 4 ana bölüm, varlık sayfası, testler (pytest, ruff)~~
 6. Gemini anahtarı eklenince: yapay zekâ yorumu (OmniRoute üzerinden ya da doğrudan).

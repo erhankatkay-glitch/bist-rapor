@@ -558,6 +558,34 @@ def mini_kart(ad_, v):
 
 
 @st.cache_data(ttl=600, show_spinner=False)
+def bist_ozet(zaman):
+    import requests
+    r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/bist/ozet.csv?t={zaman}", timeout=20)
+    return pd.read_csv(io.BytesIO(r.content)).set_index("Kod") if r.status_code == 200 else None
+
+
+def one_cikanlar(PV):
+    import logolar as LG
+    fav = [x for x in st.query_params.get("takip", "").split(",") if x] or ["THYAO", "ASELS", "GARAN", "BIMAS", "TUPRS", "KCHOL"]
+    oz = bist_ozet(ZAMAN); satir = []
+    def _sat(logo, kis, ad, fiyat, deg, alt=""):
+        renk = "#4ADE80" if (deg or 0) > 0 else "#F87171" if (deg or 0) < 0 else "#A1A1AA"
+        zem = "rgba(34,197,94,.16)" if (deg or 0) > 0 else "rgba(239,68,68,.16)" if (deg or 0) < 0 else "rgba(255,255,255,.06)"
+        lg = f'<img src="{logo}" alt="" class="oc-l">' if logo else f'<span class="oc-h">{kis[:3]}</span>'
+        return (f'<div class="oc">{lg}<div class="oc-a"><b>{kis}</b><div>{ad}{(" · " + alt) if alt else ""}</div></div>'
+                f'<div class="oc-f"><b>{fiyat}</b><br><span class="oc-p" style="color:{renk};background:{zem}">{br.yz(deg) if deg is not None else "–"}</span></div></div>')
+    for k in fav[:8]:
+        if oz is not None and k in oz.index:
+            r = oz.loc[k]
+            satir.append(_sat(LG.logo_url(k, "bist"), k, str(r.get("Ad", ""))[:30], TK.sayi(r["Fiyat"]), r.get("Değişim"), str(r.get("Genel", ""))))
+    for ad_, kis, pz in (("Bitcoin", "BTC", "kripto"), ("Ethereum", "ETH", "kripto"), ("Gram altın", "ALTIN", "emtia")):
+        v = PV.get(ad_)
+        if v: satir.append(_sat(LG.logo_url(kis, pz) if pz == "kripto" else None, kis if pz == "kripto" else "Gram", ad_,
+                                 br.ond(v["deger"], 2 if v["deger"] < 10000 else 0), v.get("d1G")))
+    return "".join(satir)
+
+
+@st.cache_data(ttl=600, show_spinner=False)
 def gunun_firsatlari(zaman, n=8):
     """Tüm piyasalardaki son taramalardan taze fırsatlar, puana göre."""
     import requests
@@ -659,23 +687,40 @@ def radar_png(S):
     return b.getvalue()
 
 
-with st.expander(":material/tune: Ayarlar ve varsayımlar"):
-    if st.button(":material/refresh: Verileri yenile (önbelleği temizle)", key="yenile"):
-        st.cache_data.clear()
-        for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin", "tk_sonuc", "pf"):
-            st.session_state.pop(k_, None)
-        st.rerun()
-    c1, c2 = st.columns(2)
-    rf = c1.number_input("Risksiz faiz (TR 10Y)", value=0.366, step=0.01, format="%.4f")
-    enf = c2.number_input("Yıllık enflasyon" + (" (EVDS)" if "enflasyon" in OTO else ""), value=float(OTO.get("enflasyon", 0.2977)),
-                          step=0.01, format="%.4f")
-    erp = c1.number_input("Hisse risk primi", value=0.07, step=0.005, format="%.3f")
-    g = c2.number_input("DCF uç büyüme", value=0.15, step=0.01, format="%.3f")
-    st.caption("Enflasyon, EVDS anahtarı girildiyse TCMB verisinden otomatik alınır; diğerleri Kasım 2026 piyasa verilerine göre ayarlıdır.")
-    yeni_k = st.text_input("TCMB EVDS API anahtarı (isteğe bağlı)", value="", type="password",
-                           help="evds3.tcmb.gov.tr → Benim Sayfam → API anahtarı. Kalıcı olması için Streamlit Secrets'a EVDS_KEY olarak ekleyin.")
-    if yeni_k:
-        st.session_state["evds_key"] = yeni_k
+# Dört ana bölüm (alt menüyle aynı): Ana Sayfa · Keşfet · Portföy · Takip. Eski sekmeler bunların altında.
+ana_b, kesfet_b, portfoy_b, takip_b = st.tabs([":material/home: Ana Sayfa", ":material/explore: Keşfet",
+                                               ":material/account_balance_wallet: Portföy", ":material/star: Takip"])
+with ana_b:
+    tab_p, tab_h, tab_tk = st.tabs([":material/dashboard: Piyasalar", ":material/newspaper: Haberler", ":material/event: Takvim"])
+with kesfet_b:
+    tab_f, tab_r, tab_x, tab_t, tab_v, tab_b, tab_k = st.tabs(
+        [":material/my_location: Fırsatlar", ":material/description: Hisse", ":material/candlestick_chart: Teknik",
+         ":material/manage_search: Tarayıcı", ":material/currency_bitcoin: Emtia & Kripto", ":material/school: Bebek",
+         ":material/balance: Karşılaştır"])
+with portfoy_b:
+    tab_pf, tab_pr = st.tabs([":material/pie_chart: Varlıklarım", ":material/insights: Performans"])
+with takip_b:
+    tab_w, tab_al = st.tabs([":material/bookmark: Favoriler", ":material/notifications_active: Alarmlar"])
+
+
+with takip_b:
+  with st.expander(":material/tune: Ayarlar ve varsayımlar"):
+      if st.button(":material/refresh: Verileri yenile (önbelleği temizle)", key="yenile"):
+          st.cache_data.clear()
+          for k_ in ("sonuc", "v_sonuc", "v_tablo", "tarama", "kars", "bebek", "bebek_derin", "tk_sonuc", "pf"):
+              st.session_state.pop(k_, None)
+          st.rerun()
+      c1, c2 = st.columns(2)
+      rf = c1.number_input("Risksiz faiz (TR 10Y)", value=0.366, step=0.01, format="%.4f")
+      enf = c2.number_input("Yıllık enflasyon" + (" (EVDS)" if "enflasyon" in OTO else ""), value=float(OTO.get("enflasyon", 0.2977)),
+                            step=0.01, format="%.4f")
+      erp = c1.number_input("Hisse risk primi", value=0.07, step=0.005, format="%.3f")
+      g = c2.number_input("DCF uç büyüme", value=0.15, step=0.01, format="%.3f")
+      st.caption("Enflasyon, EVDS anahtarı girildiyse TCMB verisinden otomatik alınır; diğerleri Kasım 2026 piyasa verilerine göre ayarlıdır.")
+      yeni_k = st.text_input("TCMB EVDS API anahtarı (isteğe bağlı)", value="", type="password",
+                             help="evds3.tcmb.gov.tr → Benim Sayfam → API anahtarı. Kalıcı olması için Streamlit Secrets'a EVDS_KEY olarak ekleyin.")
+      if yeni_k:
+          st.session_state["evds_key"] = yeni_k
 PRM = dict(rf=rf, enflasyon=enf, erp=erp, terminal_g=g)
 GUN = dt.date.today().isoformat()
 _s = dt.datetime.now()
@@ -687,7 +732,9 @@ try:
 except Exception:
     _pv_ust = None
 with _ust_yer.container():
-    _bil.html(TS.ust_bant_sayfa(_pv_ust), height=236)
+    try: _hb_ust = json_oku("haber/son.json", ZAMAN) or []
+    except Exception: _hb_ust = []
+    _bil.html(TS.ust_kompakt_sayfa(_pv_ust, _hb_ust), height=150)
 
 
 
@@ -726,21 +773,6 @@ except Exception:
 
 
 
-
-# Dört ana bölüm (alt menüyle aynı): Ana Sayfa · Keşfet · Portföy · Takip. Eski sekmeler bunların altında.
-ana_b, kesfet_b, portfoy_b, takip_b = st.tabs([":material/home: Ana Sayfa", ":material/explore: Keşfet",
-                                               ":material/account_balance_wallet: Portföy", ":material/star: Takip"])
-with ana_b:
-    tab_p, tab_h, tab_tk = st.tabs([":material/dashboard: Piyasalar", ":material/newspaper: Haberler", ":material/event: Takvim"])
-with kesfet_b:
-    tab_f, tab_r, tab_x, tab_t, tab_v, tab_b, tab_k = st.tabs(
-        [":material/my_location: Fırsatlar", ":material/description: Hisse", ":material/candlestick_chart: Teknik",
-         ":material/manage_search: Tarayıcı", ":material/currency_bitcoin: Emtia & Kripto", ":material/school: Bebek",
-         ":material/balance: Karşılaştır"])
-with portfoy_b:
-    tab_pf, tab_pr = st.tabs([":material/pie_chart: Varlıklarım", ":material/insights: Performans"])
-with takip_b:
-    tab_w, tab_al = st.tabs([":material/bookmark: Favoriler", ":material/notifications_active: Alarmlar"])
 
 # ================= RAPOR =================
 
@@ -1245,7 +1277,7 @@ with tab_p:
             st.image(sabah_k, use_container_width=True)
             ses = gorsel_oku("sabah/ozet.mp3", ZAMAN)
             if ses: st.audio(ses, format="audio/mp3")
-    st.markdown(TS.bolum("Piyasalar"), unsafe_allow_html=True)
+    st.markdown(TS.bb("Piyasalar"), unsafe_allow_html=True)
     try:
         PV = piyasa_verisi(ZAMAN)
     except Exception as e:
@@ -1259,11 +1291,18 @@ with tab_p:
     try:
         _gf = gunun_firsatlari(ZAMAN)
         if _gf:
-            st.markdown(TS.bolum("Günün fırsatları"), unsafe_allow_html=True)
+            st.markdown(TS.bb("Günün fırsatları"), unsafe_allow_html=True)
             st.markdown('<div class="serit-k">' + "".join(firsat_mini(f) for f in _gf) + "</div>", unsafe_allow_html=True)
             st.caption("Ayrıntılar: Keşfet › Fırsatlar. Puan, işlem planı ve teyitler Telegram kartlarında da var.")
     except Exception as ex:
         st.caption(f"Fırsatlar okunamadı: {ex}")
+    # ---- Öne çıkanlar: takip listesi (yoksa seçili büyük hisseler) + kripto + gram altın
+    try:
+        st.markdown(TS.bb("Öne çıkanlar"), unsafe_allow_html=True)
+        st.markdown(one_cikanlar(PV), unsafe_allow_html=True)
+        st.caption("Liste: Takip › Favoriler'e eklediğiniz hisseler (boşsa BIST'in büyükleri). Hisse fiyatları son kapanış bülteninden.")
+    except Exception as ex:
+        st.caption(f"Öne çıkanlar okunamadı: {ex}")
     with st.expander(":material/view_agenda: Piyasa kartları (büyük görünüm)"):
         for i in range(0, len(goster), 2):
             cols = st.columns(2)
@@ -1277,7 +1316,7 @@ with tab_p:
     except Exception:
         _yo = None
     if _yo:
-        st.markdown(TS.bolum("Yabancı yatırımcı akışı"), unsafe_allow_html=True)
+        st.markdown(TS.bb("Yabancı yatırımcı akışı"), unsafe_allow_html=True)
         _s = _yo["seri"]; _mx = max(abs(x["net"]) for x in _s) or 1; _w = 300; _h = 90; _bw = _w / len(_s)
         _bar = "".join(
             f'<rect x="{i * _bw + 3:.1f}" y="{(_h / 2 - x["net"] / _mx * (_h / 2 - 4)) if x["net"] > 0 else _h / 2:.1f}" width="{_bw - 6:.1f}" '

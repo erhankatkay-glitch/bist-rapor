@@ -20,19 +20,12 @@ with sync_playwright() as pw:
     print("mini kart:", pg.evaluate("document.querySelectorAll('.mk').length"), "fırsat kartı:", pg.evaluate("document.querySelectorAll('.fk').length"))
     pg.screenshot(path="denetim_graf/ana.png", full_page=False)
     pg.mouse.wheel(0, 700); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/ana2.png")
-    pg.locator("#kk-nav button[data-sekme='Keşfet']").tap(); pg.wait_for_timeout(2000)
-    pg.locator('[data-testid="stTab"]', has_text="Teknik").first.click(); pg.wait_for_timeout(1500)
-    kutu = pg.locator("input[placeholder*='aselsan, THYAO']:visible").first
-    kutu.click(); kutu.fill("THYAO"); pg.wait_for_timeout(1200); pg.keyboard.press("Enter"); pg.wait_for_timeout(1500)
-    pg.locator("button:visible", has_text="Teknik analiz yap").first.click()
-    for i in range(60):
-        pg.wait_for_timeout(3000)
-        if pg.evaluate("document.querySelectorAll('.vb').length") > 0: break
-    print("varlık kartı:", pg.evaluate("document.querySelectorAll('.vb').length"), "seviye:", pg.evaluate("document.querySelectorAll('.sv').length"),
-          "not:", pg.evaluate("document.querySelectorAll('.kn').length"))
-    pg.wait_for_timeout(2000)
-    pg.evaluate("document.querySelector('.vb') && document.querySelector('.vb').scrollIntoView({block:'start'})"); pg.wait_for_timeout(800)
-    pg.screenshot(path="denetim_graf/varlik1.png"); pg.mouse.wheel(0, 620); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/varlik2.png")
+    pg.mouse.wheel(0, 700); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/ana3.png")
+    print("öne çıkan:", pg.evaluate("document.querySelectorAll('.oc').length"), "ana sekme gizli:",
+          pg.evaluate("(()=>{const t=document.querySelector('.stTabs [role=tablist]'); return t? getComputedStyle(t).display : 'yok'})()"))
+    for ad in ["Keşfet", "Takip"]:
+        pg.locator(f"#kk-nav button[data-sekme='{ad}']").tap(); pg.wait_for_timeout(2500)
+        pg.evaluate("window.scrollTo(0,0)"); pg.screenshot(path=f"denetim_graf/{ad}.png")
     b.close()
 p.terminate()
 print(open("st_log.txt").read()[-2500:])

@@ -32,7 +32,8 @@ def esc(s):
 
 
 def yz(x):
-    return ("%" + f"{x * 100:+.1f}").replace(".", ",").replace("%+", "+%").replace("%-", "−%")
+    import bicim
+    return bicim.yuzde(x, 1, True)
 
 
 VARLIK_AD = {"NASDAQ": "Nasdaq", "SP500": "S&P 500", "XU100": "BIST 100", "XBANK": "BIST Banka", "USDTRY": "Dolar/TL", "ALTIN": "Altın (ons)", "GRAMALTIN": "Gram altın",

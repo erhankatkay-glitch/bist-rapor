@@ -30,15 +30,7 @@ DONEM = {"haftalik": {"tf": "H", "ad": "Haftalık", "ust": "A", "kapanis": "haft
          "aylik": {"tf": "A", "ad": "Aylık", "ust": "A", "kapanis": "aylık kapanış"}}
 
 
-def fy(x):
-    if x is None: return "–"
-    d = 0 if abs(x) >= 1000 else 2
-    return f"{x:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-
-def yz(x):
-    if x is None: return "–"
-    return ("+" if x > 0 else "−" if x < 0 else "") + f"%{abs(x) * 100:.1f}".replace(".", ",")
+from bicim import sayi as fy, yuzde as yz
 
 
 def veri(kod, tur_donem, bugun):
