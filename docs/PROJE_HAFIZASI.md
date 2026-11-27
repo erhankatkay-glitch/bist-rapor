@@ -108,6 +108,17 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   - Biçimleme: yz(), _img(), _png(), _yon()
   - Analiz girişleri: tara(), analiz()
 
+## Aşama 3 — Raporlar (27.11.2026)
+- `durum_raporu.py` + `durum_raporu.yml` (her gün 09:41 TSİ):
+  - cumartesi haftalık, ayın 1'i aylık rapor.
+  - 10 varlık: BIST 100, BIST 30, Dolar/TL, S&P 500, Nasdaq, VIX, ons altın, ons gümüş, Brent, BTC.
+  - Kart + PDF Telegram'a gider; `donem/` altında yayınlanır; uygulamada Piyasalar sekmesinde görünür.
+- Elle tetik: `.github/tetik/durum` dosyasına `haftalik` ya da `aylik` yazıp main'e push.
+- BIST kapanış özeti: uygulama zaten gösteriyordu; eksikliğin sebebi Yahoo gecikmesiyle atlanan bültendi (Aşama 1'de düzeldi).
+- Logolar:
+  - Kripto: spothq/cryptocurrency-icons (CC0) uygun.
+  - Hisse logoları: lisansı açık ücretsiz repo bulunamadı (nvstly/icons'ta lisans yok). Seçenek: logo.dev ücretsiz anahtar (kullanıcı kararı bekleniyor).
+
 ## Sıradaki aşamalar
 1. ~~Aşama 1: envanter ve veri denetimi~~ (bu dosya)
 2. Aşama 2: Fırsat motoru
