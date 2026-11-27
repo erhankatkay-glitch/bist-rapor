@@ -289,3 +289,5 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   Bağlı yerler: fırsat motoru (kapanış, Telegram kartı, Seçki, Günün fırsatları, kurulum istatistikleri, portföy SAT uyarısı),
   tarayıcı + SINYAL alarmı, teknik analiz karnesi/sinyal listesi (firsat.yeni_kurulum_durumu → tf_analiz), PDF sözlüğü, alarm anahtarı "Kurulum:".
 - arastirma_qd.py: R [−5, +3] kırpılır, bozuk fiyatlı varlıklar atlanır (±%60 günlük sıçrama / ≤0 fiyat).
+- Disiplin araçları: sanal.kontrol_listesi / dusus_sigortasi / gunluk_ekle ("not" olayı, ref) / haftalik_ozet; defter["ayar"].
+  Açılışta "kontrol" (puan + uyarılar) olaya yazılır; stop ve neden zorunlu, diğer kırmızılar "bilerek esnetiyorum" onayıyla.
