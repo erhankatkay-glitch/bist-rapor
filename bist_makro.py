@@ -22,6 +22,12 @@ PIYASA = {  # ad: (yahoo kodu, birim)
     "Dow Jones": ("^DJI", "puan"),
     "WTI petrol": ("CL=F", "$"),
     "Doğal gaz": ("NG=F", "$"),
+    # Aşama 12: dünya borsaları ve majör parite (ana sayfa "ABD ve dünya")
+    "DAX": ("^GDAXI", "puan"),
+    "FTSE 100": ("^FTSE", "puan"),
+    "Nikkei 225": ("^N225", "puan"),
+    "Hang Seng": ("^HSI", "puan"),
+    "EUR/USD": ("EURUSD=X", "$"),
 }
 
 # EVDS serileri: her kalem için aday kodlar (ilk çalışan kullanılır)

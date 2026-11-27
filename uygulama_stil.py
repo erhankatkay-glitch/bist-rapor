@@ -149,6 +149,12 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 .ko-not {font-size:.68rem; color:var(--soluk); margin:-2px 0 8px;}
 .km-t {overflow-x:auto;} .km-t table {border-collapse:collapse; font-size:.62rem;} .km-t th {color:var(--soluk); font-weight:700; padding:3px 4px; white-space:nowrap;}
 .km-t td {text-align:center; padding:4px 3px; min-width:30px; color:#F4F4F5; border:1px solid #0B0B0C;}
+.dn {display:flex; align-items:center; gap:9px; background:linear-gradient(180deg,#18191C,#121315); border:1px solid var(--cizgi); border-radius:14px; padding:8px 10px; margin-bottom:6px;}
+.dn-n {flex:none; width:7px; height:7px; border-radius:50%;}
+.dn-a {flex:1; min-width:0;} .dn-a b {display:block; font-size:.88rem;} .dn-a span {font-size:.66rem; color:var(--soluk); white-space:nowrap;}
+.dn svg {flex:none; width:90px; height:30px;}
+.dn-f {text-align:right; min-width:78px;} .dn-f b {display:block; font-size:.86rem; font-variant-numeric:tabular-nums;} .dn-f span {font-size:.74rem; font-weight:800;}
+.dn-eg {width:100%; height:auto; margin-top:6px;}
 .kk-bild {display:none !important;} .stElementContainer:has(.kk-bild) {display:none !important;}
 #kk-toast {position:fixed; left:10px; right:10px; max-width:620px; margin:0 auto; top:calc(10px + env(safe-area-inset-top)); z-index:999999;
   transform:translateY(-160%); opacity:0; transition:transform .38s cubic-bezier(.2,.9,.25,1.15), opacity .3s; pointer-events:none;}
@@ -517,8 +523,8 @@ NAV_STIL = """
 NAV_OGE = [
     ("Ana sayfa", "Ana Sayfa|Piyasalar", '<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="#E8B84A"/>',
      ["Ana Sayfa|Piyasalar", "Ana Sayfa|Takvim", "Ana Sayfa|Ekonomi"]),
-    ("Piyasalar", "Keşfet|Emtia & Kripto", '<path d="M3 20h18" stroke="#E8B84A" stroke-width="2.2" stroke-linecap="round"/><path d="M6 17v-6M10 17V7M14 17v-4M18 17V5" stroke="#E8B84A" stroke-width="2.6" stroke-linecap="round"/>',
-     ["Keşfet|Emtia & Kripto", "Keşfet|Karşılaştır"]),
+    ("Piyasalar", "Keşfet|Dünya", '<path d="M3 20h18" stroke="#E8B84A" stroke-width="2.2" stroke-linecap="round"/><path d="M6 17v-6M10 17V7M14 17v-4M18 17V5" stroke="#E8B84A" stroke-width="2.6" stroke-linecap="round"/>',
+     ["Keşfet|Dünya", "Keşfet|Emtia & Kripto", "Keşfet|Karşılaştır"]),
     ("Harita", "Keşfet|Teknik", '<path d="M3 3v18h18" fill="none" stroke="#E8B84A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 17v-3M11 17v-7M14.5 17v-5M18 17V7" stroke="#E8B84A" stroke-width="2.4" stroke-linecap="round"/>',
      ["Keşfet|Teknik", "Keşfet|Tarayıcı"]),
     ("Seçki", "Keşfet|Fırsatlar", '<circle cx="12" cy="12" r="9" fill="none" stroke="#E8B84A" stroke-width="2.2"/><circle cx="12" cy="12" r="5" fill="none" stroke="#E8B84A" stroke-width="2.2"/><circle cx="12" cy="12" r="1.8" fill="#E8B84A"/>',
@@ -560,6 +566,7 @@ CANLI_JS = """
   // Düğmeler ana sayfanın kendi kodu ile çalışır (bu iframe her yenilemede değişse de düğmeler ölmez).
   try{
     const W=window.parent, P=W.document, OGE=__OGE__, SIMGE=__SIMGE__;
+    try{ P.documentElement.lang="tr"; }catch(e){}   // büyük harfe çevirmede Türkçe i → İ
     let st=P.getElementById("kk-nav-stil");
     if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
     if(!P.getElementById("kk-nav-js8")){
@@ -696,7 +703,7 @@ CANLI_JS = """
               ["TAKİP",[["Favoriler","Takip|Favoriler","fav","İzleme listen"],["Alarmlar ve bildirimler","Takip|Alarmlar","alarm","Fiyat, teknik ve iğne uyarıları"]]],
               ["ARAÇLAR",[["Tarayıcı","Keşfet|Tarayıcı","tara","Kurala göre hisse/coin süz"],["Karşılaştır","Keşfet|Karşılaştır","kars","Varlıkları yan yana koy"],
                           ["Yeni başlayanlar","Keşfet|Bebek","okul","Adım adım, sade anlatım"]]],
-              ["PİYASA",[["Ekonomi","Ana Sayfa|Ekonomi","eko","Faiz, enflasyon, yabancı akışı"],["Takvim","Ana Sayfa|Takvim","tak","Önemli veri ve bilanço günleri"],
+              ["PİYASA",[["Dünya piyasaları","Keşfet|Dünya","eko","Borsalar, döviz, faiz eğrisi, emtia vadeleri"],["Emtia ve kripto","Keşfet|Emtia & Kripto","perf","Altın, petrol, coinler"],["Ekonomi","Ana Sayfa|Ekonomi","eko","Rejim, ilişkiler, faiz, enflasyon"],["Takvim","Ana Sayfa|Takvim","tak","Önemli veri ve bilanço günleri"],
                          ["Haberler","Ana Sayfa|Haberler","hab","Son dakika ve KAP özetleri"]]]];
     const cek=P.createElement("button"); cek.id="kk-cek"; cek.type="button"; cek.setAttribute("aria-label","Menü"); cek.innerHTML="<i></i>";
     const ckm=P.createElement("div"); ckm.id="kk-ckm";
@@ -785,14 +792,14 @@ def ust_kompakt_sayfa(pv=None, haberler=None):
     import json
     js = (CANLI_JS.replace("__OGE__", json.dumps(NAV_OGE)).replace("__STIL__", json.dumps(NAV_STIL))
           .replace("__SIMGE__", json.dumps(SIMGE_URL)))
-    return "<!DOCTYPE html><html><head><meta charset='utf-8'>" + KOMPAKT_STIL + "</head><body>" + ust_kompakt(pv, haberler) + js + "</body></html>"
+    return "<!DOCTYPE html><html lang='tr'><head><meta charset='utf-8'>" + KOMPAKT_STIL + "</head><body>" + ust_kompakt(pv, haberler) + js + "</body></html>"
 
 
 def ust_bant_sayfa(pv=None):
     import json
     js = (CANLI_JS.replace("__OGE__", json.dumps(NAV_OGE)).replace("__STIL__", json.dumps(NAV_STIL))
           .replace("__SIMGE__", json.dumps(SIMGE_URL)))
-    return ("<!DOCTYPE html><html><head><meta charset='utf-8'>" + BANT_STIL + "</head><body>" + ust_bant(pv) + js + "</body></html>")
+    return ("<!DOCTYPE html><html lang='tr'><head><meta charset='utf-8'>" + BANT_STIL + "</head><body>" + ust_bant(pv) + js + "</body></html>")
 
 
 def bb(baslik):

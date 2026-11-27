@@ -36,6 +36,31 @@ TK = importlib.reload(TK)
 TKR = importlib.reload(TKR)
 FR = importlib.reload(FR)
 HB = importlib.reload(HB)
+
+
+@st.cache_resource(show_spinner=False)
+def _modul_kaydi():
+    return {}
+
+
+def _yerel_modulleri_tazele():
+    """Streamlit Cloud güncellemeden sonra aynı süreci sürdürür; fonksiyon içinde içe aktarılan yardımcı modüller (sanal, rejim,
+    korelasyon, dunya…) eski sürümde kalabilir. Dosyası değişen her yerel modül yeniden yüklenir; süreçteki ilk çalıştırmada hepsi bir kez."""
+    import sys as _sys
+    kok = os.path.dirname(os.path.abspath(__file__)); kayit = _modul_kaydi(); ilk = not kayit.get("_hazir")
+    for ad_, m_ in sorted(list(_sys.modules.items())):
+        f_ = getattr(m_, "__file__", None) or ""
+        if ad_ == "__main__" or not f_.startswith(kok) or "site-packages" in f_: continue
+        try: mt = os.path.getmtime(f_)
+        except OSError: continue
+        if ilk or (ad_ in kayit and kayit[ad_] != mt):
+            try: importlib.reload(m_)
+            except Exception: pass
+        kayit[ad_] = mt
+    kayit["_hazir"] = True
+
+
+_yerel_modulleri_tazele()
 DURUM_EMOJI = {"iyi": "🟢", "orta": "🟡", "zayif": "🔴", "yok": "⚪"}
 ETK_RENK = {"GÜÇLÜ AL": "#22C55E", "AL": "#22C55E", "NÖTR": "#E8B84A", "SAT": "#EF4444", "GÜÇLÜ SAT": "#EF4444"}
 br = importlib.reload(br)  # kod güncellemelerinin hemen devreye girmesi için
@@ -658,6 +683,84 @@ def korelasyon_bolumu():
         st.caption("Yeşil aynı yönlü, kırmızı ters yönlü hareket. Korelasyon nedensellik göstermez.")
 
 
+def dunya_sekmesi():
+    """Aşama 12: dünya borsaları, döviz majörleri, ABD getiri eğrisi, emtia vade yapısı (dunya/ozet.json, sabah iş akışı)."""
+    import html as _h
+    try: o = json_oku("dunya/ozet.json", ZAMAN)
+    except Exception: o = None
+    if not o:
+        st.info("Dünya verisi henüz üretilmedi; sabah iş akışında hesaplanır."); return
+    yz = lambda x: (("+" if x >= 0 else "-") + f"%{abs(x) * 100:.1f}".replace(".", ",")) if x is not None else "–"
+    rk = lambda x: "#22C55E" if (x or 0) > 0 else "#EF4444" if (x or 0) < 0 else "#A1A1AA"
+    t_ = dt.datetime.fromisoformat(o["zaman"]).astimezone(ZoneInfo("Europe/Istanbul"))
+    st.caption(f"Günlük kapanış verisi · güncelleme {t_:%d.%m %H:%M} TSİ · kaynak Yahoo Finance ve ABD Hazinesi. Yeşil nokta: seans şu an açık.")
+    per = st.radio("Dönem", ["1 gün", "1 hafta", "1 ay", "Yılbaşından beri"], horizontal=True, index=1, key="dn_per")
+    alan = {"1 gün": "d1", "1 hafta": "d5", "1 ay": "d21", "Yılbaşından beri": "ytd"}[per]
+    for bolge in ("Asya", "Avrupa", "Amerika"):
+        b = [x for x in o["borsalar"] if x["bolge"] == bolge]
+        if not b: continue
+        st.markdown(TS.bb(f"{bolge} borsaları"), unsafe_allow_html=True)
+        st.markdown("".join(
+            f'<div class="dn"><i class="dn-n" style="background:{"#22C55E" if x.get("acik") else "#3F3F46"}"></i>'
+            f'<div class="dn-a"><b>{_h.escape(x["ad"])}</b><span>{_h.escape(x["ulke"])} · trend {x["trend"]}</span></div>'
+            f'{spark_svg(x["seri"], rk(x["d21"]), 90, 30)}<div class="dn-f"><b>{br.ond(x["son"], 0 if x["son"] > 1000 else 2)}</b>'
+            f'<span style="color:{rk(x[alan])}">{yz(x[alan])}</span></div></div>' for x in b), unsafe_allow_html=True)
+    if o.get("doviz"):
+        st.markdown(TS.bb("Döviz majörleri ve TL"), unsafe_allow_html=True)
+        st.markdown("".join(
+            f'<div class="dn"><div class="dn-a"><b>{_h.escape(x["ad"])}</b><span>trend {x["trend"]}</span></div>'
+            f'{spark_svg(x["seri"], "#E8B84A", 90, 30)}<div class="dn-f"><b>{TK.sayi(x["son"])}</b>'
+            f'<span style="color:#D4D4D8">{yz(x[alan])}</span></div></div>' for x in o["doviz"]), unsafe_allow_html=True)
+        st.caption("Paritede yükseliş, soldaki para biriminin değer kazanması demektir (ör. USD/JPY ↑ = dolar yen karşısında güçlendi).")
+    e = o.get("egri")
+    if e and e.get("bugun"):
+        st.markdown(TS.bb("ABD getiri eğrisi"), unsafe_allow_html=True)
+        w, h, pad = 340, 150, 26
+        hepsi = [p["getiri"] for k in ("bugun", "ay_once", "yil_once") for p in (e.get(k) or [])]
+        mn, mx = min(hepsi) - 0.2, max(hepsi) + 0.2
+        import math
+        xk = lambda ay: pad + (math.log(ay) / math.log(360)) * (w - pad - 6)
+        yk = lambda g: 8 + (mx - g) / (mx - mn) * (h - 30)
+        def cizgi(ps, renk, kal, kesik=""):
+            if not ps: return ""
+            return (f'<polyline points="{" ".join(f"{xk(p["ay"]):.1f},{yk(p["getiri"]):.1f}" for p in ps)}" fill="none" stroke="{renk}" '
+                    f'stroke-width="{kal}" {kesik}/>')
+        eks = "".join(f'<text x="{xk(p["ay"]):.1f}" y="{h - 8}" font-size="8" fill="#71717A" text-anchor="middle">{p["vade"]}</text>'
+                      for p in e["bugun"] if p["vade"] in ("1A", "3A", "1Y", "2Y", "5Y", "10Y", "30Y"))
+        izg = "".join(f'<line x1="{pad}" x2="{w}" y1="{yk(v):.1f}" y2="{yk(v):.1f}" stroke="#26272B"/><text x="2" y="{yk(v) + 3:.1f}" font-size="8" fill="#71717A">%{v:g}</text>'
+                      for v in [round(mn + (mx - mn) * i / 3, 1) for i in range(1, 4)])
+        _kesik = 'stroke-dasharray="4 4"'
+        svg = (f'<svg viewBox="0 0 {w} {h}" class="dn-eg">{izg}{cizgi(e.get("yil_once"), "#52525B", 1.5, _kesik)}'
+               f'{cizgi(e.get("ay_once"), "#A1A1AA", 1.5)}{cizgi(e["bugun"], "#E8B84A", 2.6)}{eks}</svg>')
+        f = e["f10_2"] if e["f10_2"] is not None else e["f10_3a"]
+        st.markdown(f'<div class="ko{" ko-kir" if f is not None and f < 0 else ""}"><div class="ko-u"><b>Eğri: {_h.escape(e["durum"])}</b>'
+                    f'<span style="color:{"#EF4444" if (f or 0) < 0 else "#E8B84A"}">{("10Y–2Y " if e["f10_2"] is not None else "10Y–3A ") + (f"{f:+.2f}".replace(".", ",") if f is not None else "–")}</span></div>'
+                    f'{svg}<div class="ko-not"><span style="color:#E8B84A">━</span> bugün ({e["tarih"][8:10]}.{e["tarih"][5:7]}) &nbsp; '
+                    f'<span style="color:#A1A1AA">━</span> 1 ay önce &nbsp; <span style="color:#52525B">┅</span> 1 yıl önce</div>'
+                    f'<div class="ko-y2">{_h.escape(e["yorum"])}</div><div class="ko-s">Kaynak: {_h.escape(e["kaynak"])}</div></div>', unsafe_allow_html=True)
+        fs = e.get("fark_seri") or {}
+        if fs.get("deger"):
+            vals = fs["deger"]; lo, hi = min(min(vals), -0.1), max(max(vals), 0.1); W, H = 340, 70
+            pts = " ".join(f"{i * W / (len(vals) - 1):.1f},{(hi - v) / (hi - lo) * H:.1f}" for i, v in enumerate(vals))
+            st.markdown(f'<div class="ko"><div class="ko-u"><b>{"10Y–2Y" if e["f10_2"] is not None else "10Y–3A"} farkı · son 2 yıl</b></div>'
+                        f'<svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" style="width:100%;height:70px"><line x1="0" x2="{W}" y1="{hi / (hi - lo) * H:.1f}" '
+                        f'y2="{hi / (hi - lo) * H:.1f}" stroke="#71717A" stroke-dasharray="3 4"/><polyline points="{pts}" fill="none" stroke="#E8B84A" stroke-width="2"/></svg>'
+                        f'<div class="ko-s">Kesikli çizgi sıfır: altı ters eğri.</div></div>', unsafe_allow_html=True)
+    if o.get("vade"):
+        st.markdown(TS.bb("Emtia vade yapısı"), unsafe_allow_html=True)
+        k = ""
+        for v in o["vade"]:
+            ps = v["noktalar"]; lo, hi = min(p["fiyat"] for p in ps), max(p["fiyat"] for p in ps); W, H = 300, 44
+            pts = " ".join(f"{i * W / (len(ps) - 1):.1f},{(H - 4) - (p['fiyat'] - lo) / ((hi - lo) or 1) * (H - 8):.1f}" for i, p in enumerate(ps))
+            renk = {"contango": "#A1A1AA", "backwardation": "#22C55E", "düz": "#A1A1AA"}[v["yapi"]]
+            k += (f'<div class="ko"><div class="ko-u"><b>{_h.escape(v["ad"])}</b><span style="color:{renk}">{v["yapi"]} · {yz(v["yillik"])}/yıl</span></div>'
+                  f'<svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" style="width:100%;height:44px"><polyline points="{pts}" fill="none" stroke="#E8B84A" stroke-width="2"/></svg>'
+                  f'<div class="ko-e"><span>{ps[0]["vade"]} · {TK.sayi(ps[0]["fiyat"])}</span><span>{ps[-1]["vade"]} · {TK.sayi(ps[-1]["fiyat"])}</span></div>'
+                  f'<div class="ko-y2">{_h.escape(v["yorum"])}</div></div>')
+        st.markdown(k, unsafe_allow_html=True)
+        st.caption("Vadeli kontrat fiyatları gecikmeli günlük kapanıştır; vade yapısı arz-talep dengesine dair ipucudur, tek başına al-sat sinyali değildir.")
+
+
 def makro_karti(m):
     """TÜFE + politika faizi + reel faiz kartı (TCMB)."""
     t = m["tufe"]["seri"]; s = t[0]
@@ -802,11 +905,11 @@ def tarama_tablosu(piyasa, zaman):
 
 
 KATEGORI = {"Tümü": None, "Kripto": "kripto", "ABD ve dünya": "dunya", "Emtia": "emtia", "Enerji": "enerji"}
-PV_KAT = {"VIX": "dunya", "Dow Jones": "dunya", "S&P 500": "dunya", "Nasdaq": "dunya", "BIST 100": "dunya", "BIST 100 ($)": "dunya",
+PV_KAT = {"DAX": "dunya", "FTSE 100": "dunya", "Nikkei 225": "dunya", "Hang Seng": "dunya", "EUR/USD": "dunya", "VIX": "dunya", "Dow Jones": "dunya", "S&P 500": "dunya", "Nasdaq": "dunya", "BIST 100": "dunya", "BIST 100 ($)": "dunya",
           "Dolar endeksi": "dunya", "ABD 10Y faiz": "dunya", "USD/TRY": "dunya", "EUR/TRY": "dunya",
           "Bitcoin": "kripto", "Ethereum": "kripto", "Gram altın": "emtia", "Ons altın": "emtia", "Gümüş": "emtia",
           "Brent petrol": "enerji", "WTI petrol": "enerji", "Doğal gaz": "enerji"}
-KISA_AD = {"Dow Jones": "DJI", "S&P 500": "US500"}
+KISA_AD = {"Dow Jones": "DJI", "S&P 500": "US500", "Nikkei 225": "Nikkei", "FTSE 100": "FTSE", "Hang Seng": "HSI"}
 # Öne çıkanlar "Önerilenler" listesi: (piyasa, kod) — kategoriye göre
 ONERI = {None: [("kripto", "BTC/USDT"), ("kripto", "ETH/USDT"), ("abd", "NVDA.US"), ("abd", "TSLA.US"), ("bist", "THYAO"), ("bist", "ASELS"),
                 ("emtia", "GRAMALTIN"), ("emtia", "BRENT")],
@@ -1102,9 +1205,9 @@ with ana_b:
     tab_p, tab_h, tab_tk, tab_ek = st.tabs([":material/dashboard: Piyasalar", ":material/newspaper: Haberler", ":material/event: Takvim",
                                             ":material/public: Ekonomi"])
 with kesfet_b:
-    tab_f, tab_r, tab_x, tab_t, tab_v, tab_b, tab_k = st.tabs(
+    tab_f, tab_r, tab_x, tab_t, tab_d, tab_v, tab_b, tab_k = st.tabs(
         [":material/my_location: Fırsatlar", ":material/description: Hisse", ":material/candlestick_chart: Teknik",
-         ":material/manage_search: Tarayıcı", ":material/currency_bitcoin: Emtia & Kripto", ":material/school: Bebek",
+         ":material/manage_search: Tarayıcı", ":material/public: Dünya", ":material/currency_bitcoin: Emtia & Kripto", ":material/school: Bebek",
          ":material/balance: Karşılaştır"])
 @st.cache_data(ttl=300, show_spinner=False)
 def anlik_fiyat(kod, zaman):
@@ -1962,6 +2065,10 @@ with tab_pr:
                      column_config={"Ort. R": st.column_config.NumberColumn(format="%+.2f")})
         st.caption("Son taramadaki likit varlıkların geçmişinde aynı kurulumların sonucu. Ort. R sıfırın üzerindeyse kural geçmişte kazandırmış.")
 
+with tab_d:
+    try: dunya_sekmesi()
+    except Exception as ex: st.caption(f"Dünya verisi okunamadı: {ex}")
+
 with tab_v:
     st.caption("Altın, gümüş, petrol, tarım ürünleri ve önde gelen kripto paralar. Bilançosu olmayan bu varlıklar için analiz "
                "trend, momentum, risk, para akışı, mevsimsellik ve piyasa verilerine dayanır.")
@@ -2015,7 +2122,7 @@ with tab_p:
         PV = piyasa_verisi(ZAMAN)
     except Exception as e:
         PV = {}; st.caption(f"Piyasa verisi alınamadı: {e}")
-    sira = ["VIX", "Dow Jones", "S&P 500", "Nasdaq", "BIST 100", "Bitcoin", "Ethereum", "USD/TRY", "Gram altın", "Ons altın", "Gümüş",
+    sira = ["VIX", "Dow Jones", "S&P 500", "Nasdaq", "DAX", "FTSE 100", "Nikkei 225", "Hang Seng", "EUR/USD", "BIST 100", "Bitcoin", "Ethereum", "USD/TRY", "Gram altın", "Ons altın", "Gümüş",
             "Brent petrol", "WTI petrol", "Doğal gaz", "EUR/TRY", "Dolar endeksi", "ABD 10Y faiz", "BIST 100 ($)"]
     _kart_yer = st.empty()
     kat_ad = st.radio("Kategori", list(KATEGORI), horizontal=True, key="ana_kat", label_visibility="collapsed")

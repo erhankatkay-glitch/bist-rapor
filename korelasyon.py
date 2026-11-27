@@ -157,8 +157,9 @@ def kart_ciz(o, yol):
          "nokta": K.C["kirmizi"] if c["kirilma"] else None, "alt": c["seviye"] + (f" · KIRILMA: 20 gün {tr2(c['c20'])}, 1 yıl {tr2(c['c250'])}" if c["kirilma"] else "")}
         for c in o["ciftler"]]},
            {"baslik": "GÖRECELİ GÜÇ (3 AY)", "renk": K.C["altin"], "satirlar": [
-        {"sol": f"{g['a']} / {g['b']}", "sag": (("+" if (g["d3"] or 0) >= 0 else "") + _y(g["d3"])).replace("+-", "-"),
-         "sag_renk": K.C["yesil"] if (g["d3"] or 0) > 0 else K.C["kirmizi"], "alt": f"lider: {g['lider']}" + (" · güçleniyor" if g["guc"] else " · zayıflıyor" if g["guc"] is False else "")}
+        {"sol": f"{g['a']} / {g['b']}", "sag": ("+" if (g["d3"] or 0) >= 0 else "-") + _y(abs(g["d3"] or 0)),
+         "sag_renk": K.C["yesil"] if (g["d3"] or 0) > 0 else K.C["kirmizi"],
+         "alt": f"3 ayın lideri: {g['lider']}" + (f" · {g['a'] if g['guc'] else g['b']} güçleniyor" if g["guc"] is not None else "")}
         for g in o["goreceli"]]}]
     if o.get("sektor"):
         s = o["sektor"]

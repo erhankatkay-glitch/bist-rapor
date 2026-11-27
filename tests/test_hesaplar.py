@@ -423,3 +423,17 @@ def test_korelasyon_kirilma_ve_goreceli():
     assert c["c250"] > 0.6 and c["c20"] < 0 and c["kirilma"]
     gr = [x for x in KR.goreceli(F) if x["a"] == "BTC"][0]
     assert gr["lider"] == "BTC" and gr["d3"] > 0
+
+
+def test_dunya_egri_ve_seans():
+    """Aşama 12: getiri eğrisi farkı/ters gün sayısı; dünya borsası seansı yerel saatle."""
+    import dunya as DN, veri_kalite as VK, datetime as dt_
+    idx = pd.bdate_range("2025-01-01", periods=300)
+    D = pd.DataFrame({"3A": 4.5, "2Y": np.r_[np.full(290, 4.0), np.full(10, 4.6)], "10Y": 4.3}, index=idx)
+    e = DN.egri_ozeti(D, "test")
+    assert abs(e["f10_2"] + 0.3) < 1e-9 and e["ters_gun"] == 10 and e["durum"].startswith("ters")
+    assert [p["vade"] for p in e["bugun"]] == ["3A", "2Y", "10Y"]
+    t = dt_.datetime(2026, 11, 27, 8, 0, tzinfo=dt_.timezone.utc)   # 09:00 Berlin, 17:00 Tokyo
+    assert VK.piyasa_acik(VK.tur_bul("^GDAXI"), t) and not VK.piyasa_acik(VK.tur_bul("^N225"), t)
+    k = DN.kontratlar("CL", "NYM", dt_.date(2026, 11, 28), 3)
+    assert [s for s, _ in k] == ["CLZ26.NYM", "CLF27.NYM", "CLG27.NYM"]
