@@ -119,6 +119,15 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   - Kripto: spothq/cryptocurrency-icons (CC0) uygun.
   - Hisse logoları: lisansı açık ücretsiz repo bulunamadı (nvstly/icons'ta lisans yok). Seçenek: logo.dev ücretsiz anahtar (kullanıcı kararı bekleniyor).
 
+## Aşama 4 — Telegram tasarımı (27.11.2026)
+- Bildirimlerin hepsi KATKAY kartıyla gidiyor:
+  - fırsat, toplu fırsat, takip, karne, portföy uyarısı
+  - alarm, haber etkisi, takvim
+  - kapanış bülteni, yabancı akışı, sabah özeti, durum raporu
+- Düz metin yalnızca kart çizilemezse son çare.
+- Fırsat kartı: yeni teyitler gösteriliyor ve kart teyit satırı arttıkça uzuyor. Grafik çizilemezse `kapanis.sade_firsat_gonder` grafiksiz kart gönderir.
+- Kripto logoları: `logolar.py` + `varlik/kripto/` (CC0).
+
 ## Sıradaki aşamalar
 1. ~~Aşama 1: envanter ve veri denetimi~~ (bu dosya)
 2. Aşama 2: Fırsat motoru
