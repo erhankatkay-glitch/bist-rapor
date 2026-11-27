@@ -272,3 +272,12 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - Alarm geçmişi 300 kayıt; uygulamada arama var. Kural ekleme ekranı tüm türleri kapsar.
 - Varsayılan kurallara `TAKVIM` eklendi.
 - Kuru çalıştırma (Actions, gerçek veri): 13 kural 15 sn; ikinci turda tekrar bildirim 0.
+
+
+## Aşama 10b — QuantDinger göstergeleri (28.11.2026)
+- `qd_calistir.py`: QuantDinger betiklerini (df/params → output.signals) varsayılan ayarla çalıştırır; ana iş parçacığında 8 sn zaman aşımı.
+- `arastirma_qd.py` + `.github/workflows/qd_arastirma.yml`: boyama (gerçek zaman) testi, tarih eşlemeli Monte Carlo, 4 dönem kontrolü, BH-FDR, kör %20.
+- Kabul edilen 12 gösterge `qd_kabul.json`'da; betikler `qd_kutuphane/` (NOTICE + Apache-2.0).
+- Bağlı olduğu yerler: fırsat motoru (`firsat.varlik_tara` → kapanış taramaları, Telegram fırsat kartları, Seçki, Günün fırsatları,
+  portföy ters sinyal uyarısı), tarayıcı (`tarayici.son_sinyal` → SINYAL alarmı), teknik analiz gösterge karnesi ve sinyal listesi
+  (`bist_teknik.tf_analiz(..., tur)` → uygulama Teknik sekmesi ve teknik PDF), PDF sözlüğü, portföy alarmında ters sinyal anahtarı "QD:".

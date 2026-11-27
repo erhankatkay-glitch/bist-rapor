@@ -806,7 +806,10 @@ AYAR = {"1S": {"pencere_fib": 120, "goster": 120, "atr_k": 2.0}, "4S": {"pencere
         "A": {"pencere_fib": 96, "goster": 120, "atr_k": 1.0}}
 
 
-def tf_analiz(h, tf):
+QD_PIYASA = {"hisse": "bist", "abd": "abd", "kripto": "kripto", "emtia": "emtia"}
+
+
+def tf_analiz(h, tf, tur=None):
     if len(h) < 30:
         return None
     G = gostergeler(h); piv = salinimlar(h, G, AYAR[tf]["atr_k"])
@@ -816,6 +819,19 @@ def tf_analiz(h, tf):
     dr = durumlar(h, G)
     # Sinyal listesi (yön: +1/-1/0, güç 0–3)
     sinyal = []
+    # Aşama 10b: bu piyasada geçmiş testi geçen QuantDinger göstergeleri (gösterge karnesi + taze sinyal)
+    if tur in QD_PIYASA:
+        try:
+            import firsat as _F
+            for q in _F.qd_durumlar(h, QD_PIYASA[tur], tf):
+                yz = "AL" if q["yon"] == 1 else "SAT"
+                ac = f"{q['aciklama']} Geçmiş testte rastgele girişe göre işlem başına " + f"{q['fazla']:+.2f}".replace(".", ",") + "R (QuantDinger, Apache-2.0)."
+                dr.append((q["baslik"], f"{yz} · {'bu mum' if q['yas'] == 0 else str(q['yas']) + ' mum önce'}" if q["yas"] is not None else "Sinyal yok",
+                           ac, q["yon"] if q["yas"] is not None else 0))
+                if q["yas"] is not None and q["yas"] <= 2:
+                    sinyal.append((f"QD: {q['baslik']}", q["yon"], ac, 2))
+        except Exception:
+            pass
     for m in mum: sinyal.append(("Mum: " + m["ad"], m["yon"], m["aciklama"] + f" ({m['tarih']:%d.%m.%Y})", m["guc"]))
     for f in form:
         sinyal.append((f"Formasyon: {f['ad']} – {f['durum']}", f["yon"], f["aciklama"] + (f" Ölçülen hedef ≈ {sayi(f['hedef'])}." if f.get("hedef") else ""), f["guc"]))
@@ -861,7 +877,7 @@ def analiz_h(kod, ad, h, tur="hisse", para="₺", tfler=("G", "H", "A")):
     h["Volume"] = h["Volume"].fillna(0)
     s = {"kod": kod, "ad": ad, "tur": tur, "para": para, "tf": {}, "fiyat_zamani": h.index[-1]}
     for tf in tfler:
-        try: s["tf"][tf] = tf_analiz(yeniden_ornekle(h, tf, tur), tf)
+        try: s["tf"][tf] = tf_analiz(yeniden_ornekle(h, tf, tur), tf, tur)
         except Exception: s["tf"][tf] = None
     ag = {"G": 0.3, "H": 0.4, "A": 0.3}
     v = [(ag[t], a["puan"]) for t, a in s["tf"].items() if a]
@@ -905,13 +921,13 @@ def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A"), kisa_vade=False):
     sonuc = {"kod": kod, "ad": ad, "tur": tur, "para": para_k or ("₺" if tur == "hisse" or kod == "GRAMALTIN" else "" if tur == "endeks" else "$"),
              "tf": {}, "fiyat_zamani": h.index[-1]}
     for tf in tfler:
-        sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(h, tf, tur), tf)
+        sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(h, tf, tur), tf, tur)
     if kisa_vade and not fiyat_fn:
         try:
             hs = saatlik_veri(kod, tur)
             tur_s = "hisse" if tur == "endeks" and kod.startswith("X") else tur
             for tf in ("1S", "4S"):
-                sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(hs, tf, tur_s), tf)
+                sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(hs, tf, tur_s), tf, tur_s)
         except Exception as ex:
             sonuc["kisa_hata"] = str(ex)[:100]
     ag = {"G": 0.3, "H": 0.4, "A": 0.3}
