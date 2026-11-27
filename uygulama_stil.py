@@ -112,6 +112,7 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
   background:linear-gradient(180deg,#18191C,#111214); border:1px solid var(--cizgi);} .kk-kutu svg {width:26px; height:26px;}
 .kk-kutu b {font-size:.74rem; font-weight:750; color:#E4E4E7;}
 .kk-kutu span:active {border-color:rgba(232,184,74,.6);}
+.kk-alt2 {font-size:.92rem; color:var(--altin); font-weight:700;}
 .kk-alt {font-size:.8rem; color:var(--soluk); line-height:1.35;} .kk-alt b {color:var(--altin);}
 .kk-kalem {color:var(--altin); font-weight:750; cursor:pointer; white-space:nowrap; margin-left:4px;}
 .kk-geri {display:inline-block; color:var(--altin); font-weight:800; font-size:.85rem; cursor:pointer; padding:4px 2px 8px;}
@@ -441,8 +442,8 @@ CANLI_JS = """
     const W=window.parent, P=W.document, OGE=__OGE__;
     let st=P.getElementById("kk-nav-stil");
     if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
-    if(!P.getElementById("kk-nav-js4")){
-      const sc=P.createElement("script"); sc.id="kk-nav-js4";
+    if(!P.getElementById("kk-nav-js5")){
+      const sc=P.createElement("script"); sc.id="kk-nav-js5";
       sc.textContent=`
         window.kkSekmeler=function(){return [...document.querySelectorAll('.stTabs [data-testid="stTab"], .stTabs [role="tab"], .stTabs [data-baseweb="tab"]')];};
         window.kkAd=function(t){const p=t.querySelector('[data-testid="stMarkdownContainer"] p')||t; return (p.innerText||p.textContent||"").trim();};
@@ -481,7 +482,7 @@ CANLI_JS = """
         window.kkIstek=function(deger){
           const inp=document.querySelector(".st-key-kk_gizli input"); if(!inp) return false;
           const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set;
-          inp.focus(); set.call(inp, deger+Date.now()); inp.dispatchEvent(new Event("input",{bubbles:true}));
+          inp.focus({preventScroll:true}); set.call(inp, deger+Date.now()); inp.dispatchEvent(new Event("input",{bubbles:true}));
           inp.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",code:"Enter",keyCode:13,which:13,bubbles:true}));
           inp.blur(); return true;
         };
@@ -507,12 +508,14 @@ CANLI_JS = """
         window.kkIsaretle=function(){
           const ilk=document.querySelector('.stTabs [role="tablist"]');
           if(ilk&&!ilk.dataset.kkGizli){ilk.dataset.kkGizli="1"; ilk.style.display="none";
+            {let e=ilk; while(e.parentElement && !e.parentElement.querySelector('[role="tabpanel"]')) e=e.parentElement; e.style.display="none";}
             const ust=ilk.parentElement; if(ust) ust.querySelectorAll(':scope > [data-baseweb="tab-border"], :scope > [data-baseweb="tab-highlight"]').forEach(e=>e.style.display="none");}
           // ana sayfanın alt sekme şeridi (Piyasalar/Haberler/Takvim) gizli: kutularla açılır
           document.querySelectorAll('.stTabs [role="tablist"]').forEach(function(tl){
             if(tl.dataset.kkGizli) return;
             const ad=[...tl.querySelectorAll('[role="tab"]')].map(x=>window.kkAd(x));
             if(ad.some(x=>x.endsWith("Piyasalar")) && ad.some(x=>x.endsWith("Takvim"))){ tl.dataset.kkGizli="1"; tl.style.display="none";
+              let e=tl; while(e.parentElement && !e.parentElement.querySelector('[role="tabpanel"]')) e=e.parentElement; e.style.display="none";
               const ust=tl.parentElement; if(ust) ust.querySelectorAll(':scope > [data-baseweb="tab-border"], :scope > [data-baseweb="tab-highlight"]').forEach(e=>e.style.display="none"); }
           });
           try{ const kp=localStorage.getItem("kk_uyari_kapali"); if(kp) document.querySelectorAll('.kk-uyari[data-id="'+kp+'"]').forEach(u=>u.style.display="none"); }catch(x){}
@@ -590,7 +593,7 @@ def ust_kompakt(pv=None, haberler=None):
             f'<div class="kt">BIST · ABD · KRİPTO · EMTİA</div></div></div>'
             f'<div class="ks"><div class="saat" id="saat">{t:%H:%M}<small id="tarih">{t.day} {ay} {gun} · TSİ</small></div>'
             f'<span class="canli"><i></i>CANLI</span></div></div>'
-            f'<div class="sd"><b class="e">SON DAKİKA</b><div class="k"><div class="ic">{"".join(hab) or "<span>Haber akışı yükleniyor…</span>"}</div></div></div>{dur}')
+            f'<div class="sd" onclick="try{{window.parent.kkGitAlt(\'Ana Sayfa|Haberler\')}}catch(e){{}}" style="cursor:pointer"><b class="e">SON DAKİKA</b><div class="k"><div class="ic">{"".join(hab) or "<span>Haber akışı yükleniyor…</span>"}</div></div></div>{dur}')
 
 
 def ust_kompakt_sayfa(pv=None, haberler=None):

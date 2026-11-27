@@ -19,6 +19,9 @@ PIYASA = {  # ad: (yahoo kodu, birim)
     "Dolar endeksi": ("DX-Y.NYB", ""),
     "ABD 10Y faiz": ("^TNX", "%"),
     "VIX": ("^VIX", ""),
+    "Dow Jones": ("^DJI", "puan"),
+    "WTI petrol": ("CL=F", "$"),
+    "Doğal gaz": ("NG=F", "$"),
 }
 
 # EVDS serileri: her kalem için aday kodlar (ilk çalışan kullanılır)
