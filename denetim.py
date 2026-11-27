@@ -35,6 +35,8 @@ with sync_playwright() as pw:
         print("sanal form:", ex)
     pg.reload(); pg.wait_for_selector('[data-testid="stTab"]', timeout=180000); bekle(); pg.wait_for_timeout(3000)
     git_sanal(); pg.wait_for_timeout(4000); bekle()
+    print("girdi değeri:", pg.evaluate("(document.querySelector('.st-key-kk_gizli2 input')||{}).value?.slice(0,60)"))
+    pg.wait_for_timeout(6000); bekle()
     print("yenileme sonrası THYAO kartı:", pg.evaluate("[...document.querySelectorAll('.hb')].filter(x=>x.offsetParent).map(x=>x.innerText.slice(0,80))"))
     pg.screenshot(path="denetim_graf/sanal_yenile.png")
     pg.evaluate("""(()=>{const t=[...document.querySelectorAll('[data-testid=stTab]')].find(x=>x.innerText.trim().endsWith('Risk hesaplayıcı')); t&&t.click();})()""")
