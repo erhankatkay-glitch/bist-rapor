@@ -26,7 +26,7 @@ hr {border:none !important; height:1px !important; background:linear-gradient(90
 [data-testid="stMarkdownContainer"] p, li {font-variant-numeric: tabular-nums;}
 iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 /* üst bant çerçevesinin altındaki boşluk */
-.stElementContainer:has(> iframe[height="160"]) {margin-bottom:-58px !important;}
+.stElementContainer:has(> iframe[height="160"]) {margin-bottom:-26px !important;}
 /* yüksekliği 0 olan betik çerçeveleri (alt menü, kaydetme, yükleme) sayfada boşluk bırakmasın */
 .stElementContainer:has(> iframe[height="0"]), [data-testid="stElementContainer"]:has(iframe[height="0"]) {position:absolute !important; width:0 !important; height:0 !important; overflow:hidden !important; margin:0 !important; padding:0 !important;}
 
@@ -485,8 +485,8 @@ CANLI_JS = """
     const W=window.parent, P=W.document, OGE=__OGE__;
     let st=P.getElementById("kk-nav-stil");
     if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
-    if(!P.getElementById("kk-nav-js6")){
-      const sc=P.createElement("script"); sc.id="kk-nav-js6";
+    if(!P.getElementById("kk-nav-js7")){
+      const sc=P.createElement("script"); sc.id="kk-nav-js7";
       sc.textContent=`
         window.kkSekmeler=function(){return [...document.querySelectorAll('.stTabs [data-testid="stTab"], .stTabs [role="tab"], .stTabs [data-baseweb="tab"]')];};
         window.kkAd=function(t){const p=t.querySelector('[data-testid="stMarkdownContainer"] p')||t; return (p.innerText||p.textContent||"").trim();};
@@ -549,6 +549,7 @@ CANLI_JS = """
           },true);
         }
         window.kkIsaretle=function(){
+          const T0=document.querySelector('[data-testid="stMain"] .stTabs'); if(T0 && !T0.dataset.kkM){T0.dataset.kkM="1"; T0.style.marginTop="-34px";}
           const ilk=document.querySelector('.stTabs [role="tablist"]');
           if(ilk&&!ilk.dataset.kkGizli){ilk.dataset.kkGizli="1"; ilk.style.display="none";
             {let e=ilk; while(e.parentElement && !e.parentElement.querySelector('[role="tabpanel"]')) e=e.parentElement; e.style.display="none";}
