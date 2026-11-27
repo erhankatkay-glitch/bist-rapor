@@ -88,8 +88,18 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - BIST'te SAT kurulumları geçmişte açıkça zararlı (GERI SAT −0,67 R); BIST zaten yalnız AL tarıyor.
 - 26.11'deki kripto kaybı tam olarak "toplu sinyal" durumuydu: aynı mumda 12 coin aynı yönde.
 - Canlıya alındı: `firsat.FILTRE`, `firsat.pa_ozellik`, `firsat.rejim`; `kapanis.REJIM`. Fırsat kartlarının teyit listesinde yeni maddeler görünür.
-- BIST 4S, BIST günlük filtresine dayanılarak eklendi; ayrıca test edilecek.
-- Test edilmemiş, filtresiz kalanlar: ABD, emtia, haftalık (H) ve aylık (A).
+- İkinci tur testleri (ABD 197 hisse, BIST 4S, BIST/ABD haftalık, emtia):
+
+| Piyasa | Olay (AL) | Teyitsiz | Seçilen filtre | Filtreli (eski / yeni yarı) |
+|---|---|---|---|---|
+| BIST 4S | 9.618 | +0,138 | BIST 100 ters değil + yapı | +0,163 (+0,162 / +0,164) |
+| ABD G | 14.705 | +0,065 | S&P 500 ters değil | +0,073 (+0,041 / +0,097) |
+| ABD H | 3.225 | +0,181 | S&P 500 aynı yönde | +0,219 (+0,237 / +0,208) |
+| BIST H | 2.343 | +0,377 | filtre yok (hiçbiri iyileştirmedi) | — |
+| Emtia G | 1.104 | +0,102 | filtre yok (hiçbiri iyileştirmedi) | — |
+
+- SAT yönü ABD, emtia ve BIST'te her filtreyle zararlı (ABD G −0,14, ABD H −0,23, emtia −0,14, BIST H −0,23); bu piyasalarda SAT taranmaya devam etmeyecek (zaten taranmıyordu).
+- Aylık (A) dilimde örnek az; filtre yok.
 
 ## Sıradaki aşamalar
 1. ~~Aşama 1: envanter ve veri denetimi~~ (bu dosya)

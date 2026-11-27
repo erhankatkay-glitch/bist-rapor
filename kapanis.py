@@ -703,6 +703,9 @@ def abd(slot, zorla):
         firsat_turu(bot, D, "4S", V_, ekstra_fn=abd_bilanco_riski)
     if r and analizler:
         likit = set(kodlar)
+        for tf_ in ("G", "H"):
+            try: REJIM[("abd", tf_)] = F.rejim(TB.SON["abd"]["endeks"]["tf"][tf_]["h"])
+            except Exception as ex: log(f"S&P 500 {tf_} yönü:", ex)
         gunluk_tf_turu(bot, D, analizler, ("G", "H", "A"), zorla, False, lambda s: "$", lambda s: s["kod"] in likit, ekstra_fn=abd_bilanco_riski)
         TB.telegram_gonder("abd", *r, klasor=CIKTI, bot=bot)
     if olay: takip_mesaji(bot, D)

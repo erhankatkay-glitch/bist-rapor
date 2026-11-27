@@ -60,8 +60,12 @@ FILTRE = {
     ("kripto", "4S"): {"rejim": 1, "yapi": True, "mum": True, "oda": True, "kume": True},   # ortR +0,005 → +0,104
     ("kripto", "G"): {"rejim": 0, "yapi": True},                                          # +0,010 → +0,058
     ("bist", "G"): {"rejim": 1},                                                           # +0,048 → +0,250
-    ("bist", "4S"): {"rejim": 1},                                                          # günlükteki kanıta dayanır (4S testi sırada)
+    ("bist", "4S"): {"rejim": 0, "yapi": True},                                            # +0,138 → +0,163
+    ("abd", "G"): {"rejim": 0},                                                            # +0,065 → +0,073 (küçük ama iki yarıda da)
+    ("abd", "H"): {"rejim": 1},                                                            # +0,181 → +0,219
 }
+# Test edilip filtre eklenmeyenler: BIST haftalık (+0,377, filtreler iyileştirmedi), emtia günlük (+0,102, aynı).
+# Geçmişte zararlı olduğu için hiç taranmayan yönler: ABD/emtia/BIST SAT (ABD G −0,14, H −0,23; emtia −0,14; BIST H −0,23).
 KUME_ORAN = 0.15
 PIV = 3
 
