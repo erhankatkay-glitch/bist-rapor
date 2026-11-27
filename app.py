@@ -472,6 +472,62 @@ def piyasa_karti(ad_, v):
             f'<div>{spark_svg(v["seri"], renk)}</div></div>')
 
 
+MINI_LOGO = {"Bitcoin": ("BTC", "kripto"), "Ethereum": ("ETH", "kripto")}
+
+
+def mini_kart(ad_, v):
+    """Ana sayfadaki yatay şerit için küçük piyasa kartı."""
+    d = v.get("d1G") or 0; renk = "#22C55E" if d > 0 else "#EF4444" if d < 0 else "#A1A1AA"
+    ok = "▲" if d > 0 else "▼" if d < 0 else "■"
+    deger = br.ond(v["deger"], 2 if v["deger"] < 10000 else 0)
+    lg = ""
+    if ad_ in MINI_LOGO:
+        import logolar as LG
+        u = LG.logo_url(*MINI_LOGO[ad_])
+        if u: lg = f'<img src="{u}" alt="" class="mk-l">'
+    return (f'<div class="mk"><div class="mk-a">{lg}{ad_}</div><div class="mk-d">{deger}</div>'
+            f'<div class="mk-y" style="color:{renk}">{ok} {br.yz(d)}</div>{spark_svg(v["seri"], renk, 116, 30)}</div>')
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def gunun_firsatlari(zaman, n=8):
+    """Tüm piyasalardaki son taramalardan taze fırsatlar, puana göre."""
+    import requests
+    out = []
+    simdi = pd.Timestamp.now(tz="UTC")
+    for pz in ("bist", "kripto", "abd", "emtia"):
+        try:
+            r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/firsat/{pz}/son.json?t={zaman}", timeout=15)
+            son = r.json() if r.status_code == 200 else {}
+        except Exception:
+            son = {}
+        for tf, x in (son or {}).items():
+            try:
+                z = pd.Timestamp(x["zaman"]); z = z if z.tzinfo else z.tz_localize("UTC")
+                if simdi - z > pd.Timedelta(hours=30 if pz == "kripto" else 80): continue
+            except Exception:
+                continue
+            for f in x.get("firsatlar", []): out.append({**f, "pz": pz})
+    return sorted(out, key=lambda f: -f.get("puan", 0))[:n]
+
+
+def firsat_mini(f):
+    import logolar as LG
+    al = f["yon"] == 1; renk = "#22C55E" if al else "#EF4444"
+    pz_ad = {"bist": "BIST", "kripto": "Kripto", "abd": "ABD", "emtia": "Emtia"}[f["pz"]]
+    u = LG.logo_url(f["kod"], f["pz"]); lg = f'<img src="{u}" alt="" class="mk-l">' if u else ""
+    p = f.get("plan") or {}; g = p.get("giris"); st_ = p.get("stop"); h1 = (p.get("hedef") or [{}])[0].get("fiyat")
+    rr = (p.get("hedef") or [{}, {}])[1].get("r") if len(p.get("hedef") or []) > 1 else None
+    plan = f"giriş {FR.fy(g)} · stop {FR.fy(st_)} · H1 {FR.fy(h1)}" if g else ""
+    puan = float(f.get("puan", 0))
+    return (f'<div class="fk" style="--v:{renk}"><div class="fk-u"><b>{lg}{FR.gorunen(f["kod"], f.get("ad"))}</b>'
+            f'<span class="fk-e" style="background:{renk}">{"AL" if al else "SAT"}</span></div>'
+            f'<div class="fk-s">{pz_ad} · {TK.TF_AD.get(f["tf"], f["tf"])} · {f.get("kurulum_ad", "")[:34]}</div>'
+            f'<div class="fk-c"><div style="width:{min(puan, 100):.0f}%"></div></div>'
+            f'<div class="fk-s"><span>Puan {puan:.0f}/100</span>{f" · K/R 1:{rr:.1f}".replace(".", ",") if rr else ""}</div>'
+            f'<div class="fk-p">{plan}</div></div>')
+
+
 @st.cache_data(ttl=600, show_spinner=False)
 def gorsel_oku(yol, zaman):
     import requests
@@ -603,11 +659,20 @@ except Exception:
 
 
 
-tab_p, tab_r, tab_x, tab_f, tab_h, tab_tk, tab_pr, tab_v, tab_t, tab_b, tab_pf, tab_al, tab_k, tab_w = st.tabs(
-    [":material/dashboard: Piyasalar", ":material/description: Hisse", ":material/candlestick_chart: Teknik", ":material/my_location: Fırsatlar",
-     ":material/newspaper: Haberler", ":material/event: Takvim", ":material/insights: Performans", ":material/currency_bitcoin: Emtia & Kripto",
-     ":material/manage_search: Tarayıcı", ":material/school: Bebek", ":material/account_balance_wallet: Portföy",
-     ":material/notifications_active: Alarm", ":material/balance: Karşılaştır", ":material/star: Takip"])
+# Dört ana bölüm (alt menüyle aynı): Ana Sayfa · Keşfet · Portföy · Takip. Eski sekmeler bunların altında.
+ana_b, kesfet_b, portfoy_b, takip_b = st.tabs([":material/home: Ana Sayfa", ":material/explore: Keşfet",
+                                               ":material/account_balance_wallet: Portföy", ":material/star: Takip"])
+with ana_b:
+    tab_p, tab_h, tab_tk = st.tabs([":material/dashboard: Piyasalar", ":material/newspaper: Haberler", ":material/event: Takvim"])
+with kesfet_b:
+    tab_f, tab_r, tab_x, tab_t, tab_v, tab_b, tab_k = st.tabs(
+        [":material/my_location: Fırsatlar", ":material/description: Hisse", ":material/candlestick_chart: Teknik",
+         ":material/manage_search: Tarayıcı", ":material/currency_bitcoin: Emtia & Kripto", ":material/school: Bebek",
+         ":material/balance: Karşılaştır"])
+with portfoy_b:
+    tab_pf, tab_pr = st.tabs([":material/pie_chart: Varlıklarım", ":material/insights: Performans"])
+with takip_b:
+    tab_w, tab_al = st.tabs([":material/bookmark: Favoriler", ":material/notifications_active: Alarmlar"])
 
 # ================= RAPOR =================
 
@@ -1125,11 +1190,22 @@ with tab_p:
     sira = ["BIST 100", "S&P 500", "Nasdaq", "USD/TRY", "EUR/TRY", "Gram altın", "Ons altın", "Gümüş", "Brent petrol",
             "Bitcoin", "Ethereum", "Dolar endeksi", "ABD 10Y faiz", "VIX", "BIST 100 ($)"]
     goster = [x for x in sira if x in PV]
-    for i in range(0, len(goster), 2):
-        cols = st.columns(2)
-        for c, ad_ in zip(cols, goster[i:i + 2]):
-            c.markdown(piyasa_karti(ad_, PV[ad_]), unsafe_allow_html=True)
-    st.caption("Kripto anlık, diğerleri ~15 dk gecikmeli (Yahoo). Mini grafik son 60 işlem günü.")
+    st.markdown('<div class="serit-k">' + "".join(mini_kart(ad_, PV[ad_]) for ad_ in goster) + "</div>", unsafe_allow_html=True)
+    st.caption("Yana kaydırın · Kripto anlık, diğerleri ~15 dk gecikmeli (Yahoo). Mini grafik son 60 işlem günü.")
+    # ---- Günün fırsatları (tüm piyasalar, puana göre)
+    try:
+        _gf = gunun_firsatlari(ZAMAN)
+        if _gf:
+            st.markdown(TS.bolum("Günün fırsatları"), unsafe_allow_html=True)
+            st.markdown('<div class="serit-k">' + "".join(firsat_mini(f) for f in _gf) + "</div>", unsafe_allow_html=True)
+            st.caption("Ayrıntılar: Keşfet › Fırsatlar. Puan, işlem planı ve teyitler Telegram kartlarında da var.")
+    except Exception as ex:
+        st.caption(f"Fırsatlar okunamadı: {ex}")
+    with st.expander(":material/view_agenda: Piyasa kartları (büyük görünüm)"):
+        for i in range(0, len(goster), 2):
+            cols = st.columns(2)
+            for c, ad_ in zip(cols, goster[i:i + 2]):
+                c.markdown(piyasa_karti(ad_, PV[ad_]), unsafe_allow_html=True)
     # ---- Yabancı yatırımcı akışı (TCMB haftalık)
     try:
         import yabanci_akis as YA

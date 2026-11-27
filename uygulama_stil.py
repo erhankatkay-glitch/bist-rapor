@@ -108,6 +108,25 @@ div[role="radiogroup"] > label:has(input:checked) p {color:var(--altin-a) !impor
 [data-testid="stMetricValue"] {font-weight:800;}
 .stProgress > div > div > div > div {background:linear-gradient(90deg, #F7D98B, #B8862B);}
 
+/* ---------- Ana sayfa şeritleri (yana kaydırılır) ---------- */
+.serit-k {display:flex; gap:9px; overflow-x:auto; padding:2px 2px 8px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;}
+.serit-k::-webkit-scrollbar {height:0;}
+.mk {flex:none; width:132px; background:linear-gradient(180deg,#18191C,#111214); border:1px solid var(--cizgi); border-radius:16px;
+     padding:9px 10px 4px; scroll-snap-align:start; box-shadow:0 8px 20px rgba(0,0,0,.35);}
+.mk-a {font-size:.7rem; color:var(--soluk); font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.mk-d {font-size:1.06rem; font-weight:850; margin-top:2px; font-variant-numeric:tabular-nums;}
+.mk-y {font-size:.72rem; font-weight:800;}
+.mk-l {width:15px; height:15px; border-radius:50%; vertical-align:-3px; margin-right:5px; background:#fff;}
+.fk {flex:none; width:228px; background:linear-gradient(160deg, color-mix(in srgb, var(--v) 14%, #17181B), #121315 60%);
+     border:1px solid color-mix(in srgb, var(--v) 45%, transparent); border-radius:16px; padding:11px 12px; scroll-snap-align:start;}
+.fk-u {display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:.98rem;}
+.fk-u .mk-l {width:18px; height:18px;}
+.fk-e {color:#0B0B0C; font-size:.62rem; font-weight:900; border-radius:6px; padding:2px 6px; letter-spacing:.04em;}
+.fk-s {font-size:.7rem; color:var(--soluk); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.fk-c {height:5px; border-radius:3px; background:#2A2B30; margin:8px 0 2px;}
+.fk-c div {height:100%; border-radius:3px; background:linear-gradient(90deg,#B8862B,#E8B84A);}
+.fk-p {font-size:.7rem; color:#E4E4E7; margin-top:5px; font-variant-numeric:tabular-nums;}
+
 /* ---------- Kartlar ---------- */
 .kart {position:relative; background:linear-gradient(180deg, #18191C 0%, #111214 100%); border:1px solid var(--cizgi);
        border-radius:18px; padding:12px 14px 11px 16px; margin-bottom:10px; overflow:hidden; box-shadow:0 10px 26px rgba(0,0,0,.4);}
@@ -265,10 +284,10 @@ NAV_STIL = """
 """
 
 NAV_OGE = [
-    ("Ana Sayfa", "Piyasalar", '<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="#E8B84A"/>'),
-    ("Analiz", "Hisse", '<rect x="4" y="12" width="3.5" height="8" rx="1" fill="#E8B84A"/><rect x="10.25" y="7" width="3.5" height="13" rx="1" fill="#E8B84A"/><rect x="16.5" y="3.5" width="3.5" height="16.5" rx="1" fill="#E8B84A"/>'),
-    ("Favoriler", "Takip", '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" fill="#E8B84A"/>'),
-    ("Fırsatlar", "Fırsatlar", '<path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5z" fill="#E8B84A"/><rect x="5" y="19.5" width="14" height="1.8" rx=".9" fill="#E8B84A"/>'),
+    ("Ana Sayfa", "Ana Sayfa", '<path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="#E8B84A"/>'),
+    ("Keşfet", "Keşfet", '<circle cx="11" cy="11" r="6.5" fill="none" stroke="#E8B84A" stroke-width="2.4"/><path d="m16 16 4.5 4.5" stroke="#E8B84A" stroke-width="2.6" stroke-linecap="round"/>'),
+    ("Portföy", "Portföy", '<rect x="3" y="7" width="18" height="13" rx="2.5" fill="#E8B84A"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7" fill="none" stroke="#E8B84A" stroke-width="2"/>'),
+    ("Takip", "Takip", '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" fill="#E8B84A"/>'),
 ]
 
 CANLI_JS = """
