@@ -50,7 +50,7 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 - **KAP iç API'si:** Kullanılmaz (pykap ve borsa-mcp bunu kullanıyor).
 
 ## Önerilen aşamalar
-- 6. Veri kalite etiketi + yedek kaynak tablosu + TCMB/TÜİK enflasyonu (resmi sayfa).
+- ~~6. Veri kalite etiketi + yedek kaynak tablosu + TCMB enflasyonu ve politika faizi~~ (27.11.2026 tamam)
 - 7. Teknik motoru tamamla: WMA, HMA, Heikin Ashi, RVOL, order block/breaker, likidite süpürme, harmonik formasyonlar (her biri geçmiş testle).
 - 8. Kendi taramanı kur: filtre birleştirme, kayıtlı şablonlar, sinyal yaşı / sinyalden beri değişim sütunları.
 - 9. Risk hesaplayıcı (pozisyon büyüklüğü, komisyon) + sanal işlem portföyü.
@@ -69,3 +69,6 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
   Sunucunun tamamı kurulmaz.
 - **zer0dayf/Bist-KAP-Dataset-Builder (MIT):** Haberleri elle girip 5 gün sonraki fiyata göre etiketleyen küçük bir araç.
   Bizde `haber.py` haber sonrası fiyat tepkisini zaten otomatik ölçüyor; eklenmez.
+
+## Son aşama (hepsi bitince)
+Telegram'da paylaşılan her şey baştan sona yeni tasarıma ve yeni modüllere göre güncellenecek (kullanıcı isteği).

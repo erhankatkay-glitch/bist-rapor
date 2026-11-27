@@ -1,48 +1,7 @@
-"""Arayüz testi: Streamlit'i başlatır, telefon boyutunda ana sayfayı ve alt menüyü dener."""
-import subprocess, time, sys, os
-p0 = 0
-_bas = time.time()
-p = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "app.py", "--server.headless", "true", "--server.port", "8501"],
-                     stdout=open("st_log.txt", "w"), stderr=subprocess.STDOUT)
-time.sleep(20)
+"""Aşama 7 araştırması: yeni kurulumların (OB, BREAKER, HARM) ve RVOL filtresinin geçmiş testi."""
+import subprocess, sys, os
 os.makedirs("denetim_graf", exist_ok=True)
-print(subprocess.run([sys.executable, "makro_tr.py", "cikti_mk"], capture_output=True, text=True).stdout[-1500:])
-import bist_makro as mk, veri_kalite as VK
-_pv = mk.piyasa_paneli()
-for ad, v in _pv.items():
-    e = VK.etiket(v.get("zaman"), v.get("tur"))
-    print(f"ETIKET {ad:14s} {v.get('kaynak',''):20s} {str(v.get('zaman'))[:25]:26s} {e['durum']:10s} {e['kisa']}")
-time.sleep(5)
-from playwright.sync_api import sync_playwright
-with sync_playwright() as pw:
-    b = pw.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
-    pg = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=2).new_page()
-    pg.on("pageerror", lambda e: print("pageerror:", str(e)[:300]))
-    pg.goto("http://localhost:8501", timeout=120000)
-    pg.wait_for_selector('[data-testid="stTab"]', timeout=180000)
-    for i in range(90):
-        if not pg.evaluate("!!document.querySelector('[data-testid=stStatusWidget]')"): break
-        pg.wait_for_timeout(2000)
-    pg.wait_for_timeout(6000)
-    sec = lambda: pg.evaluate("""[...document.querySelectorAll('[data-testid="stTab"]')].filter(x=>x.getAttribute('aria-selected')==='true').map(x=>x.innerText.trim())""")
-    print("başta:", sec())
-    print("mini kart:", pg.evaluate("document.querySelectorAll('.mk').length"), "fırsat kartı:", pg.evaluate("document.querySelectorAll('.fk').length"))
-    pg.screenshot(path="denetim_graf/ana.png", full_page=False)
-    pg.mouse.wheel(0, 700); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/ana2.png")
-    try:
-        el = pg.locator("text=Yıllık enflasyon (TÜFE)").first
-        el.scroll_into_view_if_needed(); pg.wait_for_timeout(800); pg.mouse.wheel(0, -120); pg.wait_for_timeout(500)
-        pg.screenshot(path="denetim_graf/makro.png")
-    except Exception as ex:
-        print("makro kartı yok:", ex)
-    print("ETIKET SAYISI:", pg.evaluate("document.querySelectorAll('.vk').length"))
-    pg.locator("#kk-nav button[data-sekme='Takip']").tap(); pg.wait_for_timeout(2000)
-    try:
-        pg.locator("summary:has-text('Veri kaynakları')").first.click(); pg.wait_for_timeout(1200)
-        pg.locator("summary:has-text('Veri kaynakları')").first.scroll_into_view_if_needed(); pg.wait_for_timeout(500)
-        pg.screenshot(path="denetim_graf/kaynaklar.png")
-    except Exception as ex:
-        print("kaynaklar açılamadı:", ex)
-    b.close()
-p.terminate()
-print(open("st_log.txt").read()[-2500:])
+r = subprocess.run([sys.executable, "arastirma_firsat.py", "kripto4s", "kriptog", "bistg", "bist4s", "abdg", "abdh"], text=True)
+for f in os.listdir("."):
+    if f.startswith("arastirma_") and (f.endswith(".json")):
+        os.system(f"cp {f} denetim_graf/")

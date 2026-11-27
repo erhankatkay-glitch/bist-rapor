@@ -32,10 +32,21 @@ KURULUM = {
            "Trend takip göstergesi güçlü trend ortamında (ADX ≥ 20) yukarı döndü.",
            "Trend takip göstergesi güçlü trend ortamında (ADX ≥ 20) aşağı döndü."),
     "FORM": ("Formasyon kırılımı", "Formasyon aşağı kırılımı", "", ""),
+    "OB": ("Emir bloğu geri testi", "Ayı emir bloğu geri testi",
+           "Yapı kırılımından önceki son düşüş mumunun bölgesine (emir bloğu) ilk geri dönüşte alıcı mumu geldi.",
+           "Aşağı yapı kırılımından önceki son yükseliş mumunun bölgesine ilk dönüşte satıcı mumu geldi."),
+    "BREAKER": ("Kırıcı blok geri testi", "Kırıcı blok aşağı geri testi",
+                "Kırılan ayı bloğu desteğe döndü; yukarıdan ilk geri testte alıcı mumu geldi.",
+                "Kırılan boğa bloğu dirence döndü; aşağıdan ilk geri testte satıcı mumu geldi."),
+    "HARM": ("Harmonik dönüş", "Harmonik tepe dönüşü",
+             "Fiyat harmonik formasyonun dönüş bölgesine (PRZ) geldi ve aynı mumda alıcı onayı oluştu.",
+             "Fiyat harmonik formasyonun dönüş bölgesine (PRZ) geldi ve aynı mumda satıcı onayı oluştu."),
 }
+# Aşama 7 kurulumları: geçmiş testi iki yarıda da olumlu çıkan (piyasa, tf, kurulum) üçlüleri canlıda açılır.
+EK_KURULUM = set()
 DURUM_AD = {"TEYİT": "teyit", "YUKARI KIRILIM": "yukarı kırılım", "AŞAĞI KIRILIM": "aşağı kırılım", "KIRILIM": "kırılım"}
-KALITE = {"FORM": 15, "UYUMSUZ": 12, "KIRILIM": 12, "GERI": 12, "SIKISMA": 10, "AVI": 10, "ST": 8}
-DONUS = {"UYUMSUZ", "AVI"}                  # üst zaman dilimine ters de olabilir (karşı trend)
+KALITE = {"FORM": 15, "UYUMSUZ": 12, "KIRILIM": 12, "GERI": 12, "SIKISMA": 10, "AVI": 10, "ST": 8, "OB": 12, "BREAKER": 10, "HARM": 12}
+DONUS = {"UYUMSUZ", "AVI", "HARM"}                  # üst zaman dilimine ters de olabilir (karşı trend)
 MAKS_BAR = {"4S": 30, "G": 20, "H": 12, "A": 8}
 MAKS_RISK = {"4S": 0.08, "G": 0.12, "H": 0.20, "A": 0.30}   # girişten stopa en fazla uzaklık
 GIRIS_BAR = {"4S": 2, "G": 2, "H": 1, "A": 1}
@@ -153,6 +164,8 @@ def diziler(h, G):
     for k in ("ATR", "EMA20", "EMA50", "SMA200", "RSI", "BB_UST", "BB_ALT", "BB_ORTA", "BB_GEN", "DC_UST", "DC_ALT", "ST", "ST_YON", "ADX"):
         A[k] = G[k].to_numpy(float)
     A["hacim_var"] = bool(np.nansum(A["Volume"][-60:]) > 0)
+    import teknik_ek as TE
+    A["rvol"] = TE.rvol(h["Volume"]).to_numpy(float) if A["hacim_var"] else np.full(len(h), np.nan)
     B = T.balina_serisi(h) if A["hacim_var"] else None
     A["vk"] = B["k"].to_numpy(float) if B is not None else np.full(len(h), np.nan)
     A["b_al"] = (B["al"] | B["emilim_al"]).to_numpy(bool) if B is not None else np.zeros(len(h), bool)
@@ -178,8 +191,9 @@ def ayna(A, yon):
     return M
 
 
-def tetikler(M):
-    """Aynalanmış (veya AL) dizilerde kurulum maskeleri ve ham stoplar: {kod: (maske, stop)}."""
+def tetikler(M, ek=None):
+    """Aynalanmış (veya AL) dizilerde kurulum maskeleri ve ham stoplar: {kod: (maske, stop)}.
+    ek: eklenecek Aşama 7 kurulumları (kümesi); None ise yalnız temel kurulumlar."""
     O, H, L, C = M["Open"], M["High"], M["Low"], M["Close"]; at = M["ATR"]; n = len(C)
     rng = np.where(H - L > 0, H - L, np.nan)
     clv = (C - L) / rng; alt_f = (np.minimum(O, C) - L) / rng
@@ -214,6 +228,12 @@ def tetikler(M):
             if L[i1] < L[i0] and R[i1] > R[i0] + 3 and R[i0] < 35:
                 m[t] = True; st[t] = L[i1] - 0.3 * at[t]
         out["UYUMSUZ"] = (m, st)
+    if ek:
+        import teknik_ek as TE
+        sal = salinimlar(H, L)
+        if "OB" in ek: out["OB"] = TE.ob_tetik(M, sal)
+        if "BREAKER" in ek: out["BREAKER"] = TE.breaker_tetik(M, sal)
+        if "HARM" in ek: out["HARM"] = TE.harmonik_tetik(M)[:2]
     # tekrarları ayıkla (son 3 mumda aynı kurulum varsa yeni sayma), risk aralığı 1–3,5 ATR
     for k, (m, stop) in out.items():
         m = np.nan_to_num(m.astype(float)).astype(bool)

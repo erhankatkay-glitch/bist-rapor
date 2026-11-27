@@ -121,6 +121,8 @@ def ozellikler(M, stop, t, sal, at):
     """Canlı motorla aynı price action teyitleri (firsat.pa_ozellik) + geniş stop."""
     oz = F.pa_ozellik(M, stop[t], t, sal)
     oz["genis"] = bool(M["Close"][t] - stop[t] >= 1.5 * at[t])
+    rv = M.get("rvol")
+    oz["rvol"] = bool(rv is not None and np.isfinite(rv[t]) and rv[t] >= 1.5)
     return oz
 
 
@@ -137,7 +139,9 @@ def olaylar(veri, onder, tf):
         n = len(A["Close"]); bas = max(60 if tf in ("H", "A") else 220, n - F.GECMIS_BAR)
         rj = rejim.reindex(d.index, method="ffill").to_numpy() if rejim is not None else np.zeros(n)
         for yon in (1, -1):
-            M = F.ayna(A, yon); tet = F.tetikler(M)
+            M = F.ayna(A, yon); tet = F.tetikler(M, ek={"OB", "BREAKER", "HARM"})
+            import teknik_ek as TE
+            desen = TE.harmonik_tetik(M)[2]
             sal = salinimlar(M["High"], M["Low"])
             H, L, C, O = M["High"].tolist(), M["Low"].tolist(), M["Close"].tolist(), M["Open"].tolist()
             for k, (m, stop) in tet.items():
@@ -146,7 +150,7 @@ def olaylar(veri, onder, tf):
                     s = F.simule(H, L, C, t, C[t], stop[t], RLER, F.MAKS_BAR[tf], O)
                     if not s: continue
                     oz = ozellikler(M, stop, t, sal, M["ATR"])
-                    kayit.append({"kod": kod, "zaman": d.index[t], "kurulum": k, "yon": yon, "R": s[0], "asama": s[1],
+                    kayit.append({"kod": kod, "zaman": d.index[t], "kurulum": k if k != "HARM" else f"HARM:{desen[t]}", "yon": yon, "R": s[0], "asama": s[1],
                                   "rejim": int(rj[t] * yon) if np.isfinite(rj[t]) else 0, **oz})
     df = pd.DataFrame(kayit)
     if len(df):
@@ -163,9 +167,24 @@ def ozet(df, maske=None):
             "kazanc": round(float((x["R"] > 0).mean()), 3)}
 
 
+PZ_TF = {"kripto4s": ("kripto", "4S"), "kriptog": ("kripto", "G"), "bistg": ("bist", "G"), "bist4s": ("bist", "4S"),
+         "bisth": ("bist", "H"), "abdg": ("abd", "G"), "abdh": ("abd", "H"), "emtiag": ("emtia", "G")}
+
+
+def canli_filtre(df, ad):
+    """Canlı motorda bu piyasa/zaman dilimine uygulanan Aşama 2 filtresi."""
+    f = F.FILTRE.get(PZ_TF.get(ad), {})
+    m = pd.Series(True, index=df.index)
+    if "rejim" in f: m &= df["rejim"] >= f["rejim"]
+    for k in ("yapi", "mum", "oda", "kume"):
+        if f.get(k): m &= df[k]
+    return m
+
+
 def rapor(df, ad):
     log(f"\n==================== {ad}: {len(df)} olay ====================")
     if not len(df): return {}
+    df["filtre"] = canli_filtre(df, ad)
     filtreler = {
         "taban": None,
         "rejim": df["rejim"] > 0,
@@ -175,6 +194,9 @@ def rapor(df, ad):
         "oda": df["oda"],
         "kume": df["kume"],
         "genis": df["genis"],
+        "rvol": df["rvol"],
+        "FILTRE": df["filtre"],
+        "FILTRE+rvol": df["filtre"] & df["rvol"],
         "rejim+yapi": (df["rejim"] > 0) & df["yapi"],
         "rejim+yapi+mum": (df["rejim"] > 0) & df["yapi"] & df["mum"],
         "rejim+yapi+oda": (df["rejim"] > 0) & df["yapi"] & df["oda"],
@@ -187,6 +209,18 @@ def rapor(df, ad):
         for fa, mk in filtreler.items():
             satir[fa] = ozet(g, None if mk is None else mk.loc[g.index])
         sonuc[f"{k}|{'AL' if y == 1 else 'SAT'}"] = satir
+    hm = df["kurulum"].str.startswith("HARM")
+    for y in (1, -1):
+        g = df[hm & (df["yon"] == y)]
+        if len(g): sonuc[f"HARM (hepsi)|{'AL' if y == 1 else 'SAT'}"] = {fa: ozet(g, None if mk is None else mk.loc[g.index]) for fa, mk in filtreler.items()}
+    # yeni kurulumların eski/yeni yarı kontrolü (aşırı uyum)
+    orta_ = df["zaman"].sort_values().iloc[len(df) // 2]
+    for kk in ("OB", "BREAKER", "HARM"):
+        for y in (1, -1):
+            g = df[df["kurulum"].str.startswith(kk) & (df["yon"] == y)]
+            for yari, mk_y in (("eski", g["zaman"] < orta_), ("yeni", g["zaman"] >= orta_)):
+                if len(g): sonuc[f"{kk}|{'AL' if y == 1 else 'SAT'} · {yari} yarı"] = {
+                    fa: ozet(g, mk_y if mk is None else (mk.loc[g.index] & mk_y)) for fa, mk in filtreler.items() if fa in ("taban", "FILTRE", "rvol", "FILTRE+rvol")}
     satir = {fa: ozet(df, mk) for fa, mk in filtreler.items()}
     sonuc["TÜMÜ"] = satir
     # Aşırı uyum kontrolü: filtre hem eski hem yeni yarıda işe yarıyor mu?
