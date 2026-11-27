@@ -168,3 +168,21 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - Tema altın-siyah (`.streamlit/config.toml`); radyolar hap görünümünde.
 - Ana sayfa üstüne boğa-ayı görseli geri eklendi (`.hk`, `varlik/hero.jpg`).
 - 32 bölümlük talimatın eksik analizi ve yeni aşamalar: `docs/YOL_HARITASI.md`.
+
+## Aşama 6 (27 Kasım 2026)
+- `veri_kalite.py`: her fiyata anlık / gecikmeli / kapanış / bayat etiketi; seans saatleri (BIST, ABD, emtia/döviz 24/5, kripto 7/24).
+  Ayrıca kaynak + yedek tablosu (`KAYNAKLAR`).
+- `bist_makro.piyasa_paneli`: her kalemde zaman (UTC), kaynak ve tür var.
+  Bitcoin ve Ethereum için birincil kaynak Binance (anlık), yedek Yahoo.
+- `makro_tr.py`: TCMB'nin herkese açık tablolarından TÜFE (yıllık/aylık) ve politika faizi; reel faiz hesabı.
+  Yedekler: EVDS, ardından son kayıtlı değer ("bayat").
+  Sabah özeti işi her gün `makro/tr_makro.json`'u bülten dalına yazar.
+- Uygulama:
+  - Mini kartlarda etiket.
+  - Ana sayfada "Türkiye makro" kartı.
+  - Takip altında "Veri kaynakları ve gecikmeler".
+  - Model enflasyonu TCMB'den otomatik alınır.
+- Telegram sabah özetine "Türkiye: TÜFE … · Politika faizi … · Reel faiz …" maddesi eklendi.
+- Doğrulama (27.11):
+  - TCMB'den TÜFE %29,77 (Ekim) ve faiz %36 (23.10) çekildi; faiz haberlerle teyitli.
+  - ABD 10Y faizi Yahoo'da 25.11'de kalmış, doğru biçimde "bayat" etiketlendi.
