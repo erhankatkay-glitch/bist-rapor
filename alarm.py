@@ -283,7 +283,7 @@ def _satir_ham(m):
 
 
 GRUP_KART = [("💼", "Portföyünüz", "altin"), ("⚡", "Sert hareket ve fiyat seviyeleri", "altin"), ("🟢", "Formasyon ve kırılımlar", "mavi"),
-             ("📈", "RSI ve teknik puan", "mor"), ("📰", "Şirket haberleri (KAP)", "turkuaz"), ("•", "Diğer", "soluk")]
+             ("📈", "RSI ve teknik puan", "altin"), ("📰", "Şirket haberleri (KAP)", "turkuaz"), ("•", "Diğer", "soluk")]
 
 
 def gonder(mesajlar):
