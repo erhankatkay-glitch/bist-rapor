@@ -119,3 +119,12 @@ def test_yuzde_bicimi():
 def test_sayi_bicimi():
     import bicim
     assert bicim.sayi(10953.15) == "10.953" and bicim.sayi(50.783) == "50,78" and bicim.sayi(float("nan")) == "–"
+
+
+# ---------------------------------------------------------------- haber yönü
+@pytest.mark.parametrize("baslik,beklenen", [("REEDR bedelsiz sermaye artırımı başvurusunu geri çekti", True),
+                                             ("THYAO temettü dağıtmayacak", True), ("KCHOL pay geri alımı yaptı", False),
+                                             ("ASELS yeni sözleşme imzaladı", False)])
+def test_haber_olumsuzlama(baslik, beklenen):
+    import haber
+    assert haber.olumsuzlama(baslik) is beklenen
