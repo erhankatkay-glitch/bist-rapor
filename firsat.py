@@ -55,6 +55,44 @@ EK_KURULUM = {
 # RVOL: göreli hacim zaten "Hacim x" teyidi ve hacim puanı olarak (medyana göre) skorlanıyor; ayrı filtre eklenmedi.
 DURUM_AD = {"TEYİT": "teyit", "YUKARI KIRILIM": "yukarı kırılım", "AŞAĞI KIRILIM": "aşağı kırılım", "KIRILIM": "kırılım"}
 KALITE = {"FORM": 15, "UYUMSUZ": 12, "KIRILIM": 12, "GERI": 12, "SIKISMA": 10, "AVI": 10, "ST": 8, "OB": 12, "BREAKER": 10, "HARM": 12}
+# Aşama 10b: QuantDinger kütüphanesinden sıkı testi geçen göstergeler (qd_kabul.json; arastirma_qd.py).
+# {"bist|G": [{"ad", "yon", "baslik", "aciklama"}]} — betikler qd_kutuphane/ altında (Apache-2.0, NOTICE).
+try:
+    QD_KABUL = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qd_kabul.json"), encoding="utf-8"))
+except Exception:
+    QD_KABUL = {}
+QD_KABUL = {k: v for k, v in QD_KABUL.items() if isinstance(v, list)}
+for _l in QD_KABUL.values():
+    for _q in _l:
+        _k = f"QD:{_q['ad']}"; _e = KURULUM.get(_k, ("", "", "", ""))
+        KURULUM[_k] = ((_q["baslik"], _e[1], _q["aciklama"], _e[3]) if _q["yon"] == 1 else (_e[0], _q["baslik"], _e[2], _q["aciklama"]))
+        KALITE[_k] = 9
+
+
+def qd_kurulumlar(piyasa, tf, yon):
+    return [q for q in QD_KABUL.get(f"{piyasa}|{tf}", []) if q["yon"] == yon]
+
+
+_QD_ONB = {}
+
+
+def qd_tetik(h, M, q, yon):
+    """QuantDinger göstergesinin AL (yon=1) / SAT (yon=-1) olayları → (maske, aynalanmış stop: 2 ATR)."""
+    import qd_calistir as Q
+    n = len(M["Close"]); m = np.zeros(n, bool)
+    try:
+        anahtar = (id(h), q["dosya"])          # aynı varlıkta AL ve SAT için betik bir kez çalışır
+        if anahtar not in _QD_ONB:
+            if len(_QD_ONB) > 64: _QD_ONB.clear()
+            _QD_ONB[anahtar] = Q.sinyaller(os.path.join(Q.KLASOR, q["dosya"]), h)
+        r = _QD_ONB[anahtar]
+        if r is not None:
+            idx = r[0] if yon == 1 else r[1]; m[idx[idx < n]] = True
+    except Exception:
+        pass
+    return m, M["Close"] - 2.0 * M["ATR"]
+
+
 DONUS = {"UYUMSUZ", "AVI", "HARM"}                  # üst zaman dilimine ters de olabilir (karşı trend)
 MAKS_BAR = {"4S": 30, "G": 20, "H": 12, "A": 8}
 MAKS_RISK = {"4S": 0.08, "G": 0.12, "H": 0.20, "A": 0.30}   # girişten stopa en fazla uzaklık
@@ -449,6 +487,8 @@ def varlik_tara(v, tf, yonler, pist, olay_topla=True, piyasa=None):
     bulunan = []
     for yon in yonler:
         M = ayna(A, yon); tet = tetikler(M, ek=ek_kurulumlar(piyasa, tf, yon) or None)
+        for q in qd_kurulumlar(piyasa, tf, yon):
+            tet[f"QD:{q['ad']}"] = qd_tetik(a["h"], M, q, yon)
         if olay_topla:
             for k, s in piyasa_olaylari(M, tet, tf).items(): pist.ekle((k, yon, tf), s)
         for k, (m, stop) in tet.items():

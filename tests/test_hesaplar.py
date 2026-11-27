@@ -332,3 +332,21 @@ def test_igne_tetik():
     C2 = np.r_[np.full(57, 61100.0), [61150.0, 61200.0, 61250.0]]; H2 = C2 + 60; L2 = C2 - 60
     L2[20] = 60640; L2[40] = 60830
     assert IG.tetik(H2, L2, C2) is None
+
+
+def test_qd_kabul_ve_tetik():
+    """Aşama 10b: kabul listesi yüklenir, betikler depoda, tetik hem ana hem yan iş parçacığında çalışır."""
+    import os, threading
+    import firsat as F, qd_calistir as Q, bist_teknik as T
+    assert F.QD_KABUL and all(os.path.exists(os.path.join(Q.KLASOR, q["dosya"])) for l in F.QD_KABUL.values() for q in l)
+    rng = np.random.default_rng(5); idx = pd.date_range("2022-01-01", periods=700)
+    c = 100 * np.exp(np.cumsum(rng.normal(0, 0.025, len(idx)))); o = c * (1 + rng.normal(0, .005, len(idx)))
+    d = pd.DataFrame({"Open": o, "High": np.maximum(o, c) * 1.01, "Low": np.minimum(o, c) * .99, "Close": c,
+                      "Volume": np.full(len(idx), 1e5)}, index=idx)
+    A = F.diziler(d, T.gostergeler(d)); M = F.ayna(A, 1); q = F.qd_kurulumlar("kripto", "G", 1)[0]
+    m, st = F.qd_tetik(d, M, q, 1)
+    assert m.sum() > 0 and len(st) == len(m)
+    sonuc = {}
+    F._QD_ONB.clear()
+    th = threading.Thread(target=lambda: sonuc.setdefault("m", F.qd_tetik(d, M, q, 1)[0])); th.start(); th.join()
+    assert sonuc["m"].sum() == m.sum()

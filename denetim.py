@@ -1,30 +1,33 @@
-"""Ana sayfa referans karşılaştırması (yerel Streamlit, telefon)."""
-import os, sys, subprocess, time
-os.makedirs("denetim_graf", exist_ok=True)
-p = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "app.py", "--server.headless", "true", "--server.port", "8501"],
-                     stdout=open("st_log.txt", "w"), stderr=subprocess.STDOUT)
-time.sleep(20)
-from playwright.sync_api import sync_playwright
-with sync_playwright() as pw:
-    br = pw.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
-    pg = br.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=2).new_page()
-    pg.on("pageerror", lambda e: print("pageerror:", str(e)[:300]))
-    def bekle(sn=150):
-        for i in range(sn // 2):
-            pg.wait_for_timeout(2000)
-            if not pg.evaluate("!!document.querySelector('[data-testid=stStatusWidget]')"): break
-    pg.goto("http://localhost:8501", timeout=120000); pg.wait_for_selector('[data-testid="stTab"]', timeout=180000); bekle(); pg.wait_for_timeout(5000)
-    pg.screenshot(path="denetim_graf/a1.png")
-    # boşluk teşhisi: görünür blokların üst/yükseklik listesi (ilk 700px)
-    print(pg.evaluate("""[...document.querySelectorAll('[data-testid=stMain] [data-testid=stElementContainer], [data-testid=stMain] .stTabs, [data-testid=stMain] [data-testid=stVerticalBlock]')]
-      .map(e=>{const r=e.getBoundingClientRect(); return [Math.round(r.top),Math.round(r.height),(e.getAttribute('data-testid')||'')+'.'+(e.className||'').toString().slice(0,40)]})
-      .filter(x=>x[0]>=0&&x[0]<760&&x[1]>=0).slice(0,40)"""))
-    print("mini kart genişlik:", pg.evaluate("[...document.querySelectorAll('.serit-mk .mk')].slice(0,5).map(x=>Math.round(x.getBoundingClientRect().width)+'@'+Math.round(x.getBoundingClientRect().left))"))
-    pg.mouse.wheel(0, 600); pg.wait_for_timeout(1200); pg.screenshot(path="denetim_graf/a2.png")
-    pg.locator("#kk-cek").click(); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/cekmece.png")
-    pg.locator("#kk-ckm a:has-text('Sanal işlem')").click(); pg.wait_for_timeout(3000); bekle(60)
-    print("çekmece → Sanal işlem:", pg.evaluate("[...document.querySelectorAll('[data-testid=stTab]')].filter(x=>x.getAttribute('aria-selected')==='true').map(x=>x.innerText.trim()).slice(0,2)"))
-    pg.locator("#kk-nav button:has-text('Seçki')").click(); pg.wait_for_timeout(2500); pg.screenshot(path="denetim_graf/secki.png")
-    print("HATA:", pg.evaluate("document.querySelectorAll('[data-testid=stException]').length"))
-    br.close()
-p.terminate()
+"""Aşama 10b: canlı fırsat motoru kuru çalışma — QD kurulumları tetikleniyor mu, plan doğru mu (gönderim yok)."""
+import time, collections
+import bist_teknik as T, firsat as F
+ABD = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "JPM", "V", "MA", "UNH", "HD", "PG", "XOM", "CVX", "KO", "PEP", "COST",
+       "WMT", "BAC", "AVGO", "ORCL", "CRM", "AMD", "NFLX", "ADBE", "INTC", "CSCO", "QCOM", "TXN", "NKE", "MCD", "DIS", "BA", "CAT", "GE",
+       "IBM", "GS", "MS", "LLY"]
+t0 = time.time(); v = []
+for k in ABD:
+    try:
+        h, _ = T.gunluk_veri(k + ".US"); h = h.iloc[-1600:]
+        v.append({"kod": k + ".US", "ad": k, "para": "$", "a": F.hafif(h, "G"), "ust": T.tf_analiz(T.yeniden_ornekle(h, "H"), "H")})
+    except Exception as ex:
+        print("veri yok", k, ex)
+print(len(v), "hisse veri", round(time.time() - t0), "sn"); t1 = time.time()
+sec, aday, pist = F.tara(v, "G", "abd", yonler=(1,), adet=5)
+print("tarama", round(time.time() - t1), "sn ·", len(aday), "aday,", len(sec), "seçilen")
+qd = {k: s for k, s in pist.__dict__.items()} if hasattr(pist, "__dict__") else {}
+for ad_, d in qd.items():
+    if isinstance(d, dict):
+        for kk, s in d.items():
+            if "QD:" in str(kk): print("  geçmiş olay", kk, (len(s) if hasattr(s, "__len__") else s))
+say = collections.Counter(f["kurulum_ad"] for f in aday)
+print("aday kurulumları:", say.most_common(12))
+for f in aday:
+    if any(q["baslik"] in f["kurulum_ad"] for q in F.QD_KABUL["abd|G"]):
+        p = f["plan"]; print("  QD:", f["kod"], f["kurulum_ad"], "puan", f["puan"], "beklenenR", f["beklenen_R"], "giriş", round(p["giris"], 2), "stop", round(p["stop"], 2))
+# son 60 günde QD tetik sayısı (canlı gösterim için)
+import numpy as np
+for q in F.QD_KABUL["abd|G"]:
+    n = 0
+    for x in v:
+        A = F.diziler(x["a"]["h"], x["a"]["G"]); M = F.ayna(A, 1); m, _ = F.qd_tetik(x["a"]["h"], M, q, 1); n += int(m[-60:].sum())
+    print(f"  son 60 gün {q['ad']:28s} tetik {n}")

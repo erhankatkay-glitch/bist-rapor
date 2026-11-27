@@ -26,6 +26,8 @@ def son_sinyal(h, G, piyasa, tf="G", pencere=60):
     for yon in (1, -1):
         M = F.ayna(A, yon)
         tet = F.tetikler(M, ek=F.ek_kurulumlar(piyasa, tf, yon) or None)
+        for q in F.qd_kurulumlar(piyasa, tf, yon):
+            tet[f"QD:{q['ad']}"] = F.qd_tetik(h, M, q, yon)
         for k, (m, _) in tet.items():
             idx = np.flatnonzero(m[max(0, n - pencere):]) + max(0, n - pencere)
             if len(idx) and (en is None or idx[-1] > en[0]):

@@ -5,7 +5,7 @@ addopts = "-q"
 [tool.ruff]
 line-length = 160
 target-version = "py312"
-extend-exclude = ["varlik", "docs", "raporlar"]
+extend-exclude = ["varlik", "docs", "raporlar", "qd_kutuphane"]
 
 [tool.ruff.lint]
 # Yalnızca gerçek hata yakalayan kurallar (biçim dayatması yok): tanımsız ad, kullanılmayan içe aktarma, sözdizimi
