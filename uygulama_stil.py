@@ -127,6 +127,29 @@ div[role="radiogroup"] > label:has(input:checked) p {color:var(--altin-a) !impor
 .fk-c div {height:100%; border-radius:3px; background:linear-gradient(90deg,#B8862B,#E8B84A);}
 .fk-p {font-size:.7rem; color:#E4E4E7; margin-top:5px; font-variant-numeric:tabular-nums;}
 
+/* ---------- Varlık sayfası ---------- */
+.vb, .sv, .kn {background:linear-gradient(180deg,#18191C,#111214); border:1px solid var(--cizgi); border-radius:20px; padding:15px; margin:4px 0 12px;
+               box-shadow:0 10px 26px rgba(0,0,0,.4);}
+.vb-u {display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+.vb-k {display:flex; gap:10px; align-items:center;}
+.vb-l {width:44px; height:44px; border-radius:12px; background:#fff; object-fit:contain; flex:none;}
+.vb-h {background:#1F2937; color:var(--altin); font-weight:850; font-size:.8rem; display:flex; align-items:center; justify-content:center;}
+.vb-ad {font-weight:850; font-size:1.25rem;}
+.vb-f {font-weight:850; font-size:1.75rem; letter-spacing:-.02em; font-variant-numeric:tabular-nums;}
+.vb-e {font-size:.7rem; color:var(--soluk);}
+.vb-p {font-weight:850; font-size:.86rem;}
+.vb-3 {display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:12px; padding-top:11px; border-top:1px solid var(--cizgi); text-align:center;}
+.sv-b {font-size:.72rem; font-weight:850; letter-spacing:.12em; color:var(--altin); margin-bottom:4px;}
+.sv-s {display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--cizgi);}
+.sv-c {position:relative; height:26px; margin:10px 4px 0;}
+.sv-cz {position:absolute; left:0; right:0; top:11px; height:4px; border-radius:2px; background:linear-gradient(90deg,#EF4444,#E8B84A 45%,#22C55E);}
+.sv-n {position:absolute; top:6px; width:13px; height:13px; margin-left:-6px; border-radius:50%; border:2px solid #0B0B0C;}
+.sv-f {position:absolute; top:2px; width:21px; height:21px; margin-left:-10px; border-radius:50%; background:var(--altin); border:3px solid #0B0B0C;}
+.kn {background:linear-gradient(160deg, rgba(232,184,74,.12), #17181B 60%); border-color:rgba(232,184,74,.4);}
+.kn-t {font-weight:800; font-size:1rem; margin:4px 0 6px;}
+.kn-y {font-size:.88rem; color:#E4E4E7; line-height:1.55;}
+.kn-s {font-size:.84rem; margin-top:6px;}
+
 /* ---------- Kartlar ---------- */
 .kart {position:relative; background:linear-gradient(180deg, #18191C 0%, #111214 100%); border:1px solid var(--cizgi);
        border-radius:18px; padding:12px 14px 11px 16px; margin-bottom:10px; overflow:hidden; box-shadow:0 10px 26px rgba(0,0,0,.4);}

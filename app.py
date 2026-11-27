@@ -336,7 +336,75 @@ def teknik_analiz(kod, zaman, surum, kisa=False):
     return {"kod": s["kod"], "ad": s["ad"], "etiket": s["etiket"], "puan": s["puan"], "yorum": AN.teknik_ozet(s), "baslik": AN.teknik_baslik(s),
             "senaryo": AN.teknik_senaryo(s), "pdf": pdf,
             "dosya": os.path.basename(yol), "graf": graf, "tf": tfo, "para": s["para"], "fiyat": g.get("fiyat"), "degisim": g.get("degisim"),
-            "fiyat_zamani": ts.zaman_metni(s.get("fiyat_zamani")), "ileri": ileri_ozet(None, {"₺": "TL", "$": "$"}.get(s["para"], ""), s)}
+            "fiyat_zamani": ts.zaman_metni(s.get("fiyat_zamani")), "ileri": ileri_ozet(None, {"₺": "TL", "$": "$"}.get(s["para"], ""), s),
+            "gun": _gun_ozeti(g.get("h"))}
+
+
+def _gun_ozeti(h):
+    try:
+        x = h.iloc[-1]
+        return {"yuksek": float(x["High"]), "dusuk": float(x["Low"]), "hacim": float(x["Volume"] * x["Close"]) if x.get("Volume") else None}
+    except Exception:
+        return {}
+
+
+def _kisa_tutar(v, para):
+    if not v: return "–"
+    for b, e in ((1e9, "Mr"), (1e6, "Mn"), (1e3, "B")):
+        if v >= b: return f"{para}{v / b:.1f} {e}".replace(".", ",")
+    return f"{para}{v:.0f}"
+
+
+def varlik_baslik(r, pz):
+    """Tasarımdaki varlık başlık kartı: logo, ad, büyük fiyat, değişim, gün aralığı ve üç zaman dilimi görünümü."""
+    import logolar as LG
+    u = LG.logo_url(r["kod"], pz)
+    lg = f'<img src="{u}" alt="" class="vb-l">' if u else f'<span class="vb-l vb-h">{str(r["kod"])[:3]}</span>'
+    d = r.get("degisim") or 0; renk = "#4ADE80" if d > 0 else "#F87171" if d < 0 else "#A1A1AA"
+    g = r.get("gun") or {}
+    tfk = ""
+    for tf in ("G", "H", "A"):
+        x = r["tf"].get(tf)
+        if x:
+            c = ETK_RENK.get(x["etiket"], "#A1A1AA")
+            tfk += f'<div><div class="vb-e">{TK.TF_AD[tf]}</div><div class="vb-p" style="color:{c}">{x["etiket"]}</div><div class="vb-e">{x["puan"]:.0f}/100</div></div>'
+    return (f'<div class="vb"><div class="vb-u"><div class="vb-k">{lg}<div><div class="vb-ad">{r["kod"]}</div><div class="vb-e">{r["ad"]}</div></div></div>'
+            f'<div style="text-align:right"><div class="vb-f">{TK.sayi(r["fiyat"])}</div><div style="color:{renk};font-weight:800">{br.yz(d)}</div></div></div>'
+            f'<div class="vb-3"><div><div class="vb-e">Gün yüksek</div><b>{TK.sayi(g.get("yuksek")) if g.get("yuksek") else "–"}</b></div>'
+            f'<div><div class="vb-e">Gün düşük</div><b>{TK.sayi(g.get("dusuk")) if g.get("dusuk") else "–"}</b></div>'
+            f'<div><div class="vb-e">Hacim</div><b>{_kisa_tutar(g.get("hacim"), r.get("para") or "")}</b></div></div>'
+            f'<div class="vb-3">{tfk}</div></div>')
+
+
+def seviye_karti(r):
+    """Beklenen seviyeler: günlük destek/dirençler, fiyata uzaklık, seviye çubuğu, kazanç/risk."""
+    x = r["tf"].get("G") or {}; f = r["fiyat"]
+    if not x or not f: return ""
+    ust = [v for v, _ in x.get("direnc", []) if v > f][:2]; alt = [v for v, _ in x.get("destek", []) if v < f][:2]
+    sat = []
+    if alt: sat.append(("Önce gelebilir" if len(alt) > 0 else "", "En yakın destek / tekrar test", alt[0], "#F87171"))
+    for i, v in enumerate(ust): sat.append((f"{i + 1}. hedef", "Direnç / önceki tepe", v, "#4ADE80"))
+    if len(alt) > 1: sat.append(("Risk bölgesi", "Altında görünüm bozulur", alt[1], "#F87171"))
+    satir = "".join(f'<div class="sv-s"><div><b>{a}</b><div class="vb-e">{b}</div></div><div style="text-align:right"><b>{TK.sayi(v)}</b>'
+                    f'<div class="vb-e" style="color:{c}">{br.yz(v / f - 1)} {"yukarıda" if v > f else "aşağıda"}</div></div></div>' for a, b, v, c in sat)
+    kr = ""
+    if ust and alt and f > alt[-1]:
+        oran = (ust[0] - f) / (f - alt[-1]); kr = f"1 : {oran:.1f}".replace(".", ",")
+    seviyeler = sorted([v for v in alt + ust] + [f])
+    lo, hi = seviyeler[0], seviyeler[-1]; poz = (f - lo) / (hi - lo) * 100 if hi > lo else 50
+    noktalar = "".join(f'<span class="sv-n" style="left:{(v - lo) / (hi - lo) * 100 if hi > lo else 50:.0f}%;background:{"#4ADE80" if v > f else "#F87171"}"></span>' for v in alt + ust)
+    return (f'<div class="sv"><div class="sv-b">BEKLENEN SEVİYELER</div>{satir}'
+            f'<div class="sv-c"><div class="sv-cz"></div>{noktalar}<span class="sv-f" style="left:{poz:.0f}%"></span></div>'
+            f'<div class="vb-3"><div><div class="vb-e">KAZANÇ / RİSK</div><b style="color:#E8B84A">{kr or "–"}</b></div>'
+            f'<div><div class="vb-e">RİSKE MESAFE</div><b>{br.yz(alt[-1] / f - 1) if alt else "–"}</b></div>'
+            f'<div><div class="vb-e">GÜNLÜK</div><b>{br.yz(r.get("degisim") or 0)}</b></div></div></div>')
+
+
+def katkay_notu(r):
+    sen = "".join(f'<div class="kn-s">{"▲" if "Yükseliş" in b_ else "▼"} <b>{b_}:</b> {t_} → hedef <b>{h_}</b></div>' for b_, t_, h_, i_ in (r.get("senaryo") or []))
+    return (f'<div class="kn"><div class="sv-b">KATKAY NOTU</div><div class="kn-t">{r["baslik"]}</div>'
+            f'<div class="kn-y">{r["yorum"]}</div>{sen}<div class="vb-e" style="margin-top:8px">Gösterge bazlı analizdir, yatırım tavsiyesi değildir. '
+            f'Son veri: {r["fiyat_zamani"]}</div></div>')
 
 
 @st.cache_data(ttl=10 * 60, show_spinner=False)
@@ -819,24 +887,19 @@ with tab_x:
             st.error(f"Teknik analiz yapılamadı: {e}")
     if "tk_sonuc" in st.session_state:
         r = st.session_state.tk_sonuc
-        st.markdown(f"### {r['ad']} ({r['kod']})")
-        st.caption(f"🕒 Son fiyat verisi: {r['fiyat_zamani']} · Fiyat {TK.sayi(r['fiyat'])} {r['para']} ({br.yz(r['degisim'])})")
-        kart(st, "GENEL TEKNİK GÖRÜNÜM", r["etiket"], f"Puan {r['puan']:.0f}/100 (günlük %30, haftalık %40, aylık %30)", ETK_RENK.get(r["etiket"]))
-        cols = st.columns(3)
-        for c_, tf in zip(cols, ("G", "H", "A")):
-            x = r["tf"].get(tf)
-            if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"]))
+        _pz = {"Hisse": "bist", "ABD": "abd", "Kripto": "kripto", "Emtia": "emtia"}.get(st.session_state.get("tk_tur"), "bist")
+        try:
+            st.markdown(varlik_baslik(r, _pz), unsafe_allow_html=True)
+            kart(st, "GENEL TEKNİK GÖRÜNÜM", r["etiket"], f"Puan {r['puan']:.0f}/100 (günlük %30, haftalık %40, aylık %30)", ETK_RENK.get(r["etiket"]))
+            st.markdown(seviye_karti(r), unsafe_allow_html=True)
+            st.markdown(katkay_notu(r), unsafe_allow_html=True)
+        except Exception as ex:
+            st.markdown(f"### {r['ad']} ({r['kod']})"); st.caption(f"Görünüm kartı çizilemedi: {ex}")
         if r["tf"].get("1S") or r["tf"].get("4S"):
             cols = st.columns(2)
             for c_, tf in zip(cols, ("1S", "4S")):
                 x = r["tf"].get(tf)
                 if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"]))
-        st.markdown(f'<div style="border-left:4px solid #F59E0B;background:#111A2E;border-radius:10px;padding:10px 12px;margin:6px 0">'
-                    f'<div style="font-size:0.7rem;color:#F59E0B;font-weight:700">TEKNİK GÖRÜNÜM ÖZETİ</div>'
-                    f'<div style="font-size:1.0rem;font-weight:800;color:#F1F5F9;margin:4px 0 6px">{r["baslik"]}</div>'
-                    f'<div style="font-size:0.88rem;color:#CBD5E1">{r["yorum"]}</div></div>', unsafe_allow_html=True)
-        for b_, t_, h_, i_ in r.get("senaryo") or []:
-            st.markdown(f"{'🟢' if 'Yükseliş' in b_ else '🔴'} **{b_}:** {t_} → hedef **{h_}** · {i_}")
         st.download_button(":material/download: Teknik PDF raporu", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="tk_dl")
         ileri_goster(r.get("ileri"))
         sira = [t for t in ("1S", "4S", "G", "H", "A") if t in r["tf"]]
