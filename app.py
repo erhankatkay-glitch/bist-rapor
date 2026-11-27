@@ -826,7 +826,9 @@ def akilli_uyari():
         if m[:1] not in ("⚡", "🔴", "🟢", "💼", "🗓"): continue
         kirmizi = m[:1] in ("🔴", "💼") or "-%" in m or "−" in m
         bas, _, gov = m[1:].strip().partition(":")
-        oge.append((t, kirmizi, bas.strip(), gov.strip() or m[1:], hashlib.md5((x["zaman"] + m).encode()).hexdigest()[:10], 9000))
+        if not gov.strip():   # "ASELS bugün +%5,4 hareket etti" → başlık varlık kodu, gövde mesajın kendisi (tekrar olmasın)
+            bas, gov = m[1:].strip().split()[0], m[1:].strip()
+        oge.append((t, kirmizi, bas.strip(), gov.strip(), hashlib.md5((x["zaman"] + m).encode()).hexdigest()[:10], 9000))
     if not oge: return ""
     oge.sort(key=lambda o: o[0], reverse=True)
     return '<div class="kk-bild">' + "".join(

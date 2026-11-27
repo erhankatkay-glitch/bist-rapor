@@ -107,7 +107,7 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
   border-radius:18px; padding:12px 44px 12px 14px; margin:2px 0 10px; box-shadow:0 10px 26px rgba(0,0,0,.4);}
 .kk-uyari-k {background:linear-gradient(135deg,rgba(239,68,68,.92),rgba(185,28,28,.88)); border-color:rgba(255,255,255,.18);}
 .kk-bild {display:none !important;} .stElementContainer:has(.kk-bild) {display:none !important;}
-#kk-toast {position:fixed; left:10px; right:10px; max-width:620px; margin:0 auto; top:calc(10px + env(safe-area-inset-top)); z-index:1000001;
+#kk-toast {position:fixed; left:10px; right:10px; max-width:620px; margin:0 auto; top:calc(10px + env(safe-area-inset-top)); z-index:999999;
   transform:translateY(-160%); opacity:0; transition:transform .38s cubic-bezier(.2,.9,.25,1.15), opacity .3s; pointer-events:none;}
 #kk-toast.acik {transform:none; opacity:1; pointer-events:auto;}
 #kk-toast .kk-uyari {margin:0; cursor:pointer; box-shadow:0 18px 40px rgba(0,0,0,.6); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); overflow:hidden;}
