@@ -52,13 +52,17 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 ## Önerilen aşamalar
 - ~~6. Veri kalite etiketi + yedek kaynak tablosu + TCMB enflasyonu ve politika faizi~~ (27.11.2026 tamam)
 - ~~7. Teknik motoru tamamla: WMA, HMA, Heikin Ashi, RVOL, order block/breaker, harmonik formasyonlar~~ (27.11.2026 tamam)
-- 8. Kendi taramanı kur: filtre birleştirme, kayıtlı şablonlar, sinyal yaşı / sinyalden beri değişim sütunları.
+- ~~8. Kendi taramanı kur: filtre birleştirme, kayıtlı şablonlar, sinyal yaşı / sinyalden beri değişim~~ (27.11.2026 tamam)
 - 9. Risk hesaplayıcı (pozisyon büyüklüğü, komisyon) + sanal işlem portföyü.
 - 10. Kullanıcı tanımlı alarmlar (RSI, EMA kesişimi, seviye kırılımı) + alarm geçmişi.
 - 11. Korelasyon ve göreceli güç modülü (BTC/Nasdaq, altın/DXY, BIST/S&P…).
 - 12. Dünya borsaları, döviz majörleri, getiri eğrisi, emtia vade yapısı.
 - 13. Opsiyon: BTC/ETH için Deribit'in herkese açık verisi (IV, Greeks).
 - 14. Altı rollü araştırma ekibi (kural tabanlı; ücretsiz dil modeli anahtarı gelirse yorum katmanı).
+  - Kullanıcının yüklediği erhankatkay-glitch/agency-agents (MIT) rol dosyaları şablon olarak kullanılacak (kullanıcı isteği, 27.11):
+    finance-investment-researcher, finance-financial-analyst, academic-statistician, testing-test-results-analyzer, testing-reality-checker.
+  - Raporlara eklenecek ilkeler: düşüş senaryosu yükseliş kadar ayrıntılı; "tez bozucular" (bu olursa görünüm bozulur);
+    güven derecesi (veri kalitesi + geçmiş test); en kötü durumda rakamla kayıp; başarısız sinyaller de raporlanır.
 - 15. PWA ön yüzü (isteğe bağlı).
 - 16. Aracı kurum araştırması, yalnız salt okunur.
 
