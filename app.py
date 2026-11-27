@@ -4,6 +4,7 @@ import os, glob, tempfile, datetime as dt, importlib
 import pandas as pd
 import streamlit as st
 import json
+from zoneinfo import ZoneInfo
 import bist_veri as bv
 import bist_isyatirim as isy
 import bist_makro as mk
@@ -696,6 +697,101 @@ def bist_ozet(zaman):
     import requests
     r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/bist/ozet.csv?t={zaman}", timeout=20)
     return pd.read_csv(io.BytesIO(r.content)).set_index("Kod") if r.status_code == 200 else None
+
+
+@st.cache_data(ttl=900, show_spinner=False)
+def tarama_tablosu(piyasa, zaman):
+    import requests
+    r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/tarama/{piyasa}.csv?t={zaman}", timeout=20)
+    return pd.read_csv(io.BytesIO(r.content)) if r.status_code == 200 else None
+
+
+KATEGORI = {"Tümü": None, "BIST": "bist", "Kripto": "kripto", "ABD ve dünya": "abd", "Emtia": "emtia", "Döviz": "doviz"}
+PV_KAT = {"BIST 100": "bist", "BIST 100 ($)": "bist", "S&P 500": "abd", "Nasdaq": "abd", "Dolar endeksi": "abd", "ABD 10Y faiz": "abd",
+          "VIX": "abd", "Bitcoin": "kripto", "Ethereum": "kripto", "Gram altın": "emtia", "Ons altın": "emtia", "Gümüş": "emtia",
+          "Brent petrol": "emtia", "USD/TRY": "doviz", "EUR/TRY": "doviz"}
+ONERI = {"bist": ["THYAO", "ASELS", "GARAN", "BIMAS", "TUPRS", "KCHOL", "AKBNK", "EREGL"],
+         "kripto": ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "BNB/USDT"],
+         "abd": ["NVDA.US", "AAPL.US", "MSFT.US", "TSLA.US", "AMZN.US"],
+         "emtia": ["GRAMALTIN", "ALTIN", "GUMUS", "BRENT"]}
+TUR_ISTEK = {"bist": "Hisse", "abd": "ABD", "kripto": "Kripto", "emtia": "Emtia"}
+
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def seri_toplu(semboller, zaman):
+    """Öne çıkanlar satırlarındaki mini grafikler için son 3 ayın günlük kapanışları (Yahoo, tek istek)."""
+    import yfinance as yf
+    out = {}
+    try:
+        d = yf.download(list(semboller), period="3mo", interval="1d", auto_adjust=True, progress=False, group_by="ticker", threads=True)
+        for s in semboller:
+            try: out[s] = (d[s]["Close"] if len(semboller) > 1 else d["Close"]).dropna()
+            except Exception: pass
+    except Exception:
+        pass
+    return out
+
+
+def ana_satirlar(kat, liste):
+    """Öne çıkanlar: kategori + liste türüne göre satırlar (tarama tablolarından; resmi kapanış dahil güncel)."""
+    pzler = [kat] if kat in ("bist", "kripto", "abd", "emtia") else ["bist", "kripto", "abd", "emtia"] if kat is None else []
+    fav = [x for x in st.query_params.get("takip", "").split(",") if x]
+    sat = []
+    for pz in pzler:
+        df = tarama_tablosu(pz, ZAMAN)
+        if df is None or not len(df): continue
+        df = df.set_index("Kod")
+        if liste == "Favorilerim" and pz == "bist": kodlar = [k for k in fav if k in df.index]
+        elif liste == "Günün yükselenleri" or liste == "Günün düşenleri":
+            h = pd.to_numeric(df.get("Hacim"), errors="coerce"); d_ = df[h >= h.quantile(0.5)] if h.notna().any() else df
+            d_ = d_.sort_values("Değişim", ascending=(liste == "Günün düşenleri"))
+            kodlar = list(d_.index[:4 if kat is None else 8])
+        else:
+            kodlar = [k for k in ((fav if (pz == "bist" and fav) else ONERI[pz])) if k in df.index][:3 if kat is None else 8]
+        for k in kodlar:
+            r = df.loc[k]
+            sat.append({"kod": k, "pz": pz, "fiyat": float(r["Fiyat"]), "deg": float(r["Değişim"]) if pd.notna(r["Değişim"]) else None,
+                        "ad": str(r.get("Ad") or "")[:28], "alt": str(r.get("Genel") or "")})
+    return sat
+
+
+def satir_html(x, seri=None):
+    import logolar as LG
+    d = x["deg"] or 0
+    renk = "#4ADE80" if d > 0 else "#F87171" if d < 0 else "#A1A1AA"
+    zem = "rgba(34,197,94,.16)" if d > 0 else "rgba(239,68,68,.16)" if d < 0 else "rgba(255,255,255,.06)"
+    kis = x["kod"].replace(".US", "").replace("/USDT", "")
+    lg_u = LG.logo_url(x["kod"], x["pz"]) if x["pz"] in ("bist", "abd", "kripto") else None
+    lg = f'<img src="{lg_u}" alt="" class="oc-l">' if lg_u else f'<span class="oc-h">{kis[:4]}</span>'
+    ok = f'<u style="color:{renk};text-decoration:none;font-size:.7rem;margin-left:4px">{"▲" if d > 0 else "▼" if d < 0 else ""}</u>'
+    sp = spark_svg(seri, "#22C55E" if d >= 0 else "#EF4444", 96, 24) if seri is not None and len(seri) > 5 else ""
+    istek = f"{x['kod']}|{TUR_ISTEK[x['pz']]}"
+    ik_a = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg>'
+    ik_s = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 20v-6M10 20V9M15 20v-9M20 20V5"/></svg>'
+    return (f'<div class="oc">{lg}<div class="oc-a"><b>{kis}</b>{ok}<div>{x["ad"]}{(" · " + x["alt"]) if x["alt"] and x["alt"] != "nan" else ""}</div>'
+            f'<div class="oc-sp">{sp}</div></div>'
+            f'<div class="oc-f"><b>{TK.sayi(x["fiyat"])}</b><br><span class="oc-p" style="color:{renk};background:{zem}">{br.yz(x["deg"]) if x["deg"] is not None else "–"}</span></div>'
+            f'<div class="oc-d2"><span class="oc-t" role="button" data-kk="{istek}|rapor|">{ik_a}<i>Analiz</i></span>'
+            f'<span class="oc-t oc-t2" role="button" data-kk="{istek}|seviye|">{ik_s}<i>Seviye</i></span></div></div>')
+
+
+def akilli_uyari():
+    """Ana sayfanın en üstünde son 6 saatin en önemli alarmı (kapatılabilir; kapatılan bu cihazda gizli kalır)."""
+    son_al, _ = alarm_son(ZAMAN)
+    import hashlib, html as _h, re as _re
+    simdi = dt.datetime.now(ZoneInfo("Europe/Istanbul"))
+    for x in son_al[:30]:
+        try: t = dt.datetime.strptime(x["zaman"], "%d.%m.%Y %H:%M").replace(tzinfo=ZoneInfo("Europe/Istanbul"))
+        except Exception: continue
+        if simdi - t > dt.timedelta(hours=6): break
+        m = _re.sub(r"⟦(.+?)⟧$", "", x["mesaj"]).strip()
+        if m[:1] not in ("⚡", "🔴", "🟢", "💼", "🗓"): continue
+        kirmizi = m[:1] in ("🔴", "💼") or "-%" in m or "−" in m
+        uid = hashlib.md5((x["zaman"] + m).encode()).hexdigest()[:10]
+        bas, _, gov = m[1:].strip().partition(":")
+        return (f'<div class="kk-uyari{" kk-uyari-k" if kirmizi else ""}" data-id="{uid}"><span class="kk-x" data-kapat="{uid}">×</span>'
+                f'<b>⚡ {_h.escape(bas.strip())}</b><div>{_h.escape(gov.strip() or m[1:])} · {t:%H:%M}</div></div>')
+    return ""
 
 
 def one_cikanlar(PV):
@@ -1502,6 +1598,7 @@ with tab_f:
 
 
 with tab_h:
+    st.markdown('<span role="button" data-git="Ana Sayfa|Piyasalar" class="kk-geri">‹ Ana sayfa</span>', unsafe_allow_html=True)
     st.caption("Piyasayı etkileyebilecek haberler 30 dakikada bir taranır: türü ve yönü sınıflandırılır, etkilenecek varlıklar "
                "gerekçesiyle gösterilir, haberden bu yana fiyat/hacim tepkisi ve teknik durum eklenir.")
     HD = haber_oku(ZAMAN)
@@ -1522,6 +1619,7 @@ with tab_h:
 
 
 with tab_tk:
+    st.markdown('<span role="button" data-git="Ana Sayfa|Piyasalar" class="kk-geri">‹ Ana sayfa</span>', unsafe_allow_html=True)
     st.caption("Bu haftanın yüksek etkili ekonomik verileri (ABD, Euro Bölgesi, Çin, İngiltere, Japonya). Saatler Türkiye saatidir. "
                "Geçmiş tepki, aynı veri daha önce açıklandığında altın, S&P 500 vadeli, Bitcoin ve dolar/TL'nin ilk 1 saatteki ortalama hareketidir.")
     tkv = (json_oku("haber/takvim.json", ZAMAN) or {}).get("liste") or []
@@ -1669,20 +1767,51 @@ with tab_p:
             st.image(sabah_k, use_container_width=True)
             ses = gorsel_oku("sabah/ozet.mp3", ZAMAN)
             if ses: st.audio(ses, format="audio/mp3")
-    st.selectbox("Varlık ara", list(ARAMA_SECENEK), index=None, key="ana_ara", on_change=_ara_sec, label_visibility="collapsed",
-                 placeholder="🔎  Varlık ara (ör. THYAO, Aselsan, BTC, altın, NVDA)")
+    try:
+        _uy = akilli_uyari()
+        if _uy: st.markdown(_uy, unsafe_allow_html=True)
+    except Exception:
+        pass
     if st.session_state.pop("_kk_git", None):
         _bil.html(f"<script>try{{window.parent.kkTeknikGit && window.parent.kkTeknikGit('')}}catch(e){{}}</script>", height=0)
-    st.markdown(TS.bb("Piyasalar"), unsafe_allow_html=True)
     try:
         PV = piyasa_verisi(ZAMAN)
     except Exception as e:
         PV = {}; st.caption(f"Piyasa verisi alınamadı: {e}")
     sira = ["BIST 100", "S&P 500", "Nasdaq", "USD/TRY", "EUR/TRY", "Gram altın", "Ons altın", "Gümüş", "Brent petrol",
             "Bitcoin", "Ethereum", "Dolar endeksi", "ABD 10Y faiz", "VIX", "BIST 100 ($)"]
-    goster = [x for x in sira if x in PV]
+    kat_ad = st.radio("Kategori", list(KATEGORI), horizontal=True, key="ana_kat", label_visibility="collapsed")
+    KAT = KATEGORI[kat_ad]
+    goster = [x for x in sira if x in PV and (KAT is None or PV_KAT.get(x) == KAT)] or [x for x in sira if x in PV]
     st.markdown('<div class="serit-k">' + "".join(mini_kart(ad_, PV[ad_]) for ad_ in goster) + "</div>", unsafe_allow_html=True)
-    st.caption("Yana kaydırın · Etiket: anlık / gecikmeli (~15 dk) / kapanış / bayat. Kaynaklar: Takip › Veri kaynakları. Mini grafik son 60 işlem günü.")
+    # ---- hızlı erişim kutuları
+    _ik = {"h": '<path d="M4 5h13a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2z"/><path d="M19 9h1a1 1 0 0 1 1 1v8a1 1 0 0 1-2 0"/><path d="M8 9h7M8 13h7M8 17h4"/>',
+           "t": '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+           "p": '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7M3 12h18"/>',
+           "a": '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>'}
+    st.markdown('<div class="kk-kutu">' + "".join(
+        f'<span role="button" data-git="{g}"><svg viewBox="0 0 24 24" fill="none" stroke="#E8B84A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">{_ik[k]}</svg><b>{ad}</b></span>'
+        for k, ad, g in (("h", "Haberler", "Ana Sayfa|Haberler"), ("t", "Takvim", "Ana Sayfa|Takvim"),
+                         ("p", "Portföyüm", "Portföy|Varlıklarım"), ("a", "Bildirimler", "Takip|Alarmlar"))) + "</div>", unsafe_allow_html=True)
+    st.selectbox("Varlık ara", list(ARAMA_SECENEK), index=None, key="ana_ara", on_change=_ara_sec, label_visibility="collapsed",
+                 placeholder="🔎  Varlık ara (ör. THYAO, Aselsan, BTC, altın, NVDA)")
+    # ---- Öne çıkanlar (yeni tasarım)
+    try:
+        st.markdown(TS.bb("Öne çıkanlar"), unsafe_allow_html=True)
+        c1_, c2_ = st.columns([3, 2], vertical_alignment="center")
+        c1_.markdown('<div class="kk-alt">Bir varlığa dokunun: <b>Analiz</b> raporu, <b>Seviye</b> teknik seviyeleri açar. '
+                     '<span role="button" data-git="Takip|Favoriler" class="kk-kalem">✎ listeyi düzenle</span></div>', unsafe_allow_html=True)
+        liste = c2_.selectbox("Liste", ["Önerilenler", "Favorilerim", "Günün yükselenleri", "Günün düşenleri"], key="ana_liste", label_visibility="collapsed")
+        _sat = ana_satirlar(KAT if KAT != "doviz" else None, liste)
+        import bist_teknik as _T
+        _sem = tuple(dict.fromkeys(_T.yahoo_sembol(x["kod"])[0] for x in _sat))
+        _seri = seri_toplu(_sem, ZAMAN[:-1]) if _sem else {}
+        st.markdown("".join(satir_html(x, _seri.get(_T.yahoo_sembol(x["kod"])[0])) for x in _sat) or
+                    '<div class="kk-alt">Bu listede gösterilecek varlık yok. Favorilerinizi Takip › Favoriler\'den ekleyebilirsiniz.</div>',
+                    unsafe_allow_html=True)
+        st.caption("Fiyatlar son kapanış taramasından (BIST resmi kapanış dahil); kripto taraması günlük. Anlık fiyatlar yukarıdaki kartlarda.")
+    except Exception as ex:
+        st.caption(f"Öne çıkanlar okunamadı: {ex}")
     # ---- Günün fırsatları (tüm piyasalar, puana göre)
     try:
         _gf = gunun_firsatlari(ZAMAN)
@@ -1692,13 +1821,6 @@ with tab_p:
             st.caption("Ayrıntılar: Keşfet › Fırsatlar. Puan, işlem planı ve teyitler Telegram kartlarında da var.")
     except Exception as ex:
         st.caption(f"Fırsatlar okunamadı: {ex}")
-    # ---- Öne çıkanlar: takip listesi (yoksa seçili büyük hisseler) + kripto + gram altın
-    try:
-        st.markdown(TS.bb("Öne çıkanlar"), unsafe_allow_html=True)
-        st.markdown(one_cikanlar(PV), unsafe_allow_html=True)
-        st.caption("Liste: Takip › Favoriler'e eklediğiniz hisseler (boşsa BIST'in büyükleri). Hisse fiyatları son kapanış bülteninden.")
-    except Exception as ex:
-        st.caption(f"Öne çıkanlar okunamadı: {ex}")
     with st.expander(":material/view_agenda: Piyasa kartları (büyük görünüm)"):
         for i in range(0, len(goster), 2):
             cols = st.columns(2)
@@ -1818,13 +1940,6 @@ with tab_p:
         st.info("Backtest her Pazar sabahı otomatik çalışır; ilk sonuç ilk Pazar günü burada görünecek.")
 
 # ================= TARAYICI =================
-@st.cache_data(ttl=900, show_spinner=False)
-def tarama_tablosu(piyasa, zaman):
-    import requests
-    r = requests.get(f"https://raw.githubusercontent.com/{REPO}/bulten/tarama/{piyasa}.csv?t={zaman}", timeout=20)
-    return pd.read_csv(io.BytesIO(r.content)) if r.status_code == 200 else None
-
-
 def _sablonlar():
     import tarayici as TRY
     return TRY.coz(st.query_params.get("tarama", "")) or {}
