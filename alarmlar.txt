@@ -11,9 +11,12 @@
 # Yapı:        XU100 FVG | NVDA.US BOS     Harmonik: ETH/USDT HARMONIK     Yeni kurulum: KCHOL SINYAL
 # Temel:       THYAO TEMEL (yeni finansal tablo açıklanınca)
 # Takvim:      TAKVIM (tüm önemli veriler, 75 dk önce) | TAKVIM USD
+# İğne:        BTC/USDT IGNE (stoplara doğru ivmelenince kısa süreli iğne uyarısı; uygulamanın üst bandında da görünür)
 # Portföy:     PORTFOY RISK 10 (portfoy.txt toplam zararı %10'u aşarsa)
 OTOMATIK
 TAKVIM
+BTC/USDT IGNE
+ETH/USDT IGNE
 
 # ---------------- PİYASA BELİRLEYİCİLER ----------------
 # Endeksler ve kur: sert günlük hareket + yeni formasyon/kırılım

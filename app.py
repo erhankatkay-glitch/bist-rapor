@@ -792,31 +792,33 @@ def satir_html(x, seri=None):
             f'<span class="oc-t oc-t2" role="button" data-kk="{istek}|seviye|">{ik_s}<i>Harita</i></span></div></div>')
 
 
-@st.cache_data(ttl=900, show_spinner=False)
-def igne_verisi(zaman):
-    import igne as IG
-    H, L, C = IG.mumlar("BTCUSDT", "1h", 300)
-    u = IG.uyari(H, L, C)
-    return IG.metin(u) if u else None
-
-
 def akilli_uyari():
-    """Ana sayfanın en üstündeki uyarı: BTC iğne (likidite) uyarısı; yoksa son 6 saatin en önemli alarmı. Kapatılabilir."""
+    """Ana sayfanın üst bandı: YALNIZ tetiklenmiş bildirimler. Önce süresi dolmamış iğne uyarısı (alarm sistemi, 30 dk'da bir
+    kontrol eder; fiyat seviyelere doğru ivmelenince tetiklenir, 4 saat geçerli, seviyeler süpürülünce kalkar); yoksa son 3 saatin
+    önemli alarmı. Hiçbiri yoksa bant görünmez. Kapatılan bildirim bu cihazda gizli kalır."""
     import hashlib, html as _h, re as _re
+    simdi_u = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     try:
-        ig = igne_verisi(ZAMAN)
+        ig = [x for x in (json_oku("alarm/igne.json", ZAMAN) or []) if x.get("bitis", "") > simdi_u]
     except Exception:
-        ig = None
-    if ig:
-        uid = hashlib.md5(ig[1][:40].encode()).hexdigest()[:10]
+        ig = []
+    for x in sorted(ig, key=lambda x: x.get("zaman", ""), reverse=True):
+        try:   # seviyelerin hepsi süpürüldüyse (fiyat en uzak seviyeyi geçtiyse) uyarı işini yaptı: gösterme
+            p_ = float(piyasa_verisi(ZAMAN)[{"BTC": "Bitcoin", "ETH": "Ethereum"}[x["kod"]]]["deger"])
+            if (p_ - x["seviyeler"][-1]) * x["yon"] >= 0: continue
+            metin = _re.sub(r"Şu an [\d.,]+", f"Şu an {TK.sayi(p_) if p_ < 1000 else br.ond(p_, 0)}", x["metin"])
+        except Exception:
+            metin = x["metin"]
+        uid = hashlib.md5((x["zaman"] + x["kod"]).encode()).hexdigest()[:10]
+        t_ = dt.datetime.fromisoformat(x["zaman"]).astimezone(ZoneInfo("Europe/Istanbul"))
         return (f'<div class="kk-uyari kk-uyari-k" data-id="{uid}"><span class="kk-x" data-kapat="{uid}">×</span>'
-                f'<b>⚡ {_h.escape(ig[0])}</b><div>{_h.escape(ig[1])}</div></div>')
+                f'<b>⚡ {_h.escape(x["baslik"])}</b><div>{_h.escape(metin)} · {t_:%H:%M}</div></div>')
     son_al, _ = alarm_son(ZAMAN)
     simdi = dt.datetime.now(ZoneInfo("Europe/Istanbul"))
     for x in son_al[:30]:
         try: t = dt.datetime.strptime(x["zaman"], "%d.%m.%Y %H:%M").replace(tzinfo=ZoneInfo("Europe/Istanbul"))
         except Exception: continue
-        if simdi - t > dt.timedelta(hours=6): break
+        if simdi - t > dt.timedelta(hours=3): break
         m = _re.sub(r"⟦(.+?)⟧$", "", x["mesaj"]).strip()
         if m[:1] not in ("⚡", "🔴", "🟢", "💼", "🗓"): continue
         kirmizi = m[:1] in ("🔴", "💼") or "-%" in m or "−" in m
