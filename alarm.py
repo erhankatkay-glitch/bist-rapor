@@ -54,6 +54,8 @@ def kurallar(metin):
         if m:
             t = {"DİRENÇ": "DIRENC", "HARMONİK": "HARMONIK", "SİNYAL": "SINYAL"}.get(m.group(2), m.group(2))
             K.append({"tip": t.lower(), "kod": m.group(1), "metin": s}); continue
+        m = re.match(r"^(\S+)\s+(IGNE|İĞNE|IĞNE)$", s)
+        if m: K.append({"tip": "igne", "kod": m.group(1), "metin": s}); continue
         m = re.match(r"^TAKVIM(?:\s+(\S+))?$", s.replace("TAKVİM", "TAKVIM"))
         if m: K.append({"tip": "takvim", "kod": m.group(1) or "HEPSI", "metin": s}); continue
         m = re.match(r"^PORTFOY\s+RISK\s*([\d.]+)$", s.replace("PORTFÖY", "PORTFOY").replace("RİSK", "RISK"))
@@ -277,6 +279,9 @@ def portfoy_riski(esik, fiyat_fn):
     return None
 
 
+IGNE_AKTIF = []     # bu turda tetiklenen iğne uyarıları (uygulamadaki üst bant için alarm/igne.json'a yazılır)
+
+
 def tara(K, durum):
     """Kuralları değerlendirir → (bildirimler, yeni durum)."""
     import bist_teknik as T
@@ -358,6 +363,21 @@ def tara(K, durum):
                         yeni[f"{k['metin']}|donem"] = donem
                         if once and donem != once:
                             bildir.append(f"📰 {k['kod']} · Yeni finansal tablo: {donem} dönemi açıklandı (önceki {once}); temel analizi güncelleyin.")
+            elif k["tip"] == "igne":
+                import igne as IG
+                baz = k["kod"].split("/")[0].split("-")[0]
+                H, L, C = IG.mumlar(f"{baz}USDT", "1h", 300)
+                u = IG.tetik(H, L, C)
+                if u:
+                    a2 = f"IGNE|{baz}|{u['yon']}|{round(u['seviyeler'][0], -1)}"
+                    baslik, ayr = IG.metin(u, baz)
+                    if not durum.get(a2) and not yeni.get(a2):
+                        bildir.append(f"⚡ {baz}: {baslik} · {ayr.split(' · Algoritmik')[0]}")
+                        IGNE_AKTIF.append({"kod": baz, "yon": u["yon"], "baslik": baslik, "metin": ayr, "neden": u.get("neden", ""),
+                                           "seviyeler": u["seviyeler"], "fiyat": u["fiyat"],
+                                           "zaman": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+                                           "bitis": (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=4)).isoformat(timespec="seconds")})
+                    yeni[a2] = True
             elif k["tip"] == "takvim":
                 for e in yaklasan_veriler(k["kod"]):
                     a2 = f"TAKVIM|{e['zaman']}|{e['baslik'][:40]}"
@@ -442,7 +462,8 @@ def _satir_ham(m):
     nokta = {"🟢": C["yesil"], "🔴": C["kirmizi"], "📈": C["mavi"], "📰": C["turkuaz"], "💼": C["altin"]}.get(ik, C["soluk"])
     if ik == "📰" and degis: nokta = renk_d
     if ik in ("📊", "🗓"): nokta = C["altin"]
-    return ik if ik in ("💼", "📈", "📰", "📊", "🗓") else "🟢" if ik in ("🟢", "🔴") else "•", {"sol": sol.strip(), "sag": fiyat, "nokta": nokta, "alt": alt}, url
+    if ik == "⚡": nokta = C["altin"]
+    return ik if ik in ("💼", "📈", "📰", "📊", "🗓", "⚡") else "🟢" if ik in ("🟢", "🔴") else "•", {"sol": sol.strip(), "sag": fiyat, "nokta": nokta, "alt": alt}, url
 
 
 GRUP_KART = [("💼", "Portföyünüz", "altin"), ("⚡", "Sert hareket ve fiyat seviyeleri", "altin"), ("🟢", "Formasyon ve kırılımlar", "mavi"),
@@ -519,6 +540,13 @@ def main():
     son = [{"zaman": zaman, "mesaj": m} for m in bildir] + son
     json.dump(yeni, open(DURUM, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
     json.dump(son[:300], open(SON, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    try:   # tetiklenmiş, süresi dolmamış iğne uyarıları (uygulamanın üst bandı yalnız bunları gösterir)
+        yol_ig = os.path.join("alarm_cikti", "igne.json")
+        eski = json.load(open(yol_ig, encoding="utf-8")) if os.path.exists(yol_ig) else []
+        simdi_ = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+        json.dump([x for x in eski + IGNE_AKTIF if x.get("bitis", "") > simdi_], open(yol_ig, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    except Exception as ex:
+        print("iğne kaydı:", ex, file=sys.stderr)
     json.dump({"kontrol": zaman, "kural": len(K)}, open(os.path.join("alarm_cikti", "son_kontrol.json"), "w"), ensure_ascii=False)
     print(f"{len(K)} kural, {len(bildir)} yeni alarm. Telegram: {'gönderildi' if gonder(bildir) else 'ayarlı değil / gönderilecek alarm yok'}")
     for m in bildir: print(" ", m)

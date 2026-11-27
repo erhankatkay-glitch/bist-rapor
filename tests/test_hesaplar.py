@@ -319,3 +319,16 @@ def test_igne_seviyeleri():
     assert u and u["yon"] == -1 and 60830 in u["seviyeler"] and 60640 in u["seviyeler"]
     b, a = IG.metin(u)
     assert "aşağı iğne" in b and "60.830" in a and "yatırım tavsiyesi değildir" in a
+
+
+def test_igne_tetik():
+    import numpy as np, igne as IG
+    # seviyelere doğru düşüş ivmesi: tetiklenir
+    C = np.r_[np.full(57, 61900.0), [61700.0, 61500.0, 61200.0]]; H = C + 60; L = C - 60
+    L[20] = 60640; L[40] = 60830
+    u = IG.tetik(H, L, C)
+    assert u and u["yon"] == -1 and "düşüş" in u["neden"]
+    # aynı seviyeler ama fiyat yatay / yukarı gidiyor: tetiklenmez (sürekli uyarı yok)
+    C2 = np.r_[np.full(57, 61100.0), [61150.0, 61200.0, 61250.0]]; H2 = C2 + 60; L2 = C2 - 60
+    L2[20] = 60640; L2[40] = 60830
+    assert IG.tetik(H2, L2, C2) is None

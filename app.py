@@ -776,7 +776,10 @@ def satir_html(x, seri=None):
     zem = "rgba(34,197,94,.16)" if d > 0 else "rgba(239,68,68,.16)" if d < 0 else "rgba(255,255,255,.06)"
     kis = x["kod"].replace(".US", "").replace("/USDT", "")
     lg_u = LG.logo_url(x["kod"], x["pz"]) if x["pz"] in ("bist", "abd", "kripto") else None
-    lg = f'<img src="{lg_u}" alt="" class="oc-l">' if lg_u else f'<span class="oc-h">{kis[:4]}</span>'
+    EM_IK = {"GRAMALTIN": "🥇", "ALTIN": "🥇", "GUMUS": "🥈", "PLATIN": "⚪", "PALADYUM": "⚪", "BAKIR": "🟠", "BRENT": "🛢️", "WTI": "🛢️",
+             "DOGALGAZ": "🔥", "BUGDAY": "🌾", "MISIR": "🌽", "SOYA": "🫘", "KAHVE": "☕", "KAKAO": "🍫", "SEKER": "🍬", "PAMUK": "☁️"}
+    lg = (f'<img src="{lg_u}" alt="" class="oc-l">' if lg_u else
+          f'<span class="oc-h" style="font-size:1.3rem">{EM_IK[x["kod"]]}</span>' if x["kod"] in EM_IK else f'<span class="oc-h">{kis[:4]}</span>')
     ok = f'<u style="color:{renk};text-decoration:none;font-size:.7rem;margin-left:4px">{"▲" if d > 0 else "▼" if d < 0 else ""}</u>'
     sp = spark_svg(seri, "#22C55E" if d >= 0 else "#EF4444", 96, 24) if seri is not None and len(seri) > 5 else ""
     istek = f"{x['kod']}|{TUR_ISTEK[x['pz']]}"
@@ -789,31 +792,33 @@ def satir_html(x, seri=None):
             f'<span class="oc-t oc-t2" role="button" data-kk="{istek}|seviye|">{ik_s}<i>Harita</i></span></div></div>')
 
 
-@st.cache_data(ttl=900, show_spinner=False)
-def igne_verisi(zaman):
-    import igne as IG
-    H, L, C = IG.mumlar("BTCUSDT", "1h", 300)
-    u = IG.uyari(H, L, C)
-    return IG.metin(u) if u else None
-
-
 def akilli_uyari():
-    """Ana sayfanın en üstündeki uyarı: BTC iğne (likidite) uyarısı; yoksa son 6 saatin en önemli alarmı. Kapatılabilir."""
+    """Ana sayfanın üst bandı: YALNIZ tetiklenmiş bildirimler. Önce süresi dolmamış iğne uyarısı (alarm sistemi, 30 dk'da bir
+    kontrol eder; fiyat seviyelere doğru ivmelenince tetiklenir, 4 saat geçerli, seviyeler süpürülünce kalkar); yoksa son 3 saatin
+    önemli alarmı. Hiçbiri yoksa bant görünmez. Kapatılan bildirim bu cihazda gizli kalır."""
     import hashlib, html as _h, re as _re
+    simdi_u = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     try:
-        ig = igne_verisi(ZAMAN)
+        ig = [x for x in (json_oku("alarm/igne.json", ZAMAN) or []) if x.get("bitis", "") > simdi_u]
     except Exception:
-        ig = None
-    if ig:
-        uid = hashlib.md5(ig[1][:40].encode()).hexdigest()[:10]
+        ig = []
+    for x in sorted(ig, key=lambda x: x.get("zaman", ""), reverse=True):
+        try:   # seviyelerin hepsi süpürüldüyse (fiyat en uzak seviyeyi geçtiyse) uyarı işini yaptı: gösterme
+            p_ = float(piyasa_verisi(ZAMAN)[{"BTC": "Bitcoin", "ETH": "Ethereum"}[x["kod"]]]["deger"])
+            if (p_ - x["seviyeler"][-1]) * x["yon"] >= 0: continue
+            metin = _re.sub(r"Şu an [\d.,]+", f"Şu an {TK.sayi(p_) if p_ < 1000 else br.ond(p_, 0)}", x["metin"])
+        except Exception:
+            metin = x["metin"]
+        uid = hashlib.md5((x["zaman"] + x["kod"]).encode()).hexdigest()[:10]
+        t_ = dt.datetime.fromisoformat(x["zaman"]).astimezone(ZoneInfo("Europe/Istanbul"))
         return (f'<div class="kk-uyari kk-uyari-k" data-id="{uid}"><span class="kk-x" data-kapat="{uid}">×</span>'
-                f'<b>⚡ {_h.escape(ig[0])}</b><div>{_h.escape(ig[1])}</div></div>')
+                f'<b>⚡ {_h.escape(x["baslik"])}</b><div>{_h.escape(metin)} · {t_:%H:%M}</div></div>')
     son_al, _ = alarm_son(ZAMAN)
     simdi = dt.datetime.now(ZoneInfo("Europe/Istanbul"))
     for x in son_al[:30]:
         try: t = dt.datetime.strptime(x["zaman"], "%d.%m.%Y %H:%M").replace(tzinfo=ZoneInfo("Europe/Istanbul"))
         except Exception: continue
-        if simdi - t > dt.timedelta(hours=6): break
+        if simdi - t > dt.timedelta(hours=3): break
         m = _re.sub(r"⟦(.+?)⟧$", "", x["mesaj"]).strip()
         if m[:1] not in ("⚡", "🔴", "🟢", "💼", "🗓"): continue
         kirmizi = m[:1] in ("🔴", "💼") or "-%" in m or "−" in m
@@ -883,10 +888,13 @@ def gunun_firsatlari(zaman, n=8):
                         "plan": {"giris": k["giris"], "stop": k["stop"],
                                  "hedef": [{"fiyat": h, "r": r_} for h, r_ in zip(k.get("hedef") or [], k.get("r") or [])]}})
     # her piyasadan en iyi 3 (puana göre), sonra genel sıralama
+    gruplar = {pz: sorted([f for f in out if f["pz"] == pz], key=lambda f: (f.get("acik", False), -f.get("puan", 0)))[:3]
+               for pz in ("bist", "kripto", "abd", "emtia")}
     sec = []
-    for pz in ("bist", "kripto", "abd", "emtia"):
-        sec += sorted([f for f in out if f["pz"] == pz], key=lambda f: (f.get("acik", False), -f.get("puan", 0)))[:3]
-    return sorted(sec, key=lambda f: (f.get("acik", False), -f.get("puan", 0)))[:n + 4]
+    for i in range(3):                     # sırayla her piyasadan birer tane: BIST, kripto, ABD, emtia
+        for pz in ("bist", "kripto", "abd", "emtia"):
+            if i < len(gruplar[pz]): sec.append(gruplar[pz][i])
+    return sec[:n + 4]
 
 
 def firsat_mini(f):
@@ -970,7 +978,7 @@ def radar_png(S):
     return b.getvalue()
 
 
-# Dört ana bölüm (alt menüyle aynı): Ana Sayfa · Keşfet · Portföy · Takip. Eski sekmeler bunların altında.
+# Dört ana bölüm: Ana Sayfa · Keşfet · Portföy · Takip (şeritleri gizli). Alttaki 6'lı menü bunların alt sekmelerine gider.
 ana_b, kesfet_b, portfoy_b, takip_b = st.tabs([":material/home: Ana Sayfa", ":material/explore: Keşfet",
                                                ":material/account_balance_wallet: Portföy", ":material/star: Takip"])
 with ana_b:

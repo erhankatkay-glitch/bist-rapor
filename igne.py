@@ -71,3 +71,26 @@ def metin(u, ad="BTC"):
     return (f"{ad}'de kısa süreli {'aşağı' if u['yon'] == -1 else 'yukarı'} iğne bekleniyor",
             f"Şu an {f(u['fiyat'])} · olası iğne bölgeleri {' / '.join(f(x) for x in u['seviyeler'])} · "
             "Algoritmik değerlendirmedir, yatırım tavsiyesi değildir.")
+
+
+def atr(H, L, C, n=14):
+    tr = np.maximum(H[1:] - L[1:], np.maximum(abs(H[1:] - C[:-1]), abs(L[1:] - C[:-1])))
+    return float(np.mean(tr[-n:])) if len(tr) >= n else float(np.mean(tr))
+
+
+def tetik(H, L, C, saat=3):
+    """Uyarının TETİKLENME koşulu (sürekli gösterilmez):
+      1) seçilen tarafta fiyata %2 içinde en az 2 süpürülmemiş likidite seviyesi var,
+      2) en yakın seviye 1,5 saatlik ATR kadar yakın (fiyat seviyeye dayanmış),
+      3) son `saat` mumda fiyat o yöne hareket etmiş (en az %0,4) — yani seviyeye doğru ivme var.
+    → uyari() sözlüğü + "neden" ya da None."""
+    u = uyari(H, L, C)
+    if not u: return None
+    p = C[-1]; a = atr(H, L, C)
+    yakin = [s for s in u["seviyeler"] if abs(s - p) / p <= 0.02]
+    if len(yakin) < 2: return None
+    if abs(u["seviyeler"][0] - p) > 1.5 * a: return None
+    ivme = (C[-1] / C[-1 - saat] - 1) * u["yon"]
+    if ivme < 0.004: return None
+    u["neden"] = f"son {saat} saatte %{abs(ivme) * 100:.1f} {'düşüş' if u['yon'] == -1 else 'yükseliş'}, en yakın seviye {abs(u['seviyeler'][0] - p) / a:.1f} ATR uzakta"
+    return u
