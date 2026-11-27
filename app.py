@@ -606,6 +606,58 @@ def rejim_paneli(p, kisa=False):
             + (f'<p>Dağıtım günleri: {", ".join(x[8:10] + "." + x[5:7] for x in gun)}</p>' if gun and r["durum"] in ("yukselis", "baski") else "") + '</details></div>')
 
 
+def korelasyon_bolumu():
+    """Aşama 11: piyasalar arası ilişkiler (korelasyon/ozet.json, sabah iş akışında hesaplanır)."""
+    import html as _h
+    try: o = json_oku("korelasyon/ozet.json", ZAMAN)
+    except Exception: o = None
+    if not o: return
+    st.markdown(TS.bb("Piyasalar arası ilişkiler"), unsafe_allow_html=True)
+    tr2 = lambda x: (f"{x:+.2f}".replace(".", ",") if x is not None else "–")
+    def cubuk(c):   # −1…+1 ölçeğinde 20/60/250 günlük işaretler
+        if c["c60"] is None: return ""
+        x = lambda v: 50 + 50 * max(-1, min(1, v))
+        return (f'<div class="ko-o"><div class="ko-0"></div>'
+                + (f'<i class="ko-y" style="left:{x(c["c250"]):.1f}%" title="1 yıl"></i>' if c["c250"] is not None else "")
+                + (f'<i class="ko-k" style="left:{x(c["c20"]):.1f}%" title="20 gün"></i>' if c["c20"] is not None else "")
+                + f'<i class="ko-a" style="left:{x(c["c60"]):.1f}%" title="60 gün"></i></div>'
+                '<div class="ko-e"><span>−1 ters</span><span>0</span><span>+1 aynı</span></div>')
+    html_ = ""
+    for c in o["ciftler"]:
+        renk = "#22C55E" if (c["c60"] or 0) >= 0.4 else "#EF4444" if (c["c60"] or 0) <= -0.4 else "#A1A1AA"
+        html_ += (f'<div class="ko{" ko-kir" if c["kirilma"] else ""}"><div class="ko-u"><b>{_h.escape(c["a"])} – {_h.escape(c["b"])}</b>'
+                  f'<span style="color:{renk}">{tr2(c["c60"])}</span></div><div class="ko-s">{_h.escape(c["soru"])}</div>{cubuk(c)}'
+                  f'<div class="ko-y2">{_h.escape(c["yorum"])}</div></div>')
+    st.markdown('<div class="ko-not">● 60 gün &nbsp; <span style="color:#F5D27A">◆</span> 20 gün &nbsp; <span style="color:#71717A">|</span> 1 yıl · '
+                '20 gün 1 yıldan 0,4+ saparsa <b style="color:#EF4444">kırılma</b></div>' + html_, unsafe_allow_html=True)
+    if o.get("goreceli"):
+        st.markdown(TS.bb("Göreceli güç"), unsafe_allow_html=True)
+        k = ""
+        for g in o["goreceli"]:
+            renk = "#22C55E" if (g["d3"] or 0) > 0 else "#EF4444"
+            k += (f'<div class="ko"><div class="ko-u"><b>{_h.escape(g["a"])} / {_h.escape(g["b"])}</b>'
+                  f'<span style="color:{renk}">{br.yz(g["d3"]) if g["d3"] is not None else "–"} <small>3 ay</small></span></div>'
+                  f'{spark_svg(g["seri"], renk, 320, 46)}<div class="ko-y2">{_h.escape(g["yorum"])}</div></div>')
+        st.markdown(k, unsafe_allow_html=True)
+    if o.get("sektor"):
+        st.markdown(TS.bb("BIST sektör rotasyonu"), unsafe_allow_html=True)
+        st.dataframe(pd.DataFrame([{"Sektör": x["sektor"], "RS (medyan)": x["rs"], "1 ay %": None if x["d1a"] is None else x["d1a"] * 100,
+                                    "Hisse": x["n"], "Öne çıkanlar": x["lider"]} for x in o["sektor"]]), hide_index=True, use_container_width=True,
+                     column_config={"RS (medyan)": st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.0f"),
+                                    "1 ay %": st.column_config.NumberColumn(format="%+.1f")})
+        st.caption("RS: hissenin BIST 100'e göre göreceli gücü (0–100, kapanış taraması). Yüksek RS'li sektörlerde para dönüyor olabilir.")
+    with st.expander("Korelasyon matrisi (60 gün)"):
+        M = o["matris"]; V = M["varliklar"]
+        renk = lambda v: "transparent" if v is None else (f"rgba(34,197,94,{abs(v):.2f})" if v > 0 else f"rgba(239,68,68,{abs(v):.2f})")
+        kis = {"BIST 100 ($)": "BIST$", "Dolar endeksi": "DXY", "ABD 10Y faiz": "10Y", "S&P 500": "S&P", "Nasdaq": "NDX", "USD/TRY": "USDTRY",
+               "Gümüş": "Gümüş", "Altın": "Altın", "Brent": "Brent"}
+        tab = '<div class="km-t"><table><tr><th></th>' + "".join(f"<th>{kis.get(v, v)}</th>" for v in V) + "</tr>" + "".join(
+            f"<tr><th>{kis.get(V[i], V[i])}</th>" + "".join(f'<td style="background:{renk(x)}">{"" if x is None else f"{x:.1f}".replace("0.", ".").replace(".", ",")}</td>'
+                                                          for x in r) + "</tr>" for i, r in enumerate(M["deger"])) + "</table></div>"
+        st.markdown(tab, unsafe_allow_html=True)
+        st.caption("Yeşil aynı yönlü, kırmızı ters yönlü hareket. Korelasyon nedensellik göstermez.")
+
+
 def makro_karti(m):
     """TÜFE + politika faizi + reel faiz kartı (TCMB)."""
     t = m["tufe"]["seri"]; s = t[0]
@@ -2035,6 +2087,8 @@ with tab_p:
         if any(_rj):
             st.markdown(TS.bb("Piyasa rejimi"), unsafe_allow_html=True)
             st.markdown("".join(x for x in _rj if x), unsafe_allow_html=True)
+        try: korelasyon_bolumu()
+        except Exception as ex: st.caption(f"İlişkiler okunamadı: {ex}")
         # ---- Yabancı yatırımcı akışı (TCMB haftalık)
         try:
             import yabanci_akis as YA

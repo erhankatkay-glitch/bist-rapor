@@ -196,9 +196,14 @@ def dusus_sigortasi(defter, ozkaynak_simdi=None):
         if a["gerceklesen"] < 0: ard += 1
         else: break
     neden = []
-    if dd >= A["sigorta_dd"]: neden.append(f"özkaynak tepeden %{dd * 100:.1f} geride (sınır %{A['sigorta_dd'] * 100:.0f})")
+    if dd >= A["sigorta_dd"]: neden.append(f"özkaynak tepeden %{_v(dd * 100)} geride (sınır %{A['sigorta_dd'] * 100:.0f})")
     if ard >= A["sigorta_ardisik"]: neden.append(f"son {ard} işlem üst üste zararla kapandı")
     return {"aktif": bool(neden), "dd": dd, "tepe": tepe, "ardisik": ard, "neden": neden}
+
+
+def _v(x, nd=1):
+    """Türkçe ondalık: 4.5 → 4,5; binlik nokta."""
+    return f"{x:,.{nd}f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def kontrol_listesi(defter, deger, kod, piyasa, yon, fiyat, stop, hedef, adet, kur=1.0, para="TL", rejim=None, plan_giris=None, neden=""):
@@ -216,20 +221,20 @@ def kontrol_listesi(defter, deger, kod, piyasa, yon, fiyat, stop, hedef, adet, k
         risk = None
     else:
         risk = abs(fiyat - stop) * adet * tl
-        ek("Stop belirlendi", "ok", f"Stop {stop:g} · girişten %{abs(fiyat - stop) / fiyat * 100:.1f} uzakta.")
+        ek("Stop belirlendi", "ok", f"Stop {_v(stop, 2)} · girişten %{_v(abs(fiyat - stop) / fiyat * 100)} uzakta.")
         ro = risk / oz
         ek("İşlem riski", "ok" if ro <= A["maks_risk"] / 2 else "uyari" if ro <= A["maks_risk"] else "hata",
-           f"Stop gelirse kayıp ≈ {risk:,.0f} TL = özkaynağın %{ro * 100:.2f}'i (sınır %{A['maks_risk'] * 100:.0f}).".replace(",", "."))
+           f"Stop gelirse kayıp ≈ {_v(risk, 0)} TL = özkaynağın %{_v(ro * 100, 2)}'i (sınır %{_v(A['maks_risk'] * 100, 1).rstrip('0').rstrip(',')}).")
     if hedef and stop and (hedef - fiyat) * yon > 0 and (fiyat - stop) * yon > 0:
         kr = (hedef - fiyat) * yon / ((fiyat - stop) * yon)
-        ek("Kazanç / risk oranı", "ok" if kr >= A["min_kr"] else "uyari", f"1:{kr:.1f} (en az 1:{A['min_kr']:g} önerilir).".replace(".", ","))
+        ek("Kazanç / risk oranı", "ok" if kr >= A["min_kr"] else "uyari", f"1:{_v(kr)} (en az 1:{A['min_kr']:g} önerilir).")
     else:
         ek("Kazanç / risk oranı", "uyari", "Hedef girilmedi: nerede kâr alacağını önceden belirle.")
     acik_risk = sum(abs(p["fiyat"] - p["stop"]) * p["kalan"] * (kur if p["para"] == "USD" else 1.0)
                     for p in deger["pozisyonlar"] if p.get("stop"))
     toplam = (acik_risk + (risk or 0)) / oz
     ek("Toplam açık risk", "ok" if toplam <= A["maks_toplam_risk"] else "uyari",
-       f"Tüm açık stoplar gelirse kayıp özkaynağın %{toplam * 100:.1f}'i (sınır %{A['maks_toplam_risk'] * 100:.0f}).")
+       f"Tüm açık stoplar gelirse kayıp özkaynağın %{_v(toplam * 100)}'i (sınır %{A['maks_toplam_risk'] * 100:.0f}).")
     if any(p["kod"] == kod for p in deger["pozisyonlar"]):
         ek("Aynı varlıkta açık pozisyon", "uyari", f"{kod} için zaten açık pozisyon var; riski ikiye katlamış olabilirsin.")
     if rejim and piyasa in ("bist", "abd"):
@@ -238,7 +243,7 @@ def kontrol_listesi(defter, deger, kod, piyasa, yon, fiyat, stop, hedef, adet, k
            f"Bu işlemle {piyasa.upper()} hisse payı %{pay * 100:.0f}; rejime göre önerilen en çok %{rejim['maruziyet']}.")
     if plan_giris:
         kac = (fiyat - plan_giris) * yon / plan_giris
-        ek("Kovalamıyorum", "ok" if kac <= 0.03 else "uyari", f"Fiyat plan girişinden %{kac * 100:+.1f} uzakta (%3'ten fazlası kovalama sayılır).")
+        ek("Kovalamıyorum", "ok" if kac <= 0.03 else "uyari", f"Fiyat plan girişinden %{'+' if kac >= 0 else ''}{_v(kac * 100)} uzakta (%3'ten fazlası kovalama sayılır).")
     s = dusus_sigortasi(defter, deger["ozkaynak_tl"])
     ek("Düşüş sigortası", "hata" if s["aktif"] else "ok", ("Ara ver: " + "; ".join(s["neden"])) if s["aktif"] else "Sigorta devrede değil.")
     ek("Nedeni yazdım", "ok" if len((neden or "").strip()) >= 8 else "hata", "Bu işlemi neden açtığını bir cümleyle yaz (günlük için).")

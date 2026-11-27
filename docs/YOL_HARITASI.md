@@ -72,6 +72,8 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
   - Piyasa rejimi (rejim.py): genişlik, dağıtım günleri, FTD durum makinesi, tepe uyarısı, maruziyet koçu.
     Kapanışta rejim/{bist,abd}.json; Telegram kartı yalnız durum/oran değişiminde ve Cuma; Ekonomi paneli, Seçki ve Günün fırsatları satırı, sabah özeti.
   - Kurulumlar (aynı sıkı test, QD_KAYNAK=10c): ABD G Momentum AL; BIST G EP SAT ve Momentum SAT (portföy uyarısı/karne). VCP: yetersiz olay, kapalı.
+  - Disiplin (sanal.py + Sanal işlem): işlem öncesi kontrol listesi, düşüş sigortası, kapanışta işlem günlüğü, haftalık özet + öneriler, ayarlar.
+    Defter cihazda tutulduğundan haftalık özet Telegram'a gitmez.
 - 10c. claude-trading-skills (kullanıcının fork'u, MIT) değerlendirmesi (27.11):
   - Bu repo Claude için yazılmış iş akışı talimatları (74 skill); ABD odaklı.
     20 skill ücretli FMP/Finviz verisi istiyor. Kod olarak kurulmaz; yöntemleri kendi ücretsiz verimizle uyarlanır.

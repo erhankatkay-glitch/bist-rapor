@@ -410,3 +410,16 @@ def test_disiplin_kontrol_sigorta_gunluk():
     assert h["kapanan"] == 3 and h["degerlendirilen"] == 2 and h["kazanma"] == 0 and abs(h["ort_R"] + 1) < 1e-9
     assert h["plana_uyum"] == 0.5 and any("değerlendirilmedi" in x for x in h["oneri"])
     SN.dogrula(d)   # "not" olayları geçerli
+
+
+def test_korelasyon_kirilma_ve_goreceli():
+    """Aşama 11: 20 günlük ilişki 1 yıllıktan 0,4+ saparsa kırılma; göreceli güç lideri doğru."""
+    import korelasyon as KR
+    rng = np.random.default_rng(4); n = 400; idx = pd.bdate_range("2024-01-01", periods=n)
+    z = rng.normal(0, 0.01, n); g = rng.normal(0, 0.01, n)
+    btc = 0.9 * z + 0.3 * g; btc[-20:] = -0.9 * z[-20:] + 0.3 * g[-20:]          # son 20 günde ilişki ters döndü
+    F = pd.DataFrame({"BTC": 100 * np.exp(np.cumsum(btc + 0.002)), "Nasdaq": 100 * np.exp(np.cumsum(z))}, index=idx)
+    c = [x for x in KR.ciftler(KR.getiriler(F)) if x["a"] == "BTC" and x["b"] == "Nasdaq"][0]
+    assert c["c250"] > 0.6 and c["c20"] < 0 and c["kirilma"]
+    gr = [x for x in KR.goreceli(F) if x["a"] == "BTC"][0]
+    assert gr["lider"] == "BTC" and gr["d3"] > 0
