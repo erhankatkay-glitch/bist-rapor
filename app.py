@@ -1147,6 +1147,14 @@ with tab_p:
             f'<div style="margin-top:10px">{_svg}</div>'
             f'<div class="pk-alt">{YA.cumle(_yo)} Kaynak: TCMB Haftalık Menkul Kıymet İstatistikleri (her perşembe 14:30). '
             f'Hisse bazında değil, tüm BIST için toplamdır.</div></div>', unsafe_allow_html=True)
+    for d_, ad_ in (("haftalik", "Haftalık"), ("aylik", "Aylık")):
+        k_ = gorsel_oku(f"donem/{d_}.png", ZAMAN)
+        if k_:
+            with st.expander(f":material/calendar_month: {ad_} durum raporu (10 ana varlık)"):
+                st.image(k_, use_container_width=True)
+                p_ = gorsel_oku(f"donem/{d_}.pdf", ZAMAN)
+                if p_: st.download_button(f":material/download: {ad_} durum raporu (PDF)", data=p_, file_name=f"KATKAY_{ad_}_Durum.pdf",
+                                          mime="application/pdf", key=f"donem_{d_}")
     for pz, ad_ in (("bist", "BIST"), ("abd", "ABD"), ("kripto", "Kripto")):
         k_ = gorsel_oku(f"{pz}/kapanis_karti.png", ZAMAN)
         if k_:

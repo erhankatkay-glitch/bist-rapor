@@ -64,16 +64,18 @@ def seviyeler(a, fiyat):
     return sorted(set(yukari))[:3], sorted(set(asagi), reverse=True)[:3]
 
 
-def senaryo(ad, a, ust, yukari, asagi, donem):
+def senaryo(ad, a, ust, yukari, asagi, donem, kod=""):
     et = a["etiket"]; kap = DONEM[donem]["kapanis"]
     yon = 1 if a["puan"] >= 58 else -1 if a["puan"] <= 42 else 0
     p = []
+    vix = kod == "VIX"
     if yon > 0:
-        p.append(f"Görünüm olumlu ({et.lower()}).")
-        if yukari: p.append(f"{fy(yukari[0])} üzerinde {kap} yükselişi {fy(yukari[1]) if len(yukari) > 1 else 'yeni zirvelere'} hedefine taşır.")
+        p.append(f"Yükseliş eğiliminde ({et.lower()}); piyasalarda tedirginlik artıyor." if vix else f"Görünüm olumlu ({et.lower()}).")
+        if yukari: p.append(f"{fy(yukari[0])} üzerinde {kap} yükselişi {fy(yukari[1]) if len(yukari) > 1 else 'daha yukarı'} seviyesine taşır.")
+        else: p.append("Fiyat zirve bölgesinde; üzerinde bilinen bir direnç yok.")
         if asagi: p.append(f"{fy(asagi[0])} altına inmesi görünümü zayıflatır.")
     elif yon < 0:
-        p.append(f"Görünüm zayıf ({et.lower()}).")
+        p.append(f"Düşüş eğiliminde ({et.lower()}); piyasalar sakinleşiyor." if vix else f"Görünüm zayıf ({et.lower()}).")
         if asagi: p.append(f"{fy(asagi[0])} altında {kap} düşüşü {fy(asagi[1]) if len(asagi) > 1 else 'daha alt seviyelere'} doğru sürdürebilir.")
         if yukari: p.append(f"Toparlanma için {fy(yukari[0])} üzerinde kapanış gerekir.")
     else:
@@ -100,7 +102,7 @@ def analiz_et(donem, bugun=None):
                 sonuc.append({"grup": grup, "kod": kod, "ad": ad, "fiyat": fiyat, "degisim": a["degisim"], "puan": round(a["puan"], 1),
                               "etiket": a["etiket"], "ust_etiket": ust["etiket"] if ust else None, "rsi": round(rsi, 1),
                               "yapi": a["pa"].get("yapi"), "yukari": yukari, "asagi": asagi,
-                              "senaryo": senaryo(ad, a, ust, yukari, asagi, donem), "tarih": str(a["tarih"].date()), "_s": s})
+                              "senaryo": senaryo(ad, a, ust, yukari, asagi, donem, kod), "tarih": str(a["tarih"].date()), "_s": s})
             except Exception as ex:
                 print(f"{kod}: {ex}", file=sys.stderr)
     return sonuc
@@ -114,12 +116,13 @@ def kart(donem, sonuc, dosya, bugun):
     for grup, _ in GRUPLAR:
         sat = []
         for r in [x for x in sonuc if x["grup"] == grup]:
-            hd = " / ".join(fy(x) for x in r["yukari"][:2]) or "–"; ds = " / ".join(fy(x) for x in r["asagi"][:2]) or "–"
-            sat.append({"sol": f"{r['ad']} · {r['etiket']}", "nokta": renk(r["etiket"]),
+            hd = " / ".join(fy(x) for x in r["yukari"][:2]) or "zirvede"; ds = " / ".join(fy(x) for x in r["asagi"][:2]) or "–"
+            et = r["etiket"] if r["kod"] != "VIX" else ("YÜKSELİŞTE" if "AL" in r["etiket"] else "DÜŞÜŞTE" if "SAT" in r["etiket"] else "NÖTR")
+            sat.append({"sol": f"{r['ad']} · {et}", "nokta": renk(r["etiket"]) if r["kod"] != "VIX" else C["altin"],
                         "sag": f"{fy(r['fiyat'])}  {yz(r['degisim'])}", "sag_renk": C["yesil"] if (r["degisim"] or 0) > 0 else C["kirmizi"],
                         "alt": f"Hedef {hd} · Destek {ds}. {r['senaryo']}"})
         if sat: bolumler.append({"baslik": grup, "renk": C["altin"], "satirlar": sat})
-    al = sum(1 for r in sonuc if "AL" in r["etiket"]); sat_ = sum(1 for r in sonuc if "SAT" in r["etiket"])
+    al = sum(1 for r in sonuc if "AL" in r["etiket"] and r["kod"] != "VIX"); sat_ = sum(1 for r in sonuc if "SAT" in r["etiket"] and r["kod"] != "VIX")
     baslik = f"{al} varlık olumlu, {sat_} zayıf"
     tarih = f"{bugun:%d.%m.%Y}"
     K.bildirim_karti(f"{ad.upper()} DURUM RAPORU · {tarih}", baslik,
@@ -152,7 +155,7 @@ def calistir(donem, gonder=True):
     if gonder:
         import tg
         b = tg.Bot("durum"); ad = DONEM[donem]["ad"]; omur = 24 * 8 if donem == "haftalik" else 24 * 32
-        al = [r["ad"] for r in sonuc if "AL" in r["etiket"]]; zay = [r["ad"] for r in sonuc if "SAT" in r["etiket"]]
+        al = [r["ad"] for r in sonuc if "AL" in r["etiket"] and r["kod"] != "VIX"]; zay = [r["ad"] for r in sonuc if "SAT" in r["etiket"] and r["kod"] != "VIX"]
         alt = (f"📊 <b>{ad.upper()} DURUM RAPORU</b>\nOlumlu: {', '.join(al) or '–'}\nZayıf: {', '.join(zay) or '–'}\n"
                f"Ayrıntılar ve grafikler PDF'te.")
         b.sil_anahtar(f"durum_{donem}")
