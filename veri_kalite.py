@@ -16,9 +16,17 @@ RENK = {"anlık": "#22C55E", "gecikmeli": "#E8B84A", "gün sonu": "#A1A1AA", "ba
 AD = {"bist": "BIST", "abd": "ABD", "kripto": "Kripto", "emtia": "Emtia (vadeli)", "doviz": "Döviz", "faiz": "Faiz"}
 
 
+DUNYA_SEANS = {  # Aşama 12: yerel saatle açılış–kapanış (tatiller dikkate alınmaz)
+    "^GDAXI": ("Europe/Berlin", (9, 0), (17, 30)), "^STOXX50E": ("Europe/Berlin", (9, 0), (17, 30)), "^FCHI": ("Europe/Paris", (9, 0), (17, 30)),
+    "^FTSE": ("Europe/London", (8, 0), (16, 30)), "^N225": ("Asia/Tokyo", (9, 0), (15, 30)), "^HSI": ("Asia/Hong_Kong", (9, 30), (16, 0)),
+    "000001.SS": ("Asia/Shanghai", (9, 30), (15, 0)), "^KS11": ("Asia/Seoul", (9, 0), (15, 30)), "^BSESN": ("Asia/Kolkata", (9, 15), (15, 30)),
+    "^AXJO": ("Australia/Sydney", (10, 0), (16, 0)), "^BVSP": ("America/Sao_Paulo", (10, 0), (17, 0)), "^GSPTSE": ("America/Toronto", (9, 30), (16, 0))}
+
+
 def tur_bul(kod):
     """Yahoo / Binance kodundan piyasa türü."""
     k = str(kod).upper()
+    if k in DUNYA_SEANS: return "dunya:" + k
     if k.endswith(".IS"): return "bist"
     if k.endswith("-USD") or "/" in k or k.endswith("USDT"): return "kripto"
     if k.endswith("=F"): return "emtia"
@@ -52,6 +60,9 @@ def _seans(tur):
     """(saat dilimi, açılış, kapanış, 7/24 mü, gün içi mola yok mu)"""
     if tur == "bist": return TSI, dt.time(10, 0), dt.time(18, 10)
     if tur in ("abd", "faiz"): return NY, dt.time(9, 30), dt.time(16, 0)
+    if str(tur).startswith("dunya:"):
+        tz_, a_, k_ = DUNYA_SEANS[tur[6:]]
+        return ZoneInfo(tz_), dt.time(*a_), dt.time(*k_)
     return NY, None, None          # emtia ve döviz: pazar 18:00 – cuma 17:00 NY (her gün 17–18 arası mola)
 
 

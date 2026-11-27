@@ -107,6 +107,17 @@ def izlenecekler(PV, tk, acik, firs, hab):
         if oz: m.append(f"Türkiye: {oz}" + (" (son kayıtlı değer)" if (mm.get("tufe") or {}).get("bayat") else "") + ".")
     except Exception:
         pass
+    try:   # Aşama 12: gece Asya seansı ve ABD getiri eğrisi
+        yd = os.path.join(CIKTI, "dunya", "ozet.json")
+        do = json.load(open(yd, encoding="utf-8")) if os.path.exists(yd) else oku("dunya/ozet.json")
+        asya = [x for x in (do or {}).get("borsalar", []) if x["ad"] in ("Nikkei 225", "Hang Seng", "Şanghay") and x.get("d1") is not None]
+        if asya:
+            m.append("Asya bu sabah: " + ", ".join(f"{x['ad']} {_y(x['d1'])}" for x in asya) + ".")
+        e = (do or {}).get("egri") or {}
+        f_ = e.get("f10_2") if e.get("f10_2") is not None else e.get("f10_3a")
+        if f_ is not None and f_ < 0: m.append(f"ABD getiri eğrisi ters ({f_:+.2f} puan)".replace(".", ",") + "; resesyon riski fiyatlanıyor olabilir.")
+    except Exception:
+        pass
     try:   # Aşama 11: korelasyon kırılması (alışılmış piyasalar arası ilişki bozulduysa)
         yk = os.path.join(CIKTI, "korelasyon", "ozet.json")
         ko = json.load(open(yk, encoding="utf-8")) if os.path.exists(yk) else oku("korelasyon/ozet.json")
@@ -135,7 +146,7 @@ def izlenecekler(PV, tk, acik, firs, hab):
     if firs: m.append(f"Son kapanışların en güçlü fırsatı: {_kod(firs[0]['kod'])} ({'AL' if firs[0]['yon'] == 1 else 'SAT'}, puan {firs[0]['puan']:.0f}).")
     if hab:
         import haber as H; a = hab[0]; m.append(f"Öne çıkan haber: {a['tur']} ({H.etki_ad(a)}).")
-    return m[:6]
+    return m[:7]
 
 
 def _kod(k):

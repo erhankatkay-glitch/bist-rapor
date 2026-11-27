@@ -45,6 +45,9 @@ jobs:
       - name: Korelasyon ve göreceli güç (Aşama 11)
         continue-on-error: true
         run: python korelasyon.py cikti
+      - name: Dünya piyasaları (Aşama 12)
+        continue-on-error: true
+        run: python dunya.py cikti
       - name: Sabah özetini üret ve gönder
         run: python sabah.py
       - name: Yayınla
