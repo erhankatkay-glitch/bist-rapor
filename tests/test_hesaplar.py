@@ -128,3 +128,40 @@ def test_sayi_bicimi():
 def test_haber_olumsuzlama(baslik, beklenen):
     import haber
     assert haber.olumsuzlama(baslik) is beklenen
+
+
+# ---------------------------------------------------------------- Aşama 6: veri kalite etiketi + TCMB
+def test_veri_kalite_etiketleri():
+    import datetime as dt
+    import veri_kalite as VK
+    U = dt.timezone.utc
+    # Cuma 27.11.2026 15:00 TSİ = 12:00 UTC: BIST açık
+    simdi = dt.datetime(2026, 11, 27, 12, 0, tzinfo=U)
+    assert VK.etiket(simdi - dt.timedelta(minutes=20), "bist", simdi)["durum"] == "gecikmeli"
+    assert VK.etiket(simdi - dt.timedelta(hours=3), "bist", simdi)["durum"] == "bayat"
+    assert VK.etiket(simdi - dt.timedelta(minutes=5), "kripto", simdi)["durum"] == "anlık"
+    assert VK.etiket(simdi - dt.timedelta(hours=5), "kripto", simdi)["durum"] == "bayat"
+    # Cumartesi: BIST kapalı, cuma 18:10 TSİ (15:10 UTC) verisi "gün sonu"
+    cmt = dt.datetime(2026, 11, 28, 10, 0, tzinfo=U)
+    assert VK.etiket(dt.datetime(2026, 11, 27, 15, 10, tzinfo=U), "bist", cmt)["durum"] == "gün sonu"
+    assert VK.etiket(dt.datetime(2026, 11, 25, 15, 10, tzinfo=U), "bist", cmt)["durum"] == "bayat"
+    # ABD: cuma kapanış 16:00 NY = 21:00 UTC; cumartesi "gün sonu"
+    assert VK.etiket("2026-11-27T21:00:00+00:00", "abd", cmt)["durum"] == "gün sonu"
+    assert VK.etiket(None, "abd", cmt)["durum"] == "bayat"
+    assert VK.piyasa_acik("emtia", dt.datetime(2026, 11, 28, 12, tzinfo=U)) is False      # cumartesi
+    assert VK.tur_bul("XU100.IS") == "bist" and VK.tur_bul("BTC-USD") == "kripto" and VK.tur_bul("GC=F") == "emtia"
+    assert VK.tur_bul("TRY=X") == "doviz" and VK.tur_bul("^TNX") == "faiz" and VK.tur_bul("^GSPC") == "abd"
+
+
+def test_tcmb_tablolari():
+    import makro_tr as MT
+    html = ("<table><tr><th>Ay-Yıl</th><th>TÜFE (Yıllık % Değişim)</th><th>TÜFE (Aylık % Değişim)</th></tr>"
+            "<tr><td>10-2026</td><td>29.77</td><td>2.58</td></tr><tr><td>09-2026</td><td>29.73</td><td>1.84</td></tr></table>"
+            "<table><tr><td>10-2026</td><td>27.00</td><td>1.00</td></tr></table>")   # ikinci tablo (ÜFE) alınmaz
+    t = MT.tufe_coz(html)
+    assert [r["donem"] for r in t] == ["2026-10", "2026-09"] and t[0]["yillik"] == 29.77 and t[0]["aylik"] == 2.58
+    f = MT.faiz_coz("<table><tr><th>Tarih</th><th>Borç Alma</th><th>Borç Verme</th></tr>"
+                    "<tr><td>11.09.2026</td><td>-</td><td>40.50</td></tr><tr><td>23.10.2026</td><td>-</td><td>39.50</td></tr></table>")
+    assert f["oran"] == 39.5 and f["tarih"] == "2026-10-23" and f["onceki"] == 40.5
+    m = {"tufe": {"seri": t}, "faiz": f, "reel_faiz": round((1.395 / 1.2977 - 1) * 100, 2)}
+    assert MT.ozet_satiri(m) == "TÜFE %29,77 (Ekim 2026) · Politika faizi %39,50 · Reel faiz +%7,5"

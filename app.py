@@ -535,6 +535,12 @@ def spark_svg(seri, renk, w=150, h=58):
             f'<polyline points="{pts}" fill="none" stroke="{renk}" stroke-width="2" stroke-linejoin="round" style="filter:drop-shadow(0 0 3px {renk})"/></svg>')
 
 
+def _vk_tam(v):
+    if not v.get("tur"): return ""
+    e = VK.etiket(v.get("zaman"), v.get("tur"))
+    return VK.rozet_html(e) + f'<div class="pk-alt">{v.get("kaynak", "")} · {e["aciklama"]}</div>'
+
+
 def piyasa_karti(ad_, v):
     d = v.get("d1G") or 0; renk = "#22C55E" if d > 0 else "#EF4444" if d < 0 else "#A1A1AA"
     sinif = "y" if d > 0 else "k" if d < 0 else "n"; ok = "▲" if d > 0 else "▼" if d < 0 else "■"
@@ -545,11 +551,37 @@ def piyasa_karti(ad_, v):
     lg = LG.logo_url({"Bitcoin": "BTC", "Ethereum": "ETH"}.get(ad_, ""), "kripto") if ad_ in ("Bitcoin", "Ethereum") else None
     if lg: ad_ = f'<img src="{lg}" alt="" style="width:18px;height:18px;vertical-align:-3px;margin-right:6px">{ad_}'
     return (f'<div class="pk"><div><div class="pk-ad">{ad_}</div><div class="pk-d">{deger}{birim}</div>'
-            f'<span class="rozet {sinif}">{ok} {br.yz(d)}</span><div class="pk-alt">{alt}</div></div>'
+            f'<span class="rozet {sinif}">{ok} {br.yz(d)}</span> {_vk_tam(v)}<div class="pk-alt">{alt}</div></div>'
             f'<div>{spark_svg(v["seri"], renk)}</div></div>')
 
 
 MINI_LOGO = {"Bitcoin": ("BTC", "kripto"), "Ethereum": ("ETH", "kripto")}
+
+
+def makro_karti(m):
+    """TÜFE + politika faizi + reel faiz kartı (TCMB)."""
+    t = m["tufe"]["seri"]; s = t[0]
+    seri = list(reversed(t[:13]))
+    mx = max(r["yillik"] for r in seri); mn = min(r["yillik"] for r in seri)
+    w, h = 300, 60
+    nok = " ".join(f"{i * w / max(1, len(seri) - 1):.1f},{h - 6 - (r['yillik'] - mn) / max(1e-9, mx - mn) * (h - 12):.1f}" for i, r in enumerate(seri))
+    svg = (f'<svg width="100%" viewBox="0 0 {w} {h}" preserveAspectRatio="none" style="height:60px">'
+           f'<polyline points="{nok}" fill="none" stroke="#E8B84A" stroke-width="2"/></svg>')
+    onc = t[1]["yillik"] if len(t) > 1 else None
+    yon = "" if onc is None else (f'<span class="rozet {"k" if s["yillik"] > onc else "y"}">'
+                                  f'{"▲" if s["yillik"] > onc else "▼"} önceki ay %{br.ond(onc, 2)}</span>')
+    f = m.get("faiz") or {}
+    sat = []
+    if s.get("aylik") is not None: sat.append(f'Aylık %{br.ond(s["aylik"], 2)}')
+    if f: sat.append(f'Politika faizi <b>%{br.ond(f["oran"], 2)}</b> ({f["tarih"][8:10]}.{f["tarih"][5:7]}.{f["tarih"][:4]})')
+    if m.get("reel_faiz") is not None: sat.append(f'Reel faiz <b>{"+" if m["reel_faiz"] >= 0 else "−"}%{br.ond(abs(m["reel_faiz"]), 1)}</b>')
+    bayat = m["tufe"].get("bayat") or f.get("bayat")
+    vk = VK.rozet_html({"durum": "bayat" if bayat else "aylık veri", "renk": "#EF4444" if bayat else "#A1A1AA",
+                        "aciklama": "TCMB sitesine son denemede ulaşılamadı; son kayıtlı değer." if bayat else "Aylık açıklanan resmi veri."})
+    return (f'<div class="pk" style="display:block"><div class="pk-ad">Yıllık enflasyon (TÜFE) · {MT.donem_adi(s["donem"])} {vk}</div>'
+            f'<div class="pk-d">%{br.ond(s["yillik"], 2)}</div>{yon}'
+            f'<div style="margin-top:8px">{svg}</div>'
+            f'<div class="pk-alt">{" · ".join(sat)}<br>Kaynak: {m["tufe"]["kaynak"]} · son 13 ay. TÜFE her ayın 3\'ünde 10:00\'da açıklanır.</div></div>')
 
 
 def mini_kart(ad_, v):
@@ -562,8 +594,9 @@ def mini_kart(ad_, v):
         import logolar as LG
         u = LG.logo_url(*MINI_LOGO[ad_])
         if u: lg = f'<img src="{u}" alt="" class="mk-l">'
+    vk = VK.rozet_html(VK.etiket(v.get("zaman"), v.get("tur"))) if v.get("tur") else ""
     return (f'<div class="mk"><div class="mk-a">{lg}{ad_}</div><div class="mk-d">{deger}</div>'
-            f'<div class="mk-y" style="color:{renk}">{ok} {br.yz(d)}</div>{spark_svg(v["seri"], renk, 116, 30)}</div>')
+            f'<div class="mk-y" style="color:{renk}">{ok} {br.yz(d)} {vk}</div>{spark_svg(v["seri"], renk, 116, 30)}</div>')
 
 
 def _arama_secenekleri():
@@ -801,6 +834,10 @@ with takip_b:
     tab_w, tab_al = st.tabs([":material/bookmark: Favoriler", ":material/notifications_active: Alarmlar"])
 
 
+import makro_tr as MT
+import veri_kalite as VK
+_MAKRO = json_oku("makro/tr_makro.json", dt.datetime.now().strftime("%Y%m%d%H"))
+_ENF_TCMB = (_MAKRO or {}).get("tufe", {}).get("seri", [{}])[0].get("yillik") if _MAKRO else None
 with takip_b:
   with st.expander(":material/tune: Ayarlar ve varsayımlar"):
       if st.button(":material/refresh: Verileri yenile (önbelleği temizle)", key="yenile"):
@@ -810,15 +847,23 @@ with takip_b:
           st.rerun()
       c1, c2 = st.columns(2)
       rf = c1.number_input("Risksiz faiz (TR 10Y)", value=0.366, step=0.01, format="%.4f")
-      enf = c2.number_input("Yıllık enflasyon" + (" (EVDS)" if "enflasyon" in OTO else ""), value=float(OTO.get("enflasyon", 0.2977)),
+      _enf_v = OTO.get("enflasyon") or (round(_ENF_TCMB / 100, 4) if _ENF_TCMB else 0.2977)
+      enf = c2.number_input("Yıllık enflasyon" + (" (EVDS)" if "enflasyon" in OTO else " (TCMB)" if _ENF_TCMB else ""), value=float(_enf_v),
                             step=0.01, format="%.4f")
       erp = c1.number_input("Hisse risk primi", value=0.07, step=0.005, format="%.3f")
       g = c2.number_input("DCF uç büyüme", value=0.15, step=0.01, format="%.3f")
-      st.caption("Enflasyon, EVDS anahtarı girildiyse TCMB verisinden otomatik alınır; diğerleri Kasım 2026 piyasa verilerine göre ayarlıdır.")
+      st.caption("Enflasyon her sabah TCMB'nin sitesinden otomatik alınır (EVDS anahtarı varsa o öncelikli); diğerleri Kasım 2026 piyasa verilerine göre ayarlıdır.")
       yeni_k = st.text_input("TCMB EVDS API anahtarı (isteğe bağlı)", value="", type="password",
                              help="evds3.tcmb.gov.tr → Benim Sayfam → API anahtarı. Kalıcı olması için Streamlit Secrets'a EVDS_KEY olarak ekleyin.")
       if yeni_k:
           st.session_state["evds_key"] = yeni_k
+with takip_b:
+  with st.expander(":material/database: Veri kaynakları ve gecikmeler"):
+      st.markdown("".join(
+          f'<div class="hb" style="--v:#E8B84A"><div class="hb-u"><b>{alan}</b><span class="cip">{gec}</span></div>'
+          f'<div style="font-size:.8rem;margin-top:6px;line-height:1.45">Birincil: {bir}<br>Yedek: {yed}' + (f'<br><span style="color:#A1A1AA">{not_}</span>' if not_ else "") + '</div></div>'
+          for alan, bir, yed, gec, not_ in VK.KAYNAKLAR), unsafe_allow_html=True)
+      st.caption("Kartlardaki etiketler: anlık (yeşil) · gecikmeli (altın, ~15 dk) · kapanış (gri, piyasa kapalı) · bayat (kırmızı, veri beklenenden eski).")
 PRM = dict(rf=rf, enflasyon=enf, erp=erp, terminal_g=g)
 GUN = dt.date.today().isoformat()
 _s = dt.datetime.now()
@@ -1388,7 +1433,7 @@ with tab_p:
             "Bitcoin", "Ethereum", "Dolar endeksi", "ABD 10Y faiz", "VIX", "BIST 100 ($)"]
     goster = [x for x in sira if x in PV]
     st.markdown('<div class="serit-k">' + "".join(mini_kart(ad_, PV[ad_]) for ad_ in goster) + "</div>", unsafe_allow_html=True)
-    st.caption("Yana kaydırın · Kripto anlık, diğerleri ~15 dk gecikmeli (Yahoo). Mini grafik son 60 işlem günü.")
+    st.caption("Yana kaydırın · Etiket: anlık / gecikmeli (~15 dk) / kapanış / bayat. Kaynaklar: Takip › Veri kaynakları. Mini grafik son 60 işlem günü.")
     # ---- Günün fırsatları (tüm piyasalar, puana göre)
     try:
         _gf = gunun_firsatlari(ZAMAN)
@@ -1434,6 +1479,9 @@ with tab_p:
             f'<div style="margin-top:10px">{_svg}</div>'
             f'<div class="pk-alt">{YA.cumle(_yo)} Kaynak: TCMB Haftalık Menkul Kıymet İstatistikleri (her perşembe 14:30). '
             f'Hisse bazında değil, tüm BIST için toplamdır.</div></div>', unsafe_allow_html=True)
+    if _MAKRO and _MAKRO.get("tufe"):
+        st.markdown(TS.bb("Türkiye makro"), unsafe_allow_html=True)
+        st.markdown(makro_karti(_MAKRO), unsafe_allow_html=True)
     for d_, ad_ in (("haftalik", "Haftalık"), ("aylik", "Aylık")):
         k_ = gorsel_oku(f"donem/{d_}.png", ZAMAN)
         if k_:
@@ -1453,8 +1501,6 @@ with tab_p:
             st.markdown(f"- {ad_}: **{br.ond(v['deger'], 2)}** ({v['tarih']:%m.%Y})")
         if OTO: st.caption("Model varsayımlarındaki enflasyon EVDS'den otomatik alındı.")
         if EVDS_HATA: st.caption("Okunamayan seriler: " + "; ".join(f"{k} ({h})" for k, h in EVDS_HATA.items()))
-    else:
-        st.caption("TCMB verileri (enflasyon, fonlama maliyeti, rezerv) için ⚙️ Varsayımlar bölümüne ücretsiz EVDS API anahtarınızı girin.")
 
     st.divider()
     st.markdown(TS.bb("Günlük tarama ve fırsat listeleri"), unsafe_allow_html=True)

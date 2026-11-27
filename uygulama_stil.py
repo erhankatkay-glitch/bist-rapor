@@ -184,6 +184,8 @@ div[role="radiogroup"] > label:has(input:checked) p {color:var(--altin-a) !impor
 .mk-a {font-size:.7rem; color:var(--soluk); font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .mk-d {font-size:1.06rem; font-weight:850; margin-top:2px; font-variant-numeric:tabular-nums;}
 .mk-y {font-size:.72rem; font-weight:800;}
+.vk {display:inline-flex; align-items:center; gap:4px; font-size:.6rem; font-weight:800; letter-spacing:.3px; border:1px solid; border-radius:20px; padding:1px 6px; vertical-align:1px; text-transform:uppercase; white-space:nowrap;}
+.vk i {width:5px; height:5px; border-radius:50%; display:inline-block;}
 .mk-l {width:15px; height:15px; border-radius:50%; vertical-align:-3px; margin-right:5px; background:#fff;}
 .fk {flex:none; width:228px; background:linear-gradient(160deg, color-mix(in srgb, var(--v) 14%, #17181B), #121315 60%);
      border:1px solid color-mix(in srgb, var(--v) 45%, transparent); border-radius:16px; padding:11px 12px; scroll-snap-align:start;}
