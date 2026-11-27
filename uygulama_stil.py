@@ -134,6 +134,21 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 .kl-g {display:grid; grid-template-columns:repeat(3,1fr); gap:6px;} .kl-g div {background:#141518; border:1px solid var(--cizgi); border-radius:12px; padding:8px 6px; text-align:center;}
 .kl-g b {display:block; font-size:1rem; font-weight:850;} .kl-g span {font-size:.62rem; color:var(--soluk);}
 .kl-o {font-size:.78rem; color:#D4D4D8; margin-top:7px;}
+.ko {background:linear-gradient(180deg,#18191C,#111214); border:1px solid var(--cizgi); border-radius:16px; padding:11px 12px; margin-bottom:8px;}
+.ko-kir {border-color:rgba(239,68,68,.6); box-shadow:inset 3px 0 0 #EF4444;}
+.ko-u {display:flex; justify-content:space-between; align-items:baseline; gap:8px;} .ko-u b {font-size:.9rem;} .ko-u span {font-weight:900; font-size:1rem;}
+.ko-u small {font-size:.62rem; color:var(--soluk); font-weight:700;}
+.ko-s {font-size:.72rem; color:var(--soluk); margin-top:2px;} .ko-y2 {font-size:.76rem; color:#D4D4D8; margin-top:6px; line-height:1.35;}
+.ko-o {position:relative; height:12px; margin:10px 4px 2px; border-radius:6px; background:linear-gradient(90deg,rgba(239,68,68,.45),#2A2B30 50%,rgba(34,197,94,.45));}
+.ko-0 {position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:#71717A;}
+.ko-o i {position:absolute; top:50%; transform:translate(-50%,-50%);}
+.ko-a {width:13px; height:13px; border-radius:50%; background:#F4F4F5; border:2px solid #0B0B0C;}
+.ko-k {width:10px; height:10px; background:#F5D27A; transform:translate(-50%,-50%) rotate(45deg) !important;}
+.ko-y {width:2px; height:16px; background:#71717A;}
+.ko-e {display:flex; justify-content:space-between; font-size:.58rem; color:#71717A; margin:0 2px;}
+.ko-not {font-size:.68rem; color:var(--soluk); margin:-2px 0 8px;}
+.km-t {overflow-x:auto;} .km-t table {border-collapse:collapse; font-size:.62rem;} .km-t th {color:var(--soluk); font-weight:700; padding:3px 4px; white-space:nowrap;}
+.km-t td {text-align:center; padding:4px 3px; min-width:30px; color:#F4F4F5; border:1px solid #0B0B0C;}
 .kk-bild {display:none !important;} .stElementContainer:has(.kk-bild) {display:none !important;}
 #kk-toast {position:fixed; left:10px; right:10px; max-width:620px; margin:0 auto; top:calc(10px + env(safe-area-inset-top)); z-index:999999;
   transform:translateY(-160%); opacity:0; transition:transform .38s cubic-bezier(.2,.9,.25,1.15), opacity .3s; pointer-events:none;}

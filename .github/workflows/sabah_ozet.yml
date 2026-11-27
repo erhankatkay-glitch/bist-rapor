@@ -42,6 +42,9 @@ jobs:
         env:
           EVDS_KEY: ${{ secrets.EVDS_KEY }}
         run: python makro_tr.py cikti
+      - name: Korelasyon ve göreceli güç (Aşama 11)
+        continue-on-error: true
+        run: python korelasyon.py cikti
       - name: Sabah özetini üret ve gönder
         run: python sabah.py
       - name: Yayınla

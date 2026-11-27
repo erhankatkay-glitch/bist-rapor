@@ -806,6 +806,44 @@ AYAR = {"1S": {"pencere_fib": 120, "goster": 120, "atr_k": 2.0}, "4S": {"pencere
         "A": {"pencere_fib": 96, "goster": 120, "atr_k": 1.0}}
 
 
+KIYAS = {"hisse": ("XU100", "BIST 100"), "abd": ("SP500", "S&P 500"), "kripto": ("BTC/USDT", "Bitcoin")}
+_KIYAS_ONB = {}
+
+
+def _kiyas_seri(tur):
+    """Kıyas endeksinin günlük kapanışı (süreç içinde bir kez indirilir)."""
+    if tur not in _KIYAS_ONB:
+        try: _KIYAS_ONB[tur] = gunluk_veri(KIYAS[tur][0])[0]["Close"]
+        except Exception: _KIYAS_ONB[tur] = None
+    return _KIYAS_ONB[tur]
+
+
+def goreceli_satirlar(h, tur):
+    """→ gösterge karnesi satırları: göreceli güç (3 ay) ve korelasyon/beta (60 gün)."""
+    ref = _kiyas_seri(tur); kod_ad = KIYAS[tur][1]
+    if ref is None: return []
+    c = h["Close"]; r = ref.copy()
+    c.index = pd.DatetimeIndex(c.index).tz_localize(None).normalize() if getattr(c.index, "tz", None) else pd.DatetimeIndex(c.index).normalize()
+    r.index = pd.DatetimeIndex(r.index).tz_localize(None).normalize() if getattr(r.index, "tz", None) else pd.DatetimeIndex(r.index).normalize()
+    x = pd.concat([c, r], axis=1, keys=["v", "e"]).dropna()
+    x = x[~x.index.duplicated(keep="last")]
+    if len(x) < 70 or float((x["v"] - x["e"]).abs().max()) == 0: return []
+    out = []
+    d3 = float((x["v"].iloc[-1] / x["v"].iloc[-64]) / (x["e"].iloc[-1] / x["e"].iloc[-64]) - 1)
+    oran = x["v"] / x["e"]; guc = bool(oran.iloc[-1] > oran.rolling(50).mean().iloc[-1])
+    out.append((f"Göreceli güç ({kod_ad}'e göre, 3 ay)", ("+" if d3 >= 0 else "-") + "%" + tr(abs(d3) * 100),
+                f"{'Endeksten güçlü' if d3 > 0 else 'Endeksten zayıf'}; oran 50 günlük ortalamasının {'üstünde (güçleniyor)' if guc else 'altında (zayıflıyor)'}.",
+                1 if d3 > 0 and guc else -1 if d3 < 0 and not guc else 0))
+    g = np.log(x).diff().dropna().tail(60)
+    if len(g) >= 40:
+        kor = float(g["v"].corr(g["e"])); beta = float(g.cov().iloc[0, 1] / g["e"].var()) if g["e"].var() > 0 else None
+        if beta is not None:
+            out.append((f"Korelasyon / beta ({kod_ad}, 60 gün)", f"{tr(kor, 2)} / {tr(beta, 2)}",
+                        ("Endeksle güçlü birlikte hareket" if kor >= 0.7 else "Endeksle orta düzey ilişki" if kor >= 0.4 else "Endeksten bağımsıza yakın")
+                        + f"; beta {tr(beta, 2)}: endeks %1 oynadığında ortalama %{tr(abs(beta), 1)} " + ("oynuyor (endeksten oynak)." if beta > 1.1 else "oynuyor."), 0))
+    return out
+
+
 QD_PIYASA = {"hisse": "bist", "abd": "abd", "kripto": "kripto", "emtia": "emtia"}
 
 
@@ -819,6 +857,12 @@ def tf_analiz(h, tf, tur=None):
     dr = durumlar(h, G)
     # Sinyal listesi (yön: +1/-1/0, güç 0–3)
     sinyal = []
+    # Aşama 11: endekse göre göreceli güç, korelasyon ve beta (günlük; kıyas: hisse→XU100, ABD→S&P 500, kripto→BTC)
+    if tf == "G" and tur in ("hisse", "abd", "kripto"):
+        try:
+            for satir in goreceli_satirlar(h, tur): dr.append(satir)
+        except Exception:
+            pass
     # Aşama 10c: bu piyasada testi geçen VCP / momentum patlaması / episodic pivot kurulumları (karne + taze sinyal)
     if tur in QD_PIYASA:
         try:

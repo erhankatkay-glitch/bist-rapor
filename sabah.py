@@ -107,6 +107,16 @@ def izlenecekler(PV, tk, acik, firs, hab):
         if oz: m.append(f"Türkiye: {oz}" + (" (son kayıtlı değer)" if (mm.get("tufe") or {}).get("bayat") else "") + ".")
     except Exception:
         pass
+    try:   # Aşama 11: korelasyon kırılması (alışılmış piyasalar arası ilişki bozulduysa)
+        yk = os.path.join(CIKTI, "korelasyon", "ozet.json")
+        ko = json.load(open(yk, encoding="utf-8")) if os.path.exists(yk) else oku("korelasyon/ozet.json")
+        kc = [c for c in (ko or {}).get("ciftler", []) if c.get("kirilma")]
+        if kc:
+            c = kc[0]
+            m.append(f"{c['a']} ile {c['b']} arasındaki alışılmış ilişki bozuldu (20 günlük korelasyon {c['c20']:+.2f}, 1 yıllık "
+                     f"{c['c250']:+.2f})".replace(".", ",") + "; çeşitlendirme varsayımlarını gözden geçirin.")
+    except Exception:
+        pass
     try:   # Aşama 10c: piyasa rejimi (kapanışta hesaplanır)
         rj = [r for r in (oku("rejim/bist.json"), oku("rejim/abd.json")) if r]
         if rj: m.append("Piyasa rejimi: " + "; ".join(f"{r['endeks']} {r['durum_ad'].lower()}, önerilen hisse oranı %{r['maruziyet']}"
