@@ -207,6 +207,14 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
             K._t(ax, 76, y, textwrap.shorten(a["baslik"], 70, placeholder="…"), 16, C["yazi"]); y -= 32
     K._t(ax, W / 2, 18, "KATKAY YATIRIM A.Ş. · Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
+    try:   # içerik bittiği yerin altındaki boşluğu kırp (alt bilgi korunur)
+        from PIL import Image
+        im = Image.open(dosya); bos_ust, bos_alt = int(H - max(y, 60) + 20), H - 50
+        if bos_alt - bos_ust > 80:
+            ust_, alt_ = im.crop((0, 0, W, bos_ust)), im.crop((0, bos_alt, W, H))
+            yeni = Image.new(im.mode, (W, ust_.height + alt_.height)); yeni.paste(ust_, (0, 0)); yeni.paste(alt_, (0, ust_.height)); yeni.save(dosya)
+    except Exception:
+        pass
     return dosya
 
 
