@@ -12,7 +12,7 @@ with sync_playwright() as pw:
     pg.on("pageerror", lambda e: print("pageerror:", str(e)[:300]))
     pg.goto("http://localhost:8501", timeout=120000); pg.wait_for_selector('[data-testid="stTab"]', timeout=180000); pg.wait_for_timeout(8000)
     pg.evaluate("(d)=>{localStorage.setItem('katkay_sanal', d); localStorage.setItem('kk_gorulen', JSON.stringify(['x']));}", D)
-    pg.reload(); pg.wait_for_selector('[data-testid="stTab"]', timeout=180000); pg.wait_for_timeout(8000)
+    pg.reload(); pg.wait_for_selector('[data-testid="stTab"]', timeout=180000, state="attached"); pg.wait_for_timeout(8000)
     pg.evaluate("window.kkGitAlt('Portföy|Sanal işlem')"); pg.wait_for_timeout(12000)
     def bekle():
         for _ in range(40):
