@@ -560,6 +560,7 @@ CANLI_JS = """
   // Düğmeler ana sayfanın kendi kodu ile çalışır (bu iframe her yenilemede değişse de düğmeler ölmez).
   try{
     const W=window.parent, P=W.document, OGE=__OGE__, SIMGE=__SIMGE__;
+    try{ P.documentElement.lang="tr"; }catch(e){}   // büyük harfe çevirmede Türkçe i → İ
     let st=P.getElementById("kk-nav-stil");
     if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
     if(!P.getElementById("kk-nav-js8")){
@@ -785,14 +786,14 @@ def ust_kompakt_sayfa(pv=None, haberler=None):
     import json
     js = (CANLI_JS.replace("__OGE__", json.dumps(NAV_OGE)).replace("__STIL__", json.dumps(NAV_STIL))
           .replace("__SIMGE__", json.dumps(SIMGE_URL)))
-    return "<!DOCTYPE html><html><head><meta charset='utf-8'>" + KOMPAKT_STIL + "</head><body>" + ust_kompakt(pv, haberler) + js + "</body></html>"
+    return "<!DOCTYPE html><html lang='tr'><head><meta charset='utf-8'>" + KOMPAKT_STIL + "</head><body>" + ust_kompakt(pv, haberler) + js + "</body></html>"
 
 
 def ust_bant_sayfa(pv=None):
     import json
     js = (CANLI_JS.replace("__OGE__", json.dumps(NAV_OGE)).replace("__STIL__", json.dumps(NAV_STIL))
           .replace("__SIMGE__", json.dumps(SIMGE_URL)))
-    return ("<!DOCTYPE html><html><head><meta charset='utf-8'>" + BANT_STIL + "</head><body>" + ust_bant(pv) + js + "</body></html>")
+    return ("<!DOCTYPE html><html lang='tr'><head><meta charset='utf-8'>" + BANT_STIL + "</head><body>" + ust_bant(pv) + js + "</body></html>")
 
 
 def bb(baslik):

@@ -291,3 +291,7 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - arastirma_qd.py: R [−5, +3] kırpılır, bozuk fiyatlı varlıklar atlanır (±%60 günlük sıçrama / ≤0 fiyat).
 - Disiplin araçları: sanal.kontrol_listesi / dusus_sigortasi / gunluk_ekle ("not" olayı, ref) / haftalik_ozet; defter["ayar"].
   Açılışta "kontrol" (puan + uyarılar) olaya yazılır; stop ve neden zorunlu, diğer kırmızılar "bilerek esnetiyorum" onayıyla.
+
+## Aşama 11 (28.11.2026)
+- korelasyon.py (sabah_ozet.yml adımı) → korelasyon/ozet.json; app.korelasyon_bolumu (Ekonomi); sabah.izlenecekler kırılma maddesi;
+  bist_teknik.goreceli_satirlar (tf_analiz G, tur ile) → karne + PDF. Sayfa dili "tr" (CSS büyük harfte İ).

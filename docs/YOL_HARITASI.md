@@ -84,7 +84,9 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
   - Kurulumlar (Aşama 10b testinden geçerse): VCP (Minervini), momentum patlaması, episodic pivot.
   - Disiplin: işlem öncesi kontrol listesi, düşüş sigortası (sanal portföyde %X kayıpta yeni işlem uyarısı),
     işlem günlüğü ve kapanan işlem sonrası değerlendirme (bölüm 29), haftalık performans özeti.
-- 11. Korelasyon ve göreceli güç modülü (BTC/Nasdaq, altın/DXY, BIST/S&P…).
+- 11. ✅ TAMAM (28.11): korelasyon.py — 8 ana çift (20/60/250 gün, kırılma ≥ 0,4), 12'li matris, 6 oran (göreceli güç), BIST sektör rotasyonu.
+  Sabah iş akışında korelasyon/ozet.json; Telegram kartı Pazartesi ve yeni kırılmada; sabah özeti maddesi; Ekonomi bölümü;
+  teknik karne/PDF: endekse göre 3 aylık göreceli güç + 60 günlük korelasyon/beta (hisse→XU100, ABD→S&P 500, kripto→BTC).
 - 12. Dünya borsaları, döviz majörleri, getiri eğrisi, emtia vade yapısı.
 - 13. Opsiyon: BTC/ETH için Deribit'in herkese açık verisi (IV, Greeks).
 - 14. Altı rollü araştırma ekibi (kural tabanlı; ücretsiz dil modeli anahtarı gelirse yorum katmanı).
