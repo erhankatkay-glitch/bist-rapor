@@ -1230,8 +1230,10 @@ with tab_tk:
     gunler_ = {}
     for e in tkv:
         t_ = pd.Timestamp(e["zaman"])
-        if t_ < simdi_ - pd.Timedelta(hours=3): continue
+        if t_ < simdi_ - pd.Timedelta(days=7): continue   # bu haftanın açıklanmış verileri de (soluk) görünür
         gunler_.setdefault(t_.strftime("%d.%m.%Y %A"), []).append((t_, e))
+    if tkv and not any(pd.Timestamp(e["zaman"]) >= simdi_ for e in tkv):
+        st.info("Bu hafta açıklanacak yüksek etkili veri kalmadı; yeni haftanın takvimi pazartesi sabahı gelir. Bu haftanın açıklanmış verileri aşağıda.")
     GUN_TR = {"Monday": "Pazartesi", "Tuesday": "Salı", "Wednesday": "Çarşamba", "Thursday": "Perşembe", "Friday": "Cuma", "Saturday": "Cumartesi", "Sunday": "Pazar"}
     for g_, liste_ in gunler_.items():
         tarih_, gun_ = g_.split(" ")
