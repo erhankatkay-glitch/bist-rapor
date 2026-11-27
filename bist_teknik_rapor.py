@@ -224,6 +224,9 @@ def _yon(y):
 
 
 SOZLUK_TEKNIK = [
+    ("QuantDinger göstergeleri", "Açık kaynak QuantDinger kütüphanesinden (Apache-2.0) alınıp her piyasada ayrı sıkı geçmiş testten geçen göstergeler "
+     "(ör. Mavilim, AlphaTrend, Pivot SuperTrend, fincan formasyonu). Sinyali geriye dönük çizenler elendi; yalnız rastgele girişten "
+     "4 dönemin en az 3'ünde ve son kör dönemde daha iyi olanlar kullanılır."),
     ("Hareketli ortalama (SMA/EMA)", "Belirli dönemin ortalama fiyatı. Fiyat ortalamanın üzerindeyse eğilim yukarı kabul edilir. EMA son fiyatlara daha fazla ağırlık verir."),
     ("RSI / Stokastik / Williams %R", "Momentum osilatörleri. Aşırı alım (RSI>70) ve aşırı satım (RSI<30) bölgelerini gösterir."),
     ("MACD", "İki üssel ortalama farkı; sinyal çizgisini yukarı kesmesi al, aşağı kesmesi sat sinyali sayılır."),

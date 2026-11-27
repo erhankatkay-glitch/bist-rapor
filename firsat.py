@@ -93,6 +93,23 @@ def qd_tetik(h, M, q, yon):
     return m, M["Close"] - 2.0 * M["ATR"]
 
 
+def qd_durumlar(h, piyasa, tf, pencere=10):
+    """Teknik analiz sayfası/PDF için: bu piyasada kabul edilen QuantDinger göstergelerinin son sinyali.
+    → [{baslik, yon, yas (mum; yoksa None), aciklama, fazla}]"""
+    import qd_calistir as Q
+    out = []
+    for q in [q for y in (1, -1) for q in qd_kurulumlar(piyasa, tf, y)]:
+        try:
+            r = Q.sinyaller(os.path.join(Q.KLASOR, q["dosya"]), h)
+        except Exception:
+            r = None
+        idx = (r[0] if q["yon"] == 1 else r[1]) if r is not None else np.array([], int)
+        n = len(h); son = int(idx[-1]) if len(idx) else None
+        yas = (n - 1 - son) if son is not None and n - 1 - son < pencere else None
+        out.append({"baslik": q["baslik"], "yon": q["yon"], "yas": yas, "aciklama": q["aciklama"], "fazla": q["test"]["fazla"]})
+    return out
+
+
 DONUS = {"UYUMSUZ", "AVI", "HARM"}                  # üst zaman dilimine ters de olabilir (karşı trend)
 MAKS_BAR = {"4S": 30, "G": 20, "H": 12, "A": 8}
 MAKS_RISK = {"4S": 0.08, "G": 0.12, "H": 0.20, "A": 0.30}   # girişten stopa en fazla uzaklık
