@@ -2128,7 +2128,10 @@ with tab_al:
     if son_al:
         import re as _re, html as _h
         _kart = []
-        for x in son_al[:20]:
+        _ara = st.text_input("Geçmişte ara (kod ya da kelime)", key="al_ara", placeholder="ör. THYAO, harmonik, KAP").strip().upper()
+        _liste = [x for x in son_al if not _ara or _ara in x["mesaj"].upper()]
+        st.caption(f"Son {len(son_al)} alarm saklanır · {len(_liste)} kayıt gösteriliyor")
+        for x in _liste[:60]:
             m_ = x["mesaj"]; link = _re.search(r"⟦(.+?)⟧$", m_); m_ = _re.sub(r"⟦(.+?)⟧$", "", m_).strip()
             ik = m_[:1]; renk = "#22C55E" if ("+" in m_ and "%" in m_) or ik == "🟢" else "#EF4444" if ik in ("🔴", "⛔") or "-%" in m_ else "#E8B84A"
             _kart.append(f'<div class="hb" style="--v:{renk}"><div class="hb-u"><span class="vb-e">{_h.escape(x["zaman"])}</span></div>'
@@ -2137,23 +2140,53 @@ with tab_al:
         st.markdown("".join(_kart), unsafe_allow_html=True)
     else:
         st.info("Henüz tetiklenen alarm yok.")
-    st.markdown(TS.bb("Kurallar"), unsafe_allow_html=True)
+    st.markdown(TS.bb("Kurallarım"), unsafe_allow_html=True)
     mevcut = open("alarmlar.txt", encoding="utf-8").read() if os.path.exists("alarmlar.txt") else ""
-    st.code("\n".join(s for s in mevcut.splitlines() if s.strip() and not s.startswith("#")) or "(kural yok)")
-    with st.expander(":material/add: Yeni alarm ekle"):
-        tip = st.selectbox("Alarm türü", ["Fiyat üstüne çıkınca", "Fiyat altına inince", "Günlük % hareket", "RSI altına inince", "RSI üstüne çıkınca",
-                                          "Teknik puan üstüne çıkınca", "Yeni formasyon / kırılım", "KAP haberi"], key="al_tip",
-                                          help="Formasyon alarmı: grafik formasyonları, BOS/CHoCH, harmonik formasyonlar, emir bloğu ve kırıcı blok testleri.")
-        kod_a = st.text_input("Kod (örn. THYAO, NVDA.US, BTC/TRY, PEPE/USDT@OKX, ALTIN, SP500)", key="al_kod").strip().upper()
-        deger = st.text_input("Değer (fiyat, yüzde veya RSI/puan)", key="al_deger").strip().replace(",", ".") if tip not in ("Yeni formasyon / kırılım", "KAP haberi") else ""
-        kural = {"Fiyat üstüne çıkınca": f"{kod_a} > {deger}", "Fiyat altına inince": f"{kod_a} < {deger}", "Günlük % hareket": f"{kod_a} %{deger}",
-                 "RSI altına inince": f"{kod_a} RSI < {deger}", "RSI üstüne çıkınca": f"{kod_a} RSI > {deger}", "Teknik puan üstüne çıkınca": f"{kod_a} PUAN > {deger}",
-                 "Yeni formasyon / kırılım": f"{kod_a} FORMASYON", "KAP haberi": f"{kod_a} KAP"}.get(tip, "")
-        if kod_a: st.code(kural)
+    import alarm as _AL
+    _K = _AL.kurallar(mevcut)
+    TUR_AD = {"fiyat": "Fiyat seviyesi", "yuzde": "Günlük % hareket", "rsi": "RSI", "puan": "Teknik puan", "formasyon": "Formasyon / kırılım",
+              "kap": "KAP haberi", "otomatik": "Takip listesi (otomatik)", "ema": "EMA kesişimi", "hacim": "Göreli hacim", "fib": "Fibonacci seviyesi",
+              "destek": "Destek kırılımı", "direnc": "Direnç kırılımı", "kirilim": "Destek/direnç kırılımı", "fvg": "FVG oluşumu",
+              "bos": "BOS / CHoCH", "choch": "CHoCH", "harmonik": "Harmonik formasyon", "sinyal": "Yeni fırsat kurulumu",
+              "temel": "Yeni finansal tablo", "takvim": "Ekonomik olay (75 dk önce)", "pfrisk": "Portföy riski"}
+    _say = {}
+    for k_ in _K: _say[TUR_AD.get(k_["tip"], k_["tip"])] = _say.get(TUR_AD.get(k_["tip"], k_["tip"]), 0) + 1
+    st.markdown('<div style="display:flex;flex-wrap:wrap;gap:6px">' + "".join(f'<span class="cip">{t} · {n}</span>' for t, n in _say.items()) + "</div>",
+                unsafe_allow_html=True)
+    with st.expander(f"Tüm kurallar ({len(_K)})"):
+        st.code("\n".join(s for s in mevcut.splitlines() if s.strip() and not s.startswith("#")) or "(kural yok)")
+    with st.expander(":material/add: Yeni alarm ekle", expanded=False):
+        SECENEK = {
+            "Fiyat üstüne çıkınca": ("{k} > {d}", "Fiyat"), "Fiyat altına inince": ("{k} < {d}", "Fiyat"),
+            "Günlük % hareket": ("{k} %{d}", "Yüzde (ör. 3)"), "RSI altına inince": ("{k} RSI < {d}", "RSI (ör. 30)"),
+            "RSI üstüne çıkınca": ("{k} RSI > {d}", "RSI (ör. 70)"), "Teknik puan üstüne çıkınca": ("{k} PUAN > {d}", "Puan (ör. 70)"),
+            "EMA kesişimi": ("{k} EMA {d}", "Hızlı/yavaş (ör. 20/50)"), "Göreli hacim (RVOL)": ("{k} HACIM > {d}", "Kat (ör. 2)"),
+            "Fibonacci seviyesine gelince": ("{k} FIB {d}", "Oran (ör. 0.618)"),
+            "Destek kırılımı (aşağı)": ("{k} DESTEK", None), "Direnç kırılımı (yukarı)": ("{k} DIRENC", None),
+            "Destek veya direnç kırılımı": ("{k} KIRILIM", None), "FVG oluşumu": ("{k} FVG", None), "BOS / CHoCH (yapı kırılımı)": ("{k} BOS", None),
+            "Harmonik formasyon tamamlanınca": ("{k} HARMONIK", None), "Yeni fırsat kurulumu (sinyal)": ("{k} SINYAL", None),
+            "Yeni formasyon / kırılım": ("{k} FORMASYON", None), "KAP haberi": ("{k} KAP", None),
+            "Yeni finansal tablo (temel analiz)": ("{k} TEMEL", None),
+            "Ekonomik olay (açıklamadan 75 dk önce)": ("TAKVIM {k}", "Ülke kodu boş = hepsi (ör. USD, TRY)"),
+            "Portföy riski (toplam zarar)": ("PORTFOY RISK {d}", "Zarar eşiği % (ör. 10)"),
+        }
+        tip = st.selectbox("Alarm türü", list(SECENEK), key="al_tip",
+                           help="Teknik alarmlar günlük mumla değerlendirilir; mum kapanmadan oluşan durumlar 'kapanış teyidi bekleniyor' notuyla gelir. "
+                                "Aynı sinyal aynı gün tekrar gönderilmez.")
+        sablon, deger_et = SECENEK[tip]
+        kodsuz = tip.startswith("Portföy")
+        kod_a = "" if kodsuz else st.text_input("Kod (ör. THYAO, NVDA.US, BTC/USDT, ALTIN, XU100)" if not tip.startswith("Ekonomik") else "Ülke (isteğe bağlı)",
+                                                key="al_kod").strip().upper()
+        deger = st.text_input(deger_et, key="al_deger").strip().replace(",", ".") if deger_et and not tip.startswith("Ekonomik") else ""
+        kural = sablon.format(k=kod_a, d=deger).replace("TAKVIM ", "TAKVIM ").strip()
+        gecerli = bool(_AL.kurallar(kural)) and (kodsuz or kod_a or tip.startswith("Ekonomik")) and (not deger_et or deger or tip.startswith("Ekonomik"))
+        if kod_a or kodsuz or tip.startswith("Ekonomik"):
+            st.code(kural); 
+            if not gecerli: st.caption("Kural eksik ya da hatalı; değeri kontrol edin.")
         try: gh = st.secrets.get("GH_TOKEN", "")
         except Exception: gh = ""
         if gh:
-            if st.button("Kaydet", disabled=not kod_a, key="al_kaydet"):
+            if st.button("Kaydet", disabled=not gecerli, key="al_kaydet", type="primary"):
                 import requests, base64
                 u = f"https://api.github.com/repos/{REPO}/contents/alarmlar.txt"; hd = {"Authorization": f"Bearer {gh}", "Accept": "application/vnd.github+json"}
                 j = requests.get(u, headers=hd, timeout=20).json()

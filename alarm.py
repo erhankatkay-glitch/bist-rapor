@@ -43,6 +43,21 @@ def kurallar(metin):
         if m: K.append({"tip": "yuzde", "kod": m.group(1), "deger": float(m.group(2)) / 100, "metin": s}); continue
         m = re.match(r"^(\S+)\s+(FORMASYON|KAP)$", s)
         if m: K.append({"tip": m.group(2).lower(), "kod": m.group(1), "metin": s}); continue
+        # Aşama 10: kullanıcı tanımlı teknik alarmlar
+        m = re.match(r"^(\S+)\s+EMA\s*(\d+)\s*/\s*(\d+)$", s)
+        if m: K.append({"tip": "ema", "kod": m.group(1), "hizli": int(m.group(2)), "yavas": int(m.group(3)), "metin": s}); continue
+        m = re.match(r"^(\S+)\s+(HACIM|RVOL)\s*>\s*([\d.]+)$", s)
+        if m: K.append({"tip": "hacim", "kod": m.group(1), "deger": float(m.group(3)), "metin": s}); continue
+        m = re.match(r"^(\S+)\s+FIB\s*([\d.]+)$", s)
+        if m: K.append({"tip": "fib", "kod": m.group(1), "deger": float(m.group(2)), "metin": s}); continue
+        m = re.match(r"^(\S+)\s+(DESTEK|DIRENC|DİRENÇ|KIRILIM|FVG|BOS|CHOCH|HARMONIK|HARMONİK|SINYAL|SİNYAL|TEMEL)$", s)
+        if m:
+            t = {"DİRENÇ": "DIRENC", "HARMONİK": "HARMONIK", "SİNYAL": "SINYAL"}.get(m.group(2), m.group(2))
+            K.append({"tip": t.lower(), "kod": m.group(1), "metin": s}); continue
+        m = re.match(r"^TAKVIM(?:\s+(\S+))?$", s.replace("TAKVİM", "TAKVIM"))
+        if m: K.append({"tip": "takvim", "kod": m.group(1) or "HEPSI", "metin": s}); continue
+        m = re.match(r"^PORTFOY\s+RISK\s*([\d.]+)$", s.replace("PORTFÖY", "PORTFOY").replace("RİSK", "RISK"))
+        if m: K.append({"tip": "pfrisk", "deger": float(m.group(1)) / 100, "metin": s}); continue
         print("Anlaşılamayan kural:", satir, file=sys.stderr)
     return K
 
@@ -152,6 +167,116 @@ def anlik(kod):
     return son, son / onceki - 1
 
 
+def teknik_alarm(k, g):
+    """Kullanıcı tanımlı teknik koşullar → [(ikon, olay metni, günde_bir_mi)]. g: tf_analiz (günlük).
+    Gün içinde (mum kapanmadan) oluşan durumlar 'kapanış teyidi bekleniyor' notuyla gelir."""
+    import veri_kalite as VK
+    G, h = g["G"], g["h"]; c = h["Close"]; n = len(c); out = []
+    acik = VK.piyasa_acik(VK.tur_bul(_yahoo(k["kod"])))
+    not_ = " · mum kapanmadı, kapanış teyidi bekleniyor" if acik else ""
+    tarih = f"(günlük, {g['tarih']:%d.%m})"
+    if k["tip"] == "ema":
+        e1 = c.ewm(span=k["hizli"], adjust=False).mean(); e2 = c.ewm(span=k["yavas"], adjust=False).mean()
+        if n > 2:
+            if e1.iloc[-1] > e2.iloc[-1] and e1.iloc[-2] <= e2.iloc[-2]:
+                out.append(("🟢", f"EMA{k['hizli']} EMA{k['yavas']}'yi yukarı kesti {tarih}{not_}", True))
+            if e1.iloc[-1] < e2.iloc[-1] and e1.iloc[-2] >= e2.iloc[-2]:
+                out.append(("🔴", f"EMA{k['hizli']} EMA{k['yavas']}'yi aşağı kesti {tarih}{not_}", True))
+    elif k["tip"] == "hacim":
+        rv = float(G["RVOL"].iloc[-1]) if "RVOL" in G and G["RVOL"].notna().iloc[-1] else None
+        if rv is not None and rv >= k["deger"]:
+            out.append(("📊", f"Göreli hacim {rv:.1f}x (eşik {k['deger']:g}x) {tarih}".replace(".", ","), True))
+    elif k["tip"] == "fib":
+        fb = g.get("fib")
+        if fb:
+            r = k["deger"] if k["deger"] < 1.0001 else k["deger"] / 100
+            sev = fb["seviye"].get(min(fb["seviye"], key=lambda x: abs(x - r)))
+            if sev and float(h["Low"].iloc[-1]) <= sev * 1.003 and float(h["High"].iloc[-1]) >= sev * 0.997:
+                out.append(("🟢" if fb["yukari"] else "🔴", f"Fibonacci %{r * 100:.1f} seviyesine ({_s(sev)}) geldi {tarih}".replace(".", ","), True))
+    elif k["tip"] in ("destek", "direnc", "kirilim"):
+        p0, p1 = float(c.iloc[-2]), float(c.iloc[-1])
+        ds = [v for v, _ in g["sr"]["destek"]] + [v for v, _ in g["sr"]["direnc"]]
+        for v in ds:
+            if k["tip"] in ("destek", "kirilim") and p0 >= v > p1:
+                out.append(("🔴", f"{_s(v)} desteği aşağı kırıldı {tarih}{not_}", True))
+            if k["tip"] in ("direnc", "kirilim") and p0 <= v < p1:
+                out.append(("🟢", f"{_s(v)} direnci yukarı kırıldı {tarih}{not_}", True))
+    elif k["tip"] == "fvg":
+        for ad, alt, ust, t in g["pa"].get("fvg", []):
+            if t == h.index[-1] or t == h.index[-2]:
+                out.append(("🟢" if "Boğa" in ad else "🔴", f"Yeni {ad} oluştu: {_s(alt)}–{_s(ust)} {tarih}", False))
+    elif k["tip"] in ("bos", "choch"):
+        for ad, y, ac in g["pa"].get("olaylar", []):
+            if ("BOS" in ad and k["tip"] == "bos") or ("CHoCH" in ad and k["tip"] == "choch") or (k["tip"] == "bos" and "CHoCH" in ad):
+                out.append(("🟢" if y > 0 else "🔴", f"{ad} {tarih}{not_}", True))
+    elif k["tip"] == "harmonik":
+        for f in g.get("harm", []):
+            if f["durum"] == "tamamlandı":
+                out.append(("🟢" if f["yon"] == 1 else "🔴", f"Harmonik {f['ad']} tamamlandı · dönüş bölgesi {_s(f['bolge'][0])}–{_s(f['bolge'][1])} {tarih}", False))
+    elif k["tip"] == "sinyal":
+        try:
+            import tarayici as TRY
+            x = TRY.son_sinyal(h, G, _piyasa(k["kod"]))
+            if x and x["yas"] == 0:
+                out.append(("🟢" if x["yon"] == 1 else "🔴", f"Yeni kurulum: {x['kurulum']} {tarih}{not_}", True))
+        except Exception as ex:
+            print("sinyal alarmı:", ex, file=sys.stderr)
+    return out
+
+
+def _yahoo(kod):
+    try:
+        import bist_teknik as T
+        return T.yahoo_sembol(kod)[0]
+    except Exception:
+        return kod
+
+
+def _piyasa(kod):
+    k = kod.upper()
+    if _kripto(k): return "kripto"
+    if k.endswith(".US"): return "abd"
+    import bist_varlik as V
+    return "emtia" if k in V.VARLIKLAR else "bist"
+
+
+def yaklasan_veriler(ulke="HEPSI", dakika=75):
+    """Ekonomik takvimde önümüzdeki `dakika` içinde açıklanacak yüksek etkili veriler (bülten dalındaki haber/takvim.json)."""
+    try:
+        import urllib.request
+        tk = json.loads(urllib.request.urlopen("https://raw.githubusercontent.com/erhankatkay-glitch/bist-rapor/bulten/haber/takvim.json", timeout=15).read())
+    except Exception:
+        return []
+    simdi = dt.datetime.now(dt.timezone.utc); out = []
+    for e in tk.get("liste", []) if isinstance(tk, dict) else tk:
+        try:
+            t = dt.datetime.fromisoformat(e["zaman"])
+            if t.tzinfo is None: t = t.replace(tzinfo=TSI)
+            if 0 <= (t - simdi).total_seconds() <= dakika * 60 and (ulke == "HEPSI" or str(e.get("ulke", "")).upper() == ulke):
+                out.append(e)
+        except Exception:
+            continue
+    return out
+
+
+def portfoy_riski(esik, fiyat_fn):
+    """portfoy.txt'teki pozisyonların toplam maliyete göre zararı eşiği aşarsa uyarı metni."""
+    try:
+        import portfoy as P
+        tm = td = 0.0; en_kotu = None
+        for kod, miktar, maliyet in P.takip():
+            if not (miktar and maliyet): continue
+            p, _ = fiyat_fn(kod); tm += miktar * maliyet; td += miktar * p
+            kz = p / maliyet - 1
+            if en_kotu is None or kz < en_kotu[1]: en_kotu = (kod, kz)
+        if tm and td / tm - 1 <= -esik:
+            return (f"💼 PORTFÖY: ⚠️ toplam zarar {_p(td / tm - 1)} (eşik −%{esik * 100:.0f})"
+                    + (f"; en çok kaybettiren {en_kotu[0]} {_p(en_kotu[1])}" if en_kotu else ""))
+    except Exception as ex:
+        print("portföy riski:", ex, file=sys.stderr)
+    return None
+
+
 def tara(K, durum):
     """Kuralları değerlendirir → (bildirimler, yeni durum)."""
     import bist_teknik as T
@@ -210,6 +335,42 @@ def tara(K, durum):
                         fy = f" · fiyat {_s(g['fiyat'])}" + (f" ({_p(g['degisim'])})" if g.get("degisim") is not None else "")
                         bildir.append(f"{'🟢' if yon > 0 else '🔴'} {_ad(k['kod'])}: {ad.split(': ', 1)[-1]} (günlük, {g['tarih']:%d.%m}){fy}")
                         yeni[a2] = True
+            elif k["tip"] in ("ema", "hacim", "fib", "destek", "direnc", "kirilim", "fvg", "bos", "choch", "harmonik", "sinyal"):
+                s = teknik(k["kod"]); g = s["tf"]["G"]
+                for ikon, olay, gun_tek in teknik_alarm(k, g):
+                    a2 = f"{k['metin']}|{olay[:40]}|{g['tarih']:%Y-%m-%d}" if gun_tek else f"{k['metin']}|{olay[:40]}"
+                    if not durum.get(a2) and not yeni.get(a2):
+                        fy = f" · fiyat {_s(g['fiyat'])}" + (f" ({_p(g['degisim'])})" if g.get("degisim") is not None else "")
+                        bildir.append(f"{ikon} {_ad(k['kod'])}: {olay}{fy}")
+                    yeni[a2] = True
+            elif k["tip"] == "temel":
+                gun_k = f"{k['metin']}|kontrol|{bugun}"
+                if not durum.get(gun_k):                       # mali tablolar günde bir kez kontrol edilir
+                    yeni[gun_k] = True
+                    try:
+                        import bist_isyatirim as IY
+                        f_ = IY.finansallar(k["kod"], ceyrek_sayi=2)
+                        donem = str(f_.get("son_donem") or (f_.get("donemler") or [""])[-1]) if isinstance(f_, dict) else ""
+                    except Exception as ex:
+                        donem = ""; print(f"temel {k['kod']}: {ex}", file=sys.stderr)
+                    once = durum.get(f"{k['metin']}|donem")
+                    if donem:
+                        yeni[f"{k['metin']}|donem"] = donem
+                        if once and donem != once:
+                            bildir.append(f"📰 {k['kod']} · Yeni finansal tablo: {donem} dönemi açıklandı (önceki {once}); temel analizi güncelleyin.")
+            elif k["tip"] == "takvim":
+                for e in yaklasan_veriler(k["kod"]):
+                    a2 = f"TAKVIM|{e['zaman']}|{e['baslik'][:40]}"
+                    if not durum.get(a2) and not yeni.get(a2):
+                        t_ = dt.datetime.fromisoformat(e["zaman"]).astimezone(TSI)
+                        bildir.append(f"🗓 {e['ulke']} · {e['baslik']}: {t_:%H:%M}'de açıklanacak"
+                                      + (f" · beklenti {e['beklenti']}" if e.get("beklenti") else "") + (f" · önceki {e['onceki']}" if e.get("onceki") else ""))
+                    yeni[a2] = True
+            elif k["tip"] == "pfrisk":
+                m_ = portfoy_riski(k["deger"], anlik)
+                gun_k = f"{k['metin']}|{bugun}"
+                if m_ and not durum.get(gun_k):
+                    bildir.append(m_); yeni[gun_k] = True
             elif k["tip"] == "kap":
                 import bist_borsa as BB, bist_veri as bv, bist_varlik as V
                 if _kripto(k["kod"]) or k["kod"] in V.VARLIKLAR or k["kod"].endswith(".US"): continue
@@ -241,7 +402,8 @@ def tara(K, durum):
 
 
 GRUP = [("💼", "💼 <b>PORTFÖYÜNÜZ</b>"), ("⚡🔔", "⚡ <b>Sert hareket ve fiyat seviyeleri</b>"), ("🟢🔴", "🧭 <b>Formasyon ve kırılımlar</b>"),
-        ("📈", "📈 <b>RSI ve teknik puan</b>"), ("📰", "📰 <b>Şirket haberleri (KAP)</b>")]
+        ("📈", "📈 <b>RSI ve teknik puan</b>"), ("📊", "📊 <b>Hacim</b>"),
+        ("🗓", "🗓 <b>Ekonomik takvim</b>"), ("📰", "📰 <b>Şirket haberleri (KAP)</b>")]
 
 
 def _satir(m):
@@ -279,11 +441,13 @@ def _satir_ham(m):
     if degis: alt += f" · günlük {degis.replace('-', '−')}"
     nokta = {"🟢": C["yesil"], "🔴": C["kirmizi"], "📈": C["mavi"], "📰": C["turkuaz"], "💼": C["altin"]}.get(ik, C["soluk"])
     if ik == "📰" and degis: nokta = renk_d
-    return ik if ik in ("💼", "📈", "📰") else "🟢" if ik in ("🟢", "🔴") else "•", {"sol": sol.strip(), "sag": fiyat, "nokta": nokta, "alt": alt}, url
+    if ik in ("📊", "🗓"): nokta = C["altin"]
+    return ik if ik in ("💼", "📈", "📰", "📊", "🗓") else "🟢" if ik in ("🟢", "🔴") else "•", {"sol": sol.strip(), "sag": fiyat, "nokta": nokta, "alt": alt}, url
 
 
 GRUP_KART = [("💼", "Portföyünüz", "altin"), ("⚡", "Sert hareket ve fiyat seviyeleri", "altin"), ("🟢", "Formasyon ve kırılımlar", "mavi"),
-             ("📈", "RSI ve teknik puan", "altin"), ("📰", "Şirket haberleri (KAP)", "turkuaz"), ("•", "Diğer", "soluk")]
+             ("📈", "RSI ve teknik puan", "altin"), ("📊", "Hacim", "altin"), ("🗓", "Ekonomik takvim", "altin"),
+             ("📰", "Şirket haberleri (KAP)", "altin"), ("•", "Diğer", "soluk")]
 
 
 def gonder(mesajlar):
@@ -354,7 +518,7 @@ def main():
     zaman = dt.datetime.now(TSI).strftime("%d.%m.%Y %H:%M")
     son = [{"zaman": zaman, "mesaj": m} for m in bildir] + son
     json.dump(yeni, open(DURUM, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
-    json.dump(son[:100], open(SON, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    json.dump(son[:300], open(SON, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     json.dump({"kontrol": zaman, "kural": len(K)}, open(os.path.join("alarm_cikti", "son_kontrol.json"), "w"), ensure_ascii=False)
     print(f"{len(K)} kural, {len(bildir)} yeni alarm. Telegram: {'gönderildi' if gonder(bildir) else 'ayarlı değil / gönderilecek alarm yok'}")
     for m in bildir: print(" ", m)

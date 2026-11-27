@@ -53,8 +53,16 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 - ~~6. Veri kalite etiketi + yedek kaynak tablosu + TCMB enflasyonu ve politika faizi~~ (27.11.2026 tamam)
 - ~~7. Teknik motoru tamamla: WMA, HMA, Heikin Ashi, RVOL, order block/breaker, harmonik formasyonlar~~ (27.11.2026 tamam)
 - ~~8. Kendi taramanı kur: filtre birleştirme, kayıtlı şablonlar, sinyal yaşı / sinyalden beri değişim~~ (27.11.2026 tamam)
-- 9. Risk hesaplayıcı (pozisyon büyüklüğü, komisyon) + sanal işlem portföyü.
+- ~~9. Risk hesaplayıcı (pozisyon büyüklüğü, komisyon) + sanal işlem portföyü~~ (27.11.2026 tamam)
 - 10. Kullanıcı tanımlı alarmlar (RSI, EMA kesişimi, seviye kırılımı) + alarm geçmişi.
+- 10b. QuantDinger (kullanıcının fork'u, Apache-2.0) kütüphanesinden aktarım (27.11 değerlendirmesi):
+  - Platformun kendisi kurulmaz: Docker, PostgreSQL, Redis ve sürekli açık sunucu gerekir; BIST desteği yok; canlı emir modülü var.
+  - Alınacaklar: library/indicators (54 gösterge: OTT, Mavilim, AlphaTrend, QQE, Half Trend, Schaff vb.) ve library/strategies (206 strateji).
+    Bizim motora uyarlanır; her biri geçmiş testten geçerse kullanılır. Dosya başına kaynak ve lisans notu eklenir (NOTICE).
+  - Geçmiş test yöntemi güçlendirilir:
+    - İki yarı yerine ileriye yürüyen test (walk-forward) ve son kör dönem.
+    - Çoklu deneme düzeltmesi (Benjamini-Hochberg) ve Monte Carlo.
+    - Böylece çok sayıda kural denendiğinde şans eseri iyi görünenler elenir.
 - 11. Korelasyon ve göreceli güç modülü (BTC/Nasdaq, altın/DXY, BIST/S&P…).
 - 12. Dünya borsaları, döviz majörleri, getiri eğrisi, emtia vade yapısı.
 - 13. Opsiyon: BTC/ETH için Deribit'in herkese açık verisi (IV, Greeks).

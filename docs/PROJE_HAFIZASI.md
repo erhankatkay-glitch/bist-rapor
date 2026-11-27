@@ -239,3 +239,21 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   - Düzeltme: `tg.guvenli_aciklama` (satır sonundan keser, açık etiketleri kapatır) ve HTML hatasında düz metinle tekrar deneme.
   - Açıklamalar tek satırlık başlık ve bağlantılar oldu; içerik kartta.
   - Kartlarda mavi/turkuaz yerine altın. Sabah kartındaki alt boşluk kırpılıyor.
+
+## Aşama 9 (27 Kasım 2026)
+- `sanal.py`:
+  - `pozisyon_boyutu`: risk tutarı = portföy × risk %; birim risk = stop mesafesi + giriş × (2×komisyon + kayma).
+    Adet piyasaya göre aşağı yuvarlanır (BIST/ABD tam adet, kripto 6 hane). Pozisyon portföyü aşarsa sınırlanır; hedeflerin R'si hesaplanır.
+  - Sanal defter yalnız ekleme mantığında: açılış, kısmi/tam kapanış, iptal (silme yok).
+    Değerleme `alarm.anlik` fiyatıyla; USD pozisyonlar USD/TRY ile TL'ye çevrilir.
+- Saklama:
+  - Defter yalnız cihazın tarayıcı deposunda (localStorage "katkay_sanal").
+  - İlk açılışta gizli kutu `kk_sanal` üzerinden Python'a aktarılır (yeniden denemeli); her değişiklikte depoya yazılır.
+  - JSON yedek indirme/yükleme var. GitHub'a ya da sunucuya hiçbir şey yazılmaz.
+- Uygulama:
+  - Portföy › "Sanal işlem" ve "Risk hesaplayıcı" sekmeleri.
+  - Fırsat kartlarında "Sanal işlem aç" (plan aktarılır, %1 riske göre adet önerilir).
+  - Teknik analiz sonucunda "Pozisyon büyüklüğü hesapla" (giriş = fiyat, stop = en yakın destek, ATR stop önerileri, hedef = dirençler).
+- Test (Actions, telefon görünümü):
+  - İşlem açıldı, sayfa yenilendi, işlem cihaz deposundan geri geldi.
+  - Hesaplayıcı: 100.000 TL, %1, 314/300 → 64 adet, risk 996 TL.
