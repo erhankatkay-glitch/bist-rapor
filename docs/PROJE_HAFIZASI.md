@@ -117,7 +117,9 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - BIST kapanış özeti: uygulama zaten gösteriyordu; eksikliğin sebebi Yahoo gecikmesiyle atlanan bültendi (Aşama 1'de düzeldi).
 - Logolar:
   - Kripto: spothq/cryptocurrency-icons (CC0) uygun.
-  - Hisse logoları: lisansı açık ücretsiz repo bulunamadı (nvstly/icons'ta lisans yok). Seçenek: logo.dev ücretsiz anahtar (kullanıcı kararı bekleniyor).
+  - Hisse logoları (BIST + ABD): logo.dev ücretsiz plan, publishable anahtar `logolar.LOGO_DEV`. 12/12 test hissesinde gerçek logo geldi.
+  - Kişisel kullanımda atıf gerekmiyor; ticari kullanıma geçilirse sayfaya "Logos provided by Logo.dev" bağlantısı eklenmeli.
+  - Gizli anahtar (sk_) kullanılmaz; kullanıcıya yenilemesi söylendi.
 
 ## Aşama 4 — Telegram tasarımı (27.11.2026)
 - Bildirimlerin hepsi KATKAY kartıyla gidiyor:
