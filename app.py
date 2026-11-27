@@ -797,10 +797,11 @@ def satir_html(x, seri=None):
 
 
 def akilli_uyari():
-    """Ana sayfanın üst bandı: YALNIZ tetiklenmiş bildirimler. Önce süresi dolmamış iğne uyarısı (alarm sistemi, 30 dk'da bir
-    kontrol eder; fiyat seviyelere doğru ivmelenince tetiklenir, 4 saat geçerli, seviyeler süpürülünce kalkar); yoksa son 3 saatin
-    önemli alarmı. Hiçbiri yoksa bant görünmez. Kapatılan bildirim bu cihazda gizli kalır."""
+    """Üstten düşen bildirimler (referanstaki gibi): tetiklenmiş iğne uyarıları + son 3 saatin önemli alarmları (en yeni önce, en çok 5).
+    Sayfaya gizli liste olarak basılır; tarayıcı tarafı (kkBildirim) bu cihazda henüz görülmemiş olanları sırayla üstten kaydırarak
+    gösterir, her biri birkaç saniye kalır, yenisi gelince yerini alır, sonra kalkar. Görülen bildirim bir daha düşmez."""
     import hashlib, html as _h, re as _re
+    oge = []
     simdi_u = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     try:
         ig = [x for x in (json_oku("alarm/igne.json", ZAMAN) or []) if x.get("bitis", "") > simdi_u]
@@ -813,24 +814,25 @@ def akilli_uyari():
             metin = _re.sub(r"Şu an [\d.,]+", f"Şu an {TK.sayi(p_) if p_ < 1000 else br.ond(p_, 0)}", x["metin"])
         except Exception:
             metin = x["metin"]
-        uid = hashlib.md5((x["zaman"] + x["kod"]).encode()).hexdigest()[:10]
         t_ = dt.datetime.fromisoformat(x["zaman"]).astimezone(ZoneInfo("Europe/Istanbul"))
-        return (f'<div class="kk-uyari kk-uyari-k" data-id="{uid}"><span class="kk-x" data-kapat="{uid}">×</span>'
-                f'<b>⚡ {_h.escape(x["baslik"])}</b><div>{_h.escape(metin)} · {t_:%H:%M}</div></div>')
+        oge.append((t_, True, x["baslik"], metin, hashlib.md5((x["zaman"] + x["kod"]).encode()).hexdigest()[:10], 14000))
     son_al, _ = alarm_son(ZAMAN)
     simdi = dt.datetime.now(ZoneInfo("Europe/Istanbul"))
-    for x in son_al[:30]:
+    for x in son_al[:40]:
         try: t = dt.datetime.strptime(x["zaman"], "%d.%m.%Y %H:%M").replace(tzinfo=ZoneInfo("Europe/Istanbul"))
         except Exception: continue
         if simdi - t > dt.timedelta(hours=3): break
         m = _re.sub(r"⟦(.+?)⟧$", "", x["mesaj"]).strip()
         if m[:1] not in ("⚡", "🔴", "🟢", "💼", "🗓"): continue
         kirmizi = m[:1] in ("🔴", "💼") or "-%" in m or "−" in m
-        uid = hashlib.md5((x["zaman"] + m).encode()).hexdigest()[:10]
         bas, _, gov = m[1:].strip().partition(":")
-        return (f'<div class="kk-uyari{" kk-uyari-k" if kirmizi else ""}" data-id="{uid}"><span class="kk-x" data-kapat="{uid}">×</span>'
-                f'<b>⚡ {_h.escape(bas.strip())}</b><div>{_h.escape(gov.strip() or m[1:])} · {t:%H:%M}</div></div>')
-    return ""
+        oge.append((t, kirmizi, bas.strip(), gov.strip() or m[1:], hashlib.md5((x["zaman"] + m).encode()).hexdigest()[:10], 9000))
+    if not oge: return ""
+    oge.sort(key=lambda o: o[0], reverse=True)
+    return '<div class="kk-bild">' + "".join(
+        f'<div class="kk-uyari{" kk-uyari-k" if k else ""}" data-id="{u}" data-sure="{s}" data-git="Takip|Alarmlar" style="--sure:{s}ms">'
+        f'<span class="kk-x" data-kapat="{u}">×</span><b>⚡ {_h.escape(b)}</b><div>{_h.escape(g)} · {t:%H:%M}</div></div>'
+        for t, k, b, g, u, s in oge[:5]) + "</div>"
 
 
 def one_cikanlar(PV):

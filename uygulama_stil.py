@@ -106,6 +106,17 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 .kk-uyari {position:relative; background:linear-gradient(135deg,rgba(232,184,74,.22),rgba(232,184,74,.08)); border:1px solid rgba(232,184,74,.55);
   border-radius:18px; padding:12px 44px 12px 14px; margin:2px 0 10px; box-shadow:0 10px 26px rgba(0,0,0,.4);}
 .kk-uyari-k {background:linear-gradient(135deg,rgba(239,68,68,.92),rgba(185,28,28,.88)); border-color:rgba(255,255,255,.18);}
+.kk-bild {display:none !important;} .stElementContainer:has(.kk-bild) {display:none !important;}
+#kk-toast {position:fixed; left:10px; right:10px; max-width:620px; margin:0 auto; top:calc(10px + env(safe-area-inset-top)); z-index:1000001;
+  transform:translateY(-160%); opacity:0; transition:transform .38s cubic-bezier(.2,.9,.25,1.15), opacity .3s; pointer-events:none;}
+#kk-toast.acik {transform:none; opacity:1; pointer-events:auto;}
+#kk-toast .kk-uyari {margin:0; cursor:pointer; box-shadow:0 18px 40px rgba(0,0,0,.6); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); overflow:hidden;}
+#kk-toast .kk-uyari:not(.kk-uyari-k) {background:linear-gradient(135deg,rgba(58,46,18,.97),rgba(24,22,16,.97));}
+#kk-toast .kk-uyari:after {content:""; position:absolute; left:0; bottom:0; height:3px; width:100%; background:linear-gradient(90deg,#F5D27A,#C99A2E);
+  transform-origin:left; animation:kkSure var(--sure,9000ms) linear forwards;}
+#kk-toast .kk-uyari-k:after {background:rgba(255,255,255,.75);}
+#kk-toast .say {position:absolute; right:46px; top:12px; font-size:.68rem; font-weight:800; color:rgba(255,255,255,.75);}
+@keyframes kkSure {from {transform:scaleX(1)} to {transform:scaleX(0)}}
 .kk-uyari b {display:block; font-size:.95rem; font-weight:850; color:#fff;} .kk-uyari div {font-size:.82rem; color:#F4F4F5; margin-top:3px; line-height:1.35;}
 .kk-x {position:absolute; right:10px; top:10px; width:26px; height:26px; border-radius:50%; background:rgba(255,255,255,.18); color:#fff;
   display:flex; align-items:center; justify-content:center; font-size:1rem; cursor:pointer;}
@@ -423,17 +434,17 @@ NAV_STIL = """
   font-size:10px;font-weight:600;padding:4px 0;min-width:0;white-space:nowrap;letter-spacing:-.1px;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
 #kk-nav button+button:before{content:"";position:absolute;left:0;top:18%;bottom:18%;width:1px;background:rgba(255,255,255,.08)}
 #kk-nav svg{width:21px;height:21px}
-#kk-cek{position:fixed;left:0;top:42%;z-index:999998;width:22px;height:74px;border-radius:0 14px 14px 0;border:none;cursor:pointer;
+#kk-cek{position:fixed;left:0;top:46%;z-index:999998;width:16px;height:62px;opacity:.92;border-radius:0 14px 14px 0;border:none;cursor:pointer;
   background:linear-gradient(180deg,#F5D27A,#C99A2E);box-shadow:4px 6px 18px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:0}
-#kk-cek i{display:block;width:10px;height:2px;background:#0B0B0C;border-radius:2px;box-shadow:0 -5px 0 #0B0B0C,0 5px 0 #0B0B0C}
+#kk-cek i{display:block;width:8px;height:2px;background:#0B0B0C;border-radius:2px;box-shadow:0 -5px 0 #0B0B0C,0 5px 0 #0B0B0C}
 #kk-ckm{position:fixed;inset:0;z-index:1000000;visibility:hidden}
 #kk-ckm.acik{visibility:visible}
 #kk-ckm .ort{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;transition:opacity .25s}
 #kk-ckm.acik .ort{opacity:1}
-#kk-ckm .pan{position:absolute;left:0;top:0;bottom:0;width:min(84vw,330px);overflow-y:auto;font-family:'Inter',-apple-system,sans-serif;
+#kk-ckm .pan{position:absolute;left:0;top:0;height:100vh;height:100dvh;width:min(84vw,330px);overflow-y:auto;font-family:'Inter',-apple-system,sans-serif;
   background:radial-gradient(120% 60% at 0% 0%,rgba(232,184,74,.16),transparent 60%),linear-gradient(180deg,#141518,#0B0B0C);
   border-right:1px solid rgba(232,184,74,.45);border-radius:0 26px 26px 0;box-shadow:16px 0 50px rgba(0,0,0,.7);
-  transform:translateX(-104%);transition:transform .28s cubic-bezier(.2,.8,.2,1);padding:0 12px calc(110px + env(safe-area-inset-bottom))}
+  transform:translateX(-104%);transition:transform .28s cubic-bezier(.2,.8,.2,1);padding:0 12px calc(150px + env(safe-area-inset-bottom));overscroll-behavior:contain}
 #kk-ckm.acik .pan{transform:none}
 #kk-ckm .bas{display:flex;align-items:center;gap:11px;padding:calc(18px + env(safe-area-inset-top)) 6px 16px;border-bottom:1px solid rgba(232,184,74,.22);margin-bottom:4px}
 #kk-ckm .bas img{width:42px;height:42px;border-radius:13px;border:1px solid rgba(232,184,74,.6);box-shadow:0 4px 14px rgba(232,184,74,.25)}
@@ -441,11 +452,11 @@ NAV_STIL = """
 #kk-ckm .bas i{display:block;font-style:normal;color:#8E8F96;font-size:9.5px;font-weight:800;letter-spacing:1.3px;margin-top:2px}
 #kk-ckm .kap{margin-left:auto;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:#1B1C20;color:#D4D4D8;
   font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
-#kk-ckm small{display:flex;align-items:center;gap:8px;color:#E8B84A;font-size:10px;font-weight:900;letter-spacing:1.6px;margin:16px 6px 7px}
+#kk-ckm small{display:flex;align-items:center;gap:8px;color:#E8B84A;font-size:10px;font-weight:900;letter-spacing:1.6px;margin:13px 6px 6px}
 #kk-ckm small:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(232,184,74,.45),transparent)}
-#kk-ckm a{display:flex;align-items:center;gap:12px;text-decoration:none;padding:8px 10px;margin:0 0 5px;border-radius:15px;cursor:pointer;
+#kk-ckm a{display:flex;align-items:center;gap:12px;text-decoration:none;padding:6px 10px;margin:0 0 5px;border-radius:15px;cursor:pointer;
   background:linear-gradient(180deg,#18191C,#121315);border:1px solid rgba(255,255,255,.06);-webkit-tap-highlight-color:transparent}
-#kk-ckm a .ik{flex:none;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+#kk-ckm a .ik{flex:none;width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;
   background:rgba(232,184,74,.10);border:1px solid rgba(232,184,74,.28)}
 #kk-ckm a .ik svg{width:19px;height:19px}
 #kk-ckm a .yz{min-width:0;flex:1}#kk-ckm a .yz b{display:block;color:#F4F4F5;font-size:14px;font-weight:750}
@@ -508,8 +519,8 @@ CANLI_JS = """
     const W=window.parent, P=W.document, OGE=__OGE__, SIMGE=__SIMGE__;
     let st=P.getElementById("kk-nav-stil");
     if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
-    if(!P.getElementById("kk-nav-js7")){
-      const sc=P.createElement("script"); sc.id="kk-nav-js7";
+    if(!P.getElementById("kk-nav-js8")){
+      const sc=P.createElement("script"); sc.id="kk-nav-js8";
       sc.textContent=`
         window.kkSekmeler=function(){return [...document.querySelectorAll('.stTabs [data-testid="stTab"], .stTabs [role="tab"], .stTabs [data-baseweb="tab"]')];};
         window.kkAd=function(t){const p=t.querySelector('[data-testid="stMarkdownContainer"] p')||t; return (p.innerText||p.textContent||"").trim();};
@@ -560,8 +571,10 @@ CANLI_JS = """
           document.addEventListener("click",function(e){
             const k=e.target.closest("[data-kapat]");
             if(k){ e.preventDefault(); e.stopPropagation(); try{localStorage.setItem("kk_uyari_kapali",k.dataset.kapat);}catch(x){}
+                   if(k.closest("#kk-toast")){ window.kkToastSonraki && window.kkToastSonraki(); return; }
                    const u=k.closest(".kk-uyari"); if(u) u.style.display="none"; return; }
-            const g=e.target.closest("[data-git]"); if(g){ e.preventDefault(); e.stopPropagation(); window.kkGitAlt(g.dataset.git); }
+            const g=e.target.closest("[data-git]"); if(g){ e.preventDefault(); e.stopPropagation(); window.kkGitAlt(g.dataset.git);
+              if(g.closest("#kk-toast")){ clearTimeout(window.kkToastZ); document.getElementById("kk-toast").classList.remove("acik"); } }
           },true);
         }
         if(!window.kkTikDinle){ window.kkTikDinle=1;
@@ -571,7 +584,26 @@ CANLI_JS = """
             if(window.kkIstek(b.dataset.kk)){ if(bolum==="rapor") window.kkSekmeGit("Hisse",".vb"); else window.kkTeknikGit(bolum); }
           },true);
         }
+        window.kkBildirim=function(){
+          const k=document.querySelector('.kk-bild:not([data-kkb])'); if(!k) return; k.dataset.kkb="1";
+          let gor=[]; try{gor=JSON.parse(localStorage.getItem("kk_gorulen")||"[]");}catch(e){}
+          const liste=[...k.querySelectorAll('.kk-uyari')].filter(u=>!gor.includes(u.dataset.id)).reverse();   // eskiden yeniye: en yeni en son kalır
+          if(!liste.length) return;
+          let t=document.getElementById("kk-toast"); if(!t){t=document.createElement("div"); t.id="kk-toast"; document.body.appendChild(t);}
+          clearTimeout(window.kkToastZ); let i=0;
+          window.kkToastSonraki=function(){
+            clearTimeout(window.kkToastZ);
+            if(i>=liste.length){ t.classList.remove("acik"); return; }
+            const u=liste[i++], sure=+(u.dataset.sure||9000), kalan=liste.length-i;
+            const koy=function(){ t.innerHTML=u.outerHTML+(kalan?'<span class="say">+'+kalan+'</span>':''); void t.offsetWidth; t.classList.add("acik");
+              gor.push(u.dataset.id); gor=gor.slice(-80); try{localStorage.setItem("kk_gorulen",JSON.stringify(gor));}catch(e){}
+              window.kkToastZ=setTimeout(window.kkToastSonraki,sure); };
+            if(t.classList.contains("acik")){ t.classList.remove("acik"); setTimeout(koy,420); } else setTimeout(koy,600);
+          };
+          window.kkToastSonraki();
+        };
         window.kkIsaretle=function(){
+          try{ window.kkBildirim(); }catch(e){}
           const T0=document.querySelector('[data-testid="stMain"] .stTabs'); if(T0 && !T0.dataset.kkM){T0.dataset.kkM="1"; T0.style.marginTop="-34px";}
           const ilk=document.querySelector('.stTabs [role="tablist"]');
           if(ilk&&!ilk.dataset.kkGizli){ilk.dataset.kkGizli="1"; ilk.style.display="none";
