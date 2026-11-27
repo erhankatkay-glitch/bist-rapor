@@ -1,0 +1,13 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 160
+target-version = "py312"
+extend-exclude = ["varlik", "docs", "raporlar"]
+
+[tool.ruff.lint]
+# Yalnızca gerçek hata yakalayan kurallar (biçim dayatması yok): tanımsız ad, kullanılmayan içe aktarma, sözdizimi
+select = ["F", "E9"]
+ignore = ["F401", "F841", "F541", "E701", "E702", "E741"]

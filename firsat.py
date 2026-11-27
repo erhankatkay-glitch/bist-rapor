@@ -124,9 +124,8 @@ def fy(x):
 
 
 def yz(x, d=1, isaret=True):
-    if x is None or not np.isfinite(x): return "–"
-    s = f"{x * 100:+.{d}f}" if isaret else f"{x * 100:.{d}f}"
-    return ("%" + s).replace(".", ",") if not isaret else (s[0] + "%" + s[1:]).replace(".", ",").replace("-", "−")
+    import bicim
+    return bicim.yuzde(x, d, isaret)
 
 
 def rr(x):
