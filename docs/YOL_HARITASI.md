@@ -51,7 +51,7 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 
 ## Önerilen aşamalar
 - ~~6. Veri kalite etiketi + yedek kaynak tablosu + TCMB enflasyonu ve politika faizi~~ (27.11.2026 tamam)
-- 7. Teknik motoru tamamla: WMA, HMA, Heikin Ashi, RVOL, order block/breaker, likidite süpürme, harmonik formasyonlar (her biri geçmiş testle).
+- ~~7. Teknik motoru tamamla: WMA, HMA, Heikin Ashi, RVOL, order block/breaker, harmonik formasyonlar~~ (27.11.2026 tamam)
 - 8. Kendi taramanı kur: filtre birleştirme, kayıtlı şablonlar, sinyal yaşı / sinyalden beri değişim sütunları.
 - 9. Risk hesaplayıcı (pozisyon büyüklüğü, komisyon) + sanal işlem portföyü.
 - 10. Kullanıcı tanımlı alarmlar (RSI, EMA kesişimi, seviye kırılımı) + alarm geçmişi.

@@ -42,8 +42,17 @@ KURULUM = {
              "Fiyat harmonik formasyonun dönüş bölgesine (PRZ) geldi ve aynı mumda alıcı onayı oluştu.",
              "Fiyat harmonik formasyonun dönüş bölgesine (PRZ) geldi ve aynı mumda satıcı onayı oluştu."),
 }
-# Aşama 7 kurulumları: geçmiş testi iki yarıda da olumlu çıkan (piyasa, tf, kurulum) üçlüleri canlıda açılır.
-EK_KURULUM = set()
+# Aşama 7 kurulumları (arastirma_firsat.py, 27.11.2026): yalnızca canlı filtreyle birlikte ESKİ ve YENİ yarıda ayrı ayrı
+# ortalama sonucu +0,02R'nin üzerinde olan (piyasa, tf) → {(kurulum, yön)} açılır. Parantezde eski / yeni yarı ortR.
+EK_KURULUM = {
+    ("bist", "G"): {("OB", 1), ("BREAKER", 1), ("HARM", 1)},    # OB +0,148/+0,063 · BREAKER +0,199/+0,145 · HARM +0,112/+0,048
+    ("bist", "4S"): {("BREAKER", 1), ("HARM", 1)},              # BREAKER +0,184/+0,053 · HARM +0,289/+0,036
+    ("abd", "G"): {("BREAKER", 1), ("HARM", 1)},                # BREAKER +0,199/+0,079 · HARM +0,027/+0,086
+    ("abd", "H"): {("BREAKER", 1), ("HARM", 1)},                # BREAKER +0,358/+0,228 · HARM +0,237/+0,177
+    ("kripto", "G"): {("HARM", -1)},                            # HARM SAT +0,641/+0,563
+}
+# Elenenler: kripto 4S'te hepsi; OB BIST 4S, ABD G/H'de (eski yarı ≤ 0); tüm SAT yönleri (kripto G harmonik hariç).
+# RVOL: göreli hacim zaten "Hacim x" teyidi ve hacim puanı olarak (medyana göre) skorlanıyor; ayrı filtre eklenmedi.
 DURUM_AD = {"TEYİT": "teyit", "YUKARI KIRILIM": "yukarı kırılım", "AŞAĞI KIRILIM": "aşağı kırılım", "KIRILIM": "kırılım"}
 KALITE = {"FORM": 15, "UYUMSUZ": 12, "KIRILIM": 12, "GERI": 12, "SIKISMA": 10, "AVI": 10, "ST": 8, "OB": 12, "BREAKER": 10, "HARM": 12}
 DONUS = {"UYUMSUZ", "AVI", "HARM"}                  # üst zaman dilimine ters de olabilir (karşı trend)
@@ -427,7 +436,11 @@ def hafif(h, tf):
     return {"h": h, "G": T.gostergeler(h), "tf": tf}
 
 
-def varlik_tara(v, tf, yonler, pist, olay_topla=True):
+def ek_kurulumlar(piyasa, tf, yon):
+    return {k for k, y in EK_KURULUM.get((piyasa, tf), set()) if y == yon}
+
+
+def varlik_tara(v, tf, yonler, pist, olay_topla=True, piyasa=None):
     """Tek varlık, tek zaman dilimi. v: {kod, ad, para, a (tf_analiz ya da hafif), ust | ust_fn, rs, ...}.
     Son mumdaki taze kurulumları döndürür; ayrıca piyasa istatistiğine geçmiş olayları ekler."""
     a = v["a"]
@@ -435,11 +448,16 @@ def varlik_tara(v, tf, yonler, pist, olay_topla=True):
     A = diziler(a["h"], a["G"]); n = len(A["Close"]); son = n - 1
     bulunan = []
     for yon in yonler:
-        M = ayna(A, yon); tet = tetikler(M)
+        M = ayna(A, yon); tet = tetikler(M, ek=ek_kurulumlar(piyasa, tf, yon) or None)
         if olay_topla:
             for k, s in piyasa_olaylari(M, tet, tf).items(): pist.ekle((k, yon, tf), s)
         for k, (m, stop) in tet.items():
-            if m[son]: bulunan.append({"kod_k": k, "yon": yon, "stop": float(stop[son]) * yon, "M": M, "tet": (m, stop)})
+            if m[son]:
+                b_ = {"kod_k": k, "yon": yon, "stop": float(stop[son]) * yon, "M": M, "tet": (m, stop)}
+                if k == "HARM":
+                    import teknik_ek as TE
+                    b_["desen"] = TE.DESEN_AD.get(TE.harmonik_tetik(M)[2][son], "")
+                bulunan.append(b_)
     # formasyon kırılımları
     try:
         for f in form_tetik(a, tf):
@@ -544,7 +562,7 @@ def degerlendir(v, tf, bulunan, pist, piyasa, baglam=None):
         adlar = []
         for b in ks:
             if b["kod_k"] == "FORM": adlar.append(f"{b['form']['ad']} – {DURUM_AD.get(b['form']['durum'].split(' (')[0], 'kırılım')}")
-            else: adlar.append(KURULUM[b["kod_k"]][0 if yon == 1 else 1])
+            else: adlar.append(KURULUM[b["kod_k"]][0 if yon == 1 else 1] + (f" ({b['desen']})" if b.get("desen") else ""))
         aciklama = (form["aciklama"] if ana["kod_k"] == "FORM" else KURULUM[ana["kod_k"]][2 if yon == 1 else 3])
         out.append({"kod": v["kod"], "ad": v.get("ad", v["kod"]), "para": v.get("para", ""), "piyasa": piyasa, "tf": tf, "yon": yon,
                     "kurulum": ana["kod_k"], "kurulum_ad": " + ".join(dict.fromkeys(adlar)), "aciklama": aciklama,
@@ -562,7 +580,7 @@ def tara(varliklar, tf, piyasa, yonler=(1,), adet=5, min_puan=MIN_PUAN, ilerleme
     pist = PiyasaIstatistik(); bulunanlar = []
     for i, v in enumerate(varliklar):
         try:
-            b = varlik_tara(v, tf, yonler, pist)
+            b = varlik_tara(v, tf, yonler, pist, piyasa=piyasa)
             if b: bulunanlar.append((v, b))
         except Exception as ex:
             if ilerleme: ilerleme(f"{v.get('kod')}: {str(ex)[:60]}")

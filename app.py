@@ -330,13 +330,20 @@ def teknik_analiz(kod, zaman, surum, kisa=False):
     TKR.teknik_pdf(s, yol)
     with open(yol, "rb") as f: pdf = f.read()
     graf = {tf: TKR.g_teknik(a, f"{s['kod']} · {TK.TF_AD[tf]} · {a['etiket']}", dpi=130).getvalue() for tf, a in s["tf"].items() if a}
+    graf_ha = {}
+    for tf, a in s["tf"].items():
+        if a:
+            try: graf_ha[tf] = TKR.g_teknik(a, f"{s['kod']} · {TK.TF_AD[tf]} · {a['etiket']}", dpi=130, ha=True).getvalue()
+            except Exception: pass
     tfo = {tf: {"etiket": a["etiket"], "puan": a["puan"], "sayim": a["oy"]["sayim"], "sinyal": [(x[0], x[1], x[2]) for x in a["sinyal"]],
                 "destek": a["sr"]["destek"], "direnc": a["sr"]["direnc"], "yapi": a["pa"]["yapi"], "ma": a["oy"]["ma_etiket"],
-                "osc": a["oy"]["osc_etiket"], "pivot": a["pivot"]["Klasik"]} for tf, a in s["tf"].items() if a}
+                "osc": a["oy"]["osc_etiket"], "pivot": a["pivot"]["Klasik"], "bloklar": a["pa"].get("bloklar", []),
+                "likidite": a["pa"].get("likidite", []), "bolge": a["pa"].get("bolge"), "harm": a.get("harm", [])}
+           for tf, a in s["tf"].items() if a}
     g = s["tf"].get("G") or {}
     return {"kod": s["kod"], "ad": s["ad"], "etiket": s["etiket"], "puan": s["puan"], "yorum": AN.teknik_ozet(s), "baslik": AN.teknik_baslik(s),
             "senaryo": AN.teknik_senaryo(s), "pdf": pdf,
-            "dosya": os.path.basename(yol), "graf": graf, "tf": tfo, "para": s["para"], "fiyat": g.get("fiyat"), "degisim": g.get("degisim"),
+            "dosya": os.path.basename(yol), "graf": graf, "graf_ha": graf_ha, "tf": tfo, "para": s["para"], "fiyat": g.get("fiyat"), "degisim": g.get("degisim"),
             "fiyat_zamani": ts.zaman_metni(s.get("fiyat_zamani")), "ileri": ileri_ozet(None, {"₺": "TL", "$": "$"}.get(s["para"], ""), s),
             "gun": _gun_ozeti(g.get("h"))}
 
@@ -700,7 +707,7 @@ def one_cikanlar(PV):
         lg = f'<img src="{logo}" alt="" class="oc-l">' if logo else f'<span class="oc-h">{kis[:3]}</span>'
         return (f'<div class="oc">{lg}<div class="oc-a"><b>{kis}</b><div>{ad}{(" · " + alt) if alt else ""}</div></div>'
                 f'<div class="oc-f"><b>{fiyat}</b><br><span class="oc-p" style="color:{renk};background:{zem}">{br.yz(deg) if deg is not None else "–"}</span></div>'
-                + (f'<div class="oc-d"><span class="oc-b" role="button" data-kk="{istek}||">Analiz</span>'
+                + (f'<div class="oc-d"><span class="oc-b" role="button" data-kk="{istek}|rapor|">Analiz</span>'
                    f'<span class="oc-b oc-b2" role="button" data-kk="{istek}|seviye|">Seviye</span></div>' if istek else "") + '</div>')
     for k in fav[:8]:
         if oz is not None and k in oz.index:
@@ -881,7 +888,11 @@ _ist = st.session_state.get("kk_istek") or ""
 if _ist and _ist != st.session_state.get("_kk_son"):
     st.session_state["_kk_son"] = _ist
     _p = (_ist.split("|") + ["", "", ""])[:3]
-    if _p[0]:
+    if _p[0] and _p[2] == "rapor":      # Analiz düğmesi → Keşfet › Hisse (araştırma raporu)
+        _rt = {"Hisse": "BIST", "ABD": "ABD", "Kripto": "Kripto", "Emtia": "Emtia"}.get(_p[1], "BIST")
+        st.session_state["r_tur"] = _rt
+        st.session_state["_kk_rapor"] = (_p[0], _rt)
+    elif _p[0]:                         # Seviye düğmesi ve arama → Keşfet › Teknik
         st.session_state["tk_tur"] = _p[1] if _p[1] in ("Hisse", "ABD", "Emtia", "Kripto") else "Hisse"
         st.session_state["_kk_analiz"] = (_p[0], _p[2])
 with _ust_yer.container():
@@ -932,6 +943,17 @@ except Exception:
 
 with tab_r:
     r_tur = st.radio("Piyasa", ["BIST", "ABD", "Kripto", "Emtia"], horizontal=True, key="r_tur")
+    if st.session_state.get("_kk_rapor"):
+        _rk, _rt = st.session_state.pop("_kk_rapor")
+        try:
+            with st.status(f"{_rk} araştırma raporu hazırlanıyor… (30–60 sn)") as s_:
+                if _rt in ("Kripto", "Emtia"):
+                    st.session_state.rv_sonuc = varlik_analiz(_rk, tuple(PRM.items()), ZAMAN, br.SURUM)
+                else:
+                    st.session_state.sonuc = analiz(_rk, "", tuple(PRM.items()), ZAMAN, br.SURUM)
+                s_.update(label="Hazır ✓", state="complete", expanded=False)
+        except Exception as e:
+            st.error(f"{_rk} raporu hazırlanamadı: {e}")
     if r_tur in ("Kripto", "Emtia"):
         if r_tur == "Kripto":
             r_vk = kripto_sec("r_k"); r_vs = r_vk
@@ -1100,12 +1122,29 @@ with tab_x:
         for sk, tf in zip(sek, sira):
             with sk:
                 x = r["tf"][tf]
-                if tf in r["graf"]: st.image(r["graf"][tf], use_container_width=True)
+                _ha = st.radio("Mum tipi", ["Normal mum", "Heikin Ashi"], horizontal=True, key=f"tk_ha_{tf}", label_visibility="collapsed")
+                _gr = (r.get("graf_ha") or {}).get(tf) if _ha == "Heikin Ashi" else r["graf"].get(tf)
+                if _gr: st.image(_gr, use_container_width=True)
+                if _ha == "Heikin Ashi": st.caption("Heikin Ashi mumları trendi yumuşatır; gösterilen fiyatlar ortalamadır. Seviyeler gerçek fiyattır.")
                 st.markdown(f"**Ortalamalar:** {x['ma']} · **Osilatörler:** {x['osc']} · **Yapı:** {x['yapi']}")
+                smc = []
+                for b in x.get("bloklar", [])[:3]:
+                    smc.append(f'<span class="cip" style="border-color:{"#22C55E" if b["yon"] > 0 else "#EF4444"}66">{b["ad"]} · {TK.sayi(b["alt"])}–{TK.sayi(b["ust"])} · {b["durum"]}</span>')
+                for f in x.get("harm", [])[:2]:
+                    smc.append(f'<span class="cip" style="border-color:#E8B84A88">{f["ad"]} · {f["durum"]} · PRZ {TK.sayi(f["bolge"][0])}–{TK.sayi(f["bolge"][1])}</span>')
+                for ad_l, tip_l, v_l in x.get("likidite", [])[:2]:
+                    smc.append(f'<span class="cip">{ad_l} · {TK.sayi(v_l)}</span>')
+                if x.get("bolge"): smc.append(f'<span class="cip">Bölge: {x["bolge"]["bolge"]} (%{x["bolge"]["oran"] * 100:.0f})</span>')
+                if smc:
+                    st.markdown(TS.bb("Akıllı para (SMC) ve harmonik"), unsafe_allow_html=True)
+                    st.markdown('<div class="cipler" style="display:flex;flex-wrap:wrap;gap:6px">' + "".join(smc) + "</div>", unsafe_allow_html=True)
                 d_ = " · ".join(TK.sayi(v) for v, _ in x["destek"][:3]) or "–"; r_ = " · ".join(TK.sayi(v) for v, _ in x["direnc"][:3]) or "–"
                 st.markdown(f"🟢 **Destek:** {d_}  \n🔴 **Direnç:** {r_}  \n⚖️ **Pivot:** P {TK.sayi(x['pivot']['P'])} · R1 {TK.sayi(x['pivot']['R1'])} · S1 {TK.sayi(x['pivot']['S1'])}")
-                for ad_, y_, ac in x["sinyal"]:
-                    st.markdown(f"{'🟢' if y_ > 0 else '🔴' if y_ < 0 else '🟡'} **{ad_}**  \n<span style='font-size:0.85rem;color:#6B7280'>{ac}</span>", unsafe_allow_html=True)
+                if x["sinyal"]: st.markdown(TS.bb("Sinyaller"), unsafe_allow_html=True)
+                st.markdown("".join(
+                    f'<div class="hb" style="--v:{"#22C55E" if y_ > 0 else "#EF4444" if y_ < 0 else "#E8B84A"};padding:9px 12px;margin-bottom:7px">'
+                    f'<div class="hb-b" style="margin:0 0 3px">{ad_}</div><div style="font-size:.8rem;color:#A1A1AA">{ac}</div></div>'
+                    for ad_, y_, ac in x["sinyal"]), unsafe_allow_html=True)
                 if not x["sinyal"]: st.caption("Bu zaman diliminde belirgin bir formasyon veya sinyal yok.")
 
     st.divider()
@@ -1239,6 +1278,9 @@ with tab_f:
         st.markdown(
             "- **Taze sinyal:** Yalnızca az önce kapanan mumda oluşan kurulumlar: hacimli kırılım, trend içi geri çekilme, sıkışma kırılımı, "
             "uyumsuzluklu dönüş, likidite avı dönüşü, SuperTrend dönüşü, formasyon (ikili dip/tepe, OBO/TOBO, üçgen, kama, bayrak, trend çizgisi) kırılımı.\n"
+            "- **Akıllı para ve harmonik (Aşama 7):** emir bloğu geri testi, kırıcı blok geri testi, harmonik dönüş (Gartley, Bat, Butterfly, Crab, "
+            "Deep Crab, Shark, Cypher, AB=CD). Yalnızca geçmiş testte hem eski hem yeni dönemde kâr getiren piyasa/zaman dilimlerinde açıktır: "
+            "BIST günlük ve 4 saatlik, ABD günlük ve haftalık, kripto günlük (harmonik SAT).\n"
             "- **Stop:** Kurulumu bozan yapı seviyesi + ATR payı (en az 1, en fazla 3,5 ATR).\n"
             "- **Hedefler:** Direnç/destek, aşılmamış önceki tepeler, Fibonacci seviye ve uzantıları, pivotlar ve formasyonun ölçtüğü hedef; "
             "her biri R (risk katı) ile. H1'de yarısı, H2'de %30'u, H3'te kalanı kapatılır; H1 sonrası stop girişe çekilir.\n"
@@ -1772,7 +1814,8 @@ with tab_al:
     st.code("\n".join(s for s in mevcut.splitlines() if s.strip() and not s.startswith("#")) or "(kural yok)")
     with st.expander(":material/add: Yeni alarm ekle"):
         tip = st.selectbox("Alarm türü", ["Fiyat üstüne çıkınca", "Fiyat altına inince", "Günlük % hareket", "RSI altına inince", "RSI üstüne çıkınca",
-                                          "Teknik puan üstüne çıkınca", "Yeni formasyon / kırılım", "KAP haberi"], key="al_tip")
+                                          "Teknik puan üstüne çıkınca", "Yeni formasyon / kırılım", "KAP haberi"], key="al_tip",
+                                          help="Formasyon alarmı: grafik formasyonları, BOS/CHoCH, harmonik formasyonlar, emir bloğu ve kırıcı blok testleri.")
         kod_a = st.text_input("Kod (örn. THYAO, NVDA.US, BTC/TRY, PEPE/USDT@OKX, ALTIN, SP500)", key="al_kod").strip().upper()
         deger = st.text_input("Değer (fiyat, yüzde veya RSI/puan)", key="al_deger").strip().replace(",", ".") if tip not in ("Yeni formasyon / kırılım", "KAP haberi") else ""
         kural = {"Fiyat üstüne çıkınca": f"{kod_a} > {deger}", "Fiyat altına inince": f"{kod_a} < {deger}", "Günlük % hareket": f"{kod_a} %{deger}",

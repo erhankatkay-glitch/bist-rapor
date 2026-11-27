@@ -419,7 +419,7 @@ def portfoy_uyari(bot, D, tf, varliklar, adaylar):
         pist = F.PiyasaIstatistik()
         for v in varliklar:
             if _pf_anahtar(v["kod"]) not in pf: continue
-            b = F.varlik_tara(v, tf, (-1,), pist, olay_topla=False)
+            b = F.varlik_tara(v, tf, (-1,), pist, olay_topla=False, piyasa=D.p)
             if not b: continue
             if "sr" not in v["a"]: v["a"] = T.tf_analiz(v["a"]["h"], tf)
             sat += [a for a in F.degerlendir(v, tf, b, pist, D.p) if a["puan"] >= 45]

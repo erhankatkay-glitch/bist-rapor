@@ -186,3 +186,24 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - Doğrulama (27.11):
   - TCMB'den TÜFE %29,77 (Ekim) ve faiz %36 (23.10) çekildi; faiz haberlerle teyitli.
   - ABD 10Y faizi Yahoo'da 25.11'de kalmış, doğru biçimde "bayat" etiketlendi.
+
+## Aşama 7 (27 Kasım 2026)
+- `teknik_ek.py`:
+  - Göstergeler: WMA, HMA, Heikin Ashi, RVOL.
+  - ATR zigzag (teyitli salınımlar).
+  - Harmonik formasyonlar: Gartley, Bat, Butterfly, Crab, Deep Crab, Shark, Cypher, AB=CD; tolerans `TOL`.
+  - Emir bloğu (aktif / test edildi / geçersiz), kırıcı blok, eşit tepe/dip, premium/iskonto.
+  - Test: kesilmiş veriyle tam veri aynı tetikleri veriyor, yani geleceğe bakmıyor.
+- Geçmiş test (Actions, 6 piyasa/dilim, 100 bin+ olay). Canlıda açılanlar `firsat.EK_KURULUM`'da:
+  - BIST G: OB, BREAKER, HARM (AL).
+  - BIST 4S: BREAKER, HARM.
+  - ABD G/H: BREAKER, HARM.
+  - Kripto G: HARM SAT.
+  - Kripto 4S'te hiçbiri tutmadı.
+  - RVOL ayrı filtre olmadı; mevcut "Hacim x" teyidiyle aynı bilgi.
+- Analiz sayfası ve PDF:
+  - SMC çipleri, grafikte OB kutuları, harmonik PRZ ve eşit tepe/dip çizgileri.
+  - Heikin Ashi seçeneği.
+  - Sinyaller kart görünümünde.
+- Alarmlar: "Yeni formasyon / kırılım" alarmı ve portföy uyarıları harmonik, emir bloğu ve kırıcı blok sinyallerini de kapsıyor.
+- Ana sayfa düğmeleri: "Analiz" Keşfet › Hisse araştırma raporunu açar; "Seviye" Keşfet › Teknik'in seviyeler bölümünü açar.

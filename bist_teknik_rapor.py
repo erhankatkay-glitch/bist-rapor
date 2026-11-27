@@ -44,7 +44,7 @@ def _img(b, gen, oran):
 # =====================================================================
 # MUM GRAFİĞİ
 # =====================================================================
-def g_teknik(a, baslik, kompakt=False, dpi=150):
+def g_teknik(a, baslik, kompakt=False, dpi=150, ha=False):
     """Mum grafiği + EMA20/50, SMA200, Bollinger, destek/direnç, Fibonacci, formasyon çizgileri,
     FVG kutuları, mum formasyonu işaretleri; alt panellerde hacim, RSI, MACD."""
     h, G = a["h"], a["G"]; N = T.AYAR[a["tf"]]["goster"] if not kompakt else min(90, T.AYAR[a["tf"]]["goster"])
@@ -54,6 +54,10 @@ def g_teknik(a, baslik, kompakt=False, dpi=150):
     else:
         fig = plt.figure(figsize=(7.5, 6.4)); gs = fig.add_gridspec(4, 1, height_ratios=[4.2, 0.8, 1.1, 1.1], hspace=0.06)
     ax = fig.add_subplot(gs[0])
+    if ha:                                   # Heikin Ashi: yalnızca mum çizimi değişir, seviyeler gerçek fiyattır
+        import teknik_ek as TE
+        w = TE.heikin_ashi(h).iloc[bas:]
+        baslik = baslik + " · Heikin Ashi"
     yuk = w["Close"] >= w["Open"]
     renk = np.where(yuk, YESIL, KIRMIZI)
     ax.vlines(x, w["Low"], w["High"], color=renk, lw=0.7)
@@ -85,6 +89,23 @@ def g_teknik(a, baslik, kompakt=False, dpi=150):
             try: xi = w.index.get_loc(t)
             except KeyError: continue
             ax.add_patch(plt.Rectangle((xi, alt), len(w) - xi, ust - alt, color=YESIL if "Boğa" in ad else KIRMIZI, alpha=0.08, lw=0))
+    # Emir blokları (Aşama 7), harmonik dönüş bölgeleri, eşit tepe/dip likiditesi
+    if not kompakt:
+        for b in a["pa"].get("bloklar", [])[:3]:
+            try: xi = max(0, w.index.get_loc(b["tarih"]))
+            except KeyError: xi = 0
+            if b["ust"] < lo_ - pad or b["alt"] > hi_ + pad: continue
+            r_ = YESIL if b["yon"] > 0 else KIRMIZI
+            ax.add_patch(plt.Rectangle((xi, b["alt"]), len(w) - xi, b["ust"] - b["alt"], color=r_, alpha=0.14 if b["durum"] == "aktif" else 0.07, lw=0))
+            ax.text(xi, b["ust"], ("OB" if b["durum"] == "aktif" else "OB·test"), fontsize=5.5, color=r_, va="bottom")
+        for f in a.get("harm", [])[:2]:
+            lo_b, hi_b = f["bolge"]
+            if hi_b < lo_ - pad or lo_b > hi_ + pad: continue
+            ax.add_patch(plt.Rectangle((len(w) - 12, lo_b), 12 + (10 if not kompakt else 6), hi_b - lo_b, color=HEX.get("altin", HEX["sari"]), alpha=0.22, lw=0))
+            ax.text(len(w) - 12, hi_b, f"{f['ad']} PRZ", fontsize=5.5, color=HEX.get("altin", HEX["sari"]), va="bottom")
+        for ad, tip, v in a["pa"].get("likidite", [])[:2]:
+            if lo_ - pad < v < hi_ + pad:
+                ax.axhline(v, color=C["gri"], lw=0.7, ls=(0, (1, 2))); ax.text(-0.5, v, "= " + ("tepe" if tip == 1 else "dip"), fontsize=5.5, color=C["gri"], va="bottom")
     # Formasyon çizimleri
     def X(i): return i - bas
     for cz in a["cizim"]:
@@ -297,7 +318,13 @@ def teknik_pdf(s, dosya):
                                    TS.yan_yana(TS.tablo(ft, [PW * .5, PW * .5], font=7.2), TS.tablo(pt, [PW * .3, PW * .35, PW * .35], font=7.2), W)]))
         pa = a["pa"]; sat = [f"Piyasa yapısı: <b>{pa['yapi']}</b>."]
         for ad, alt_, ust_, t_ in pa["fvg"]: sat.append(f"{ad}: {_f(alt_)} – {_f(ust_)} ({t_:%d.%m.%Y}).")
-        if pa.get("ob"): sat.append(f"{pa['ob'][0]}: {_f(pa['ob'][1])} – {_f(pa['ob'][2])} ({pa['ob'][3]:%d.%m.%Y}).")
+        for b in pa.get("bloklar", []):
+            sat.append(f"{b['ad']} ({b['durum']}): {_f(b['alt'])} – {_f(b['ust'])} ({b['tarih']:%d.%m.%Y}).")
+        if not pa.get("bloklar") and pa.get("ob"): sat.append(f"{pa['ob'][0]}: {_f(pa['ob'][1])} – {_f(pa['ob'][2])} ({pa['ob'][3]:%d.%m.%Y}).")
+        for ad, tip, v in pa.get("likidite", []): sat.append(f"{ad}: {_f(v)}.")
+        if pa.get("bolge"): sat.append(f"Son salınım aralığında fiyat <b>{pa['bolge']['bolge']}</b> bölgesinde (aralığın %{pa['bolge']['oran'] * 100:.0f}'i).")
+        for f in a.get("harm", []):
+            sat.append(f"Harmonik {f['ad']} ({'boğa' if f['yon'] == 1 else 'ayı'}, {f['durum']}): dönüş bölgesi {_f(f['bolge'][0])} – {_f(f['bolge'][1])}.")
         E.append(KeepTogether([Paragraph("Price action", ST["h2"])] + [Paragraph("• " + x, ST["madde"]) for x in sat]))
     gg = s["tf"].get("G")
     if gg is not None:

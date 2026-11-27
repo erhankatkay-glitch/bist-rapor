@@ -16,8 +16,16 @@ import pandas as pd
 
 # ----------------------------------------------------------------------------- göstergeler
 def wma(s, n):
-    w = np.arange(1, n + 1, dtype=float)
-    return s.rolling(n, min_periods=n).apply(lambda x: float(np.dot(x, w) / w.sum()), raw=True)
+    """Ağırlıklı hareketli ortalama (son değere en çok ağırlık), vektörel."""
+    s = pd.Series(s, dtype=float); n = int(n)
+    if n <= 1: return s.copy()
+    w = np.arange(n, 0, -1, dtype=float)              # convolve ters çevirir: en yeni değer n ağırlık alır
+    x = s.to_numpy(); out = np.full(len(x), np.nan)
+    if len(x) >= n:
+        v = np.convolve(np.nan_to_num(x), w, mode="valid") / w.sum()
+        gecerli = pd.Series(x).rolling(n).count().to_numpy()[n - 1:] == n
+        out[n - 1:] = np.where(gecerli, v, np.nan)
+    return pd.Series(out, index=s.index)
 
 
 def hma(s, n=20):
