@@ -857,12 +857,16 @@ def _sanal_kaydet():
 def sanal_islem_sekmesi():
     import sanal as SN
     if not st.session_state.get("sanal_yuklendi"):
-        _bil.html("""<script>(function(){try{const P=window.parent; const v=P.localStorage.getItem("katkay_sanal")||"BOS";
-          const inp=P.document.querySelector(".st-key-kk_gizli2 input"); if(!inp) return;
-          const set=Object.getOwnPropertyDescriptor(P.HTMLInputElement.prototype,"value").set;
-          inp.focus(); set.call(inp, v); inp.dispatchEvent(new Event("input",{bubbles:true}));
-          inp.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",code:"Enter",keyCode:13,which:13,bubbles:true})); inp.blur();
-          }catch(e){}})()</script>""", height=0)
+        _bil.html("""<script>(function(){const P=window.parent; let n=0;
+          const iv=setInterval(function(){ n++; try{
+            const v=P.localStorage.getItem("katkay_sanal")||"BOS";
+            const inp=P.document.querySelector(".st-key-kk_gizli2 input");
+            if(inp && inp.value!==v){
+              const set=Object.getOwnPropertyDescriptor(P.HTMLInputElement.prototype,"value").set;
+              inp.focus(); set.call(inp, v); inp.dispatchEvent(new Event("input",{bubbles:true}));
+              inp.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",code:"Enter",keyCode:13,which:13,bubbles:true})); inp.blur();
+            } else if(inp && n%6===0){ inp.focus(); inp.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",code:"Enter",keyCode:13,which:13,bubbles:true})); inp.blur(); }
+          }catch(e){} if(n>60) clearInterval(iv); },500); })()</script>""", height=0)
         st.caption("Sanal defter bu cihazdan yükleniyor…"); return
     d = st.session_state.setdefault("sanal", SN.bos_defter())
     if st.session_state.pop("sanal_kirli", False):
