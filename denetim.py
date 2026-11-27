@@ -1,14 +1,6 @@
 """Canlı uygulama hata kontrolü + Aşama 12 gerçek veri."""
 import os, sys, subprocess, time, json
 os.makedirs("denetim_graf", exist_ok=True); os.makedirs("cikti", exist_ok=True)
-import dunya as DN
-o = DN.hesapla("cikti")
-print("borsa", len(o["borsalar"]), [(x["ad"], round(x["d1"] or 0, 4)) for x in o["borsalar"]][:6])
-print("döviz", len(o["doviz"]), "| eğri:", (o["egri"] or {}).get("kaynak"), (o["egri"] or {}).get("durum"), (o["egri"] or {}).get("f10_2"),
-      [(p["vade"], p["getiri"]) for p in (o["egri"] or {}).get("bugun", [])])
-print("vade:", [(v["ad"], v["yapi"], round(v["yillik"], 3), len(v["noktalar"])) for v in o["vade"]])
-DN.kart_ciz(o, "denetim_graf/dunya.png")
-subprocess.run([sys.executable, "yayinla.py", "cikti", "dünya ilk yayın (denetim)"])
 from playwright.sync_api import sync_playwright
 URL = "https://cuz9rz7rlsx7bfwolrb8xq.streamlit.app"
 with sync_playwright() as pw:
@@ -26,9 +18,10 @@ with sync_playwright() as pw:
     if not fr: print("canlı uygulama açılmadı"); pg.screenshot(path="denetim_graf/canli.png")
     else:
         fr.wait_for_timeout(8000)
-        for yol in ("Portföy|Sanal işlem", "Keşfet|Dünya"):
+        for yol in ("Keşfet|Dünya", "Ana Sayfa|Ekonomi"):
             fr.evaluate(f"window.kkGitAlt && window.kkGitAlt('{yol}')"); fr.wait_for_timeout(15000)
             print("CANLI", yol, "hata:", fr.evaluate("[...document.querySelectorAll('[data-testid=stException]')].map(x=>x.innerText.slice(0,160))"),
-                  "| dünya satırı:", fr.evaluate("document.querySelectorAll('.dn').length"))
+                  "| dünya satırı:", fr.evaluate("document.querySelectorAll('.dn').length"), "| ilişki kartı:", fr.evaluate("document.querySelectorAll('.ko').length"),
+                  "| okunamadı:", fr.evaluate("[...document.querySelectorAll('p')].map(x=>x.innerText).filter(t=>t.includes('okunamadı'))"))
             pg.screenshot(path=f"denetim_graf/canli_{yol.split('|')[1].replace(' ', '_')}.png")
     br.close()
