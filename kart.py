@@ -65,6 +65,24 @@ def _marka(ax, H, x=48, boy=36):
         return x
 
 
+_LOGO_ON = {}
+
+
+def logo_ciz(ax, kod, x, y_alt, boy):
+    """Kripto varlık logosu (varsa) — (x, y_alt) sol alt köşe, boy piksel. Çizildiyse True."""
+    try:
+        import logolar, matplotlib.image as mpimg
+        yol = logolar.kripto_logo(kod)
+        if not yol: return False
+        if yol not in _LOGO_ON: _LOGO_ON[yol] = mpimg.imread(yol)
+        xl, yl = ax.get_xlim(), ax.get_ylim()
+        ax.imshow(_LOGO_ON[yol], extent=[x, x + boy, y_alt, y_alt + boy], aspect="auto", zorder=6, interpolation="lanczos")
+        ax.set_xlim(*xl); ax.set_ylim(*yl)
+        return True
+    except Exception:
+        return False
+
+
 def _kutu(ax, x, y, w, h, renk, r=14, alpha=1.0, kenar=None):
     if kenar is None and renk in (C["panel"], C["panel2"]): kenar = C["cizgi"]   # uygulamadaki gibi ince çerçeve
     ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}", fc=renk, ec=kenar or "none", lw=1.5 if kenar else 0,
@@ -127,9 +145,11 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     ax.add_patch(Rectangle((0, H - 8), W, 8, color=C["altin"]))
     import tg
     _t(ax, _marka(ax, H), H - 58, f"{tg.buyuk(piyasa_ad)}  ·  {tg.buyuk(tf_ad)}  ·  FIRSAT", 15, C["altin"], "semibold")
-    _t(ax, 48, H - 140, F.gorunen(f["kod"], None), 54, weight="bold")
+    bx = 48
+    if f.get("piyasa") == "kripto" and logo_ciz(ax, f["kod"], 48, H - 152, 64): bx = 128
+    _t(ax, bx, H - 140, F.gorunen(f["kod"], None), 54, weight="bold")
     ad = f.get("ad") or ""
-    if ad and ad not in f["kod"]: _t(ax, 48, H - 180, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
+    if ad and ad not in f["kod"]: _t(ax, bx, H - 180, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
     _kutu(ax, 48, H - 250, 150, 48, ana, r=24)
     _t(ax, 123, H - 234, "AL" if yon == 1 else "SAT", 22, "#FFFFFF", "bold", ha="center")
     ku = f["kurulum_ad"]

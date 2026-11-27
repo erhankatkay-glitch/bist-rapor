@@ -464,6 +464,9 @@ def piyasa_karti(ad_, v):
     deger = br.ond(v["deger"], 2 if v["deger"] < 10000 else 0)
     birim = {"puan": "", "TL": " ₺", "$": " $", "%": "%"}.get(v["birim"], "")
     alt = " · ".join(x for x in (f"1A {br.yz(v['d1A'])}" if v.get("d1A") is not None else "", f"YBB {br.yz(v['YBB'])}" if v.get("YBB") is not None else "") if x)
+    import logolar as LG
+    lg = LG.kripto_logo_uri({"Bitcoin": "BTC", "Ethereum": "ETH"}.get(ad_, "")) if ad_ in ("Bitcoin", "Ethereum") else None
+    if lg: ad_ = f'<img src="{lg}" alt="" style="width:18px;height:18px;vertical-align:-3px;margin-right:6px">{ad_}'
     return (f'<div class="pk"><div><div class="pk-ad">{ad_}</div><div class="pk-d">{deger}{birim}</div>'
             f'<span class="rozet {sinif}">{ok} {br.yz(d)}</span><div class="pk-alt">{alt}</div></div>'
             f'<div>{spark_svg(v["seri"], renk)}</div></div>')
@@ -868,12 +871,14 @@ with tab_f:
         ac = FD.get("acik") or []
         if not ac: st.info("Açık kurulum yok.")
         else:
-            st.dataframe(pd.DataFrame([{"Kod": k["kod"], "Dilim": TK.TF_AD[k["tf"]], "Yön": "AL" if k["yon"] == 1 else "SAT", "Kurulum": k["kurulum"],
+            import logolar as LG
+            st.dataframe(pd.DataFrame([{**({"": LG.kripto_logo_uri(k["kod"])} if fk == "kripto" else {}), "Kod": k["kod"], "Dilim": TK.TF_AD[k["tf"]], "Yön": "AL" if k["yon"] == 1 else "SAT", "Kurulum": k["kurulum"],
                                         "Giriş": FR.fy(k["giris"]), "Stop": FR.fy(k["stop"]) + (" (girişte)" if k["asama"] else ""),
                                         "H1": FR.fy(k["hedef"][0]), "H2": FR.fy(k["hedef"][1]), "H3": FR.fy(k["hedef"][2]),
                                         "Görülen hedef": k["asama"], "Son fiyat": FR.fy(k.get("son_fiyat")),
                                         "Getiri": FR.yz((k.get("son_fiyat", k["giris"]) - k["giris"]) / k["giris"] * k["yon"]),
-                                        "Bitiş": str(k["bitis"])[:16].replace("T", " ")} for k in ac]), hide_index=True, use_container_width=True)
+                                        "Bitiş": str(k["bitis"])[:16].replace("T", " ")} for k in ac]), hide_index=True, use_container_width=True,
+                         column_config={"": st.column_config.ImageColumn("", width="small")} if fk == "kripto" else None)
     with f3:
         gc = FD.get("gecmis") or []
         pf = FR.performans(gc)
