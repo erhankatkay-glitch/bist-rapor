@@ -247,6 +247,9 @@ def gostergeler(h):
     G["TRIX"] = 100 * e3.pct_change()
     G["VWMA20"] = (c * v).rolling(20).sum() / v.rolling(20).sum().replace(0, np.nan)
     G["HACIM_ORT"] = v.rolling(20).mean()
+    import teknik_ek as TE
+    G["WMA20"], G["HMA20"] = TE.wma(c, 20), TE.hma(c, 20)
+    G["RVOL"] = TE.rvol(v)
     return G
 
 
@@ -605,6 +608,31 @@ def price_action(h, G, piv):
             ust_, alt_ = lo[i - 2], hi[i]
             if hi[i + 1:].max(initial=-np.inf) < ust_: o["fvg"].append(("Ayı FVG", alt_, ust_, h.index[i]))
     o["fvg"] = sorted(o["fvg"], key=lambda x: abs((x[1] + x[2]) / 2 - son))[:3]
+    # Aşama 7: emir blokları ve kırıcı bloklar (iki yön, durumlarıyla), likidite havuzları, premium/iskonto
+    try:
+        import teknik_ek as TE, firsat as F_
+        A0 = {k: h[k].to_numpy(float) for k in ("Open", "High", "Low", "Close")}; A0["ATR"] = G["ATR"].to_numpy(float)
+        blk = []
+        for yon in (1, -1):
+            M = A0 if yon == 1 else {"Open": -A0["Open"], "Close": -A0["Close"], "High": -A0["Low"], "Low": -A0["High"], "ATR": A0["ATR"]}
+            sal = F_.salinimlar(M["High"], M["Low"])
+            for b in TE.bloklar(M, sal):
+                if b["durum"] == "geçersiz" or n - 1 - b["i"] > 120: continue
+                alt_, ust_ = sorted((b["alt"] * yon, b["ust"] * yon))
+                blk.append({"ad": "Boğa emir bloğu" if yon == 1 else "Ayı emir bloğu", "yon": yon, "alt": alt_, "ust": ust_,
+                            "durum": b["durum"], "tarih": h.index[b["i"]]})
+                if b["test"] == n - 1:
+                    o["olaylar"].append((f"{'Boğa' if yon == 1 else 'Ayı'} emir bloğu testi", yon,
+                                         f"Fiyat {sayi(alt_)}–{sayi(ust_)} emir bloğuna ilk kez geri döndü."))
+            bm, _ = TE.breaker_tetik(M, sal)
+            if bm[-1]: o["olaylar"].append((f"Kırıcı blok testi ({'yukarı' if yon == 1 else 'aşağı'})", yon,
+                                            "Kırılan blok yön değiştirdi ve geri testte tuttu."))
+        blk.sort(key=lambda b: abs((b["alt"] + b["ust"]) / 2 - son))
+        o["bloklar"] = blk[:4]
+        o["likidite"] = TE.esit_seviyeler(piv[:-1], float(G["ATR"].iloc[-1]))
+        o["bolge"] = TE.premium_iskonto(piv[:-1], son)
+    except Exception:
+        o["bloklar"], o["likidite"], o["bolge"] = [], [], None
     # Basit emir bloğu: son yükselen yapı kırılımından önceki son kırmızı mum
     if tep:
         hedef_i = tep[-1][0]
@@ -757,7 +785,11 @@ def durumlar(h, G):
         ob = G["OBV"];
         if len(ob) > 20: ek("OBV eğilimi (20)", "Yukarı" if ob.iloc[-1] > ob.iloc[-20] else "Aşağı", "Hacim fiyatı destekliyor" if (ob.iloc[-1] > ob.iloc[-20]) == (c > h["Close"].iloc[-20]) else "Hacim ile fiyat ayrışıyor", 1 if ob.iloc[-1] > ob.iloc[-20] else -1)
         vo, va = float(h["Volume"].iloc[-1]), _son(G["HACIM_ORT"])
-        if va: ek("Hacim / 20 dönem ort.", tr(vo / va) + "x", "Ortalamanın çok üzerinde hacim" if vo > 1.8 * va else "Normal hacim" if vo > 0.6 * va else "Düşük hacim", 0)
+        rv = _son(G["RVOL"]) if "RVOL" in G else None
+        if rv is not None: ek("Göreli hacim (RVOL)", tr(rv) + "x", "Ortalamanın çok üzerinde hacim (ilgi artıyor)" if rv > 1.8 else "Normal hacim" if rv > 0.6 else "Düşük hacim (ilgi az)", 0)
+        elif va: ek("Hacim / 20 dönem ort.", tr(vo / va) + "x", "Ortalamanın çok üzerinde hacim" if vo > 1.8 * va else "Normal hacim" if vo > 0.6 * va else "Düşük hacim", 0)
+    hm = _son(G["HMA20"]) if "HMA20" in G else None
+    if hm: ek("Hull ortalaması (HMA 20)", sayi(hm), "Fiyat HMA üzerinde, kısa vadeli eğilim yukarı" if c > hm else "Fiyat HMA altında, kısa vadeli eğilim aşağı", 1 if c > hm else -1)
     tr_ = _son(G["TRIX"])
     if tr_ is not None: ek("TRIX (15)", ("+" if tr_ > 0 else "") + tr(tr_, 3), "Pozitif momentum" if tr_ > 0 else "Negatif momentum", 1 if tr_ > 0 else -1)
     return S
@@ -785,6 +817,18 @@ def tf_analiz(h, tf):
     for f in form:
         sinyal.append((f"Formasyon: {f['ad']} – {f['durum']}", f["yon"], f["aciklama"] + (f" Ölçülen hedef ≈ {sayi(f['hedef'])}." if f.get("hedef") else ""), f["guc"]))
     for ad, y, ac in pa["olaylar"]: sinyal.append(("Price action: " + ad, y, ac, 2))
+    try:
+        import teknik_ek as TE
+        harm = TE.harmonik_bul(h, G, AYAR[tf]["atr_k"])
+    except Exception:
+        harm = []
+    for f in harm:
+        if f["durum"] == "tamamlandı":
+            sinyal.append((f"Harmonik: {f['ad']} ({'boğa' if f['yon'] == 1 else 'ayı'})", f["yon"],
+                           f"D noktası dönüş bölgesinde ({sayi(f['bolge'][0])}–{sayi(f['bolge'][1])}); {'yukarı' if f['yon'] == 1 else 'aşağı'} dönüş beklenir.", 2))
+        else:
+            sinyal.append((f"Harmonik: {f['ad']} oluşuyor", 0,
+                           f"Olası dönüş bölgesi {sayi(f['bolge'][0])}–{sayi(f['bolge'][1])}; fiyat bu bölgeye gelirse {'alım' if f['yon'] == 1 else 'satış'} fırsatı doğabilir.", 0))
     for ad, y, ac in uy: sinyal.append((ad, y, ac, 2))
     for ad, y, ac, g in kes: sinyal.append((ad, y, ac, g))
     try: bal, bal_oz = balina_izleri(h, G)
@@ -795,7 +839,7 @@ def tf_analiz(h, tf):
     puan = 50 + 50 * (0.55 * oy["skor"] + 0.30 * (net / toplam if sinyal else 0) + 0.15 * pa_y)
     puan = float(min(max(puan, 0), 100))
     return {"tf": tf, "h": h, "G": G, "piv": piv, "oy": oy, "mum": mum, "form": form, "cizim": cizim, "pa": pa, "uy": uy,
-            "kes": kes, "balina": bal, "balina_ozet": bal_oz, "sr": sr, "fib": fib, "pivot": pv, "durum": dr, "sinyal": sinyal, "puan": puan,
+            "kes": kes, "harm": harm, "balina": bal, "balina_ozet": bal_oz, "sr": sr, "fib": fib, "pivot": pv, "durum": dr, "sinyal": sinyal, "puan": puan,
             "etiket": puan_etiket(puan), "fiyat": float(h["Close"].iloc[-1]), "tarih": h.index[-1],
             "degisim": float(h["Close"].iloc[-1] / h["Close"].iloc[-2] - 1) if len(h) > 1 else None}
 
