@@ -414,11 +414,12 @@ KOMPAKT_STIL = """<style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap');
 *{box-sizing:border-box} body{margin:0;background:transparent;font-family:'Inter',-apple-system,sans-serif;color:#F4F4F5}
 .ku{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 10px}
-.km{display:flex;align-items:center;gap:10px;min-width:0}
+.km{display:flex;align-items:center;gap:10px;min-width:0;flex:1;overflow:hidden}
 .km img{width:40px;height:40px;border-radius:11px;border:1px solid rgba(232,184,74,.5);flex:none}
 .ka{font-weight:900;font-size:17px;letter-spacing:.2px;white-space:nowrap}.ka span{color:#E8B84A}
-.kt{font-size:9.5px;color:#A1A1AA;letter-spacing:1.5px;font-weight:700;white-space:nowrap}
-.ks{display:flex;align-items:center;gap:7px;flex:none}
+.kt{font-size:9.5px;color:#A1A1AA;letter-spacing:1.2px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.km>div{min-width:0}
+.ks{display:flex;align-items:center;gap:7px;flex:none;margin-left:8px}
 .saat{font-weight:800;font-size:15px;text-align:right;line-height:1.05}.saat small{display:block;font-size:9px;color:#A1A1AA;font-weight:600}
 .canli{display:flex;align-items:center;gap:5px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.45);color:#4ADE80;
   font-size:10.5px;font-weight:800;border-radius:20px;padding:5px 9px}.canli i{width:7px;height:7px;border-radius:50%;background:#22C55E;box-shadow:0 0 8px #22C55E}

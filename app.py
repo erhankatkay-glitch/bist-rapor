@@ -43,6 +43,7 @@ st.set_page_config(page_title="KATKAY YATIRIM A.Ş.", page_icon="varlik/favicon.
 import uygulama_stil as TS
 TS = importlib.reload(TS)
 st.markdown(TS.STIL, unsafe_allow_html=True)
+REPO = "erhankatkay-glitch/bist-rapor"   # bülten dalının deposu (üst bant da kullanır)
 _ust_yer = st.empty()   # üst bant + kayan fiyat şeridi (piyasa verisi gelince doldurulur)
 
 # ---------------- Makro veriler ----------------
@@ -616,7 +617,8 @@ def firsat_mini(f):
     rr = (p.get("hedef") or [{}, {}])[1].get("r") if len(p.get("hedef") or []) > 1 else None
     plan = f"giriş {FR.fy(g)} · stop {FR.fy(st_)} · H1 {FR.fy(h1)}" if g else ""
     puan = float(f.get("puan", 0))
-    return (f'<div class="fk" style="--v:{renk}"><div class="fk-u"><b>{lg}{FR.gorunen(f["kod"], f.get("ad"))}</b>'
+    kis = str(f["kod"]).replace(".US", "").split("/")[0].split("@")[0]
+    return (f'<div class="fk" style="--v:{renk}"><div class="fk-u"><b>{lg}{kis}</b>'
             f'<span class="fk-e" style="background:{renk}">{"AL" if al else "SAT"}</span></div>'
             f'<div class="fk-s">{pz_ad} · {TK.TF_AD.get(f["tf"], f["tf"])} · {f.get("kurulum_ad", "")[:34]}</div>'
             f'<div class="fk-c"><div style="width:{min(puan, 100):.0f}%"></div></div>'
@@ -734,7 +736,7 @@ except Exception:
 with _ust_yer.container():
     try: _hb_ust = json_oku("haber/son.json", ZAMAN) or []
     except Exception: _hb_ust = []
-    _bil.html(TS.ust_kompakt_sayfa(_pv_ust, _hb_ust), height=150)
+    _bil.html(TS.ust_kompakt_sayfa(_pv_ust, _hb_ust), height=112)
 
 
 
