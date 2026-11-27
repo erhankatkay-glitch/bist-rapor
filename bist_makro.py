@@ -91,14 +91,14 @@ def _tazele(h, gi, kod):
 
 
 def _son_zaman(gi, kod):
-    """Gün içi (15 dk) verideki son mumun KAPANIŞ zamanı, UTC ISO."""
+    """Gün içi (15 dk) verideki son mumun zamanı, UTC ISO."""
     try:
         if gi is None or kod not in gi.columns.get_level_values(0): return None
         g = gi[kod]["Close"].dropna()
         if g.empty: return None
         t = g.index[-1]
         t = t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC")
-        return (t + pd.Timedelta(minutes=15)).to_pydatetime().isoformat()
+        return t.to_pydatetime().isoformat()   # son mumun başlangıcı (mum henüz kapanmamış olabilir; temkinli)
     except Exception:
         return None
 

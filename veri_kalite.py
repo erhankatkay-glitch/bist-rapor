@@ -89,12 +89,21 @@ def etiket(zaman, tur, simdi=None):
         d = "gecikmeli" if yas <= 50 else "bayat"
     else:
         d = "gün sonu" if z >= son_kapanis(tur, t) - dt.timedelta(minutes=90) else "bayat"
-    kisa = {"anlık": "anlık", "gecikmeli": f"{int(yas)} dk önce" if yas < 120 else saat, "gün sonu": "kapanış", "bayat": saat}[d]
+    kisa = {"anlık": "anlık", "gecikmeli": "~15 dk" if yas <= 20 else f"{int(yas)} dk önce", "gün sonu": "kapanış", "bayat": saat}[d]
     ac = {"anlık": "Anlık fiyat.",
           "gecikmeli": "Piyasa açık; ücretsiz kaynak yaklaşık 15 dk gecikmeli.",
           "gün sonu": "Piyasa kapalı; son seansın kapanış verisi.",
           "bayat": "Veri beklenenden eski; kaynakta kesinti ya da tatil olabilir."}[d]
     return {"durum": d, "renk": RENK[d], "kisa": kisa, "aciklama": f"{ac} Son veri: {saat} TSİ.", "yas_dk": round(yas, 1)}
+
+
+KISA_AD = {"anlık": "canlı", "gecikmeli": "15 dk", "gün sonu": "kapanış", "bayat": "bayat"}
+
+
+def rozet_kucuk(e):
+    """Mini kartlar için: nokta + tek kelime."""
+    return (f'<span class="vk vk-k" style="color:{e["renk"]};border-color:{e["renk"]}55"><i style="background:{e["renk"]}"></i>'
+            f'{KISA_AD.get(e["durum"], e["durum"])}</span>')
 
 
 def rozet_html(e):

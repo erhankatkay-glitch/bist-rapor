@@ -7,7 +7,6 @@ p = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "app.py", "--ser
 time.sleep(20)
 os.makedirs("denetim_graf", exist_ok=True)
 print(subprocess.run([sys.executable, "makro_tr.py", "cikti_mk"], capture_output=True, text=True).stdout[-1500:])
-print(subprocess.run([sys.executable, "yayinla.py", "cikti_mk", "Makro (TCMB) ilk yükleme"], capture_output=True, text=True).stdout[-400:])
 import bist_makro as mk, veri_kalite as VK
 _pv = mk.piyasa_paneli()
 for ad, v in _pv.items():
