@@ -221,6 +221,17 @@ div[role="radiogroup"] > label:has(input:checked) p {color:var(--altin-a) !impor
 .fk-s {font-size:.7rem; color:var(--soluk); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .fk-c {height:5px; border-radius:3px; background:#2A2B30; margin:8px 0 2px;}
 .fk-c div {height:100%; border-radius:3px; background:linear-gradient(90deg,#B8862B,#E8B84A);}
+.fl-b {display:flex; justify-content:space-between; align-items:baseline; margin:12px 2px 5px; font-size:.8rem; font-weight:800;
+  color:var(--altin,#E8B84A); letter-spacing:.03em; text-transform:uppercase;}
+.fl-b span {font-size:.68rem; font-weight:600; color:var(--soluk); text-transform:none; letter-spacing:0;}
+.fl {background:linear-gradient(100deg, color-mix(in srgb, var(--v) 10%, #17181B), #121315 55%); border:1px solid rgba(255,255,255,.07);
+  border-left:3px solid var(--v); border-radius:12px; padding:8px 10px 6px; margin-bottom:6px;}
+.fl-u {display:flex; align-items:center; gap:8px; font-size:.92rem;}
+.fl-u b {display:flex; align-items:center; gap:6px; white-space:nowrap;} .fl-u .mk-l {width:18px; height:18px;}
+.fl-k {flex:1; min-width:0; font-size:.68rem; color:var(--soluk); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.fl-a {display:flex; justify-content:space-between; gap:8px; margin-top:4px; font-size:.7rem; font-variant-numeric:tabular-nums;}
+.fl-p {color:#E4E4E7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .fl-n {color:#E8B84A; font-weight:800; white-space:nowrap;}
+.fl .fk-c {margin:5px 0 0; height:3px;}
 .fk-p {font-size:.7rem; color:#E4E4E7; margin-top:5px; font-variant-numeric:tabular-nums;}
 
 /* ---------- Varlık sayfası ---------- */
