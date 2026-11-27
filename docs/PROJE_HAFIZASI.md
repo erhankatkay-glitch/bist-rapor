@@ -257,3 +257,18 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - Test (Actions, telefon görünümü):
   - İşlem açıldı, sayfa yenilendi, işlem cihaz deposundan geri geldi.
   - Hesaplayıcı: 100.000 TL, %1, 314/300 → 64 adet, risk 996 TL.
+
+## Aşama 10 (27 Kasım 2026)
+- `alarm.kurallar` yeni sözdizimi:
+  - Teknik: `KOD EMA 20/50`, `KOD HACIM > 2`, `KOD FIB 0.618`, `KOD DESTEK|DIRENC|KIRILIM`, `KOD FVG`, `KOD BOS`, `KOD HARMONIK`, `KOD SINYAL`.
+  - Diğer: `KOD TEMEL`, `TAKVIM [ÜLKE]`, `PORTFOY RISK 10`.
+- `alarm.teknik_alarm` günlük `tf_analiz` çıktısından değerlendirir.
+  - Mum kapanmadıysa mesaja "kapanış teyidi bekleniyor" eklenir.
+  - Aynı olay aynı gün tekrar gönderilmez (durum anahtarı).
+- Diğer türlerin çalışması:
+  - TEMEL: İş Yatırım'daki son dönem günde bir kontrol edilir.
+  - TAKVIM: bülten dalındaki `haber/takvim.json`'dan, açıklamaya 75 dk kala.
+  - PORTFOY RISK: portfoy.txt toplam zararı.
+- Alarm geçmişi 300 kayıt; uygulamada arama var. Kural ekleme ekranı tüm türleri kapsar.
+- Varsayılan kurallara `TAKVIM` eklendi.
+- Kuru çalıştırma (Actions, gerçek veri): 13 kural 15 sn; ikinci turda tekrar bildirim 0.
