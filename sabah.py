@@ -107,6 +107,12 @@ def izlenecekler(PV, tk, acik, firs, hab):
         if oz: m.append(f"Türkiye: {oz}" + (" (son kayıtlı değer)" if (mm.get("tufe") or {}).get("bayat") else "") + ".")
     except Exception:
         pass
+    try:   # Aşama 10c: piyasa rejimi (kapanışta hesaplanır)
+        rj = [r for r in (oku("rejim/bist.json"), oku("rejim/abd.json")) if r]
+        if rj: m.append("Piyasa rejimi: " + "; ".join(f"{r['endeks']} {r['durum_ad'].lower()}, önerilen hisse oranı %{r['maruziyet']}"
+                                                       + (" (tepe uyarısı)" if r.get("tepe_uyarisi") else "") for r in rj) + ".")
+    except Exception:
+        pass
     if tk:
         e = tk[0]; t = dt.datetime.fromisoformat(e["zaman"])
         import ses as SES; ek = "'" + SES.ek_de(SES._saat_metni(t))[-2:]
@@ -119,7 +125,7 @@ def izlenecekler(PV, tk, acik, firs, hab):
     if firs: m.append(f"Son kapanışların en güçlü fırsatı: {_kod(firs[0]['kod'])} ({'AL' if firs[0]['yon'] == 1 else 'SAT'}, puan {firs[0]['puan']:.0f}).")
     if hab:
         import haber as H; a = hab[0]; m.append(f"Öne çıkan haber: {a['tur']} ({H.etki_ad(a)}).")
-    return m[:5]
+    return m[:6]
 
 
 def _kod(k):

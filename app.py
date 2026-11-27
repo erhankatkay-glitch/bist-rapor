@@ -1940,6 +1940,8 @@ with tab_p:
         _gf = gunun_firsatlari(ZAMAN)
         if _gf:
             st.markdown(TS.bb("Günün fırsatları"), unsafe_allow_html=True)
+            _rjk = "".join(rejim_paneli(p_, kisa=True) for p_ in ("bist", "abd"))
+            if _rjk: st.markdown(_rjk.replace('<div class="rj-k"', '<div class="rj-k" role="button" data-git="Ana Sayfa|Ekonomi"'), unsafe_allow_html=True)
             _pa = {"bist": "BIST hisseleri", "kripto": "Kripto", "abd": "ABD hisseleri", "emtia": "Emtia"}
             st.markdown("".join(
                 f'<div class="fl-b">{_pa[pz]}<span>{sum(f["pz"] == pz for f in _gf)} fırsat</span></div>'

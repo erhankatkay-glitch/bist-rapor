@@ -190,10 +190,12 @@ def kart_ciz(r, yol):
     return yol
 
 
-def telegram(piyasa, r, klasor, bot):
+def telegram(piyasa, r, klasor, bot, onceki=None):
     try:
         yol = kart_ciz(r, os.path.join(klasor, "rejim", f"{piyasa}.png"))
         alt = f"🧭 <b>Piyasa rejimi</b> · {r['ozet']}"
+        if onceki and onceki.get("durum") != r["durum"]:
+            alt += f"\n🔄 Durum değişti: {DURUM_AD.get(onceki['durum'], onceki['durum'])} → <b>{r['durum_ad']}</b>"
         if r.get("tepe_uyarisi"): alt += "\n⚠️ Tepe uyarısı: genişlik bozuluyor, dağıtım günleri artıyor."
         bot.foto(yol, alt, f"rejim:{piyasa}:{dt.date.today()}", 30)
     except Exception as ex:

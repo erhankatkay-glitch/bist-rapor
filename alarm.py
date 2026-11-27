@@ -80,7 +80,7 @@ def portfoy_kontrol(yeni, durum, teknik, bugun):
                 yeni[a] = True; parca.append(metin)
         ters = [ad_.split(": ", 1)[-1].split(" – ")[0] for ad_, yon, ac, guc in g["sinyal"] if yon < 0 and any(
             w in ad_ for w in ("TEYİT", "KIRILIM", "BOS", "CHoCH", "Ölüm kesişimi", "SuperTrend sat", "Balina satışı", "dağıtım",
-                               "Harmonik:", "emir bloğu testi", "Kırıcı blok", "QD:"))]
+                               "Harmonik:", "emir bloğu testi", "Kırıcı blok", "QD:", "Kurulum:"))]
         yeni_ters = [x for x in dict.fromkeys(ters) if not durum.get(f"PF|{kod}|sin|{x[:40]}|{bugun}")]
         for x in yeni_ters: yeni[f"PF|{kod}|sin|{x[:40]}|{bugun}"] = True
         if yeni_ters: parca.append("ters sinyal: " + ", ".join(yeni_ters[:4]))

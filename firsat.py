@@ -119,6 +119,21 @@ def qd_durumlar(h, piyasa, tf, pencere=10):
     return out
 
 
+YENI_10C = ("VCP", "MOMENTUM", "EP")
+
+
+def yeni_kurulum_durumu(h, G, piyasa, tf, pencere=10):
+    """Teknik analiz sayfası/PDF: bu piyasada açık (EK_KURULUM) 10c kurulumlarının son tetiği → [{baslik, yon, yas, aciklama}]."""
+    acik = [(k, y) for k, y in EK_KURULUM.get((piyasa, tf), set()) if k in YENI_10C]
+    if not acik: return []
+    A = diziler(h, G); n = len(A["Close"]); out = []
+    for k, y in sorted(acik):
+        m, _ = tetikler(ayna(A, y), ek={k})[k]
+        ii = np.flatnonzero(m); yas = (n - 1 - int(ii[-1])) if len(ii) and n - 1 - int(ii[-1]) < pencere else None
+        out.append({"baslik": KURULUM[k][0 if y == 1 else 1], "yon": y, "yas": yas, "aciklama": KURULUM[k][2 if y == 1 else 3]})
+    return out
+
+
 DONUS = {"UYUMSUZ", "AVI", "HARM"}                  # üst zaman dilimine ters de olabilir (karşı trend)
 MAKS_BAR = {"4S": 30, "G": 20, "H": 12, "A": 8}
 MAKS_RISK = {"4S": 0.08, "G": 0.12, "H": 0.20, "A": 0.30}   # girişten stopa en fazla uzaklık
