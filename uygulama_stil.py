@@ -545,7 +545,7 @@ CANLI_JS = """
     }
     const eski=P.getElementById("kk-nav"); if(eski) eski.remove();
     const nav=P.createElement("nav"); nav.id="kk-nav";
-    nav.innerHTML=OGE.map(o=>'<button type="button" data-sekme="'+o[1]+'" data-es=\''+JSON.stringify(o[3])+'\' onclick="window.kkGitAlt(this.dataset.sekme)">'+
+    nav.innerHTML=OGE.map(o=>'<button type="button" data-sekme="'+o[1]+'" data-es="'+JSON.stringify(o[3]).replace(/"/g,"&quot;")+'" onclick="window.kkGitAlt(this.dataset.sekme)">'+
       '<svg viewBox="0 0 24 24">'+o[2]+'</svg><span>'+o[0]+'</span></button>').join("");
     P.body.appendChild(nav);
     if(typeof W.kkGit!=="function"){   // ana sayfaya betik eklenemezse (güvenlik politikası) yedek yol
