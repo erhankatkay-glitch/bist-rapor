@@ -38,26 +38,52 @@ def _degisim(s, gun):
     return float(s.iloc[-1] / once.iloc[-1] - 1) if len(once) else None
 
 
+def _yerel_tz(kod):
+    k = str(kod)
+    if k.endswith(".IS"): return "Europe/Istanbul"
+    if k.endswith("-USD"): return "UTC"            # kripto: Yahoo günlük barı UTC gününe göredir
+    return "America/New_York"
+
+
+def gun_ici_tamamla(gunluk, gunici, kod):
+    """Yahoo günlük verisi bazı piyasalarda (özellikle XU100 ve BIST hisseleri) bir-iki gün geride kalabiliyor.
+    Gün içi (15 dk) verideki, günlükte olmayan günleri günlük bara çevirip ekler; son günün kapanışını en son fiyatla günceller.
+    gunluk: Close serisi ya da OHLCV DataFrame (tz'siz, gün indeksli). gunici: aynı sembolün gün içi OHLCV DataFrame'i."""
+    try:
+        if gunici is None or len(gunici) == 0 or len(gunluk) == 0:
+            return gunluk
+        g = gunici.dropna(subset=["Close"])
+        if g.empty:
+            return gunluk
+        idx = g.index.tz_convert(_yerel_tz(kod)) if g.index.tz is not None else g.index
+        gun = pd.Series(idx.date, index=g.index)
+        out = gunluk.astype(float) if isinstance(gunluk, pd.Series) else gunluk.astype({c: float for c in gunluk.columns if c in ("Open", "High", "Low", "Close", "Volume")})
+        son_gun = pd.Timestamp(out.index[-1]).normalize()
+        for d, parca in g.groupby(gun.values):
+            t = pd.Timestamp(d)
+            if t < son_gun:
+                continue
+            if isinstance(out, pd.Series):
+                out.loc[t] = float(parca["Close"].iloc[-1])
+            else:
+                satir = {"Open": float(parca["Open"].iloc[0]), "High": float(parca["High"].max()), "Low": float(parca["Low"].min()),
+                         "Close": float(parca["Close"].iloc[-1]), "Volume": float(parca["Volume"].sum()) if "Volume" in parca else 0.0}
+                if t == son_gun and t in out.index:          # aynı gün: yalnız kapanışı/uçları güncelle
+                    eski = out.loc[t]
+                    satir = {"Open": eski["Open"], "High": max(eski["High"], satir["High"]), "Low": min(eski["Low"], satir["Low"]),
+                             "Close": satir["Close"], "Volume": max(float(eski.get("Volume", 0) or 0), satir["Volume"])}
+                for c, v in satir.items():
+                    if c in out.columns: out.loc[t, c] = v
+        return out.sort_index()
+    except Exception:
+        return gunluk
+
+
 def _tazele(h, gi, kod):
-    """Günlük kapanış serisinin son gününü gün içi son fiyatla günceller ya da eksik günü ekler."""
     try:
         if gi is None or kod not in gi.columns.get_level_values(0):
             return h
-        g = gi[kod]["Close"].dropna()
-        if g.empty:
-            return h
-        t = g.index[-1]
-        yerel = t.tz_convert("Europe/Istanbul" if kod.endswith(".IS") else "America/New_York") if t.tzinfo else t
-        gun = pd.Timestamp(yerel.date())
-        if kod.endswith("-USD"):          # kripto: Yahoo günlük barı UTC gününe göredir
-            gun = pd.Timestamp((t.tz_convert("UTC") if t.tzinfo else t).date())
-        son = float(g.iloc[-1])
-        h = h.copy()
-        if gun > h.index[-1]:
-            h.loc[gun] = son
-        elif gun == h.index[-1]:
-            h.iloc[-1] = son
-        return h.sort_index()
+        return gun_ici_tamamla(h, gi[kod], kod)
     except Exception:
         return h
 

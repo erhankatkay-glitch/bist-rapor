@@ -110,9 +110,17 @@ def anlik(kod):
         g = yf.Ticker(y).history(period="5d", interval="15m")
         d = yf.Ticker(y).history(period="10d")
         if g is None or g.empty or d is None or d.empty: raise ValueError(f"{kod} fiyatı alınamadı")
-        son = float(g["Close"].dropna().iloc[-1]); gun = g.index[-1].date()
-        # önceki kapanış: son işlem gününden ÖNCEKİ günün kapanışı (seans açılmadan dünkü hareket 'bugün' sayılmasın)
-        once = d[[t.date() < gun for t in d.index]]["Close"].dropna()
+        g = g.dropna(subset=["Close"]); son = float(g["Close"].iloc[-1]); gun = g.index[-1].date()
+        # önceki kapanış: son işlem gününden ÖNCEKİ işlem gününün kapanışı. Yahoo günlük verisi o günü henüz içermiyorsa
+        # (XU100'de sık olur) gün içi verideki o günün son fiyatı kullanılır.
+        gunler = sorted({t.date() for t in g.index if t.date() < gun})
+        once_gun = gunler[-1] if gunler else None
+        gd = d["Close"].dropna(); gd_gun = {t.date(): float(v) for t, v in gd.items()}
+        if once_gun and once_gun in gd_gun:
+            return son, gd_gun[once_gun]
+        if once_gun:
+            return son, float(g[[t.date() == once_gun for t in g.index]]["Close"].iloc[-1])
+        once = gd[[t.date() < gun for t in gd.index]]
         return son, (float(once.iloc[-1]) if len(once) else son)
     y, _ = T.yahoo_sembol(kod)
     son, onceki = _son_ve_onceki(y)

@@ -76,6 +76,28 @@ def toplu_veri(semboller, sure="10y", parca=100):
     return out
 
 
+def gunu_tamamla(veri, parca=150):
+    """Yahoo'nun geride kalan günlük barlarını gün içi (15 dk) veriyle tamamlar (bkz. bist_makro.gun_ici_tamamla)."""
+    import yfinance as yf, bist_makro as MK
+    semboller = list(veri)
+    eklenen = 0
+    for i in range(0, len(semboller), parca):
+        grup = semboller[i:i + parca]
+        try:
+            gi = yf.download(grup, period="5d", interval="15m", auto_adjust=True, progress=False, group_by="ticker", threads=True)
+        except Exception as ex:
+            print("gün içi indirme hatası:", ex, file=sys.stderr); continue
+        for s in grup:
+            try:
+                d = gi[s] if isinstance(gi.columns, pd.MultiIndex) else gi
+                yeni = MK.gun_ici_tamamla(veri[s], d, s)
+                eklenen += len(yeni) - len(veri[s]); veri[s] = yeni
+            except Exception:
+                continue
+    print(f"Gün içi tamamlama: {eklenen} eksik günlük bar eklendi")
+    return veri
+
+
 def takip(piyasa):
     yol = "teknik_takip.txt"
     kod = [s.strip().upper() for s in open(yol, encoding="utf-8") if s.strip() and not s.startswith("#")] if os.path.exists(yol) else []
@@ -102,6 +124,8 @@ def calistir(piyasa, klasor="cikti", veri_fn=None, zorla=False):
     semboller = [T.yahoo_sembol(k)[0] for k in kodlar + [ref]] + (["TRY=X", "GC=F"] if piyasa in ("emtia", "kripto_tl") else [])
     print(f"{piyasa}: {len(kodlar)} varlık, veri indiriliyor…")
     veri = veri_fn(semboller) if veri_fn else toplu_veri(semboller, "10y")
+    if veri_fn is None and piyasa not in ("kripto", "kripto_tl"):
+        veri = gunu_tamamla(veri)
     utc_bugun = dt.datetime.now(dt.timezone.utc).date()
     if piyasa in ("kripto", "kripto_tl"):   # 00:00 UTC'de kapanan mum tamamlandı; yeni açılan yarım mumu at
         veri = {k_: d[d.index.date < utc_bugun] for k_, d in veri.items()}
