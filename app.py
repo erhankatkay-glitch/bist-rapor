@@ -553,7 +553,7 @@ def _vk_tam(v):
 def piyasa_karti(ad_, v):
     d = v.get("d1G") or 0; renk = "#22C55E" if d > 0 else "#EF4444" if d < 0 else "#A1A1AA"
     sinif = "y" if d > 0 else "k" if d < 0 else "n"; ok = "▲" if d > 0 else "▼" if d < 0 else "■"
-    deger = br.ond(v["deger"], 2 if v["deger"] < 1000 else 0)
+    deger = br.ond(v["deger"], 2 if v["deger"] < 10000 else 0)
     birim = {"puan": "", "TL": " ₺", "$": " $", "%": "%"}.get(v["birim"], "")
     alt = " · ".join(x for x in (f"1A {br.yz(v['d1A'])}" if v.get("d1A") is not None else "", f"YBB {br.yz(v['YBB'])}" if v.get("YBB") is not None else "") if x)
     import logolar as LG
@@ -597,7 +597,7 @@ def mini_kart(ad_, v):
     """Ana sayfadaki yatay şerit için küçük piyasa kartı."""
     d = v.get("d1G") or 0; renk = "#22C55E" if d > 0 else "#EF4444" if d < 0 else "#A1A1AA"
     ok = "▲" if d > 0 else "▼" if d < 0 else "■"
-    deger = br.ond(v["deger"], 2 if v["deger"] < 10000 else 0)
+    deger = br.ond(v["deger"], 2 if v["deger"] < 1000 else 0)
     lg = ""
     if ad_ in MINI_LOGO:
         import logolar as LG
