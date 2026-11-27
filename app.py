@@ -558,6 +558,90 @@ def mini_kart(ad_, v):
             f'<div class="mk-y" style="color:{renk}">{ok} {br.yz(d)}</div>{spark_svg(v["seri"], renk, 116, 30)}</div>')
 
 
+def _arama_secenekleri():
+    import bist_abd as AB
+    out = {}
+    for s in bv.arama_secenekleri(): out[f"BIST · {s}"] = (bv.secimden_kod(s), "Hisse")
+    for k, v in V.VARLIKLAR.items():
+        if v[2] == "kripto": out[f"Kripto · {k} — {v[1]}"] = (f"{k}/USDT", "Kripto")
+        elif v[2] == "emtia": out[f"Emtia · {k} — {v[1]}"] = (k, "Emtia")
+    for k, ad in AB.DEV.items(): out[f"ABD · {k} — {ad}"] = (AB.kod_yap(k), "ABD")
+    for k, ad in (("SP500", "S&P 500"), ("NASDAQ", "Nasdaq"), ("VIX", "VIX")): out[f"Endeks · {k} — {ad}"] = (k, "ABD")
+    out["Endeks · XU100 — BIST 100"] = ("XU100", "Hisse"); out["Endeks · XU030 — BIST 30"] = ("XU030", "Hisse")
+    return out
+
+
+ARAMA_SECENEK = _arama_secenekleri()
+
+
+def _ara_sec():
+    s = st.session_state.get("ana_ara")
+    if s and s in ARAMA_SECENEK:
+        kod, tur = ARAMA_SECENEK[s]
+        st.session_state["kk_istek"] = f"{kod}|{tur}||{dt.datetime.now().timestamp():.0f}"
+        st.session_state["_kk_git"] = True
+        st.session_state["ana_ara"] = None
+
+
+ULKE_BAYRAK = {"USD": "🇺🇸", "EUR": "🇪🇺", "CNY": "🇨🇳", "GBP": "🇬🇧", "JPY": "🇯🇵", "TRY": "🇹🇷"}
+
+
+def _veri_tr(baslik, ulke):
+    try:
+        import ses as SES
+        return SES.veri_adi(baslik, None)
+    except Exception:
+        return baslik
+
+
+def takvim_mini(e):
+    t_ = pd.Timestamp(e["zaman"])
+    return (f'<div class="mk" style="width:168px"><div class="mk-a">{ULKE_BAYRAK.get(e["ulke"], "")} {t_:%d.%m · %H:%M}</div>'
+            f'<div style="font-size:.84rem;font-weight:750;margin-top:4px;line-height:1.25">{_veri_tr(e["baslik"], e["ulke"])[:60]}</div>'
+            f'<div class="mk-a" style="margin:4px 0 6px">{("beklenti " + e["beklenti"]) if e.get("beklenti") else "&nbsp;"}</div></div>')
+
+
+def takvim_karti(t_, e, arsiv, simdi_):
+    x = [a_ for a_ in arsiv if a_["baslik"] == e["baslik"] and a_["ulke"] == e["ulke"] and a_.get("tepki")]
+    tep = []
+    for v in ("Altın", "S&P 500 vadeli", "Bitcoin", "Dolar/TL"):
+        d = [a_["tepki"][v]["1s"] for a_ in x if v in a_["tepki"] and "1s" in a_["tepki"][v]]
+        if d: tep.append(f'<span class="cip">{v} ±%' + f"{sum(abs(z) for z in d) / len(d) * 100:.1f}".replace(".", ",") + "</span>")
+    gecti = t_ < simdi_
+    dk = int((t_ - simdi_).total_seconds() // 60)
+    durum = ('<span class="cip">açıklandı</span>' if gecti else
+             f'<span class="cip cip-a">{dk // 60} sa {dk % 60} dk sonra</span>' if dk < 24 * 60 else f'<span class="cip cip-a">yaklaşıyor</span>')
+    kutu = "".join(f'<div><div class="vb-e">{ad}</div><b>{e.get(k) or "–"}</b></div>' for ad, k in (("Beklenti", "beklenti"), ("Önceki", "onceki")))
+    return (f'<div class="tk{" tk-g" if gecti else ""}"><div class="tk-s">{t_:%H:%M}<small>{ULKE_BAYRAK.get(e["ulke"], "")} {HB.ULKE_AD.get(e["ulke"], e["ulke"])}</small></div>'
+            f'<div class="tk-i"><b>{_veri_tr(e["baslik"], e["ulke"])}</b><div class="vb-e">{e["baslik"]}</div>'
+            f'<div class="tk-k">{kutu}</div>'
+            f'<div class="cipler">{durum}{"".join(tep)}</div>'
+            f'{f"<div class=vb-e>Geçmişte açıklamadan sonraki 1 saatteki ortalama hareket ({len(x)} açıklama)</div>" if tep else ""}</div></div>')
+
+
+def haber_karti(a):
+    import html as _h
+    try: z = pd.Timestamp(a["zaman"]).tz_convert("Europe/Istanbul")
+    except Exception: z = None
+    jeo = a["tur"].startswith("Jeopolitik")
+    renk = "#E8B84A" if jeo else "#22C55E" if a["yon"] > 0 else "#EF4444"
+    etki = HB.etki_ad(a)
+    var = []
+    for v in a.get("varliklar") or []:
+        ad = HB.VARLIK_AD.get(v["kod"], v["kod"]); ok = "▲" if v["isaret"] > 0 else "▼"
+        r = v.get("tepki") or {}; dg = r.get("degisim")
+        rk = "#4ADE80" if v["isaret"] > 0 else "#F87171"
+        var.append(f'<span class="cip" title="{_h.escape(v.get("gerekce", ""))}"><b style="color:{rk}">{ok}</b> {ad}'
+                   f'{(" · " + br.yz(dg)) if dg not in (None, 0) else ""}</span>')
+    yildiz = "●" * int(a.get("onem") or 1)
+    link = f'<a href="{_h.escape(a["link"])}" target="_blank" rel="noopener" class="hb-l">Habere git ›</a>' if a.get("link") else ""
+    return (f'<div class="hb" style="--v:{renk}"><div class="hb-u"><span class="cip" style="color:{renk};border-color:{renk}55">{_h.escape(a["tur"])}</span>'
+            f'<span class="vb-e">{z:%d.%m %H:%M} · {_h.escape(a.get("kaynak") or "")} <span style="color:#E8B84A">{yildiz}</span></span></div>'
+            f'<div class="hb-b">{_h.escape(a["baslik"])}</div>'
+            f'<div class="hb-e" style="color:{renk}">{etki}</div>'
+            f'<div class="cipler">{"".join(var)}</div>{link}</div>')
+
+
 @st.cache_data(ttl=600, show_spinner=False)
 def bist_ozet(zaman):
     import requests
@@ -569,20 +653,24 @@ def one_cikanlar(PV):
     import logolar as LG
     fav = [x for x in st.query_params.get("takip", "").split(",") if x] or ["THYAO", "ASELS", "GARAN", "BIMAS", "TUPRS", "KCHOL"]
     oz = bist_ozet(ZAMAN); satir = []
-    def _sat(logo, kis, ad, fiyat, deg, alt=""):
+    def _sat(logo, kis, ad, fiyat, deg, alt="", istek=None):
         renk = "#4ADE80" if (deg or 0) > 0 else "#F87171" if (deg or 0) < 0 else "#A1A1AA"
         zem = "rgba(34,197,94,.16)" if (deg or 0) > 0 else "rgba(239,68,68,.16)" if (deg or 0) < 0 else "rgba(255,255,255,.06)"
         lg = f'<img src="{logo}" alt="" class="oc-l">' if logo else f'<span class="oc-h">{kis[:3]}</span>'
         return (f'<div class="oc">{lg}<div class="oc-a"><b>{kis}</b><div>{ad}{(" · " + alt) if alt else ""}</div></div>'
-                f'<div class="oc-f"><b>{fiyat}</b><br><span class="oc-p" style="color:{renk};background:{zem}">{br.yz(deg) if deg is not None else "–"}</span></div></div>')
+                f'<div class="oc-f"><b>{fiyat}</b><br><span class="oc-p" style="color:{renk};background:{zem}">{br.yz(deg) if deg is not None else "–"}</span></div>'
+                + (f'<div class="oc-d"><span class="oc-b" role="button" data-kk="{istek}||">Analiz</span>'
+                   f'<span class="oc-b oc-b2" role="button" data-kk="{istek}|seviye|">Seviye</span></div>' if istek else "") + '</div>')
     for k in fav[:8]:
         if oz is not None and k in oz.index:
             r = oz.loc[k]
-            satir.append(_sat(LG.logo_url(k, "bist"), k, str(r.get("Ad", ""))[:30], TK.sayi(r["Fiyat"]), r.get("Değişim"), str(r.get("Genel", ""))))
+            satir.append(_sat(LG.logo_url(k, "bist"), k, str(r.get("Ad", ""))[:30], TK.sayi(r["Fiyat"]), r.get("Değişim"), str(r.get("Genel", "")),
+                              istek=f"{k}|Hisse"))
     for ad_, kis, pz in (("Bitcoin", "BTC", "kripto"), ("Ethereum", "ETH", "kripto"), ("Gram altın", "ALTIN", "emtia")):
         v = PV.get(ad_)
         if v: satir.append(_sat(LG.logo_url(kis, pz) if pz == "kripto" else None, kis if pz == "kripto" else "Gram", ad_,
-                                 br.ond(v["deger"], 2 if v["deger"] < 10000 else 0), v.get("d1G")))
+                                 br.ond(v["deger"], 2 if v["deger"] < 10000 else 0), v.get("d1G"),
+                                 istek=f"{kis}/USDT|Kripto" if pz == "kripto" else "GRAMALTIN|Emtia"))
     return "".join(satir)
 
 
@@ -733,6 +821,16 @@ try:
     _pv_ust = piyasa_verisi(ZAMAN)
 except Exception:
     _pv_ust = None
+# Ana sayfadaki satır düğmeleri (Analiz / Seviye) bu gizli kutuya "KOD|TÜR|BÖLÜM|zaman" yazar (uygulama_stil.CANLI_JS → kkIstek)
+with st.container(key="kk_gizli"):
+    st.text_input("istek", key="kk_istek", label_visibility="collapsed")
+_ist = st.session_state.get("kk_istek") or ""
+if _ist and _ist != st.session_state.get("_kk_son"):
+    st.session_state["_kk_son"] = _ist
+    _p = (_ist.split("|") + ["", "", ""])[:3]
+    if _p[0]:
+        st.session_state["tk_tur"] = _p[1] if _p[1] in ("Hisse", "ABD", "Emtia", "Kripto") else "Hisse"
+        st.session_state["_kk_analiz"] = (_p[0], _p[2])
 with _ust_yer.container():
     try: _hb_ust = json_oku("haber/son.json", ZAMAN) or []
     except Exception: _hb_ust = []
@@ -912,6 +1010,14 @@ with tab_x:
                             placeholder="Seçin")
         tk_kod = tk_s.split(" — ")[0] if tk_s else ""
     st.checkbox("Kısa vade dahil (1 saatlik ve 4 saatlik grafikler)", key="tk_kisa")
+    if st.session_state.get("_kk_analiz"):
+        _kk, _bo = st.session_state.pop("_kk_analiz")
+        try:
+            with st.status(f"{_kk} teknik analizi yapılıyor… (15–40 sn)") as s_:
+                st.session_state.tk_sonuc = teknik_analiz(_kk, ZAMAN, br.SURUM, False)
+                s_.update(label="Hazır ✓", state="complete", expanded=False)
+        except Exception as e:
+            st.error(f"Teknik analiz yapılamadı: {e}")
     if st.button(":material/candlestick_chart: Teknik analiz yap", type="primary", disabled=not tk_kod, key="tk_btn"):
         try:
             with st.status(f"{tk_kod} teknik analizi yapılıyor… (15–40 sn)") as s_:
@@ -1101,20 +1207,14 @@ with tab_h:
     simdi_ = pd.Timestamp.now(tz="Europe/Istanbul")
     yaklasan = [e for e in tkv if pd.Timestamp(e["zaman"]) >= simdi_ - pd.Timedelta(hours=2)]
     if yaklasan:
-        with st.expander(f":material/event: Bu haftanın önemli verileri ({len(yaklasan)})", expanded=False):
-            for e in yaklasan[:20]:
-                t_ = pd.Timestamp(e["zaman"])
-                st.markdown(f"- `{t_:%d.%m %H:%M}` **{HB.ULKE_AD.get(e['ulke'], e['ulke'])}** – {e['baslik']}"
-                            + (f" (beklenti {e['beklenti']}, önceki {e['onceki']})" if e.get("beklenti") else ""))
+        st.markdown(TS.bb("Yaklaşan veriler"), unsafe_allow_html=True)
+        st.markdown('<div class="serit-k">' + "".join(takvim_mini(e) for e in yaklasan[:12]) + "</div>", unsafe_allow_html=True)
+    st.markdown(TS.bb("Haber akışı"), unsafe_allow_html=True)
     son_h = HD.get("son") or []
     if not son_h:
         st.info("Henüz analiz edilmiş haber yok. İlk tarama alarm kontrolüyle birlikte yapılır.")
-    tur_sec = st.multiselect("Haber türü", sorted({x["tur"] for x in son_h}), key="hb_tur")
-    for a in son_h[:60]:
-        if tur_sec and a["tur"] not in tur_sec: continue
-        with st.container(border=True):
-            st.markdown(_md(HB.mesaj(a)))
-            if a.get("link"): st.markdown(f"[Habere git]({a['link']})")
+    tur_sec = st.multiselect("Haber türü", sorted({x["tur"] for x in son_h}), key="hb_tur", placeholder="Tümü")
+    st.markdown("".join(haber_karti(a) for a in son_h[:60] if not tur_sec or a["tur"] in tur_sec), unsafe_allow_html=True)
 
 # ================= TAKVİM =================
 
@@ -1135,22 +1235,8 @@ with tab_tk:
     GUN_TR = {"Monday": "Pazartesi", "Tuesday": "Salı", "Wednesday": "Çarşamba", "Thursday": "Perşembe", "Friday": "Cuma", "Saturday": "Cumartesi", "Sunday": "Pazar"}
     for g_, liste_ in gunler_.items():
         tarih_, gun_ = g_.split(" ")
-        st.markdown(f"##### {GUN_TR.get(gun_, gun_)} · {tarih_}")
-        for t_, e in liste_:
-            x = [a for a in arsiv if a["baslik"] == e["baslik"] and a["ulke"] == e["ulke"] and a.get("tepki")]
-            tep = []
-            for v in ("Altın", "S&P 500 vadeli", "Bitcoin", "Dolar/TL"):
-                d = [a["tepki"][v]["1s"] for a in x if v in a["tepki"] and "1s" in a["tepki"][v]]
-                if d: tep.append(f"{v} ±%{sum(abs(z) for z in d) / len(d) * 100:.1f}".replace(".", ","))
-            gecti = t_ < simdi_
-            st.markdown(
-                f'<div style="background:#111A2E;border:1px solid rgba(148,163,184,.14);border-left:4px solid {"#94A3B8" if gecti else "#F59E0B"};border-radius:12px;'
-                f'padding:9px 12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between">'
-                f'<b style="color:#F1F5F9">{t_:%H:%M} · {e["ulke"]} – {e["baslik"]}</b>'
-                f'<span style="color:#B45309;font-weight:700;font-size:.85rem">{("beklenti " + e["beklenti"]) if e.get("beklenti") else ""}</span></div>'
-                f'<div style="font-size:.78rem;color:#94A3B8;margin-top:2px">{("önceki " + e["onceki"]) if e.get("onceki") else ""}'
-                f'{(" · geçmişte 1 saatte: " + ", ".join(tep) + f" ({len(x)} açıklama)") if tep else ""}{" · açıklandı" if gecti else ""}</div></div>',
-                unsafe_allow_html=True)
+        st.markdown(TS.bb(f"{GUN_TR.get(gun_, gun_)} · {tarih_}"), unsafe_allow_html=True)
+        st.markdown("".join(takvim_karti(t_, e, arsiv, simdi_) for t_, e in liste_), unsafe_allow_html=True)
     st.caption("Kural: beklentiden güçlü ABD verisi genellikle doları ve faiz beklentisini yükseltir, altın ve kripto üzerinde baskı yaratır; zayıf veri tersini yapar.")
 
 # ================= PERFORMANS =================
@@ -1279,6 +1365,10 @@ with tab_p:
             st.image(sabah_k, use_container_width=True)
             ses = gorsel_oku("sabah/ozet.mp3", ZAMAN)
             if ses: st.audio(ses, format="audio/mp3")
+    st.selectbox("Varlık ara", list(ARAMA_SECENEK), index=None, key="ana_ara", on_change=_ara_sec, label_visibility="collapsed",
+                 placeholder="🔎  Varlık ara (ör. THYAO, Aselsan, BTC, altın, NVDA)")
+    if st.session_state.pop("_kk_git", None):
+        _bil.html(f"<script>try{{window.parent.kkTeknikGit && window.parent.kkTeknikGit('')}}catch(e){{}}</script>", height=0)
     st.markdown(TS.bb("Piyasalar"), unsafe_allow_html=True)
     try:
         PV = piyasa_verisi(ZAMAN)

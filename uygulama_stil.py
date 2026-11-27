@@ -79,6 +79,12 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 .stTabs .stTabs .stTabs [data-testid="stTab"] {border:none !important; background:transparent !important; border-radius:0 !important; padding:8px 12px !important;}
 .stTabs .stTabs .stTabs [aria-selected="true"] {background:transparent !important; box-shadow:inset 0 -2px 0 var(--altin) !important;}
 .stTabs .stTabs .stTabs [aria-selected="true"] p {color:var(--altin) !important;}
+/* gizli istek kutusu (satır düğmeleri) */
+.st-key-kk_gizli {position:absolute !important; left:-9999px !important; height:0 !important; overflow:hidden !important;}
+.oc-d {display:flex; flex-direction:column; gap:5px; flex:none;}
+.oc-b {background:rgba(232,184,74,.1); border:1px solid rgba(232,184,74,.4); color:var(--altin); border-radius:10px; font-size:.7rem;
+       font-weight:800; padding:6px 9px; text-align:center; cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none;}
+.oc-b2 {background:#111214; border-color:#2A2B30; color:#E4E4E7;}
 /* tasarımdaki bölüm başlığı: ÖNE ÇIKANLAR ———— */
 .bb {display:flex; align-items:center; gap:10px; margin:18px 2px 8px; font-size:.8rem; font-weight:850; letter-spacing:.14em;}
 .bb:after {content:""; flex:1; height:1px; background:linear-gradient(90deg, rgba(232,184,74,.6), transparent);}
@@ -91,6 +97,26 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 .oc-a {flex:1; min-width:0;} .oc-a b {font-size:.98rem;} .oc-a div {font-size:.72rem; color:var(--soluk); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .oc-f {text-align:right;} .oc-f b {font-size:1rem; font-variant-numeric:tabular-nums;}
 .oc-p {display:inline-block; margin-top:3px; font-size:.74rem; font-weight:800; border-radius:8px; padding:2px 8px;}
+
+/* Haber ve takvim kartları */
+.cip {display:inline-flex; align-items:center; gap:4px; font-size:.72rem; font-weight:700; border:1px solid #2A2B30; background:#111214;
+      color:#E4E4E7; border-radius:20px; padding:3px 9px; margin:4px 5px 0 0;}
+.cip-a {border-color:rgba(232,184,74,.5); color:var(--altin);}
+.cipler {margin-top:4px;}
+.hb {background:linear-gradient(180deg,#18191C,#111214); border:1px solid var(--cizgi); border-left:3px solid var(--v); border-radius:16px;
+     padding:11px 13px; margin-bottom:9px;}
+.hb-u {display:flex; justify-content:space-between; align-items:center; gap:8px;} .hb-u .cip {margin:0;}
+.hb-b {font-weight:750; font-size:.95rem; line-height:1.35; margin:7px 0 4px;}
+.hb-e {font-size:.76rem; font-weight:800;}
+.hb-l {display:inline-block; margin-top:8px; font-size:.78rem; font-weight:800; color:var(--altin) !important; text-decoration:none;}
+.tk {display:flex; gap:12px; background:linear-gradient(180deg,#18191C,#111214); border:1px solid var(--cizgi); border-radius:16px;
+     padding:11px 13px; margin-bottom:9px;}
+.tk-g {opacity:.62;}
+.tk-s {flex:none; width:62px; font-weight:850; font-size:1.05rem; color:var(--altin); font-variant-numeric:tabular-nums;}
+.tk-s small {display:block; font-size:.66rem; color:var(--soluk); font-weight:600; margin-top:2px;}
+.tk-i {flex:1; min-width:0;} .tk-i > b {font-size:.92rem; line-height:1.3;}
+.tk-k {display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:7px;}
+.tk-k > div {background:#111214; border-radius:10px; padding:5px 8px;}
 
 /* ---------- Butonlar ---------- */
 div.stButton > button, div.stDownloadButton > button, div.stLinkButton > a, div.stFormSubmitButton > button {
@@ -370,8 +396,8 @@ CANLI_JS = """
     const W=window.parent, P=W.document, OGE=__OGE__;
     let st=P.getElementById("kk-nav-stil");
     if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
-    if(!P.getElementById("kk-nav-js")){
-      const sc=P.createElement("script"); sc.id="kk-nav-js";
+    if(!P.getElementById("kk-nav-js2")){
+      const sc=P.createElement("script"); sc.id="kk-nav-js2";
       sc.textContent=`
         window.kkSekmeler=function(){return [...document.querySelectorAll('.stTabs [data-testid="stTab"], .stTabs [role="tab"], .stTabs [data-baseweb="tab"]')];};
         window.kkAd=function(t){const p=t.querySelector('[data-testid="stMarkdownContainer"] p')||t; return (p.innerText||p.textContent||"").trim();};
@@ -384,6 +410,29 @@ CANLI_JS = """
           try{(k||window).scrollTo({top:0,behavior:"smooth"});}catch(e){} try{window.scrollTo({top:0,behavior:"smooth"});}catch(e){}
           setTimeout(window.kkIsaretle,80);
         };
+        window.kkTeknikGit=function(bolum){
+          window.kkGit("Keşfet");
+          setTimeout(function(){
+            const t=window.kkSekmeler().find(x=>window.kkAd(x).endsWith("Teknik")); if(t) t.click();
+            let n=0; const iv=setInterval(function(){ n++;
+              const h=document.querySelector(bolum==="seviye"?".sv":".vb");
+              if(h){h.scrollIntoView({behavior:"smooth",block:"start"}); clearInterval(iv);} if(n>90) clearInterval(iv); },700);
+          },350);
+        };
+        window.kkIstek=function(deger){
+          const inp=document.querySelector(".st-key-kk_gizli input"); if(!inp) return false;
+          const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value").set;
+          inp.focus(); set.call(inp, deger+Date.now()); inp.dispatchEvent(new Event("input",{bubbles:true}));
+          inp.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",code:"Enter",keyCode:13,which:13,bubbles:true}));
+          inp.blur(); return true;
+        };
+        if(!window.kkTikDinle){ window.kkTikDinle=1;
+          document.addEventListener("click",function(e){
+            const b=e.target.closest("[data-kk]"); if(!b) return; e.preventDefault(); e.stopPropagation();
+            const bolum=(b.dataset.kk.split("|")[2]||"");
+            if(window.kkIstek(b.dataset.kk)) window.kkTeknikGit(bolum);
+          },true);
+        }
         window.kkIsaretle=function(){
           const ilk=document.querySelector('.stTabs [role="tablist"]');
           if(ilk&&!ilk.dataset.kkGizli){ilk.dataset.kkGizli="1"; ilk.style.display="none";
