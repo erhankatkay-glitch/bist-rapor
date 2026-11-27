@@ -21,6 +21,7 @@ with sync_playwright() as pw:
     pg.locator(".oc-b:visible", has_text="Analiz").first.click(); pg.wait_for_timeout(3000); bekle(150); pg.wait_for_timeout(6000)
     print("ANALİZ sonrası sekmeler:", sec())
     print("rapor başlığı görünür:", pg.evaluate("[...document.querySelectorAll('.vb')].filter(x=>x.offsetParent).map(x=>x.innerText.slice(0,40))"))
+    print("KAYDIRMA:", pg.evaluate("(()=>{const v=[...document.querySelectorAll('.vb')].find(x=>x.offsetParent); return v? Math.round(v.getBoundingClientRect().top):null})()"))
     pg.screenshot(path="denetim_graf/analiz.png")
     # SEVİYE
     pg.locator("#kk-nav button[data-sekme='Ana Sayfa']").tap(); pg.wait_for_timeout(2500)
