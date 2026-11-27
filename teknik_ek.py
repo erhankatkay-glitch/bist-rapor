@@ -294,3 +294,71 @@ def premium_iskonto(piv, fiyat):
     y = (fiyat - dip[0]) / (tep[0] - dip[0])
     bolge = "premium (pahalı yarı)" if y > 0.55 else "iskonto (ucuz yarı)" if y < 0.45 else "denge"
     return {"oran": float(y), "bolge": bolge, "ust": tep[0], "alt": dip[0], "orta": (tep[0] + dip[0]) / 2}
+
+
+# ============================================================ Aşama 10c: VCP, momentum patlaması, episodic pivot
+# Aynalanmış dizilerde çalışır (SAT için fiyatlar negatif): yüzdeler hep fark / |önceki| ile hesaplanır.
+def _ort(x, n):
+    return pd.Series(x).rolling(n, min_periods=n).mean().to_numpy(float)
+
+
+def _enb(x, n):
+    return pd.Series(x).rolling(n, min_periods=n).max().to_numpy(float)
+
+
+def _enk(x, n):
+    return pd.Series(x).rolling(n, min_periods=n).min().to_numpy(float)
+
+
+def _kaydir_(x, k=1):
+    y = np.full(len(x), np.nan); y[k:] = x[:-k]; return y
+
+
+def vcp_tetik(M):
+    """Minervini VCP: 2. evre trend + son 60 mumda daralan 3 geri çekilme + kuruyan hacim → pivotun hacimli kırılımı.
+    → (maske, stop: son 10 mumun dibi − 0,2 ATR)."""
+    O, H, L, C, V, at = (np.asarray(M[k], float) for k in ("Open", "High", "Low", "Close", "Volume", "ATR")); n = len(C)
+    m = np.zeros(n, bool); stop = np.full(n, np.nan)
+    if not M.get("hacim_var") or n < 260: return m, stop
+    s50, s150, s200 = _ort(C, 50), _ort(C, 150), _ort(C, 200)
+    hi, lo = _enb(C, 252), _enk(C, 252)
+    v50, v10 = _kaydir_(_ort(V, 50)), _kaydir_(_ort(V, 10))
+    piv = _kaydir_(_enb(H, 15)); dip10 = _kaydir_(_enk(L, 10))
+    with np.errstate(invalid="ignore", divide="ignore"):
+        trend = (C > s50) & (s50 > s150) & (s150 > s200) & (s200 > _kaydir_(s200, 20)) & ((hi - C) / np.abs(hi) <= 0.25) & ((C - lo) / np.abs(lo) >= 0.30)
+        kir = (C > piv) & (_kaydir_(C) <= piv) & (V >= 1.4 * v50) & (v10 < 0.85 * v50) & ((C - L) / np.where(H - L > 0, H - L, np.nan) >= 0.5)
+    for t in np.flatnonzero(trend & kir):
+        if t < 61: continue
+        d = []
+        for a in (t - 60, t - 40, t - 20):
+            hh, ll = H[a:a + 20].max(), L[a:a + 20].min(); d.append((hh - ll) / abs(hh))
+        if d[0] > d[1] > d[2] and d[2] <= 0.10 and d[0] >= 0.06:
+            m[t] = True; stop[t] = dip10[t] - 0.2 * at[t]
+    return m, stop
+
+
+def momentum_tetik(M):
+    """Momentum patlaması (Stockbee): sakin günün ardından ≥ %4 (ve ≥ 1,5 ATR) yükseliş, hacim önceki günden yüksek, üst bölgede kapanış,
+    fiyat 50 günlüğün üstünde. → (maske, stop: patlama mumunun dibi − 0,1 ATR)."""
+    H, L, C, V, at = (np.asarray(M[k], float) for k in ("High", "Low", "Close", "Volume", "ATR")); n = len(C)
+    pC = _kaydir_(C); ppC = _kaydir_(C, 2); s50 = _ort(C, 50)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        r = (C - pC) / np.abs(pC); r1 = (pC - ppC) / np.abs(ppC)
+        clv = (C - L) / np.where(H - L > 0, H - L, np.nan)
+        hv = (V > _kaydir_(V)) if M.get("hacim_var") else np.ones(n, bool)
+        m = (r >= 0.04) & ((C - pC) >= 1.5 * at) & hv & (clv >= 0.7) & (np.abs(r1) <= 0.02) & (C > s50)
+    m = np.nan_to_num(m, nan=0).astype(bool)
+    return m, L - 0.1 * at
+
+
+def ep_tetik(M):
+    """Episodic pivot: ≥ %6 boşlukla açılış, hacim 50 günlük ortalamanın ≥ 3 katı, gün boyu boşluk korunur (üst yarıda kapanış,
+    önceki kapanışın üstünde). → (maske, stop: günün dibi − 0,1 ATR)."""
+    O, H, L, C, V, at = (np.asarray(M[k], float) for k in ("Open", "High", "Low", "Close", "Volume", "ATR")); n = len(C)
+    if not M.get("hacim_var"): return np.zeros(n, bool), np.full(n, np.nan)
+    pC = _kaydir_(C); v50 = _kaydir_(_ort(V, 50))
+    with np.errstate(invalid="ignore", divide="ignore"):
+        bosluk = (O - pC) / np.abs(pC)
+        clv = (C - L) / np.where(H - L > 0, H - L, np.nan)
+        m = (bosluk >= 0.06) & (V >= 3 * v50) & (clv >= 0.5) & (C > pC + 0.5 * (O - pC))
+    return np.nan_to_num(m, nan=0).astype(bool), L - 0.1 * at

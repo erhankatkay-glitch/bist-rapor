@@ -1,7 +1,15 @@
 name: Aşama 10b — QuantDinger gösterge testi
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      kaynak:
+        description: "qd = QuantDinger göstergeleri · 10c = VCP / momentum patlaması / episodic pivot"
+        required: false
+        default: "qd"
+
+env:
+  QD_KAYNAK: ${{ github.event.inputs.kaynak || 'qd' }}
 
 permissions:
   contents: write
