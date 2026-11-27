@@ -165,3 +165,60 @@ def test_tcmb_tablolari():
     assert f["oran"] == 39.5 and f["tarih"] == "2026-10-23" and f["onceki"] == 40.5
     m = {"tufe": {"seri": t}, "faiz": f, "reel_faiz": round((1.395 / 1.2977 - 1) * 100, 2)}
     assert MT.ozet_satiri(m) == "TÜFE %29,77 (Ekim 2026) · Politika faizi %39,50 · Reel faiz +%7,5"
+
+
+# ---------------------------------------------------------------- Aşama 7: harmonik, SMC, göstergeler
+def _yapay(n=900, tohum=3):
+    import numpy as np, pandas as pd
+    r = np.random.default_rng(tohum)
+    c = 100 * np.exp(np.cumsum(r.normal(0, 0.02, n))); o = c * np.exp(r.normal(0, 0.005, n))
+    return pd.DataFrame({"Open": o, "High": np.maximum(o, c) * np.exp(abs(r.normal(0, 0.01, n))),
+                         "Low": np.minimum(o, c) * np.exp(-abs(r.normal(0, 0.01, n))), "Close": c,
+                         "Volume": r.integers(1000, 5000, n).astype(float)}, index=pd.date_range("2022-01-01", periods=n))
+
+
+def test_harmonik_oranlar():
+    import teknik_ek as TE
+    # Gartley: X=100, A=200, B=138.2 (0.618), C=176.4 (BC/AB 0.618) → D ≈ 121.4 (0.786 XA)
+    ad = {a: (lo, hi) for a, lo, hi in TE.harmonik_aday(100, 200, 138.2, 176.4)}
+    assert "Gartley" in ad and ad["Gartley"][0] <= 121.4 <= ad["Gartley"][1]
+    assert "Bat" not in ad                                   # B 0.618: yarasa için fazla derin
+    # Bat: B=0.45, D=0.886
+    ad = {a: (lo, hi) for a, lo, hi in TE.harmonik_aday(100, 200, 155, 185)}
+    assert "Bat" in ad and ad["Bat"][0] <= 111.4 <= ad["Bat"][1]
+    # Crab: D X'in altında (1.618)
+    ad = {a: (lo, hi) for a, lo, hi in TE.harmonik_aday(100, 200, 138.2, 185)}
+    assert "Crab" in ad and ad["Crab"][1] < 100
+    assert TE.abcd_aday(200, 150, 180)[0][0] == "ABCD"
+    assert TE.harmonik_aday(100, 90, 95, 97) == []           # A, X'in altında: geçersiz
+
+
+def test_yeni_kurulumlar_ileriye_bakmaz():
+    """t'ye kadar kesilmiş veriyle hesaplanan tetikler, tam veriyle hesaplananlarla t öncesinde aynı olmalı."""
+    import numpy as np, bist_teknik as T, firsat as F
+    h = _yapay()
+    def tet(d):
+        G = T.gostergeler(d); A = F.diziler(d, G); out = {}
+        for y in (1, -1):
+            for k, (m, s) in F.tetikler(F.ayna(A, y), ek={"OB", "BREAKER", "HARM"}).items():
+                if k in ("OB", "BREAKER", "HARM"): out[(k, y)] = (m, s)
+        return out
+    tam = tet(h)
+    for kes in (500, 650, 800):
+        kisa = tet(h.iloc[:kes])
+        for anahtar, (m, s) in kisa.items():
+            assert np.array_equal(m, tam[anahtar][0][:kes]), (anahtar, kes)
+            assert np.allclose(s[m], tam[anahtar][1][:kes][m]), (anahtar, kes)
+
+
+def test_gostergeler_ek():
+    import numpy as np, pandas as pd, teknik_ek as TE
+    s = pd.Series(np.arange(1, 31, dtype=float))
+    assert abs(TE.wma(s, 3).iloc[2] - (1 * 1 + 2 * 2 + 3 * 3) / 6) < 1e-9
+    assert abs(TE.hma(s, 9).iloc[-1] - 30) < 1e-6            # doğrusal seride HMA gecikmesizdir
+    v = pd.Series([100.0] * 25 + [300.0])
+    assert abs(TE.rvol(v).iloc[-1] - 3.0) < 1e-9
+    h = _yapay(50)
+    ha = TE.heikin_ashi(h)
+    assert np.allclose(ha["Close"], (h["Open"] + h["High"] + h["Low"] + h["Close"]) / 4)
+    assert (ha["High"] >= ha[["Open", "Close"]].max(axis=1) - 1e-9).all()
