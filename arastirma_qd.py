@@ -69,10 +69,21 @@ def veri_al(pazar):
     raise SystemExit("pazar?")
 
 
+def bozuk(d):
+    """Bozuk fiyat verisi: sıfır/negatif fiyat ya da tek günde ±%60'tan büyük sıçrama (bölünme/veri hatası)."""
+    c = d["Close"].to_numpy(float)
+    if (c <= 0).any() or (d["Low"].to_numpy(float) <= 0).any(): return True
+    r = np.abs(np.diff(np.log(c)))
+    return bool(np.nanmax(r) > np.log(1.6)) if len(r) else True
+
+
 def hazirla(veri, tf):
     """Her varlık için motor dizileri ve iki yönün aynalanmış hali."""
     out = {}
+    atilan = [k for k, d in veri.items() if bozuk(d)]
+    if atilan: log(f"bozuk veri, atlandı ({len(atilan)}): {', '.join(atilan[:15])}")
     for kod, d in veri.items():
+        if kod in atilan: continue
         try:
             G = T.gostergeler(d); A = F.diziler(d, G)
         except Exception as ex:
@@ -91,7 +102,9 @@ def olc(yon_dizi, t, tf, stop=None):
     if not np.isfinite(at[t]) or at[t] <= 0: return None
     if stop is None or not np.isfinite(stop): stop = C[t] - STOP_ATR * at[t]
     if (C[t] - stop) / abs(C[t]) > F.MAKS_RISK[tf]: return None
-    return F.simule(H, L, C, t, C[t], stop, RLER, F.MAKS_BAR[tf], O)
+    s = F.simule(H, L, C, t, C[t], stop, RLER, F.MAKS_BAR[tf], O)
+    if s: s = (float(np.clip(s[0], -5.0, 3.0)),) + tuple(s[1:])   # gerçekçi aralık: en çok 3. hedef, boşluklu stopta en çok −5R
+    return s
 
 
 def olay(pazar, parca, toplam):
@@ -134,10 +147,13 @@ def olay(pazar, parca, toplam):
 def boyama(parca, toplam):
     """Göstergelerin gerçek zaman uyumu: tam veri olaylarının, yalnız o mumdaki veriye kadar çalıştırıldığında da çıkma oranı."""
     import yfinance as yf
-    v = yf.download(["THYAO.IS", "GARAN.IS", "AAPL", "MSFT", "BTC-USD"], period="6y", interval="1d", auto_adjust=True,
-                    progress=False, group_by="ticker", threads=True)
+    sem = ["THYAO.IS", "GARAN.IS", "AAPL", "MSFT", "BTC-USD"]
+    if KAYNAK == "10c":   # nadir kurulumlar için daha çok varlık (yeterli olay)
+        sem += ["ASELS.IS", "KCHOL.IS", "BIMAS.IS", "EREGL.IS", "SASA.IS", "HEKTS.IS", "KONTR.IS", "ASTOR.IS", "PGSUS.IS", "TUPRS.IS",
+                "NVDA", "TSLA", "AMD", "META", "NFLX", "PLTR", "SMCI", "COIN", "SHOP", "MSTR", "ETH-USD", "SOL-USD"]
+    v = yf.download(sem, period="6y", interval="1d", auto_adjust=True, progress=False, group_by="ticker", threads=True)
     veri = {}
-    for k in ("THYAO.IS", "GARAN.IS", "AAPL", "MSFT", "BTC-USD"):
+    for k in sem:
         d = v[k].dropna(subset=["Close"]); d.index = d.index.tz_localize(None) if d.index.tz is not None else d.index
         veri[k] = d.tail(1200)
     rng = np.random.default_rng(11); out = {}
