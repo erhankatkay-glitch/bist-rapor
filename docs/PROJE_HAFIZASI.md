@@ -76,6 +76,21 @@ Henüz düz metin giden bildirimler:
 - Binance ana adresi GitHub sunucularından 451 veriyor; sistem zaten data-api.binance.vision kullanıyor.
 - OmniRoute GitHub Actions'ta çalışıyor ama ücretsiz bir sağlayıcı anahtarı (Gemini) olmadan yanıt üretmiyor.
 
+## Aşama 2 — Fırsat motoru (27.11.2026, ilk adım)
+Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş olaylarını önerilen teyitlerle ve teyitsiz karşılaştırır. Aşırı uyuma karşı her filtre hem eski hem yeni yarıda ayrı ayrı kontrol edildi.
+
+| Piyasa | Olay | Teyitsiz ort. R | Seçilen filtre | Filtreli ort. R (eski / yeni yarı) |
+|---|---|---|---|---|
+| Kripto 4S | 8.135 | +0,005 | BTC yönü + yapı + mum + oda + toplu sinyal değil | +0,104 (+0,077 / +0,170) |
+| Kripto G | 4.644 | +0,010 | BTC ters değil + yapı | +0,058 (+0,070 / +0,047) |
+| BIST G | 17.910 | +0,048 | BIST 100 yönü | +0,250 (+0,359 / +0,115) |
+
+- BIST'te SAT kurulumları geçmişte açıkça zararlı (GERI SAT −0,67 R); BIST zaten yalnız AL tarıyor.
+- 26.11'deki kripto kaybı tam olarak "toplu sinyal" durumuydu: aynı mumda 12 coin aynı yönde.
+- Canlıya alındı: `firsat.FILTRE`, `firsat.pa_ozellik`, `firsat.rejim`; `kapanis.REJIM`. Fırsat kartlarının teyit listesinde yeni maddeler görünür.
+- BIST 4S, BIST günlük filtresine dayanılarak eklendi; ayrıca test edilecek.
+- Test edilmemiş, filtresiz kalanlar: ABD, emtia, haftalık (H) ve aylık (A).
+
 ## Sıradaki aşamalar
 1. ~~Aşama 1: envanter ve veri denetimi~~ (bu dosya)
 2. Aşama 2: Fırsat motoru
