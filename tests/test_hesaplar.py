@@ -233,3 +233,42 @@ def test_gostergeler_ek():
     ha = TE.heikin_ashi(h)
     assert np.allclose(ha["Close"], (h["Open"] + h["High"] + h["Low"] + h["Close"]) / 4)
     assert (ha["High"] >= ha[["Open", "Close"]].max(axis=1) - 1e-9).all()
+
+
+# ---------------------------------------------------------------- Aşama 9: risk hesaplayıcı ve sanal defter
+def test_pozisyon_boyutu():
+    import sanal as S
+    # 100.000 TL, %1 risk, giriş 100, stop 95, komisyon/kayma yok → 1.000 TL / 5 = 200 adet
+    r = S.pozisyon_boyutu(100_000, 0.01, 100, 95, komisyon=0, kayma=0, hedefler=(110,))
+    assert r["adet"] == 200 and r["pozisyon"] == 20_000 and abs(r["gercek_risk"] - 1000) < 1e-9
+    assert abs(r["hedef"][0]["kazanc"] - 2000) < 1e-9 and abs(r["hedef"][0]["r"] - 2) < 1e-9
+    # maliyet dahil: birim risk 5 + 100×(0,004+0,001)=5,5 → 181 adet (aşağı yuvarlanır)
+    assert S.pozisyon_boyutu(100_000, 0.01, 100, 95)["adet"] == 181
+    # çok yakın stop: pozisyon portföyle sınırlanır
+    r = S.pozisyon_boyutu(10_000, 0.02, 100, 99.9, komisyon=0, kayma=0)
+    assert r["adet"] == 100 and r["uyari"]
+    # kripto küsuratlı adet
+    assert S.pozisyon_boyutu(1000, 0.01, 60000, 58000, komisyon=0, kayma=0, piyasa="kripto")["adet"] == 0.005
+    import pytest as _pt
+    with _pt.raises(ValueError): S.pozisyon_boyutu(1000, 0.01, 100, 105)          # AL'da stop girişin üstünde
+
+
+def test_sanal_defter():
+    import sanal as S
+    d = S.bos_defter(100_000)
+    a = S.islem_ac(d, "THYAO", "bist", 1, 100, 300, komisyon=0.001, stop=290, hedef=330)
+    b = S.islem_ac(d, "ASELS", "bist", 1, 50, 320, komisyon=0)
+    S.islem_kapat(d, a["id"], 320, adet=40)                     # kısmi
+    assert abs(S.pozisyonlar(d)[0]["kalan"] - 60) < 1e-9
+    S.islem_kapat(d, a["id"], 310)                              # kalan 60
+    S.iptal(d, b["id"], "yanlış giriş")
+    assert S.pozisyonlar(d) == []                               # iptal edilen açık sayılmaz
+    k = S.kapananlar(d)[0]
+    beklenen = 40 * 20 + 60 * 10 - (40 * (320 * 0.001 + 300 * 0.001) + 60 * (310 * 0.001 + 300 * 0.001))
+    assert abs(k["gerceklesen"] - beklenen) < 1e-9 and k["R"] > 0
+    assert len(d["olaylar"]) == 5                               # hiçbir kayıt silinmedi
+    v = S.degerle(d, lambda kod: 999)
+    assert abs(v["ozkaynak_tl"] - (100_000 + beklenen)) < 1e-9 and v["islem_sayisi"] == 1
+    import pytest as _pt
+    with _pt.raises(ValueError): S.islem_ac(d, "THYAO", "bist", -1, 1, 300)   # BIST'te açığa satış yok
+    assert S.dogrula({"olaylar": []})["baslangic"] == 100_000

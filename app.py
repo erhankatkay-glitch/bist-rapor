@@ -338,7 +338,8 @@ def teknik_analiz(kod, zaman, surum, kisa=False):
     tfo = {tf: {"etiket": a["etiket"], "puan": a["puan"], "sayim": a["oy"]["sayim"], "sinyal": [(x[0], x[1], x[2]) for x in a["sinyal"]],
                 "destek": a["sr"]["destek"], "direnc": a["sr"]["direnc"], "yapi": a["pa"]["yapi"], "ma": a["oy"]["ma_etiket"],
                 "osc": a["oy"]["osc_etiket"], "pivot": a["pivot"]["Klasik"], "bloklar": a["pa"].get("bloklar", []),
-                "likidite": a["pa"].get("likidite", []), "bolge": a["pa"].get("bolge"), "harm": a.get("harm", [])}
+                "likidite": a["pa"].get("likidite", []), "bolge": a["pa"].get("bolge"), "harm": a.get("harm", []),
+                "atr": float(a["G"]["ATR"].iloc[-1]) if pd.notna(a["G"]["ATR"].iloc[-1]) else None}
            for tf, a in s["tf"].items() if a}
     g = s["tf"].get("G") or {}
     return {"kod": s["kod"], "ad": s["ad"], "etiket": s["etiket"], "puan": s["puan"], "yorum": AN.teknik_ozet(s), "baslik": AN.teknik_baslik(s),
@@ -835,8 +836,181 @@ with kesfet_b:
         [":material/my_location: Fırsatlar", ":material/description: Hisse", ":material/candlestick_chart: Teknik",
          ":material/manage_search: Tarayıcı", ":material/currency_bitcoin: Emtia & Kripto", ":material/school: Bebek",
          ":material/balance: Karşılaştır"])
+@st.cache_data(ttl=300, show_spinner=False)
+def anlik_fiyat(kod, zaman):
+    import alarm as _AL
+    return _AL.anlik(kod)[0]
+
+
+def _sanal_tur(kod):
+    k = kod.upper().strip()
+    if k in V.VARLIKLAR and V.VARLIKLAR[k][2] == "emtia": return "emtia", ("TL" if k == "GRAMALTIN" else "USD")
+    if "/" in k or k.endswith("-USD"): return "kripto", ("TL" if k.endswith("/TRY") else "USD")
+    if k.endswith(".US"): return "abd", "USD"
+    return "bist", "TL"
+
+
+def _sanal_kaydet():
+    st.session_state["sanal_kirli"] = True
+
+
+def sanal_islem_sekmesi():
+    import sanal as SN
+    if not st.session_state.get("sanal_yuklendi"):
+        _bil.html("""<script>(function(){try{const P=window.parent; const v=P.localStorage.getItem("katkay_sanal")||"BOS";
+          const inp=P.document.querySelector(".st-key-kk_gizli2 input"); if(!inp) return;
+          const set=Object.getOwnPropertyDescriptor(P.HTMLInputElement.prototype,"value").set;
+          inp.focus(); set.call(inp, v); inp.dispatchEvent(new Event("input",{bubbles:true}));
+          inp.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",code:"Enter",keyCode:13,which:13,bubbles:true})); inp.blur();
+          }catch(e){}})()</script>""", height=0)
+        st.caption("Sanal defter bu cihazdan yükleniyor…"); return
+    d = st.session_state.setdefault("sanal", SN.bos_defter())
+    if st.session_state.pop("sanal_kirli", False):
+        _bil.html("<script>try{window.parent.localStorage.setItem('katkay_sanal'," + json.dumps(json.dumps(d, ensure_ascii=False)) + ")}catch(e){}</script>", height=0)
+    st.markdown('<div class="kn" style="border-left:3px solid #E8B84A;padding:10px 14px"><b style="color:#E8B84A">SANAL PORTFÖY</b> · '
+                'Gerçek para kullanılmaz; gerçek portföyünüzden (Varlıklarım) tamamen ayrıdır. Kayıtlar yalnızca bu cihazda saklanır.</div>',
+                unsafe_allow_html=True)
+    try: kur = float(piyasa_verisi(ZAMAN)["USD/TRY"]["deger"])
+    except Exception: kur = 1.0
+    v = SN.degerle(d, lambda k: anlik_fiyat(k, ZAMAN), kur)
+    c1, c2 = st.columns(2)
+    kart(c1, "ÖZKAYNAK", f"{br.ond(v['ozkaynak_tl'], 0)} TL", f"başlangıç {br.ond(d['baslangic'], 0)} TL · {br.yz(v['getiri'])}",
+         "#22C55E" if v["getiri"] > 0 else "#EF4444" if v["getiri"] < 0 else None)
+    kart(c2, "AÇIK / GERÇEKLEŞEN", f"{br.ond(v['acik_kz_tl'], 0)} / {br.ond(v['gerceklesen_tl'], 0)} TL",
+         f"{v['islem_sayisi']} kapanmış işlem" + (f" · kazanma %{v['kazanma'] * 100:.0f}" if v["kazanma"] is not None else "")
+         + (f" · ort. {v['ort_R']:+.2f}R" if v["ort_R"] is not None else ""))
+    # ---- yeni işlem
+    on = st.session_state.pop("sanal_on", None)
+    if on:
+        for k_, v_ in on.items(): st.session_state[f"sn_{k_}"] = v_
+    with st.expander(":material/add: Yeni sanal işlem", expanded=bool(on)):
+        kod = st.text_input("Kod", key="sn_kod", placeholder="THYAO, AAPL.US, BTC/USDT, GRAMALTIN").strip().upper()
+        pz, para = _sanal_tur(kod) if kod else ("bist", "TL")
+        yon = st.radio("Yön", ["AL", "SAT (yalnız kripto vadeli)"], horizontal=True, key="sn_yon")
+        c1, c2 = st.columns(2)
+        fiyat = c1.number_input(f"Fiyat ({para})", min_value=0.0, key="sn_fiyat", format="%g")
+        if kod and c2.button("Güncel fiyatı getir", key="sn_getir"):
+            try:
+                st.session_state["sanal_on"] = {"kod": kod, "fiyat": float(anlik_fiyat(kod, ZAMAN))}; st.rerun()
+            except Exception as ex:
+                st.warning(f"Fiyat alınamadı: {ex}")
+        c1, c2 = st.columns(2)
+        stop = c1.number_input("Stop (isteğe bağlı)", min_value=0.0, key="sn_stop", format="%g")
+        hedef = c2.number_input("Hedef (isteğe bağlı)", min_value=0.0, key="sn_hedef", format="%g")
+        c1, c2 = st.columns(2)
+        adet = c1.number_input("Adet", min_value=0.0, key="sn_adet", format="%g")
+        kom = c2.number_input("Komisyon (binde)", min_value=0.0, value=st.session_state.get("sn_kom", 2.0), key="sn_kom", format="%g")
+        if fiyat and stop:
+            try:
+                oneri = SN.pozisyon_boyutu(v["ozkaynak_tl"] / (kur if para == "USD" else 1), 0.01, fiyat, stop, 1 if yon == "AL" else -1,
+                                           kom / 1000, 0.001, pz)
+                st.caption(f"%1 risk kuralına göre önerilen adet: **{SN._yuvarla_asagi(oneri['adet'], SN.LOT.get(pz, 1)):g}** "
+                           f"(pozisyon {br.ond(oneri['pozisyon'], 0)} {para}, portföyün %{oneri['pay'] * 100:.0f}'i)")
+            except Exception:
+                pass
+        aciklama = st.text_input("Not (neden bu işlem?)", key="sn_not", placeholder="ör. BIST günlük fırsat, harmonik dönüş")
+        if st.button(":material/check: Sanal işlemi aç", type="primary", key="sn_ac", disabled=not (kod and fiyat and adet)):
+            try:
+                SN.islem_ac(d, kod, pz, 1 if yon == "AL" else -1, adet, fiyat, kom / 1000, stop or None, hedef or None, para,
+                            st.session_state.get("sn_kaynak", "elle"), aciklama)
+                _sanal_kaydet(); st.success("Sanal işlem açıldı."); st.rerun()
+            except ValueError as ex:
+                st.error(str(ex))
+    # ---- açık pozisyonlar
+    st.markdown(TS.bb(f"Açık pozisyonlar ({len(v['pozisyonlar'])})"), unsafe_allow_html=True)
+    import logolar as LG
+    for p in v["pozisyonlar"]:
+        renk = "#22C55E" if (p["kz"] or 0) > 0 else "#EF4444" if (p["kz"] or 0) < 0 else "#E8B84A"
+        lg = LG.logo_url(p["kod"], p["piyasa"]) if p["piyasa"] in ("bist", "abd", "kripto") else None
+        st.markdown(
+            f'<div class="hb" style="--v:{renk}"><div class="hb-u"><b>' + (f'<img src="{lg}" style="width:20px;height:20px;border-radius:5px;vertical-align:-4px;margin-right:7px">' if lg else "")
+            + f'{p["kod"]} · {"AL" if p["yon"] == 1 else "SAT"}</b><span class="cip" style="color:{renk}">{br.yz(p["kz_oran"]) if p["kz_oran"] is not None else "–"}</span></div>'
+            f'<div style="font-size:.82rem;color:#A1A1AA;margin-top:6px">{p["kalan"]:g} adet · giriş {TK.sayi(p["fiyat"])} · son {TK.sayi(p["son"]) if p["son"] else "–"} {p["para"]}'
+            f' · K/Z {br.ond(p["kz"], 2) if p["kz"] is not None else "–"} {p["para"]}'
+            + (f' · stop {TK.sayi(p["stop"])}' if p.get("stop") else "") + (f' · hedef {TK.sayi(p["hedef"])}' if p.get("hedef") else "")
+            + (f'<br><b style="color:#E8B84A">⚠ {p["uyari"]}</b>' if p["uyari"] else "") + "</div></div>", unsafe_allow_html=True)
+        c1, c2, c3 = st.columns([2, 2, 1])
+        ka = c1.number_input("Kapatılacak adet", min_value=0.0, max_value=float(p["kalan"]), value=float(p["kalan"]), key=f"sn_ka_{p['id']}", format="%g",
+                             label_visibility="collapsed")
+        if c2.button(f"Kapat ({TK.sayi(p['son']) if p['son'] else 'fiyat yok'})", key=f"sn_kp_{p['id']}", disabled=not p["son"]):
+            SN.islem_kapat(d, p["id"], p["son"], ka, sebep="elle"); _sanal_kaydet(); st.rerun()
+        if c3.button("İptal", key=f"sn_ip_{p['id']}", help="Yanlış girilen işlemi geçersiz sayar; kayıt silinmez, geçmişte görünür."):
+            SN.iptal(d, p["id"], "yanlış giriş"); _sanal_kaydet(); st.rerun()
+    if not v["pozisyonlar"]: st.caption("Açık sanal pozisyon yok. Fırsat kartlarındaki \"Sanal işlem aç\" düğmesiyle ya da yukarıdan ekleyebilirsiniz.")
+    # ---- geçmiş
+    if v["kapananlar"]:
+        st.markdown(TS.bb("Kapanan işlemler"), unsafe_allow_html=True)
+        st.dataframe(pd.DataFrame([{"Kod": a["kod"], "Yön": "AL" if a["yon"] == 1 else "SAT", "Adet": a["adet"], "Giriş": a["fiyat"],
+                                    "Çıkış": sum(k["fiyat"] * k["adet"] for k in a["kapanis"]) / a["adet"],
+                                    "K/Z": a["gerceklesen"], "Para": a["para"], "R": a["R"],
+                                    "Açılış": a["t"][:10], "Kapanış": a["kapanis"][-1]["t"][:10]} for a in v["kapananlar"]]),
+                     hide_index=True, use_container_width=True,
+                     column_config={"Giriş": st.column_config.NumberColumn(format="%.2f"), "Çıkış": st.column_config.NumberColumn(format="%.2f"),
+                                    "K/Z": st.column_config.NumberColumn(format="%+.2f"), "R": st.column_config.NumberColumn(format="%+.2f")})
+    with st.expander(":material/history: Tüm kayıtlar (denetim izi), yedek ve ayarlar"):
+        st.caption("Kayıtlar silinmez; iptal edilen işlemler de burada görünür.")
+        st.dataframe(pd.DataFrame([{"Zaman": o["t"].replace("T", " ")[:16], "Tür": {"ac": "açılış", "kapat": "kapanış", "iptal": "iptal", "not": "not"}[o["tip"]],
+                                    "Kod": o.get("kod", ""), "Fiyat": o.get("fiyat"), "Adet": o.get("adet"), "Açıklama": o.get("aciklama") or o.get("sebep", ""),
+                                    "Kimlik": o["id"], "Bağlı": o.get("ref", "")} for o in reversed(d["olaylar"])]), hide_index=True, use_container_width=True)
+        st.download_button(":material/download: Yedeği indir (JSON)", json.dumps(d, ensure_ascii=False, indent=1), "katkay_sanal_defter.json",
+                           "application/json", key="sn_yedek")
+        yuk = st.file_uploader("Yedekten geri yükle", type=["json"], key="sn_yukle")
+        if yuk is not None and st.button("Yedeği yükle (mevcut defterin yerine geçer)", key="sn_yukle_btn"):
+            try:
+                st.session_state["sanal"] = SN.dogrula(json.loads(yuk.getvalue().decode("utf-8"))); _sanal_kaydet(); st.success("Yedek yüklendi."); st.rerun()
+            except Exception as ex:
+                st.error(f"Yedek okunamadı: {ex}")
+        if not d["olaylar"]:
+            b0 = st.number_input("Başlangıç bakiyesi (TL)", min_value=1000.0, value=float(d["baslangic"]), step=10000.0, key="sn_bas", format="%g")
+            if b0 != d["baslangic"] and st.button("Bakiyeyi ayarla", key="sn_bas_btn"):
+                d["baslangic"] = float(b0); _sanal_kaydet(); st.rerun()
+
+
+def risk_hesaplayici(on=None, anahtar="rh"):
+    """Pozisyon büyüklüğü: risk tutarı = portföy × risk %; adet = risk tutarı / (stop mesafesi + maliyetler)."""
+    import sanal as SN
+    on = on or {}
+    c1, c2 = st.columns(2)
+    pf = c1.number_input("Portföy değeri", min_value=0.0, value=float(on.get("portfoy", 100_000.0)), step=10_000.0, key=f"{anahtar}_pf", format="%g")
+    rk = c2.number_input("İşlem başına risk (%)", min_value=0.1, max_value=10.0, value=float(on.get("risk", 1.0)), step=0.25, key=f"{anahtar}_rk", format="%g")
+    yon = st.radio("Yön", ["AL", "SAT"], horizontal=True, key=f"{anahtar}_yon")
+    c1, c2 = st.columns(2)
+    gi = c1.number_input("Giriş", min_value=0.0, value=float(on.get("giris", 0.0)), key=f"{anahtar}_gi", format="%g")
+    sto = c2.number_input("Stop", min_value=0.0, value=float(on.get("stop", 0.0)), key=f"{anahtar}_st", format="%g")
+    if on.get("atr") and gi:
+        st.caption(f"ATR {TK.sayi(on['atr'])} → 1,5 ATR stop: {TK.sayi(SN.atr_stop(gi, on['atr'], 1.5, 1 if yon == 'AL' else -1))} · "
+                   f"2 ATR: {TK.sayi(SN.atr_stop(gi, on['atr'], 2, 1 if yon == 'AL' else -1))}")
+    c1, c2, c3 = st.columns(3)
+    kom = c1.number_input("Komisyon (binde)", min_value=0.0, value=2.0, key=f"{anahtar}_kom", format="%g")
+    kay = c2.number_input("Kayma/spread (binde)", min_value=0.0, value=1.0, key=f"{anahtar}_kay", format="%g")
+    pz = c3.selectbox("Piyasa", ["bist", "abd", "kripto", "emtia"], index=["bist", "abd", "kripto", "emtia"].index(on.get("piyasa", "bist")), key=f"{anahtar}_pz",
+                      format_func=lambda x: {"bist": "BIST", "abd": "ABD", "kripto": "Kripto", "emtia": "Emtia"}[x])
+    hed = st.text_input("Hedefler (virgülle, isteğe bağlı)", value=on.get("hedefler", ""), key=f"{anahtar}_hd", placeholder="ör. 330, 345")
+    if not (pf and gi and sto): st.caption("Portföy, giriş ve stop girin."); return
+    try:
+        hl = [float(x.replace(",", ".")) for x in hed.replace(";", " ").replace(" ", ",").split(",") if x.strip()] if hed else []
+    except ValueError:
+        hl = []
+    try:
+        r = SN.pozisyon_boyutu(pf, rk / 100, gi, sto, 1 if yon == "AL" else -1, kom / 1000, kay / 1000, pz, hedefler=hl)
+    except ValueError as ex:
+        st.error(str(ex)); return
+    c1, c2 = st.columns(2)
+    kart(c1, "ALINACAK ADET", f"{r['adet']:g}", f"pozisyon {br.ond(r['pozisyon'], 0)} · portföyün %{r['pay'] * 100:.0f}'i")
+    kart(c2, "RİSK", f"{br.ond(r['gercek_risk'], 0)}", f"portföyün %{r['gercek_risk_orani'] * 100:.2f}'i · stop mesafesi %{r['stop_mesafe'] * 100:.1f}", "#EF4444")
+    if r["hedef"]:
+        st.markdown("".join(f'<div class="hb" style="--v:#22C55E;padding:9px 12px;margin-bottom:6px"><div class="hb-u"><b>H{i + 1} · {TK.sayi(h["fiyat"])}</b>'
+                            f'<span class="cip" style="color:#22C55E">{h["r"]:+.2f}R</span></div><div style="font-size:.8rem;color:#A1A1AA">'
+                            f'tahmini kâr {br.ond(h["kazanc"], 0)} (maliyetler düşülmüş) · fiyat hareketi {br.yz(h["getiri"])}</div></div>'
+                            for i, h in enumerate(r["hedef"])), unsafe_allow_html=True)
+    for u in r["uyari"]: st.warning(u)
+    st.caption(f"Birim başına toplam risk {TK.sayi(r['birim_risk'])} (stop mesafesi + alış/satış komisyonu + kayma). "
+               "Hedef ve stoplar sonuç garantisi değildir; boşluklu açılışlarda kayıp stop mesafesini aşabilir.")
+
+
 with portfoy_b:
-    tab_pf, tab_pr = st.tabs([":material/pie_chart: Varlıklarım", ":material/insights: Performans"])
+    tab_pf, tab_pr, tab_sn, tab_rh = st.tabs([":material/pie_chart: Varlıklarım", ":material/insights: Performans",
+                                              ":material/science: Sanal işlem", ":material/calculate: Risk hesaplayıcı"])
 with takip_b:
     tab_w, tab_al = st.tabs([":material/bookmark: Favoriler", ":material/notifications_active: Alarmlar"])
 
@@ -881,6 +1055,20 @@ try:
     _pv_ust = piyasa_verisi(ZAMAN)
 except Exception:
     _pv_ust = None
+# Sanal işlem defteri: yalnızca bu cihazın tarayıcı deposunda (localStorage) tutulur; ilk açılışta gizli kutuya aktarılır
+with st.container(key="kk_gizli2"):
+    st.text_input("sanal", key="kk_sanal", label_visibility="collapsed")
+if not st.session_state.get("sanal_yuklendi"):
+    _sv = st.session_state.get("kk_sanal") or ""
+    if _sv:
+        import sanal as _SN
+        try:
+            st.session_state["sanal"] = _SN.dogrula(json.loads(_sv)) if _sv != "BOS" else _SN.bos_defter()
+        except Exception:
+            st.session_state["sanal"] = _SN.bos_defter()
+        st.session_state["sanal_yuklendi"] = True
+
+
 # Ana sayfadaki satır düğmeleri (Analiz / Seviye) bu gizli kutuya "KOD|TÜR|BÖLÜM|zaman" yazar (uygulama_stil.CANLI_JS → kkIstek)
 with st.container(key="kk_gizli"):
     st.text_input("istek", key="kk_istek", label_visibility="collapsed")
@@ -1118,6 +1306,12 @@ with tab_x:
                 if x: kart(c_, TK.TF_AD[tf].upper(), x["etiket"], f"{x['puan']:.0f} · Al {x['sayim']['AL']} / Sat {x['sayim']['SAT']}", ETK_RENK.get(x["etiket"]))
         st.download_button(":material/download: Teknik PDF raporu", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key="tk_dl")
         ileri_goster(r.get("ileri"))
+        with st.expander(":material/calculate: Pozisyon büyüklüğü hesapla (risk yönetimi)"):
+            _g = r["tf"].get("G") or {}
+            _ds = [v_ for v_, _ in (_g.get("destek") or []) if r.get("fiyat") and v_ < r["fiyat"]]
+            _tur_pz = {"Hisse": "bist", "ABD": "abd", "Kripto": "kripto", "Emtia": "emtia"}.get(st.session_state.get("tk_tur"), "bist")
+            risk_hesaplayici({"giris": r.get("fiyat") or 0.0, "stop": float(_ds[0]) if _ds else 0.0, "atr": _g.get("atr"), "piyasa": _tur_pz,
+                              "hedefler": ", ".join(f"{v_:.2f}" for v_, _ in (_g.get("direnc") or [])[:2])}, f"tkrh_{r['kod']}")
         sira = [t for t in ("1S", "4S", "G", "H", "A") if t in r["tf"]]
         sek = st.tabs([TK.TF_AD[t] for t in sira])
         for sk, tf in zip(sek, sira):
@@ -1213,6 +1407,14 @@ with tab_f:
                     else:
                         try: st.markdown(_md(FR.firsat_metni(f)))
                         except Exception as ex: st.write(f.get("kod"), ex)
+                    def _sanal_firsat(f_=f):
+                        p_ = f_["plan"]
+                        st.session_state["sanal_on"] = {"kod": f_["kod"], "fiyat": float(p_["giris"]), "stop": float(p_["stop"]),
+                                                        "hedef": float(p_["hedef"][0]["fiyat"]) if p_.get("hedef") else 0.0,
+                                                        "yon": "AL" if f_["yon"] == 1 else "SAT (yalnız kripto vadeli)",
+                                                        "not": f"{f_.get('kurulum_ad', '')[:60]} · puan {f_.get('puan', 0):.0f}", "kaynak": "fırsat"}
+                    st.button(":material/science: Sanal işlem aç", key=f"sn_f_{tf}_{f['kod']}", on_click=_sanal_firsat,
+                              help="İşlem planını Portföy › Sanal işlem'e aktarır; adet %1 risk kuralıyla önerilir.")
                     with st.expander("Kurulum açıklaması ve tüm ayrıntılar"):
                         try: st.markdown(_md(FR.firsat_metni(f)))
                         except Exception: pass
@@ -1844,6 +2046,14 @@ with tab_b:
 import portfoy as PF
 PF = importlib.reload(PF)
 
+
+
+with tab_sn:
+    sanal_islem_sekmesi()
+
+with tab_rh:
+    st.caption("İşlem başına ne kadar risk alacağınıza göre kaç adet almanız gerektiğini hesaplar.")
+    risk_hesaplayici(st.session_state.get("rh_on"), "rh")
 
 
 with tab_pf:

@@ -98,7 +98,7 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 [data-testid="stRadioOption"][data-selected="true"] {background:#E8B84A; border-color:#E8B84A;}
 [data-testid="stRadioOption"][data-selected="true"] p {color:#0B0B0C !important;}
 /* gizli istek kutusu (satır düğmeleri) */
-.st-key-kk_gizli {position:absolute !important; left:-9999px !important; height:0 !important; overflow:hidden !important;}
+.st-key-kk_gizli, .st-key-kk_gizli2 {position:absolute !important; left:-9999px !important; height:0 !important; overflow:hidden !important;}
 .oc-d {display:flex; flex-direction:column; gap:5px; flex:none;}
 .oc-b {background:rgba(232,184,74,.1); border:1px solid rgba(232,184,74,.4); color:var(--altin); border-radius:10px; font-size:.7rem;
        font-weight:800; padding:6px 9px; text-align:center; cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none;}
