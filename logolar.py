@@ -7,6 +7,7 @@ logo.dev'e göre tarayıcı kodunda açıkça kullanılması güvenlidir; gizli 
 import base64
 import functools
 import os
+import re
 import tempfile
 import urllib.request
 
@@ -59,9 +60,15 @@ def hisse_logo_url(kod, piyasa, boy=128):
     return f"https://img.logo.dev/ticker/{s}?token={LOGO_DEV}&size={boy}&format=png&fallback=404"
 
 
+def kripto_logo_url(kod, boy=128):
+    """Logo.dev kripto logosu (sembolle): img.logo.dev/crypto/btc."""
+    b = kripto_baz(kod)
+    return f"https://img.logo.dev/crypto/{b.lower()}?token={LOGO_DEV}&size={boy}&format=png&fallback=404" if b else None
+
+
 def logo_url(kod, piyasa):
-    """Uygulama (tarayıcı) için: kripto → data: adresi, hisse → logo.dev adresi, diğer → None."""
-    if piyasa == "kripto": return kripto_logo_uri(kod)
+    """Uygulama (tarayıcı) için: kripto ve hisse → logo.dev adresi (kriptoda yedek: yerel CC0 set), diğer → None."""
+    if piyasa == "kripto": return kripto_logo_url(kod)
     if piyasa in ("bist", "abd"): return hisse_logo_url(kod, piyasa)
     return None
 
@@ -69,16 +76,33 @@ def logo_url(kod, piyasa):
 @functools.lru_cache(maxsize=512)
 def logo_dosya(kod, piyasa):
     """Kart çizimi için yerel PNG yolu (hisseler indirilip önbelleğe alınır) ya da None."""
-    if piyasa == "kripto": return kripto_logo(kod)
-    u = hisse_logo_url(kod, piyasa)
+    if piyasa not in ("kripto", "bist", "abd"): return None
+    if piyasa == "kripto":
+        u = kripto_logo_url(kod); ad = "kripto_" + kripto_baz(kod)
+    else:
+        u = hisse_logo_url(kod, piyasa); ad = hisse_sembol(kod, piyasa) if u else None
     if not u: return None
     os.makedirs(_ONBELLEK, exist_ok=True)
-    yol = os.path.join(_ONBELLEK, f"{hisse_sembol(kod, piyasa)}.png")
+    yol = os.path.join(_ONBELLEK, f"{ad}.png")
     if os.path.exists(yol): return yol
     try:
         r = urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"}), timeout=10)
-        if r.status != 200: return None
+        if r.status != 200: raise ValueError(r.status)
         open(yol, "wb").write(r.read())
         return yol
     except Exception:
-        return None
+        return kripto_logo(kod) if piyasa == "kripto" else None   # kriptoda yedek: yerel CC0 set
+
+
+_LOGOSUZ = {"XU100", "XU030", "XBANK", "XUSIN", "XHOLD", "XUTEK", "SP500", "NASDAQ", "DOW", "VIX", "DAX", "USDTRY", "EURTRY", "DXY", "US10Y",
+            "ALTIN", "GRAMALTIN", "GUMUS", "BRENT", "WTI", "BAKIR", "PLATIN", "PALADYUM", "DOGALGAZ", "BUGDAY", "MISIR", "SOYA", "KAHVE",
+            "KAKAO", "SEKER", "PAMUK"}
+
+
+def tahmin_piyasa(kod):
+    """Koddan piyasa: 'BTC/USDT' → kripto, 'AAPL.US' → abd, 'THYAO' → bist; endeks ve emtia → None (logo yok)."""
+    k = str(kod).upper()
+    if "/" in k or k.endswith("-USD") or "@" in k: return "kripto"
+    if k.endswith(".US"): return "abd"
+    if k in _LOGOSUZ: return None
+    return "bist" if re.fullmatch(r"[A-Z0-9]{3,6}", k.replace(".IS", "")) else None

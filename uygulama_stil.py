@@ -89,6 +89,14 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 [data-testid="stRadio"] [role="radiogroup"] > label:has(input:checked) {background:#E8B84A; border-color:#E8B84A;}
 [data-testid="stRadio"] [role="radiogroup"] > label:has(input:checked) p {color:#0B0B0C !important;}
 [data-testid="stRadio"] > label p {font-size:.72rem !important; letter-spacing:.1em; text-transform:uppercase; color:var(--soluk) !important; font-weight:800 !important;}
+/* Streamlit 1.6x radyo yapısı (stRadioGroup / stRadioOption) */
+[data-testid="stRadioGroup"] {display:flex !important; flex-wrap:nowrap !important; overflow-x:auto; gap:8px !important; scrollbar-width:none; padding-bottom:2px;}
+[data-testid="stRadioGroup"]::-webkit-scrollbar {display:none;}
+[data-testid="stRadioOption"] {padding:7px 14px !important; margin:0 !important; border-radius:20px; border:1px solid #2A2B30; background:#17181B; cursor:pointer;}
+[data-testid="stRadioOption"] > div > div:first-child {display:none !important;}
+[data-testid="stRadioOption"] p {font-weight:700 !important; font-size:.86rem !important; color:#E4E4E7; white-space:nowrap;}
+[data-testid="stRadioOption"][data-selected="true"] {background:#E8B84A; border-color:#E8B84A;}
+[data-testid="stRadioOption"][data-selected="true"] p {color:#0B0B0C !important;}
 /* gizli istek kutusu (satır düğmeleri) */
 .st-key-kk_gizli {position:absolute !important; left:-9999px !important; height:0 !important; overflow:hidden !important;}
 .oc-d {display:flex; flex-direction:column; gap:5px; flex:none;}

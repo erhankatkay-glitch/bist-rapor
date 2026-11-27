@@ -376,7 +376,7 @@ def _sar(s, n):
 
 def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
     """Bildirimler için ortak tasarım. bolumler: [{"baslik", "renk", "aciklama"(ops.), "satirlar": [
-    {"sol", "sag"(ops.), "sag_renk"(ops.), "nokta"(renk, ops.), "alt"(ops.)}]}]. Yükseklik içeriğe göre ayarlanır."""
+    {"sol", "sag"(ops.), "sag_renk"(ops.), "nokta"(renk, ops.), "logo"((kod, piyasa), ops.), "alt"(ops.)}]}]. Yükseklik içeriğe göre ayarlanır."""
     vurgu = vurgu or C["altin"]
     # --- yükseklik hesabı
     ust_y = 250; h = ust_y
@@ -409,8 +409,14 @@ def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
             alt_s = _sar(s.get("alt", ""), 80)[:4] if s.get("alt") else []
             kh = 44 + 26 * len(alt_s)
             _kutu(ax, 40, y - kh + 30, W - 80, kh, C["panel"], r=12)
-            if s.get("nokta"): ax.add_patch(Circle((66, y + 8), 8, color=s["nokta"]))
-            _t(ax, 86 if s.get("nokta") else 62, y, textwrap.shorten(str(s["sol"]), 52, placeholder="…"), 20, weight="bold")
+            lg = False
+            if s.get("logo"):
+                kod_, pz_ = s["logo"] if isinstance(s["logo"], (tuple, list)) else (s["logo"], None)
+                import logolar as _LG
+                pz_ = pz_ or _LG.tahmin_piyasa(kod_)
+                lg = bool(pz_) and logo_ciz(ax, kod_, 50, y - 7, 32, pz_)
+            if not lg and s.get("nokta"): ax.add_patch(Circle((66, y + 8), 8, color=s["nokta"]))
+            _t(ax, 92 if lg else 86 if s.get("nokta") else 62, y, textwrap.shorten(str(s["sol"]), 52, placeholder="…"), 20, weight="bold")
             if s.get("sag"): _t(ax, W - 62, y, str(s["sag"]), 20, s.get("sag_renk") or C["yazi"], "bold", ha="right")
             yy = y - 30
             for sat in alt_s:

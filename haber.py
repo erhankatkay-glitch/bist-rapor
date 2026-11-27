@@ -580,7 +580,7 @@ def kart_bolumu(a):
             if te.get("destek"): e += f" · destek {F.fy(te['destek'])} ({yz(te['destek'] / p - 1)})"
             if te.get("direnc"): e += f" · direnç {F.fy(te['direnc'])} ({yz(te['direnc'] / p - 1)})"
             alt.append(e)
-        sat.append({"sol": ("Portföy · " if _pfk(v["kod"]) in pf else "") + vad(v["kod"]), "sag": "↑ yükseliş" if yuk else "↓ düşüş",
+        sat.append({"logo": (v["kod"], None), "sol": ("Portföy · " if _pfk(v["kod"]) in pf else "") + vad(v["kod"]), "sag": "↑ yükseliş" if yuk else "↓ düşüş",
                     "sag_renk": C["yesil"] if yuk else C["kirmizi"], "nokta": C["yesil"] if yuk else C["kirmizi"], "alt": "  ".join(alt)})
     jeo = a["tur"].startswith("Jeopolitik")
     return {"baslik": f"{a['tur']} · {etki_ad(a)} · {t:%H:%M}",
