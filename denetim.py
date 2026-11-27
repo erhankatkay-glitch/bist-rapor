@@ -22,9 +22,9 @@ with sync_playwright() as pw:
     pg.mouse.wheel(0, 700); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/ana2.png")
     pg.locator("#kk-nav button[data-sekme='Keşfet']").tap(); pg.wait_for_timeout(2000)
     pg.locator('[data-testid="stTab"]', has_text="Teknik").first.click(); pg.wait_for_timeout(1500)
-    kutu = pg.get_by_placeholder("Şirket adı veya kodu yazın (örn. aselsan, THYAO)").first
+    kutu = pg.locator("input[placeholder*='aselsan, THYAO']:visible").first
     kutu.click(); kutu.fill("THYAO"); pg.wait_for_timeout(1200); pg.keyboard.press("Enter"); pg.wait_for_timeout(1500)
-    pg.get_by_role("button", name="Teknik analiz yap").first.click()
+    pg.locator("button:visible", has_text="Teknik analiz yap").first.click()
     for i in range(60):
         pg.wait_for_timeout(3000)
         if pg.evaluate("document.querySelectorAll('.vb').length") > 0: break
