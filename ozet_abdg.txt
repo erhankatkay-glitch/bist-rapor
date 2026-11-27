@@ -1,0 +1,9 @@
+abdg: 3 gösterge, 2915 olay; kör dönem 2025-11-18 sonrası
+boyama testi: 3 gösterge, boyamasız 2
+
+4 test · BH anlamlı 4 · KABUL 1
+gosterge  yon    n    ortR   taban  fazla        p    p1  parca_ok  kor_n  kor_ortR  kor_fazla    kor_p  eslesme  boyamasiz   bh  kabul
+MOMENTUM    1 1047  0.2007  0.1454 0.0553 0.032484 0.559         3    316    0.1217     0.0789 0.079920      1.0       True True   True
+      EP    1  184  0.2618  0.0984 0.1633 0.012994 0.603         4     32   -0.1302    -0.0577 0.620380      1.0       True True  False
+      EP   -1  167 -0.0450 -0.1935 0.1485 0.021989 0.455         3     52   -0.1881    -0.0364 0.586414      1.0       True True  False
+MOMENTUM   -1  889 -0.0156 -0.0721 0.0564 0.027486 0.474         4    217   -0.1446     0.0020 0.470529      1.0       True True  False

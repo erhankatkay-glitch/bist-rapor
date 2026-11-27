@@ -1,0 +1,10 @@
+
+1 Failed download:
+['ARCT']: OperationalError('database is locked')
+$BRK.B: No data found, symbol may be delisted
+
+1 Failed download:
+['BRK.B']: No data found, symbol may be delisted
+bozuk veri, atlandı (8): MRNA, IREN, CRDO, AAOI, IONQ, CVNA, WULF, ASTS
+abdg: 188 varlık, veri 268 sn
+bitti 268 sn

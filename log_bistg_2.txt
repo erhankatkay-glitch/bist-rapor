@@ -1,0 +1,7 @@
+
+1 Failed download:
+['BOBET.IS']: OperationalError('database is locked')
+bozuk veri, atlandı (28): TEHOL, HEKTS, CVKMD, CCOLA, BJKAS, MANAS, AYGAZ, TUKAS, BSOKE, FENER, TSPOR, TRHOL, KBORU, KGYO, GSRAY
+bistg: 372 varlık, veri 64 sn
+  EP                                         olay    439  hata 0   15.6 sn
+bitti 79 sn

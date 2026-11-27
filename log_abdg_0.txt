@@ -1,0 +1,9 @@
+$BRK.B: No data found, symbol may be delisted
+
+1 Failed download:
+['BRK.B']: No data found, symbol may be delisted
+bozuk veri, atlandı (8): MRNA, IREN, CRDO, AAOI, IONQ, CVNA, WULF, ASTS
+abdg: 188 varlık, veri 234 sn
+taban 437588 olay, 239 sn
+  VCP                                        olay     11  hata 0   11.9 sn
+bitti 251 sn

@@ -1,0 +1,6 @@
+
+1 Failed download:
+['CEMAS.IS']: OperationalError('database is locked')
+bozuk veri, atlandı (28): TEHOL, HEKTS, CVKMD, CCOLA, BJKAS, MANAS, AYGAZ, TUKAS, BSOKE, FENER, TSPOR, TRHOL, KBORU, KGYO, GSRAY
+bistg: 372 varlık, veri 60 sn
+bitti 60 sn

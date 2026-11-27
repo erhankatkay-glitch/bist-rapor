@@ -1,0 +1,14 @@
+kriptog: 2 gösterge, 76 olay; kör dönem 2026-06-24 sonrası
+Traceback (most recent call last):
+  File "/home/runner/work/bist-rapor/bist-rapor/arastirma_qd.py", line 268, in <module>
+    else: ozet(sys.argv[2])
+          ^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/bist-rapor/bist-rapor/arastirma_qd.py", line 248, in ozet
+    S["eslesme"] = S["gosterge"].map(lambda g: (boya.get(g) or {}).get("eslesme"))
+                   ~^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pandas/core/frame.py", line 4330, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pandas/core/indexes/range.py", line 549, in get_loc
+    raise KeyError(key)
+KeyError: 'gosterge'

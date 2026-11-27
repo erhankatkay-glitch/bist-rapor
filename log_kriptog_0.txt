@@ -1,0 +1,5 @@
+bozuk veri, atlandı (8): ZEC, PORTAL, TRX, MMT, ADA, INIT, OKB, HEI
+kriptog: 33 varlık, veri 60 sn
+taban 14707 olay, 60 sn
+  VCP                                        olay      1  hata 0    1.1 sn
+bitti 61 sn

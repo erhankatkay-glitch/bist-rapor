@@ -1,0 +1,5 @@
+bozuk veri, atlandı (3): PORTAL, SNDKB, HEI
+kripto4s: 54 varlık, veri 55 sn
+taban 64696 olay, 56 sn
+  VCP                                        olay     12  hata 0    2.8 sn
+bitti 59 sn

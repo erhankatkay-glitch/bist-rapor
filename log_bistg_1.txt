@@ -1,0 +1,4 @@
+bozuk veri, atlandı (28): TEHOL, HEKTS, CVKMD, CCOLA, BJKAS, MANAS, AYGAZ, TUKAS, BSOKE, FENER, TSPOR, TRHOL, KBORU, KGYO, GSRAY
+bistg: 372 varlık, veri 63 sn
+  MOMENTUM                                   olay   4333  hata 0   19.9 sn
+bitti 83 sn

@@ -1,0 +1,7 @@
+kripto4s: 2 gösterge, 299 olay; kör dönem 2026-11-01 sonrası
+boyama testi: 3 gösterge, boyamasız 2
+
+2 test · BH anlamlı 0 · KABUL 0
+gosterge  yon   n    ortR  taban   fazla        p    p1  parca_ok  kor_n  kor_ortR  kor_fazla   kor_p  eslesme  boyamasiz    bh  kabul
+MOMENTUM    1 119  0.2067   0.07  0.1367 0.057971 0.529         3     10   -1.0000    -0.2288 1.00000      1.0       True False  False
+MOMENTUM   -1  99 -0.1508  -0.07 -0.0808 0.820090 0.374         1     59    0.1312    -0.0265 0.59041      1.0       True False  False
