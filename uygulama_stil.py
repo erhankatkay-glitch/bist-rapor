@@ -497,6 +497,9 @@ KOMPAKT_STIL = """<style>
 .sd .ic em{font-style:normal;color:#E8B84A;font-weight:800;margin-right:6px}
 @keyframes kay{to{transform:translateX(-100%)}}
 .hap{display:none}
+.hk{height:96px;margin:0 -4px -34px;background-size:cover;background-position:center 45%;opacity:.95;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 25%,#000 55%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 25%,#000 55%,transparent 100%)}
+.ku{position:relative;z-index:1}
 </style>"""
 
 
@@ -520,7 +523,9 @@ def ust_kompakt(pv=None, haberler=None):
             v = pv.get(ad_)
             if v: hab.append(f'<span><em>{ad_}</em>{v["deger"]:,.2f} ({(v.get("d1G") or 0) * 100:+.2f}%)</span>'.replace(",", "X").replace(".", ",").replace("X", "."))
     logo = f'<img src="{_logo_url()}" alt="KATKAY">' if _logo_url() else ""
-    return (f'<div class="ku"><div class="km">{logo}<div><div class="ka">KATKAY <span>YATIRIM</span></div>'
+    hero = _hero_url()
+    return ((f'<div class="hk" style="background-image:url({hero})"></div>' if hero else '') +
+            f'<div class="ku"><div class="km">{logo}<div><div class="ka">KATKAY <span>YATIRIM</span></div>'
             f'<div class="kt">BIST · ABD · KRİPTO · EMTİA</div></div></div>'
             f'<div class="ks"><div class="saat" id="saat">{t:%H:%M}<small id="tarih">{t.day} {ay} {gun} · TSİ</small></div>'
             f'<span class="canli"><i></i>CANLI</span></div></div>'

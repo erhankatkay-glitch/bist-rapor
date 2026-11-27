@@ -842,7 +842,7 @@ if _ist and _ist != st.session_state.get("_kk_son"):
 with _ust_yer.container():
     try: _hb_ust = json_oku("haber/son.json", ZAMAN) or []
     except Exception: _hb_ust = []
-    _bil.html(TS.ust_kompakt_sayfa(_pv_ust, _hb_ust), height=112)
+    _bil.html(TS.ust_kompakt_sayfa(_pv_ust, _hb_ust), height=176)
 
 
 
