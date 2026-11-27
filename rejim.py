@@ -157,6 +157,17 @@ def _tr_tarih(s):
     except Exception: return s or ""
 
 
+def durum_alt(r):
+    """Dağıtım sayısı ve takip günü yalnız yükseliş dönemlerinde anlamlıdır; düzeltme/rallide rallinin günü ve beklenen şart yazılır."""
+    if r["durum"] in ("yukselis", "baski"):
+        return f"{r['dagitim']} dağıtım günü (son 25 seans)" + (f" · takip günü {_tr_tarih(r['ftd'])}" if r.get("ftd") else "")
+    if r["durum"] == "ralli":
+        esik = {"bist": "%1,5", "abd": "%1,25"}.get(r.get("piyasa"), "")
+        return (f"Ralli denemesinin {r.get('ralli_gunu') or '?'}. günü · yeni yükseliş için 4. günden sonra hacimli {esik}+ artış (takip günü) gerekli; "
+                f"düzeltme dibi kırılırsa deneme biter")
+    return "Endeks düzeltmede · ilk yükseliş günüyle ralli denemesi başlar"
+
+
 def kart_ciz(r, yol):
     import kart as K
     g = r.get("genislik") or {}
@@ -164,8 +175,7 @@ def kart_ciz(r, yol):
     renk = K.C.get({"yesil": "yesil", "altin": "altin", "kirmizi": "kirmizi"}[DURUM_RENK[r["durum"]]], K.C["altin"])
     bol = [{"baslik": "DURUM", "renk": renk, "satirlar": [
                {"sol": r["durum_ad"], "sag": f"%{r['maruziyet']} hisse", "sag_renk": renk, "nokta": renk,
-                "alt": (f"{r['dagitim']} dağıtım günü (son 25 seans)" + (f" · son takip günü {_tr_tarih(r['ftd'])}" if r.get("ftd") else "")
-                        + (f" · ralli denemesinin {r['ralli_gunu']}. günü" if r.get("ralli_gunu") else ""))}]},
+                "alt": durum_alt(r)}]},
            {"baslik": "PİYASA GENİŞLİĞİ", "renk": K.C["altin"], "satirlar": [
                {"sol": "50 günlüğün üstündeki hisseler", "sag": tr(g.get("ust50")),
                 "alt": f"20 gün önce {tr(g.get('ust50_20g_once'))}" if g.get("ust50_20g_once") is not None else ""},
