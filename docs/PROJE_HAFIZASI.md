@@ -281,3 +281,11 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - Bağlı olduğu yerler: fırsat motoru (`firsat.varlik_tara` → kapanış taramaları, Telegram fırsat kartları, Seçki, Günün fırsatları,
   portföy ters sinyal uyarısı), tarayıcı (`tarayici.son_sinyal` → SINYAL alarmı), teknik analiz gösterge karnesi ve sinyal listesi
   (`bist_teknik.tf_analiz(..., tur)` → uygulama Teknik sekmesi ve teknik PDF), PDF sözlüğü, portföy alarmında ters sinyal anahtarı "QD:".
+
+## Aşama 10c (28.11.2026)
+- `rejim.py`: kapanis.rejim_turu (BIST/ABD kapanış bülteninden sonra) → `rejim/{p}.json` (yayinla ALT_BIRIM'de), kart değişimde/Cuma.
+  Uygulama: rejim_paneli (Ekonomi; kısa satır Seçki ve Günün fırsatları), sabah.py izlenecekler maddesi.
+- `teknik_ek.vcp_tetik / momentum_tetik / ep_tetik` → `firsat.tetikler(ek=...)`; açık olanlar EK_KURULUM'da.
+  Bağlı yerler: fırsat motoru (kapanış, Telegram kartı, Seçki, Günün fırsatları, kurulum istatistikleri, portföy SAT uyarısı),
+  tarayıcı + SINYAL alarmı, teknik analiz karnesi/sinyal listesi (firsat.yeni_kurulum_durumu → tf_analiz), PDF sözlüğü, alarm anahtarı "Kurulum:".
+- arastirma_qd.py: R [−5, +3] kırpılır, bozuk fiyatlı varlıklar atlanır (±%60 günlük sıçrama / ≤0 fiyat).

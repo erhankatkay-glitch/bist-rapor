@@ -60,6 +60,10 @@ EK_KURULUM = {
     ("abd", "H"): {("BREAKER", 1), ("HARM", 1)},                # BREAKER +0,358/+0,228 · HARM +0,237/+0,177
     ("kripto", "G"): {("HARM", -1)},                            # HARM SAT +0,641/+0,563
 }
+# Aşama 10c (28.11.2026, arastirma_qd.py QD_KAYNAK=10c: boyama testi, tarih eşlemeli Monte Carlo, 4 dönem, BH-FDR, kör %20).
+# Parantez: geliştirme dönemi rastgele girişe göre fazla R / kör dönem fazla R. VCP: 5 yılda < 50 olay (test edilemedi, kapalı).
+EK_KURULUM[("bist", "G")] |= {("EP", -1), ("MOMENTUM", -1)}   # EP SAT +0,75/+0,39 · MOMENTUM SAT +0,17/+0,23 (BIST SAT tabanı −0,26R)
+EK_KURULUM[("abd", "G")] |= {("MOMENTUM", 1)}                 # MOMENTUM AL +0,055/+0,079
 # Elenenler: kripto 4S'te hepsi; OB BIST 4S, ABD G/H'de (eski yarı ≤ 0); tüm SAT yönleri (kripto G harmonik hariç).
 # RVOL: göreli hacim zaten "Hacim x" teyidi ve hacim puanı olarak (medyana göre) skorlanıyor; ayrı filtre eklenmedi.
 DURUM_AD = {"TEYİT": "teyit", "YUKARI KIRILIM": "yukarı kırılım", "AŞAĞI KIRILIM": "aşağı kırılım", "KIRILIM": "kırılım"}
