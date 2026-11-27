@@ -121,6 +121,38 @@ def bist_4s(h1, simdi_tsi):
     return tamamlanan(T.yeniden_ornekle(h, "4S", "hisse"), pd.Timedelta(hours=4), simdi_tsi)
 
 
+def resmi_kapanis_uygula(h1, semboller, simdi_tsi):
+    """Saatlik veride son mum kapanış seansından (18:00–18:10) önceki son işlemdir; resmi kapanış değildir.
+    Seans bittiyse (18:12 sonrası) günlük bardaki resmi kapanışı o günün son saatlik mumuna yazar.
+    h1: {kod: DataFrame (TSİ, tz'siz)}; semboller: {kod: yahoo_sembolu}."""
+    if simdi_tsi.time() < dt.time(18, 12) or simdi_tsi.weekday() >= 5: return 0
+    import yfinance as yf
+    bugun = simdi_tsi.normalize(); duzelen = 0
+    liste = [semboller[k] for k in h1 if k in semboller]
+    for i in range(0, len(liste), 150):
+        try:
+            g = yf.download(liste[i:i + 150], period="5d", interval="1d", auto_adjust=True, progress=False, group_by="ticker", threads=True)
+        except Exception as ex:
+            log("resmi kapanış indirilemedi:", ex); continue
+        for k, s_ in semboller.items():
+            if s_ not in liste[i:i + 150] or k not in h1: continue
+            try:
+                d = (g[s_] if isinstance(g.columns, pd.MultiIndex) else g).dropna(subset=["Close"])
+                d.index = d.index.tz_localize(None) if d.index.tz is not None else d.index
+                if not len(d) or d.index[-1].normalize() != bugun: continue
+                c = float(d["Close"].iloc[-1]); h = h1[k]
+                gun_i = h.index[h.index.normalize() == bugun]
+                if not len(gun_i): continue
+                t = gun_i[-1]
+                h.loc[t, "Close"] = c
+                h.loc[t, "High"] = max(float(h.loc[t, "High"]), c); h.loc[t, "Low"] = min(float(h.loc[t, "Low"]), c)
+                duzelen += 1
+            except Exception:
+                continue
+    log(f"Resmi kapanış uygulandı: {duzelen} sembol")
+    return duzelen
+
+
 def bist_gunluk_hacim(h1):
     tl = (h1["Close"] * h1["Volume"]).groupby(h1.index.normalize()).sum()
     return float(tl.iloc[-20:].median()) if len(tl) else 0.0
@@ -511,6 +543,10 @@ def bist(slot, zorla):
     acik_kod = {k["kod"] for k in D.acik}
     log(f"BIST: {len(kodlar)} hisse için saatlik veri indiriliyor…")
     h1 = {s[:-3]: d for s, d in yahoo_saatlik([k + ".IS" for k in list(kodlar) + list(acik_kod) + ["XU100"]], "Europe/Istanbul").items()}
+    try:
+        resmi_kapanis_uygula(h1, {k: k + ".IS" for k in h1}, simdi)
+    except Exception as ex:
+        log("resmi kapanış:", ex)
     xu = h1.pop("XU100", None)
     log(f"Saatlik veri: {len(h1)} hisse")
     # 1) takip

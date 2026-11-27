@@ -113,6 +113,8 @@ def anlik(kod):
         if g is None or g.empty or d is None or d.empty: raise ValueError(f"{kod} fiyatı alınamadı")
         g = g.dropna(subset=["Close"]); son = float(g["Close"].iloc[-1]); gun = g.index[-1].date()
         gd0 = d["Close"].dropna()
+        if len(gd0) and gd0.index[-1].date() == gun:
+            son = float(gd0.iloc[-1])   # günlük bar o günü içeriyorsa onun kapanışı esas (BIST kapanış seansı dahil resmi fiyat)
         if len(gd0) and gd0.index[-1].date() > gun:
             # Gün içi akış durmuş (ör. vadeli metallerde tatil sonrası 15 dk veri gelmiyor) ama günlük bar daha yeni:
             # son fiyat anlık özetten / günlükten, önceki kapanış günlük seriden alınır.
@@ -132,6 +134,16 @@ def anlik(kod):
             return son, float(g[[t.date() == once_gun for t in g.index]]["Close"].iloc[-1])
         once = gd[[t.date() < gun for t in gd.index]]
         return son, (float(once.iloc[-1]) if len(once) else son)
+    if kod.upper() in ("ALTIN", "GRAMALTIN"):    # spot ons: Binance PAXG (vadeli GC=F spotun ~%1 üstünde olabilir)
+        try:
+            import bist_makro as MK
+            b = MK.binance_fiyat("PAXGUSDT"); son, onceki = b["fiyat"], b["fiyat"] / (1 + b["d24"])
+            if kod.upper() == "GRAMALTIN":
+                k_son, k_once = _son_ve_onceki("TRY=X")
+                son, onceki = son * k_son / 31.1035, onceki * k_once / 31.1035
+            return son, son / onceki - 1
+        except Exception:
+            pass
     y, _ = T.yahoo_sembol(kod)
     son, onceki = _son_ve_onceki(y)
     if kod.upper() == "GRAMALTIN":   # ons altın ($) × USD/TRY / 31,1035

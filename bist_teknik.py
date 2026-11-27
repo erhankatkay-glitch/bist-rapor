@@ -90,6 +90,9 @@ def gunluk_veri(kod, fiyat_fn=None):
         if h is None or h.empty:
             raise ValueError(f"{k} için fiyat verisi bulunamadı.")
         h, _ = br.canli_guncelle(h, y)
+    if y == "GC=F":                                   # altın: vadeli seri spota ölçeklenir (Binance PAXG)
+        import bist_makro as _MK
+        h = _MK.altin_spot_olcekle(h)
     if k == "GRAMALTIN":
         fx = (br.kur_cek() if not fiyat_fn else fiyat_fn("TRY=X")["Close"])
         f = fx.reindex(h.index, method="ffill")

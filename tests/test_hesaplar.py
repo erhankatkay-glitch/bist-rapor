@@ -32,6 +32,17 @@ def test_gun_ici_tamamla_eksik_gunleri_ekler():
     assert out.loc["2026-11-26", "Close"] == pytest.approx(4.25)
 
 
+def test_gun_ici_tamamla_resmi_kapanisi_ezmez():
+    """27.11.2026: Yahoo günlük XU100 kapanışı 10.977,01 (resmi, kapanış seansı dahil); son 15 dk mumu 10.970,81.
+    Günlük bar varken gün içi fiyat kapanışı ezmemeli."""
+    d = pd.DataFrame({"Open": [10737.18], "High": [11046.28], "Low": [10615.74], "Close": [10977.01], "Volume": [1]},
+                     index=pd.to_datetime(["2026-11-27"]))
+    gi = pd.DataFrame({"Open": [10950.0], "High": [10975.0], "Low": [10945.0], "Close": [10970.81], "Volume": [1]},
+                      index=pd.DatetimeIndex(["2026-11-27 14:45"], tz="UTC"))
+    assert MK.gun_ici_tamamla(d, gi, "XU100.IS").loc["2026-11-27", "Close"] == pytest.approx(10977.01)
+    assert MK.gun_ici_tamamla(d["Close"], gi, "XU100.IS").iloc[-1] == pytest.approx(10977.01)
+
+
 def test_gun_ici_tamamla_eski_gunlere_dokunmaz():
     s = pd.Series([1.0, 2.0], index=pd.to_datetime(["2026-11-23", "2026-11-24"]))
     gi = pd.DataFrame({"Open": [9.0], "High": [9.0], "Low": [9.0], "Close": [9.0], "Volume": [1]},

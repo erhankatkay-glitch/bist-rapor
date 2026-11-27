@@ -242,6 +242,8 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
         try: o = fiyat_fn("GC=F", "10y")
         except Exception: o = fiyat_fn("GC=F")
         if fiyat_fn is fiyat_cek: o, _ = br.canli_guncelle(o, "GC=F")
+        import bist_makro as _MK
+        o = _MK.altin_spot_olcekle(o)                 # vadeli → spot ons
         f = fx.reindex(o.index, method="ffill")
         h = o[["Open", "High", "Low", "Close"]].mul(f, axis=0) / 31.1035
         h["Volume"] = o.get("Volume", 0); h = h.dropna(subset=["Close"]); para = "TL"
@@ -273,6 +275,9 @@ def analiz(kod, fiyat_fn=None, fx_fn=None, haber_fn=None, cg_fn=None, korku_fn=N
         zaman = h.index[-1]
         if fiyat_fn is fiyat_cek and parite != "TRY":
             h, zaman = br.canli_guncelle(h, yahoo)
+        if yahoo == "GC=F":
+            import bist_makro as _MK
+            h = _MK.altin_spot_olcekle(h)             # vadeli → spot ons
     k = h["Close"].dropna()
     m = {"kod": kod, "baz": baz, "parite": parite, "borsa": borsa_kul, "ad": ad, "fiyat_zamani": zaman, "tur": tur, "para": para, "fiyat": float(k.iloc[-1]), "tarih": k.index[-1], "hist": h}
     f_al = fx.reindex(k.index, method="ffill")

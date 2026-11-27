@@ -64,6 +64,10 @@ def gun_ici_tamamla(gunluk, gunici, kod):
             t = pd.Timestamp(d)
             if t < son_gun:
                 continue
+            if t == son_gun and t in out.index:
+                # Günlük bar zaten var: resmi kapanışı (BIST'te 18:00–18:10 kapanış seansı dahil) gün içi son
+                # 15 dk fiyatıyla EZME. Gün içi veri yalnızca günlükte hiç olmayan günleri tamamlar.
+                continue
             if isinstance(out, pd.Series):
                 out.loc[t] = float(parca["Close"].iloc[-1])
             else:
@@ -115,6 +119,23 @@ def _gun_sonu_zaman(gun, kod):
         return None
 
 
+def altin_spot_olcekle(x):
+    """Yahoo altın vadeli (GC=F) serisini/OHLC tablosunu spot onsa ölçekler (Binance PAXG). Ulaşılamazsa aynen döner."""
+    try:
+        b = binance_fiyat("PAXGUSDT")
+        son = float((x["Close"] if hasattr(x, "columns") else x).dropna().iloc[-1])
+        r = b["fiyat"] / son
+        if not 0.9 < r < 1.1: return x
+        if hasattr(x, "columns"):
+            x = x.copy()
+            for c in ("Open", "High", "Low", "Close"):
+                if c in x: x[c] = x[c] * r
+            return x
+        return x * r
+    except Exception:
+        return x
+
+
 def binance_fiyat(sym, zaman_asimi=8):
     """Binance herkese açık 24 saatlik özet: {"fiyat", "d24", "zaman"} (anahtarsız; ABD sunucularında da çalışan uç)."""
     import json, urllib.request
@@ -164,12 +185,30 @@ def piyasa_paneli():
                          d1G=b["d24"], d1A=_degisim(s_, 30), d1Y=_degisim(s_, 365))
         except Exception:
             pass
+    # Ons altın: Yahoo GC=F vadeli kontrattır (spotun ~%1 üstünde olabilir). Spot için Binance PAXG (1 token = 1 ons fiziki altın).
+    try:
+        b = binance_fiyat("PAXGUSDT")
+        if b and "Ons altın" in out:
+            o_ = out["Ons altın"]; carpan = b["fiyat"] / float(o_["seri"].iloc[-1])
+            if 0.9 < carpan < 1.1:
+                s_ = o_["seri"] * carpan                       # vadeli seriyi spota ölçekle (grafik ve dönem getirileri için)
+                gun = pd.Timestamp(b["zaman"].astimezone(dt.timezone.utc).date())
+                s_.loc[gun] = b["fiyat"]; s_ = s_.sort_index()
+                o_.update(deger=b["fiyat"], seri=s_, zaman=b["zaman"].isoformat(), kaynak="Binance PAXG (spot)", tur="kripto",
+                          d1G=b["d24"], d1A=_degisim(s_, 30), d1Y=_degisim(s_, 365),
+                          YBB=None)
+    except Exception:
+        pass
     # Türetilmiş: gram altın (TL) ve BIST 100 dolar bazlı
     try:
         ons, kur = out["Ons altın"]["seri"], out["USD/TRY"]["seri"]
         g = (ons / 31.1035 * kur.reindex(ons.index, method="ffill")).dropna()
-        out["Gram altın"] = {"deger": float(g.iloc[-1]), "birim": "TL", "seri": g, "d1G": _degisim(g, 1), "tur": "emtia",
-                             "zaman": min(out["Ons altın"].get("zaman") or "", out["USD/TRY"].get("zaman") or "") or None, "kaynak": "Yahoo (hesaplanan)",
+        d1g_ = None
+        if out["Ons altın"].get("kaynak", "").startswith("Binance") and out["USD/TRY"].get("d1G") is not None:
+            d1g_ = (1 + out["Ons altın"]["d1G"]) * (1 + out["USD/TRY"]["d1G"]) - 1
+        out["Gram altın"] = {"deger": float(g.iloc[-1]), "birim": "TL", "seri": g, "d1G": d1g_ if d1g_ is not None else _degisim(g, 1), "tur": "emtia",
+                             "zaman": min(out["Ons altın"].get("zaman") or "", out["USD/TRY"].get("zaman") or "") or None,
+                             "kaynak": "spot ons × USD/TRY (hesaplanan)" if d1g_ is not None else "Yahoo (hesaplanan)",
                              "d1A": _degisim(g, 30), "d1Y": _degisim(g, 365), "YBB": None}
     except Exception:
         pass
