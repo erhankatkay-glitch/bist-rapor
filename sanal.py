@@ -77,12 +77,13 @@ def atr_stop(giris, atr, kat=1.5, yon=1):
 
 
 # ----------------------------------------------------------------------------- sanal defter
-def islem_ac(defter, kod, piyasa, yon, adet, fiyat, komisyon=0.002, stop=None, hedef=None, para="TL", kaynak="elle", aciklama=""):
+def islem_ac(defter, kod, piyasa, yon, adet, fiyat, komisyon=0.002, stop=None, hedef=None, para="TL", kaynak="elle", aciklama="", kontrol=None):
     if adet <= 0 or fiyat <= 0: raise ValueError("Adet ve fiyat pozitif olmalı.")
     if yon == -1 and piyasa != "kripto":
         raise ValueError("Açığa satış (SAT) yalnızca kripto vadeli işlemler için desteklenir.")
     o = {"id": uuid.uuid4().hex[:10], "t": _simdi(), "tip": "ac", "kod": kod, "piyasa": piyasa, "yon": int(yon), "adet": float(adet),
          "fiyat": float(fiyat), "komisyon": float(komisyon), "stop": stop, "hedef": hedef, "para": para, "kaynak": kaynak, "aciklama": aciklama}
+    if kontrol: o["kontrol"] = {"puan": kontrol.get("puan"), "uyari": [m["ad"] for m in kontrol.get("maddeler", []) if m["durum"] != "ok"]}
     defter["olaylar"].append(o)
     return o
 
@@ -164,3 +165,133 @@ def dogrula(defter):
             raise ValueError("Defterde tanınmayan kayıt var.")
     defter.setdefault("baslangic", 100_000.0); defter.setdefault("para", "TL"); defter.setdefault("surum", SURUM)
     return defter
+
+
+# ============================================================================= Aşama 10c-3: disiplin araçları
+AYAR_VARSAYILAN = {"sigorta_dd": 0.10, "sigorta_ardisik": 3, "maks_risk": 0.02, "maks_toplam_risk": 0.06, "min_kr": 2.0}
+DUYGULAR = ["Sakin / planlı", "Korku", "Açgözlülük", "Sabırsızlık", "İntikam (kaybı geri alma)", "Sıkılma / FOMO"]
+KAPANIS_SEBEP = ["Hedef geldi", "Stop çalıştı", "Plan dışı erken çıkış", "Plan dışı geç çıkış", "Senaryo bozuldu (plana uygun)", "Diğer"]
+
+
+def ayarlar(defter):
+    return {**AYAR_VARSAYILAN, **(defter.get("ayar") or {})}
+
+
+def _ozkaynak_egrisi(defter):
+    """Kapanış sırasına göre gerçekleşen özkaynak (başlangıç + birikimli K/Z). Para birimi karışıksa yaklaşık (TL kabul)."""
+    kap = sorted(kapananlar(defter), key=lambda a: a["kapanis"][-1]["t"])
+    e = [defter["baslangic"]]
+    for a in kap: e.append(e[-1] + a["gerceklesen"])
+    return e, kap
+
+
+def dusus_sigortasi(defter, ozkaynak_simdi=None):
+    """Düşüş sigortası: özkaynak tepeden `sigorta_dd` kadar düştüyse ya da son `sigorta_ardisik` işlem üst üste zararla
+    kapandıysa yeni işlemden önce ara verme uyarısı. → {"aktif", "dd", "tepe", "ardisik", "neden"}"""
+    A = ayarlar(defter); e, kap = _ozkaynak_egrisi(defter)
+    simdi = float(ozkaynak_simdi if ozkaynak_simdi is not None else e[-1])
+    tepe = max(e + [simdi]); dd = 1 - simdi / tepe if tepe > 0 else 0.0
+    ard = 0
+    for a in reversed(kap):
+        if a["gerceklesen"] < 0: ard += 1
+        else: break
+    neden = []
+    if dd >= A["sigorta_dd"]: neden.append(f"özkaynak tepeden %{dd * 100:.1f} geride (sınır %{A['sigorta_dd'] * 100:.0f})")
+    if ard >= A["sigorta_ardisik"]: neden.append(f"son {ard} işlem üst üste zararla kapandı")
+    return {"aktif": bool(neden), "dd": dd, "tepe": tepe, "ardisik": ard, "neden": neden}
+
+
+def kontrol_listesi(defter, deger, kod, piyasa, yon, fiyat, stop, hedef, adet, kur=1.0, para="TL", rejim=None, plan_giris=None, neden=""):
+    """İşlem öncesi kontrol listesi. deger: degerle() çıktısı; rejim: {"maruziyet", "durum_ad"} (bist/abd).
+    → {"maddeler": [{"ad", "durum": "ok"|"uyari"|"hata", "aciklama"}], "puan" (0–100), "engel" (hata var mı)}"""
+    A = ayarlar(defter); M = []
+    tl = kur if para == "USD" else 1.0
+    oz = max(1e-9, float(deger["ozkaynak_tl"]))
+    ek = lambda ad, d, ac: M.append({"ad": ad, "durum": d, "aciklama": ac})
+    if not stop:
+        ek("Stop belirlendi", "hata", "Stopsuz işlem açılmaz: nerede yanıldığını önceden bilmelisin.")
+        risk = None
+    elif (fiyat - stop) * yon <= 0:
+        ek("Stop belirlendi", "hata", "Stop yanlış tarafta.")
+        risk = None
+    else:
+        risk = abs(fiyat - stop) * adet * tl
+        ek("Stop belirlendi", "ok", f"Stop {stop:g} · girişten %{abs(fiyat - stop) / fiyat * 100:.1f} uzakta.")
+        ro = risk / oz
+        ek("İşlem riski", "ok" if ro <= A["maks_risk"] / 2 else "uyari" if ro <= A["maks_risk"] else "hata",
+           f"Stop gelirse kayıp ≈ {risk:,.0f} TL = özkaynağın %{ro * 100:.2f}'i (sınır %{A['maks_risk'] * 100:.0f}).".replace(",", "."))
+    if hedef and stop and (hedef - fiyat) * yon > 0 and (fiyat - stop) * yon > 0:
+        kr = (hedef - fiyat) * yon / ((fiyat - stop) * yon)
+        ek("Kazanç / risk oranı", "ok" if kr >= A["min_kr"] else "uyari", f"1:{kr:.1f} (en az 1:{A['min_kr']:g} önerilir).".replace(".", ","))
+    else:
+        ek("Kazanç / risk oranı", "uyari", "Hedef girilmedi: nerede kâr alacağını önceden belirle.")
+    acik_risk = sum(abs(p["fiyat"] - p["stop"]) * p["kalan"] * (kur if p["para"] == "USD" else 1.0)
+                    for p in deger["pozisyonlar"] if p.get("stop"))
+    toplam = (acik_risk + (risk or 0)) / oz
+    ek("Toplam açık risk", "ok" if toplam <= A["maks_toplam_risk"] else "uyari",
+       f"Tüm açık stoplar gelirse kayıp özkaynağın %{toplam * 100:.1f}'i (sınır %{A['maks_toplam_risk'] * 100:.0f}).")
+    if any(p["kod"] == kod for p in deger["pozisyonlar"]):
+        ek("Aynı varlıkta açık pozisyon", "uyari", f"{kod} için zaten açık pozisyon var; riski ikiye katlamış olabilirsin.")
+    if rejim and piyasa in ("bist", "abd"):
+        pay = (sum(p["deger_tl"] or 0 for p in deger["pozisyonlar"] if p["piyasa"] == piyasa) + fiyat * adet * tl) / oz
+        ek(f"Piyasa rejimi ({rejim.get('durum_ad', '')})", "ok" if pay <= rejim["maruziyet"] / 100 + 1e-9 else "uyari",
+           f"Bu işlemle {piyasa.upper()} hisse payı %{pay * 100:.0f}; rejime göre önerilen en çok %{rejim['maruziyet']}.")
+    if plan_giris:
+        kac = (fiyat - plan_giris) * yon / plan_giris
+        ek("Kovalamıyorum", "ok" if kac <= 0.03 else "uyari", f"Fiyat plan girişinden %{kac * 100:+.1f} uzakta (%3'ten fazlası kovalama sayılır).")
+    s = dusus_sigortasi(defter, deger["ozkaynak_tl"])
+    ek("Düşüş sigortası", "hata" if s["aktif"] else "ok", ("Ara ver: " + "; ".join(s["neden"])) if s["aktif"] else "Sigorta devrede değil.")
+    ek("Nedeni yazdım", "ok" if len((neden or "").strip()) >= 8 else "hata", "Bu işlemi neden açtığını bir cümleyle yaz (günlük için).")
+    p = {"ok": 1.0, "uyari": 0.5, "hata": 0.0}
+    puan = round(100 * sum(p[x["durum"]] for x in M) / len(M))
+    return {"maddeler": M, "puan": puan, "engel": any(x["durum"] == "hata" for x in M)}
+
+
+def gunluk_ekle(defter, ref, plana_uydum=None, duygu=None, ders="", sebep=None):
+    """Kapanan işlem değerlendirmesi (işlem günlüğü) → "not" olayı (yalnız ekleme)."""
+    o = {"id": uuid.uuid4().hex[:10], "t": _simdi(), "tip": "not", "ref": ref, "plana_uydum": plana_uydum, "duygu": duygu,
+         "ders": (ders or "").strip(), "sebep": sebep}
+    defter["olaylar"].append(o)
+    return o
+
+
+def gunlukler(defter):
+    """ref → son değerlendirme."""
+    out = {}
+    for o in defter["olaylar"]:
+        if o["tip"] == "not" and o.get("ref"): out[o["ref"]] = o
+    return out
+
+
+def haftalik_ozet(defter, kur=1.0, bugun=None, gun=7):
+    """Son `gun` günde kapanan işlemlerin özeti + kural tabanlı öneriler."""
+    bugun = bugun or dt.datetime.now(dt.timezone.utc)
+    sinir = (bugun - dt.timedelta(days=gun)).isoformat(timespec="seconds")
+    G = gunlukler(defter); acilis = {o["id"]: o for o in defter["olaylar"] if o["tip"] == "ac"}
+    kap = [a for a in kapananlar(defter) if a["kapanis"][-1]["t"] >= sinir]
+    acilan = [o for o in defter["olaylar"] if o["tip"] == "ac" and o["t"] >= sinir]
+    tl = lambda a: a["gerceklesen"] * (kur if a["para"] == "USD" else 1.0)
+    rler = [a["R"] for a in kap if a.get("R") is not None]
+    deg = [G[a["id"]] for a in kap if a["id"] in G]
+    uyum = [g["plana_uydum"] for g in deg if g.get("plana_uydum") is not None]
+    duygu = {}
+    for g in deg:
+        if g.get("duygu"): duygu[g["duygu"]] = duygu.get(g["duygu"], 0) + 1
+    kpuan = [acilis[a["id"]].get("kontrol", {}).get("puan") for a in kap if acilis.get(a["id"], {}).get("kontrol")]
+    o = {"gun": gun, "kapanan": len(kap), "acilan": len(acilan), "kz_tl": sum(tl(a) for a in kap),
+         "kazanma": (sum(1 for a in kap if a["gerceklesen"] > 0) / len(kap)) if kap else None,
+         "ort_R": (sum(rler) / len(rler)) if rler else None, "plana_uyum": (sum(uyum) / len(uyum)) if uyum else None,
+         "degerlendirilen": len(deg), "duygu": duygu, "kontrol_puani": (sum(kpuan) / len(kpuan)) if kpuan else None,
+         "en_iyi": max(kap, key=tl)["kod"] if kap else None, "en_kotu": min(kap, key=tl)["kod"] if kap else None}
+    oneri = []
+    if kap and o["degerlendirilen"] < len(kap): oneri.append(f"{len(kap) - o['degerlendirilen']} kapanan işlem değerlendirilmedi; günlüğü doldur, ders çıkar.")
+    if o["plana_uyum"] is not None and o["plana_uyum"] < 0.7: oneri.append("İşlemlerin %30'undan fazlasında plana uyulmadı: girişten önce çıkış kuralını yaz ve ona uy.")
+    kayip_r = [r for r in rler if r < 0]
+    if kayip_r and min(kayip_r) < -1.3: oneri.append("Bir zarar 1R'yi belirgin aştı: stopu kaydırmamak ve boşluk riskini küçük pozisyonla yönetmek gerekir.")
+    if len(acilan) > 10: oneri.append(f"Bu hafta {len(acilan)} işlem açıldı: aşırı işlem riski; yalnız en yüksek puanlı kurulumları seç.")
+    olumsuz = sum(v for k, v in duygu.items() if not k.startswith("Sakin"))
+    if olumsuz and olumsuz >= max(1, len(deg) // 2): oneri.append("İşlemlerin yarısında duygusal karar (korku/açgözlülük/intikam) işaretlendi: işlem boyutunu küçült.")
+    if o["kontrol_puani"] is not None and o["kontrol_puani"] < 70: oneri.append("Kontrol listesi puanı düşük: uyarılara rağmen açılan işlemler var.")
+    if kap and not oneri: oneri.append("Kurallara uyum iyi; aynı disiplinle devam.")
+    o["oneri"] = oneri
+    return o
