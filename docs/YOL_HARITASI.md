@@ -55,6 +55,11 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 - ~~8. Kendi taramanı kur: filtre birleştirme, kayıtlı şablonlar, sinyal yaşı / sinyalden beri değişim~~ (27.11.2026 tamam)
 - ~~9. Risk hesaplayıcı (pozisyon büyüklüğü, komisyon) + sanal işlem portföyü~~ (27.11.2026 tamam)
 - ~~10. Kullanıcı tanımlı alarmlar (RSI, EMA kesişimi, seviye kırılımı) + alarm geçmişi~~ (27.11.2026 tamam)
+- 10b. ✅ TAMAM (28.11): 445 göstergenin 223–228'i sinyal üretti; 4 piyasada (BIST G, ABD G, kripto G/4S) test edildi.
+  Gerçek zaman (boyama) testi ZigZag/pivot/emir bloğu bulucularının geleceği gördüğünü ortaya çıkardı (eşleşme %0; elendi).
+  Kabul: 12 gösterge (qd_kabul.json) → BIST G fincan; ABD G pivot kırılımı, pivot SuperTrend, RSI-T3 PMax, Mavilim;
+  kripto G medyan trend SAT, itki tutunması, Hull bandı, Fibonacci bant, yüzde stop SAT; kripto 4S AlphaTrend SAT, sıfır gecikmeli trend SAT.
+  Yeniden çalıştırma: Actions › "Aşama 10b — QuantDinger gösterge testi" (arastirma_qd.py; sonuç arastirma-cikti dalında).
 - 10b. QuantDinger (kullanıcının fork'u, Apache-2.0) kütüphanesinden aktarım (27.11 değerlendirmesi):
   - Platformun kendisi kurulmaz: Docker, PostgreSQL, Redis ve sürekli açık sunucu gerekir; BIST desteği yok; canlı emir modülü var.
   - Alınacaklar: library/indicators (54 gösterge: OTT, Mavilim, AlphaTrend, QQE, Half Trend, Schaff vb.) ve library/strategies (206 strateji).
