@@ -207,3 +207,20 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   - Sinyaller kart görünümünde.
 - Alarmlar: "Yeni formasyon / kırılım" alarmı ve portföy uyarıları harmonik, emir bloğu ve kırıcı blok sinyallerini de kapsıyor.
 - Ana sayfa düğmeleri: "Analiz" Keşfet › Hisse araştırma raporunu açar; "Seviye" Keşfet › Teknik'in seviyeler bölümünü açar.
+
+## Fiyat düzeltmesi (27 Kasım 2026 akşam)
+- Sorun: BIST'in resmi kapanışı 18:00–18:10 kapanış seansında oluşur, Yahoo'nun 15 dk ve 1 dk verisinde bu seans yok.
+  `gun_ici_tamamla` ve `canli_guncelle`, günlük bardaki doğru kapanışı gün içi son fiyatla eziyordu.
+  Örnek: XU100 10.970,81 yerine 10.977,01; THYAO 313 yerine 314.
+- Düzeltme:
+  - Günlük bar varsa gün içi veri yalnız eksik günleri tamamlar.
+  - `canli_guncelle` piyasa kapalıyken dokunmaz.
+  - `alarm.anlik` günlük kapanışı esas alır.
+  - Kapanış işinde saatlik BIST verisinin son mumuna resmi kapanış yazılır (`kapanis.resmi_kapanis_uygula`).
+- Altın: Yahoo GC=F vadeli, spotun yaklaşık %1 üstünde.
+  Ons altın artık Binance PAXG (spot); GC=F serisi spota ölçekleniyor (`bist_makro.altin_spot_olcekle`).
+  Gram altın = spot ons × USD/TRY ÷ 31,1035. Kapalıçarşı fiyatı yerel prim nedeniyle yaklaşık %1–1,5 yüksek olabilir.
+- Doğrulama (Actions, 27.11 akşam):
+  - Endeksler: XU100 10.977,01 (+%2,18), XU030 13.763,83 (+%2,31); ikisi de resmi kapanışla aynı.
+  - Hisseler: THYAO 314, ASELS 332, GARAN 138,10, BIMAS 370,75, TUPRS 330, KCHOL 189,40, AKBNK 59,95.
+- Bilinen: Gümüş ve petrol vadeli kontrat; ABD'de Şükran Günü'nde (26.11) günlük bar olmadığı için günlük değişim iki günlük.
