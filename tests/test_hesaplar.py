@@ -374,3 +374,39 @@ def test_rejim_durum_makinesi():
     assert son2["dagitim"] == 4 and son2["durum"] == "baski"
     p, neden, _ = RJ.maruziyet(son2, None, vix=35)
     assert p == 40 and any("VIX" in x for x in neden)
+
+
+def test_disiplin_kontrol_sigorta_gunluk():
+    """Aşama 10c-3: kontrol listesi, düşüş sigortası (dd ve ardışık kayıp), işlem günlüğü, haftalık özet."""
+    import sanal as SN
+    d = SN.bos_defter(100_000)
+    v = SN.degerle(d, lambda k: 100.0)
+    # stopsuz ve nedensiz işlem engellenir
+    k = SN.kontrol_listesi(d, v, "THYAO", "bist", 1, 100, None, None, 100, neden="")
+    assert k["engel"] and {m["ad"] for m in k["maddeler"] if m["durum"] == "hata"} == {"Stop belirlendi", "Nedeni yazdım"}
+    # düzgün işlem: risk %0,5, K/R 1:2,5, rejim %80 → engel yok
+    k = SN.kontrol_listesi(d, v, "THYAO", "bist", 1, 100, 95, 112.5, 100, rejim={"maruziyet": 80, "durum_ad": "Onaylı yükseliş"},
+                           neden="BIST günlük kırılım fırsatı")
+    assert not k["engel"] and k["puan"] == 100
+    # risk sınırı: %3 risk → hata
+    k = SN.kontrol_listesi(d, v, "THYAO", "bist", 1, 100, 90, 130, 300, neden="deneme işlemi")
+    assert any(m["ad"] == "İşlem riski" and m["durum"] == "hata" for m in k["maddeler"])
+    # 3 ardışık zarar → sigorta
+    for i in range(3):
+        o = SN.islem_ac(d, f"K{i}", "bist", 1, 100, 100, 0, 95, 110, aciklama="test"); SN.islem_kapat(d, o["id"], 95)
+    s = SN.dusus_sigortasi(d)
+    assert s["aktif"] and s["ardisik"] == 3
+    v = SN.degerle(d, lambda k: 100.0)
+    k = SN.kontrol_listesi(d, v, "THYAO", "bist", 1, 100, 95, 112.5, 100, neden="bir işlem daha")
+    assert any(m["ad"] == "Düşüş sigortası" and m["durum"] == "hata" for m in k["maddeler"])
+    # dd sigortası: tek büyük zarar %12
+    d2 = SN.bos_defter(100_000); o = SN.islem_ac(d2, "X", "bist", 1, 1000, 100, 0, 90); SN.islem_kapat(d2, o["id"], 88)
+    assert SN.dusus_sigortasi(d2)["aktif"] and SN.dusus_sigortasi(d2)["dd"] > 0.11
+    # günlük + haftalık özet
+    kap = SN.kapananlar(d)
+    SN.gunluk_ekle(d, kap[0]["id"], plana_uydum=False, duygu="Korku", ders="stopu erken kaydırdım")
+    SN.gunluk_ekle(d, kap[1]["id"], plana_uydum=True, duygu="Sakin / planlı")
+    h = SN.haftalik_ozet(d)
+    assert h["kapanan"] == 3 and h["degerlendirilen"] == 2 and h["kazanma"] == 0 and abs(h["ort_R"] + 1) < 1e-9
+    assert h["plana_uyum"] == 0.5 and any("değerlendirilmedi" in x for x in h["oneri"])
+    SN.dogrula(d)   # "not" olayları geçerli

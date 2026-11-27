@@ -1101,8 +1101,14 @@ def sanal_islem_sekmesi():
     kart(c2, "AÇIK / GERÇEKLEŞEN", f"{br.ond(v['acik_kz_tl'], 0)} / {br.ond(v['gerceklesen_tl'], 0)} TL",
          f"{v['islem_sayisi']} kapanmış işlem" + (f" · kazanma %{v['kazanma'] * 100:.0f}" if v["kazanma"] is not None else "")
          + (f" · ort. {v['ort_R']:+.2f}R" if v["ort_R"] is not None else ""))
+    sig = SN.dusus_sigortasi(d, v["ozkaynak_tl"])
+    if sig["aktif"]:
+        st.markdown('<div class="kk-uyari kk-uyari-k" style="margin:8px 0"><b>🛡 Düşüş sigortası devrede</b><div>'
+                    + "; ".join(sig["neden"]).capitalize() + ". Yeni işlemden önce ara ver, son işlemlerini günlükte değerlendir; "
+                    "devam edersen pozisyonları küçült.</div></div>", unsafe_allow_html=True)
     # ---- yeni işlem
     on = st.session_state.pop("sanal_on", None)
+    if on and on.get("plan"): st.session_state["sn_plan"] = on.pop("plan")
     if on:
         for k_, v_ in on.items(): st.session_state[f"sn_{k_}"] = v_
     with st.expander(":material/add: Yeni sanal işlem", expanded=bool(on)):
@@ -1130,11 +1136,28 @@ def sanal_islem_sekmesi():
                            f"(pozisyon {br.ond(oneri['pozisyon'], 0)} {para}, portföyün %{oneri['pay'] * 100:.0f}'i)")
             except Exception:
                 pass
-        aciklama = st.text_input("Not (neden bu işlem?)", key="sn_not", placeholder="ör. BIST günlük fırsat, harmonik dönüş")
-        if st.button(":material/check: Sanal işlemi aç", type="primary", key="sn_ac", disabled=not (kod and fiyat and adet)):
+        aciklama = st.text_input("Neden bu işlem? (zorunlu, günlüğe yazılır)", key="sn_not", placeholder="ör. BIST günlük fırsat, harmonik dönüş")
+        # ---- işlem öncesi kontrol listesi (Aşama 10c)
+        kl = None; esnet = False
+        if kod and fiyat and adet:
+            try: _rj = json_oku(f"rejim/{pz}.json", ZAMAN) if pz in ("bist", "abd") else None
+            except Exception: _rj = None
+            kl = SN.kontrol_listesi(d, v, kod, pz, 1 if yon == "AL" else -1, fiyat, stop or None, hedef or None, adet, kur, para,
+                                    rejim=_rj, plan_giris=st.session_state.get("sn_plan"), neden=aciklama)
+            _ik = {"ok": ("✓", "#22C55E"), "uyari": ("!", "#E8B84A"), "hata": ("✕", "#EF4444")}
+            st.markdown(f'<div class="kl"><div class="kl-b"><b>İşlem öncesi kontrol listesi</b><span>puan {kl["puan"]}/100</span></div>' + "".join(
+                f'<div class="kl-m"><i style="background:{_ik[m["durum"]][1]}">{_ik[m["durum"]][0]}</i><div><b>{m["ad"]}</b><span>{m["aciklama"]}</span></div></div>'
+                for m in kl["maddeler"]) + "</div>", unsafe_allow_html=True)
+            sert = [m for m in kl["maddeler"] if m["durum"] == "hata" and m["ad"] in ("Stop belirlendi", "Nedeni yazdım")]
+            if kl["engel"] and not sert:
+                esnet = st.checkbox("Kırmızı maddeleri okudum; kuralı bilerek esnetiyorum (günlüğe not düşülür)", key="sn_esnet")
+        acilabilir = bool(kod and fiyat and adet and kl and (not kl["engel"] or esnet)
+                          and not any(m["durum"] == "hata" and m["ad"] in ("Stop belirlendi", "Nedeni yazdım") for m in kl["maddeler"]))
+        if st.button(":material/check: Sanal işlemi aç", type="primary", key="sn_ac", disabled=not acilabilir):
             try:
                 SN.islem_ac(d, kod, pz, 1 if yon == "AL" else -1, adet, fiyat, kom / 1000, stop or None, hedef or None, para,
-                            st.session_state.get("sn_kaynak", "elle"), aciklama)
+                            st.session_state.get("sn_kaynak", "elle"), aciklama + (" [kural esnetildi]" if esnet else ""), kontrol=kl)
+                st.session_state.pop("sn_plan", None)
                 _sanal_kaydet(); st.success("Sanal işlem açıldı."); st.rerun()
             except ValueError as ex:
                 st.error(str(ex))
@@ -1151,20 +1174,55 @@ def sanal_islem_sekmesi():
             f' · K/Z {br.ond(p["kz"], 2) if p["kz"] is not None else "–"} {p["para"]}'
             + (f' · stop {TK.sayi(p["stop"])}' if p.get("stop") else "") + (f' · hedef {TK.sayi(p["hedef"])}' if p.get("hedef") else "")
             + (f'<br><b style="color:#E8B84A">⚠ {p["uyari"]}</b>' if p["uyari"] else "") + "</div></div>", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns([2, 2, 1])
-        ka = c1.number_input("Kapatılacak adet", min_value=0.0, max_value=float(p["kalan"]), value=float(p["kalan"]), key=f"sn_ka_{p['id']}", format="%g",
-                             label_visibility="collapsed")
-        if c2.button(f"Kapat ({TK.sayi(p['son']) if p['son'] else 'fiyat yok'})", key=f"sn_kp_{p['id']}", disabled=not p["son"]):
-            SN.islem_kapat(d, p["id"], p["son"], ka, sebep="elle"); _sanal_kaydet(); st.rerun()
-        if c3.button("İptal", key=f"sn_ip_{p['id']}", help="Yanlış girilen işlemi geçersiz sayar; kayıt silinmez, geçmişte görünür."):
-            SN.iptal(d, p["id"], "yanlış giriş"); _sanal_kaydet(); st.rerun()
+        with st.expander(f"Kapat · {TK.sayi(p['son']) if p['son'] else 'fiyat yok'} (işlem günlüğüyle)"):
+            ka = st.number_input("Kapatılacak adet", min_value=0.0, max_value=float(p["kalan"]), value=float(p["kalan"]), key=f"sn_ka_{p['id']}", format="%g")
+            c1, c2 = st.columns(2)
+            seb = c1.selectbox("Neden kapatıyorsun?", SN.KAPANIS_SEBEP, key=f"sn_sb_{p['id']}")
+            duy = c2.selectbox("Duygu durumun", SN.DUYGULAR, key=f"sn_dy_{p['id']}")
+            uy = st.radio("Plana uydun mu?", ["Evet", "Hayır"], horizontal=True, key=f"sn_uy_{p['id']}")
+            ders = st.text_input("Ders / not (isteğe bağlı)", key=f"sn_ds_{p['id']}", placeholder="ör. hedefe yakın sabırsızlıkla çıktım")
+            c1, c2 = st.columns([3, 1])
+            if c1.button("Kapat ve günlüğe yaz", type="primary", key=f"sn_kp_{p['id']}", disabled=not p["son"]):
+                SN.islem_kapat(d, p["id"], p["son"], ka, sebep=seb)
+                if ka >= p["kalan"] - 1e-12: SN.gunluk_ekle(d, p["id"], uy == "Evet", duy, ders, seb)
+                _sanal_kaydet(); st.rerun()
+            if c2.button("İptal", key=f"sn_ip_{p['id']}", help="Yanlış girilen işlemi geçersiz sayar; kayıt silinmez, geçmişte görünür."):
+                SN.iptal(d, p["id"], "yanlış giriş"); _sanal_kaydet(); st.rerun()
     if not v["pozisyonlar"]: st.caption("Açık sanal pozisyon yok. Fırsat kartlarındaki \"Sanal işlem aç\" düğmesiyle ya da yukarıdan ekleyebilirsiniz.")
     # ---- geçmiş
+    GN = SN.gunlukler(d)
+    # ---- haftalık performans özeti (Aşama 10c)
+    hz = SN.haftalik_ozet(d, kur)
+    if hz["kapanan"] or hz["acilan"]:
+        st.markdown(TS.bb("Bu haftanın özeti"), unsafe_allow_html=True)
+        yz_ = lambda x: f"%{x * 100:.0f}" if x is not None else "–"
+        hucre = [(hz["kapanan"], "kapanan işlem"), (yz_(hz["kazanma"]), "kazanma"),
+                 (f"{hz['ort_R']:+.2f}R" if hz["ort_R"] is not None else "–", "ortalama R"), (br.ond(hz["kz_tl"], 0), "K/Z (TL)"),
+                 (yz_(hz["plana_uyum"]), "plana uyum"),
+                 (f"{hz['kontrol_puani']:.0f}" if hz["kontrol_puani"] is not None else hz["acilan"], "kontrol puanı" if hz["kontrol_puani"] is not None else "açılan işlem")]
+        st.markdown('<div class="kl"><div class="kl-g">' + "".join(f"<div><b>{x}</b><span>{y}</span></div>" for x, y in hucre) + "</div>"
+                    + "".join(f'<div class="kl-o">• {x}</div>' for x in hz["oneri"]) + "</div>", unsafe_allow_html=True)
+        st.caption("Sanal defter yalnız bu cihazda tutulduğu için haftalık özet Telegram'a gönderilmez; burada görünür.")
     if v["kapananlar"]:
+        bekleyen = [a for a in v["kapananlar"] if a["id"] not in GN]
+        if bekleyen:
+            with st.expander(f":material/edit_note: Değerlendirilmemiş {len(bekleyen)} işlem (işlem günlüğü)"):
+                for a in bekleyen[-5:]:
+                    st.markdown(f"**{a['kod']}** · {'AL' if a['yon'] == 1 else 'SAT'} · K/Z {br.ond(a['gerceklesen'], 2)} {a['para']}"
+                                + (f" · {a['R']:+.2f}R" if a.get("R") is not None else ""))
+                    c1, c2 = st.columns(2)
+                    duy = c1.selectbox("Duygu", SN.DUYGULAR, key=f"sn_gd_{a['id']}")
+                    uy = c2.radio("Plana uydun mu?", ["Evet", "Hayır"], horizontal=True, key=f"sn_gu_{a['id']}")
+                    ders = st.text_input("Ders", key=f"sn_gt_{a['id']}")
+                    if st.button("Günlüğe yaz", key=f"sn_gb_{a['id']}"):
+                        SN.gunluk_ekle(d, a["id"], uy == "Evet", duy, ders, a["kapanis"][-1].get("sebep")); _sanal_kaydet(); st.rerun()
         st.markdown(TS.bb("Kapanan işlemler"), unsafe_allow_html=True)
         st.dataframe(pd.DataFrame([{"Kod": a["kod"], "Yön": "AL" if a["yon"] == 1 else "SAT", "Adet": a["adet"], "Giriş": a["fiyat"],
                                     "Çıkış": sum(k["fiyat"] * k["adet"] for k in a["kapanis"]) / a["adet"],
                                     "K/Z": a["gerceklesen"], "Para": a["para"], "R": a["R"],
+                                    "Sebep": a["kapanis"][-1].get("sebep", ""), "Plan": {True: "uydu", False: "uymadı"}.get((GN.get(a["id"]) or {}).get("plana_uydum"), "–"),
+                                    "Duygu": (GN.get(a["id"]) or {}).get("duygu") or "–", "Ders": (GN.get(a["id"]) or {}).get("ders") or "",
+                                    "Kontrol": (a.get("kontrol") or {}).get("puan"),
                                     "Açılış": a["t"][:10], "Kapanış": a["kapanis"][-1]["t"][:10]} for a in v["kapananlar"]]),
                      hide_index=True, use_container_width=True,
                      column_config={"Giriş": st.column_config.NumberColumn(format="%.2f"), "Çıkış": st.column_config.NumberColumn(format="%.2f"),
@@ -1182,6 +1240,13 @@ def sanal_islem_sekmesi():
                 st.session_state["sanal"] = SN.dogrula(json.loads(yuk.getvalue().decode("utf-8"))); _sanal_kaydet(); st.success("Yedek yüklendi."); st.rerun()
             except Exception as ex:
                 st.error(f"Yedek okunamadı: {ex}")
+        st.markdown("**Disiplin ayarları**")
+        _A = SN.ayarlar(d); c1, c2, c3 = st.columns(3)
+        a1 = c1.number_input("Sigorta: tepeden düşüş %", 2.0, 50.0, _A["sigorta_dd"] * 100, 1.0, key="sn_a1", format="%g")
+        a2 = c2.number_input("Sigorta: ardışık zarar", 2, 10, int(_A["sigorta_ardisik"]), key="sn_a2")
+        a3 = c3.number_input("İşlem başına en çok risk %", 0.25, 10.0, _A["maks_risk"] * 100, 0.25, key="sn_a3", format="%g")
+        if (a1 / 100, a2, a3 / 100) != (_A["sigorta_dd"], _A["sigorta_ardisik"], _A["maks_risk"]) and st.button("Ayarları kaydet", key="sn_a_btn"):
+            d["ayar"] = {**(d.get("ayar") or {}), "sigorta_dd": a1 / 100, "sigorta_ardisik": int(a2), "maks_risk": a3 / 100}; _sanal_kaydet(); st.rerun()
         if not d["olaylar"]:
             b0 = st.number_input("Başlangıç bakiyesi (TL)", min_value=1000.0, value=float(d["baslangic"]), step=10000.0, key="sn_bas", format="%g")
             if b0 != d["baslangic"] and st.button("Bakiyeyi ayarla", key="sn_bas_btn"):
@@ -1642,7 +1707,8 @@ with tab_f:
                         st.session_state["sanal_on"] = {"kod": f_["kod"], "fiyat": float(p_["giris"]), "stop": float(p_["stop"]),
                                                         "hedef": float(p_["hedef"][0]["fiyat"]) if p_.get("hedef") else 0.0,
                                                         "yon": "AL" if f_["yon"] == 1 else "SAT (yalnız kripto vadeli)",
-                                                        "not": f"{f_.get('kurulum_ad', '')[:60]} · puan {f_.get('puan', 0):.0f}", "kaynak": "fırsat"}
+                                                        "not": f"{f_.get('kurulum_ad', '')[:60]} · puan {f_.get('puan', 0):.0f}", "kaynak": "fırsat",
+                                                        "plan": float(p_["giris"])}
                     st.button(":material/science: Sanal işlem aç", key=f"sn_f_{tf}_{f['kod']}", on_click=_sanal_firsat,
                               help="İşlem planını Portföy › Sanal işlem'e aktarır; adet %1 risk kuralıyla önerilir.")
                     with st.expander("Kurulum açıklaması ve tüm ayrıntılar"):

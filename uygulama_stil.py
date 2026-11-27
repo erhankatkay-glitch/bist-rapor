@@ -126,6 +126,14 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 .rj-k {display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; background:linear-gradient(90deg, color-mix(in srgb, var(--v) 16%, #17181B), #121315);
   border:1px solid color-mix(in srgb, var(--v) 45%, #2A2B30); border-left:3px solid var(--v); border-radius:12px; padding:8px 11px; margin:4px 0 10px; cursor:pointer; font-size:.8rem;}
 .rj-k b {font-weight:900;} .rj-k span {color:var(--v); font-weight:800;} .rj-k em {font-style:normal; color:#D4D4D8;} .rj-k i {font-style:normal; color:#FCA5A5; font-weight:800;}
+.kl {background:linear-gradient(180deg,#18191C,#111214); border:1px solid var(--cizgi); border-radius:16px; padding:10px 12px; margin:6px 0 10px;}
+.kl-b {display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;} .kl-b b {color:#E8B84A; font-size:.86rem;} .kl-b span {font-size:.74rem; color:var(--soluk); font-weight:800;}
+.kl-m {display:flex; gap:10px; align-items:flex-start; padding:6px 0; border-top:1px solid rgba(255,255,255,.05);}
+.kl-m i {flex:none; width:20px; height:20px; border-radius:50%; color:#0B0B0C; font-style:normal; font-weight:900; font-size:.72rem; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+.kl-m b {display:block; font-size:.82rem;} .kl-m span {font-size:.74rem; color:var(--soluk);}
+.kl-g {display:grid; grid-template-columns:repeat(3,1fr); gap:6px;} .kl-g div {background:#141518; border:1px solid var(--cizgi); border-radius:12px; padding:8px 6px; text-align:center;}
+.kl-g b {display:block; font-size:1rem; font-weight:850;} .kl-g span {font-size:.62rem; color:var(--soluk);}
+.kl-o {font-size:.78rem; color:#D4D4D8; margin-top:7px;}
 .kk-bild {display:none !important;} .stElementContainer:has(.kk-bild) {display:none !important;}
 #kk-toast {position:fixed; left:10px; right:10px; max-width:620px; margin:0 auto; top:calc(10px + env(safe-area-inset-top)); z-index:999999;
   transform:translateY(-160%); opacity:0; transition:transform .38s cubic-bezier(.2,.9,.25,1.15), opacity .3s; pointer-events:none;}
