@@ -1,35 +1,45 @@
-"""Canlı uygulama: normal ve ?embed=true modları (hiçbir şey kaydetmez)."""
-import os
+"""Ana sayfa yeni düzen testi (yerel Streamlit, telefon görünümü)."""
+import os, sys, subprocess, time
 os.makedirs("denetim_graf", exist_ok=True)
+p = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "app.py", "--server.headless", "true", "--server.port", "8501"],
+                     stdout=open("st_log.txt", "w"), stderr=subprocess.STDOUT)
+time.sleep(20)
 from playwright.sync_api import sync_playwright
-UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
-def dene(pw, url, ad):
-    b = pw.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
-    pg = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=2, user_agent=UA).new_page()
-    pg.goto(url, timeout=180000); fr = None
-    for i in range(80):
-        pg.wait_for_timeout(3000)
-        for f in pg.frames:
-            try:
-                if f.locator('[data-testid="stTab"]').count(): fr = f; break
-            except Exception: pass
-        if fr: break
-    print(ad, "çerçeve:", [f.url[:70] for f in pg.frames][:4], "| uygulama bulundu:", bool(fr))
-    if fr:
-        for i in range(40):
-            pg.wait_for_timeout(2000)
-            if not fr.evaluate("!!document.querySelector('[data-testid=stStatusWidget]')"): break
-        pg.wait_for_timeout(5000)
-        pg.screenshot(path=f"denetim_graf/{ad}_1.png")
-        print(ad, "alt menü:", fr.evaluate("!!document.getElementById('kk-nav')"), "| rozet/araç çubuğu:",
-              pg.evaluate("document.querySelectorAll('[class*=viewerBadge],[data-testid=stToolbar],[class*=_profileContainer],[class*=profile]').length"))
-        try:
-            fr.locator("#kk-nav button[data-sekme='Takip']").tap(); pg.wait_for_timeout(2500)
-            print(ad, "Takip seçili:", fr.evaluate("[...document.querySelectorAll('[data-testid=stTab]')].filter(x=>x.getAttribute('aria-selected')==='true').map(x=>x.innerText.trim())"))
-            pg.screenshot(path=f"denetim_graf/{ad}_2.png")
-        except Exception as ex:
-            print(ad, "menü:", ex)
-    b.close()
 with sync_playwright() as pw:
-    dene(pw, "https://cuz9rz7rlsx7bfwolrb8xq.streamlit.app/?embed=true", "embed")
-    dene(pw, "https://cuz9rz7rlsx7bfwolrb8xq.streamlit.app/", "normal")
+    b = pw.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
+    pg = b.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=2).new_page()
+    pg.on("pageerror", lambda e: print("pageerror:", str(e)[:300]))
+    def bekle(sn=150):
+        for i in range(sn // 2):
+            pg.wait_for_timeout(2000)
+            if not pg.evaluate("!!document.querySelector('[data-testid=stStatusWidget]')"): break
+    pg.goto("http://localhost:8501", timeout=120000); pg.wait_for_selector('[data-testid="stTab"]', timeout=180000); bekle(); pg.wait_for_timeout(6000)
+    pg.screenshot(path="denetim_graf/ana1.png")
+    pg.mouse.wheel(0, 650); pg.wait_for_timeout(1200); pg.screenshot(path="denetim_graf/ana2.png")
+    pg.mouse.wheel(0, 700); pg.wait_for_timeout(1200); pg.screenshot(path="denetim_graf/ana3.png")
+    print("öne çıkan satır:", pg.evaluate("[...document.querySelectorAll('.oc')].filter(x=>x.offsetParent).length"),
+          "| mini grafik:", pg.evaluate("[...document.querySelectorAll('.oc-sp svg')].length"),
+          "| kutu:", pg.evaluate("document.querySelectorAll('.kk-kutu span').length"),
+          "| uyarı:", pg.evaluate("document.querySelectorAll('.kk-uyari').length"),
+          "| gizli alt sekme:", pg.evaluate("[...document.querySelectorAll('[role=tablist]')].filter(t=>t.style.display==='none').length"))
+    # kategori: Kripto
+    try:
+        pg.locator("label:has-text('Kripto')").first.click(); pg.wait_for_timeout(3000); bekle(60)
+        print("kripto satırları:", pg.evaluate("[...document.querySelectorAll('.oc b')].filter(x=>x.offsetParent).map(x=>x.innerText).slice(0,8)"))
+        pg.evaluate("window.scrollTo(0,0)"); pg.screenshot(path="denetim_graf/ana_kripto.png")
+    except Exception as ex: print("kategori:", ex)
+    # Takvim kutusu
+    try:
+        pg.locator(".kk-kutu span[data-git='Ana Sayfa|Takvim']").first.click(); pg.wait_for_timeout(2500)
+        print("takvim seçili:", pg.evaluate("[...document.querySelectorAll('[data-testid=stTab]')].filter(x=>x.getAttribute('aria-selected')==='true').map(x=>x.innerText.trim()).slice(0,3)"))
+        pg.screenshot(path="denetim_graf/takvim.png")
+        pg.locator(".kk-geri:visible").first.click(); pg.wait_for_timeout(2500)
+        print("geri sonrası:", pg.evaluate("[...document.querySelectorAll('[data-testid=stTab]')].filter(x=>x.getAttribute('aria-selected')==='true').map(x=>x.innerText.trim()).slice(0,3)"))
+        pg.locator(".kk-kutu span[data-git='Takip|Alarmlar']").first.click(); pg.wait_for_timeout(2500)
+        print("bildirimler:", pg.evaluate("[...document.querySelectorAll('[data-testid=stTab]')].filter(x=>x.getAttribute('aria-selected')==='true').map(x=>x.innerText.trim()).slice(0,6)"))
+        pg.screenshot(path="denetim_graf/nav_aktif.png")
+    except Exception as ex: print("kutu:", ex)
+    print("HATA KUTUSU:", pg.evaluate("document.querySelectorAll('[data-testid=stException]').length"))
+    b.close()
+p.terminate()
+print(open("st_log.txt").read()[-1500:])

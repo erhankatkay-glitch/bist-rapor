@@ -101,6 +101,25 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 [data-testid="stRadioOption"][data-selected="true"] p {color:#0B0B0C !important;}
 /* gizli istek kutusu (satır düğmeleri) */
 .st-key-kk_gizli, .st-key-kk_gizli2 {position:absolute !important; left:-9999px !important; height:0 !important; overflow:hidden !important;}
+.kk-uyari {position:relative; background:linear-gradient(135deg,rgba(232,184,74,.22),rgba(232,184,74,.08)); border:1px solid rgba(232,184,74,.55);
+  border-radius:18px; padding:12px 44px 12px 14px; margin:2px 0 10px; box-shadow:0 10px 26px rgba(0,0,0,.4);}
+.kk-uyari-k {background:linear-gradient(135deg,rgba(239,68,68,.92),rgba(185,28,28,.88)); border-color:rgba(255,255,255,.18);}
+.kk-uyari b {display:block; font-size:.95rem; font-weight:850; color:#fff;} .kk-uyari div {font-size:.82rem; color:#F4F4F5; margin-top:3px; line-height:1.35;}
+.kk-x {position:absolute; right:10px; top:10px; width:26px; height:26px; border-radius:50%; background:rgba(255,255,255,.18); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-size:1rem; cursor:pointer;}
+.kk-kutu {display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:12px 0 4px;}
+.kk-kutu span {display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 4px 10px; border-radius:16px; cursor:pointer;
+  background:linear-gradient(180deg,#18191C,#111214); border:1px solid var(--cizgi);} .kk-kutu svg {width:26px; height:26px;}
+.kk-kutu b {font-size:.74rem; font-weight:750; color:#E4E4E7;}
+.kk-kutu span:active {border-color:rgba(232,184,74,.6);}
+.kk-alt {font-size:.8rem; color:var(--soluk); line-height:1.35;} .kk-alt b {color:var(--altin);}
+.kk-kalem {color:var(--altin); font-weight:750; cursor:pointer; white-space:nowrap; margin-left:4px;}
+.kk-geri {display:inline-block; color:var(--altin); font-weight:800; font-size:.85rem; cursor:pointer; padding:4px 2px 8px;}
+.oc-sp {margin-top:4px; height:24px;}
+.oc-d2 {display:flex; gap:6px; flex:none;}
+.oc-t {display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; width:52px; height:52px; border-radius:13px; cursor:pointer;
+  background:rgba(232,184,74,.1); border:1px solid rgba(232,184,74,.45); color:var(--altin);} .oc-t i {font-style:normal; font-size:.62rem; font-weight:800;}
+.oc-t2 {background:#111214; border-color:#2A2B30; color:#E4E4E7;}
 .oc-d {display:flex; flex-direction:column; gap:5px; flex:none;}
 .oc-b {background:rgba(232,184,74,.1); border:1px solid rgba(232,184,74,.4); color:var(--altin); border-radius:10px; font-size:.7rem;
        font-weight:800; padding:6px 9px; text-align:center; cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none;}
@@ -376,8 +395,10 @@ NAV_STIL = """
   font-size:11px;font-weight:600;padding:4px 0;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
 #kk-nav button+button:before{content:"";position:absolute;left:0;top:18%;bottom:18%;width:1px;background:rgba(255,255,255,.08)}
 #kk-nav svg{width:24px;height:24px}
-#kk-nav button.aktif{color:#E8B84A}
-#kk-nav button.aktif:after{content:"";position:absolute;bottom:-3px;width:34px;height:3px;border-radius:3px;background:#E8B84A;box-shadow:0 0 10px #E8B84A}
+#kk-nav button.aktif{color:#0B0B0C;background:radial-gradient(circle at 50% 30%,#F5D27A,#E8B84A 60%,#C99A2E);border-radius:18px;
+  box-shadow:0 6px 18px rgba(232,184,74,.45);margin:-2px 2px}
+#kk-nav button.aktif:before{display:none}
+#kk-nav button.aktif svg [fill]:not([fill="none"]){fill:#0B0B0C} #kk-nav button.aktif svg [stroke]{stroke:#0B0B0C}
 """
 
 NAV_OGE = [
@@ -420,14 +441,15 @@ CANLI_JS = """
     const W=window.parent, P=W.document, OGE=__OGE__;
     let st=P.getElementById("kk-nav-stil");
     if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
-    if(!P.getElementById("kk-nav-js3")){
-      const sc=P.createElement("script"); sc.id="kk-nav-js3";
+    if(!P.getElementById("kk-nav-js4")){
+      const sc=P.createElement("script"); sc.id="kk-nav-js4";
       sc.textContent=`
         window.kkSekmeler=function(){return [...document.querySelectorAll('.stTabs [data-testid="stTab"], .stTabs [role="tab"], .stTabs [data-baseweb="tab"]')];};
         window.kkAd=function(t){const p=t.querySelector('[data-testid="stMarkdownContainer"] p')||t; return (p.innerText||p.textContent||"").trim();};
         window.kkGit=function(ad){
           const t=window.kkSekmeler().find(x=>window.kkAd(x).endsWith(ad));
           if(!t) return;
+          if(ad==="Ana Sayfa") setTimeout(function(){const p=window.kkSekmeler().find(x=>window.kkAd(x).endsWith("Piyasalar")); if(p) p.click();},120);
           t.scrollIntoView({block:"nearest",inline:"center"});
           t.dispatchEvent(new MouseEvent("mousedown",{bubbles:true})); t.click();
           const k=document.querySelector('[data-testid="stAppScrollToBottomContainer"],[data-testid="stMain"],section.main,[data-testid="stAppViewContainer"]');
@@ -463,6 +485,18 @@ CANLI_JS = """
           inp.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter",code:"Enter",keyCode:13,which:13,bubbles:true}));
           inp.blur(); return true;
         };
+        window.kkGitAlt=function(yol){
+          const p=yol.split("|"); window.kkGit(p[0]);
+          if(p[1]) setTimeout(function(){const t=window.kkSekmeler().find(x=>window.kkAd(x).endsWith(p[1])); if(t){t.click(); setTimeout(window.kkIsaretle,80);}},220);
+        };
+        if(!window.kkTikDinle2){ window.kkTikDinle2=1;
+          document.addEventListener("click",function(e){
+            const k=e.target.closest("[data-kapat]");
+            if(k){ e.preventDefault(); e.stopPropagation(); try{localStorage.setItem("kk_uyari_kapali",k.dataset.kapat);}catch(x){}
+                   const u=k.closest(".kk-uyari"); if(u) u.style.display="none"; return; }
+            const g=e.target.closest("[data-git]"); if(g){ e.preventDefault(); e.stopPropagation(); window.kkGitAlt(g.dataset.git); }
+          },true);
+        }
         if(!window.kkTikDinle){ window.kkTikDinle=1;
           document.addEventListener("click",function(e){
             const b=e.target.closest("[data-kk]"); if(!b) return; e.preventDefault(); e.stopPropagation();
@@ -474,6 +508,14 @@ CANLI_JS = """
           const ilk=document.querySelector('.stTabs [role="tablist"]');
           if(ilk&&!ilk.dataset.kkGizli){ilk.dataset.kkGizli="1"; ilk.style.display="none";
             const ust=ilk.parentElement; if(ust) ust.querySelectorAll(':scope > [data-baseweb="tab-border"], :scope > [data-baseweb="tab-highlight"]').forEach(e=>e.style.display="none");}
+          // ana sayfanın alt sekme şeridi (Piyasalar/Haberler/Takvim) gizli: kutularla açılır
+          document.querySelectorAll('.stTabs [role="tablist"]').forEach(function(tl){
+            if(tl.dataset.kkGizli) return;
+            const ad=[...tl.querySelectorAll('[role="tab"]')].map(x=>window.kkAd(x));
+            if(ad.some(x=>x.endsWith("Piyasalar")) && ad.some(x=>x.endsWith("Takvim"))){ tl.dataset.kkGizli="1"; tl.style.display="none";
+              const ust=tl.parentElement; if(ust) ust.querySelectorAll(':scope > [data-baseweb="tab-border"], :scope > [data-baseweb="tab-highlight"]').forEach(e=>e.style.display="none"); }
+          });
+          try{ const kp=localStorage.getItem("kk_uyari_kapali"); if(kp) document.querySelectorAll('.kk-uyari[data-id="'+kp+'"]').forEach(u=>u.style.display="none"); }catch(x){}
           const nav=document.getElementById("kk-nav"); if(!nav) return;
           const s=window.kkSekmeler().find(x=>x.getAttribute("aria-selected")==="true"); const ad=s?window.kkAd(s):"";
           nav.querySelectorAll("button").forEach(b=>b.classList.toggle("aktif", ad.endsWith(b.dataset.sekme)));
