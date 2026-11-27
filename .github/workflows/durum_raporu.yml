@@ -1,0 +1,48 @@
+name: Haftalık ve aylık durum raporu
+
+on:
+  schedule:
+    - cron: "41 6 * * *"   # 09:41 TSİ; cumartesi haftalık, ayın 1'i aylık rapor (diğer günler hiçbir şey yapmaz)
+  push:
+    branches: [main]
+    paths: [".github/tetik/durum"]
+  workflow_dispatch:
+    inputs:
+      donem:
+        description: "haftalik veya aylik"
+        default: "haftalik"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: durum-raporu
+  cancel-in-progress: false
+
+jobs:
+  rapor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DURUM_KLON: onceki
+      DURUM_CIKTI: cikti
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Önceki durumu al
+        run: git clone -q --depth 1 --branch bulten "$GH_URL" onceki || mkdir -p onceki
+      - name: Raporu üret ve gönder
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then python durum_raporu.py
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then python durum_raporu.py "${{ inputs.donem }}" gonder
+          else python durum_raporu.py "$(cat .github/tetik/durum)" gonder; fi
+      - name: Yayınla
+        if: always()
+        run: python yayinla.py cikti "Durum raporu $(date -u +%F)"
