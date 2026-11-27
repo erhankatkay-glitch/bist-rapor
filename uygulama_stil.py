@@ -26,7 +26,7 @@ hr {border:none !important; height:1px !important; background:linear-gradient(90
 [data-testid="stMarkdownContainer"] p, li {font-variant-numeric: tabular-nums;}
 iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 /* üst bant çerçevesinin altındaki boşluk */
-.stElementContainer:has(> iframe[height="160"]) {margin-bottom:-26px !important;}
+.stElementContainer:has(> iframe[height="160"]) {margin-bottom:-58px !important;}
 /* yüksekliği 0 olan betik çerçeveleri (alt menü, kaydetme, yükleme) sayfada boşluk bırakmasın */
 .stElementContainer:has(> iframe[height="0"]), [data-testid="stElementContainer"]:has(iframe[height="0"]) {position:absolute !important; width:0 !important; height:0 !important; overflow:hidden !important; margin:0 !important; padding:0 !important;}
 
