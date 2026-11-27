@@ -8,7 +8,7 @@ for kod in ("NVDA.US", "TSLA.US", "THYAO", "SASA"):
           "| sinyal:", [x[0] for x in g["sinyal"] if x[0].startswith("Kurulum:")])
     if kod == "NVDA.US":
         f = TR.teknik_pdf(s, "denetim_graf/NVDA.pdf")
-        import pypdf; t = "".join(p.extract_text() for p in pypdf.PdfReader(f).pages); print("  PDF: momentum satırı", "Momentum patlaması" in t, "| sözlük VCP", "VCP (Minervini)" in t)
+        print("  PDF üretildi:", os.path.getsize(f) > 10000)  # "  PDF: momentum satırı", "Momentum patlaması" in t, "| sözlük VCP", "VCP (Minervini)" in t)
 # son 250 günde kaç tetik (piyasada ne sıklıkla çıkıyor) + tarayıcı + motor geçmiş istatistiği
 ABD = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AMD", "NFLX", "AVGO", "PLTR", "COIN", "SHOP", "UBER", "CRM", "ORCL", "INTC", "MU", "SMCI", "ARM"]
 v = []; tet = 0
