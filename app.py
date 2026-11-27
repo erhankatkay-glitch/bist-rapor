@@ -1655,8 +1655,8 @@ def teknik_tarayici():
         if tur == "sayi":
             c1, c2 = st.columns(2)
             kw = lambda k_: {} if k_ in st.session_state else {"value": None}
-            mn = c1.number_input(f"{et} · en az", key=f"tt_min_{a}", placeholder="sınır yok", **kw(f"tt_min_{a}"))
-            mx = c2.number_input(f"{et} · en çok", key=f"tt_max_{a}", placeholder="sınır yok", **kw(f"tt_max_{a}"))
+            mn = c1.number_input(f"{et} · en az", key=f"tt_min_{a}", placeholder="sınır yok", format="%g", **kw(f"tt_min_{a}"))
+            mx = c2.number_input(f"{et} · en çok", key=f"tt_max_{a}", placeholder="sınır yok", format="%g", **kw(f"tt_max_{a}"))
             kosullar.append({"alan": a, **({"min": mn} if mn is not None else {}), **({"max": mx} if mx is not None else {})})
         elif tur == "secim":
             ops = sorted(x for x in df[a].dropna().astype(str).unique() if x and x != "–")

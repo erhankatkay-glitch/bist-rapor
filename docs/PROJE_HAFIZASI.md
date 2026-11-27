@@ -224,3 +224,18 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   - Endeksler: XU100 10.977,01 (+%2,18), XU030 13.763,83 (+%2,31); ikisi de resmi kapanışla aynı.
   - Hisseler: THYAO 314, ASELS 332, GARAN 138,10, BIMAS 370,75, TUPRS 330, KCHOL 189,40, AKBNK 59,95.
 - Bilinen: Gümüş ve petrol vadeli kontrat; ABD'de Şükran Günü'nde (26.11) günlük bar olmadığı için günlük değişim iki günlük.
+
+## Aşama 8 ve Telegram düzeltmesi (27 Kasım 2026)
+- `tarayici.py`: her kapanış bülteni `tarama/<piyasa>.csv` yazar (yayinla ALT_BIRIM'de "tarama", dosya bazında birleşir).
+  - Sütunlar: fiyat, değişim, hacim, RVOL, RSI, ATR%, ADX, EMA sırası, yapı, günlük/haftalık görünüm ve çoklu zaman uyumu, RS, Fib, destek/direnç uzaklığı, FVG, BOS/CHoCH, likidite süpürme, emir bloğu, harmonik, premium/iskonto.
+  - Son sinyal: kurulum, tarih, fiyat, yaş, sinyalden beri değişim.
+- Uygulama Keşfet › Tarayıcı › "Teknik tarama":
+  - Piyasa seçimi, 9 hazır şablon, istediğin koşulları VE ile birleştirme, sıralama.
+  - Satırdan teknik analize geçiş.
+  - Şablon kaydetme: adres satırında `?tarama=` olarak saklanır.
+- İlk tablolar Actions'ta üretildi (BIST 628, ABD, kripto, emtia).
+- Telegram:
+  - Kart açıklaması 1000 karakterden HTML etiketinin ortasından kesiliyordu. Telegram kartı reddediyor, sistem düz metne düşüyordu (haber etkisi).
+  - Düzeltme: `tg.guvenli_aciklama` (satır sonundan keser, açık etiketleri kapatır) ve HTML hatasında düz metinle tekrar deneme.
+  - Açıklamalar tek satırlık başlık ve bağlantılar oldu; içerik kartta.
+  - Kartlarda mavi/turkuaz yerine altın. Sabah kartındaki alt boşluk kırpılıyor.
