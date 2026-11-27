@@ -20,12 +20,30 @@ with sync_playwright() as pw:
     print("mini kart:", pg.evaluate("document.querySelectorAll('.mk').length"), "fırsat kartı:", pg.evaluate("document.querySelectorAll('.fk').length"))
     pg.screenshot(path="denetim_graf/ana.png", full_page=False)
     pg.mouse.wheel(0, 700); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/ana2.png")
-    pg.mouse.wheel(0, 700); pg.wait_for_timeout(800); pg.screenshot(path="denetim_graf/ana3.png")
-    print("öne çıkan:", pg.evaluate("document.querySelectorAll('.oc').length"), "ana sekme gizli:",
-          pg.evaluate("(()=>{const t=document.querySelector('.stTabs [role=tablist]'); return t? getComputedStyle(t).display : 'yok'})()"))
-    for ad in ["Keşfet", "Takip"]:
-        pg.locator(f"#kk-nav button[data-sekme='{ad}']").tap(); pg.wait_for_timeout(2500)
-        pg.evaluate("window.scrollTo(0,0)"); pg.screenshot(path=f"denetim_graf/{ad}.png")
+    # 1) Öne çıkanlar: THYAO "Seviye" düğmesi
+    b_ = pg.locator(".oc-b2").first; b_.scroll_into_view_if_needed(); pg.wait_for_timeout(500); b_.tap()
+    for i in range(60):
+        pg.wait_for_timeout(2500)
+        if pg.evaluate("document.querySelectorAll('.sv').length") > 0: break
+    print("Seviye düğmesi → seçili:", sec()[:3], "seviye kartı:", pg.evaluate("document.querySelectorAll('.sv').length"),
+          "kod:", pg.evaluate("(document.querySelector('.vb-ad')||{}).innerText"))
+    pg.wait_for_timeout(2500); pg.screenshot(path="denetim_graf/seviye.png")
+    # 2) Haberler ve Takvim
+    pg.locator("#kk-nav button[data-sekme='Ana Sayfa']").tap(); pg.wait_for_timeout(1500)
+    for ad in ("Haberler", "Takvim"):
+        pg.locator('[data-testid="stTab"]:visible', has_text=ad).first.click(); pg.wait_for_timeout(2000)
+        pg.evaluate("window.scrollTo(0,0)"); pg.mouse.wheel(0, 250); pg.wait_for_timeout(600)
+        print(ad, "kart:", pg.evaluate("document.querySelectorAll('.hb').length"), pg.evaluate("document.querySelectorAll('.tk').length"))
+        pg.screenshot(path=f"denetim_graf/{ad}.png")
+    # 3) Arama kutusu
+    pg.locator('[data-testid="stTab"]:visible', has_text="Piyasalar").first.click(); pg.wait_for_timeout(1500)
+    kutu = pg.locator("input[aria-label='Varlık ara']").first
+    kutu.click(); kutu.fill("ASELS"); pg.wait_for_timeout(1200); pg.keyboard.press("Enter")
+    for i in range(60):
+        pg.wait_for_timeout(2500)
+        if (pg.evaluate("(document.querySelector('.vb-ad')||{}).innerText") or "").startswith("ASELS"): break
+    print("Arama → seçili:", sec()[:3], "kod:", pg.evaluate("(document.querySelector('.vb-ad')||{}).innerText"))
+    pg.wait_for_timeout(2000); pg.screenshot(path="denetim_graf/arama.png")
     b.close()
 p.terminate()
 print(open("st_log.txt").read()[-2500:])
