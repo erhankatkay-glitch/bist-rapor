@@ -159,3 +159,12 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 4. Aşama 4: Tüm Telegram bildirimleri KATKAY tasarımında.
 5. ~~Aşama 5: 4 ana bölüm, varlık sayfası, testler (pytest, ruff)~~
 6. Gemini anahtarı eklenince: yapay zekâ yorumu (OmniRoute üzerinden ya da doğrudan).
+
+## 27 Kasım 2026
+- Kripto logoları artık logo.dev'den (`logolar.kripto_logo_url`); hata olursa yerel CC0 set.
+- Tüm Telegram kartlarında satır başında varlık logosu (`bildirim_karti` satırında "logo": (kod, piyasa)).
+  Endeks ve emtiada logo yok, renkli nokta kalır.
+  Kapsam: alarm, takip, toplu fırsat, haber, durum raporu.
+- Tema altın-siyah (`.streamlit/config.toml`); radyolar hap görünümünde.
+- Ana sayfa üstüne boğa-ayı görseli geri eklendi (`.hk`, `varlik/hero.jpg`).
+- 32 bölümlük talimatın eksik analizi ve yeni aşamalar: `docs/YOL_HARITASI.md`.

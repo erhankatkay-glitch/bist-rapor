@@ -1,0 +1,71 @@
+# KATKAY — 32 bölümlük talimata göre yol haritası (27 Kasım 2026)
+
+Kaynak: kullanıcının "Küresel piyasa analizi, tarama ve yatırım platformu" talimatı.
+Karar: sıfırdan yeniden yazmak yerine mevcut, geçmiş testle doğrulanmış Python motoru korunur;
+talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamamlanır.
+
+## Mevcut durum (Var / Kısmen / Yok)
+
+| # | Bölüm | Durum | Not |
+|---|---|---|---|
+| 1 | Ücretsizlik ilkeleri | Var | Tüm araçlar ücretsiz; ücretli servis yok |
+| 2 | Ana araç + yedek | Kısmen | Yahoo + İş Yatırım + Binance var; yedek tablosu yazılmadı |
+| 3 | iPhone'dan geliştirme / PWA | Kısmen | Streamlit ana ekrana eklenebiliyor; gerçek PWA yok |
+| 4 | GitHub düzeni | Kısmen | Depo herkese açık (bilinçli, aşağıya bak); modüller kök klasörde |
+| 5 | Ortak veri standardı | Kısmen | Kaynak/zaman var; "gecikmeli / gün sonu / bayat" etiketi her yerde yok |
+| 6 | BIST | Var | BIST 100 evreni, sektörler, KAP sınıflandırma |
+| 7 | ABD + dünya borsaları | Kısmen | ABD var; Londra, Frankfurt, Tokyo vb. yok |
+| 8 | Kripto | Var | Spot, fonlama, açık pozisyon; borsalar arası fark yok |
+| 9 | Emtia | Kısmen | Fiyatlar var; contango/backwardation, vade yok |
+| 10 | Döviz, faiz, tahvil | Kısmen | USD/TRY, DXY, ABD 10Y; getiri eğrisi, reel faiz, TÜFE otomatik değil |
+| 11 | Vadeli + opsiyon | Kısmen | Kripto vadeli var; opsiyon/Greeks yok |
+| 12 | Teknik motor | Var | EMA/SMA/RSI/MACD/ADX/ATR/BB/Ichimoku/Supertrend/OBV/MFI/CMF/Donchian/PSAR; WMA, HMA, Heikin Ashi yok |
+| 13 | Temel analiz | Kısmen | F/K, PD/DD vb. (İş Yatırım); banka/holding ayrımı, SEC yok |
+| 14 | Grafik | Kısmen | Mum, hacim, indikatör; çizim araçları yok |
+| 15 | Fibonacci + harmonik | Kısmen | Fibonacci var; harmonik formasyon yok |
+| 16 | SMC | Kısmen | FVG, BOS, CHoCH var; order block, breaker, likidite süpürme yok |
+| 17 | Hacim / VWAP / profil | Kısmen | VWAP, hacim profili var; RVOL taraması yok |
+| 18 | Çoklu zaman dilimi | Var | 4 saat / gün / hafta teyidi |
+| 19 | Tarama motoru | Kısmen | Hazır taramalar var; kullanıcının kendi filtresini kurması yok |
+| 20 | 100 puanlık sinyal | Var | Geçmiş testli filtrelerle |
+| 21 | Risk / hedef | Kısmen | Stop, H1–H3, R/R var; pozisyon büyüklüğü hesaplayıcı yok |
+| 22 | Portföy + sanal işlem | Kısmen | Portföy var; sanal (paper) işlem yok |
+| 23 | Alarm merkezi | Kısmen | Otomatik alarmlar var; kullanıcının kendi kuralını yazması yok |
+| 24 | Ekonomik takvim | Var | |
+| 25 | Haber | Var | KAP + genel; olumsuzlama düzeltildi |
+| 26 | Korelasyon | Kısmen | Portföyde var; ayrı modül yok |
+| 27 | Yapay zekâ asistanı | Kısmen | Kural tabanlı metin (analist.py); dil modeli yok |
+| 28 | Raporlar | Var | Günlük, haftalık, aylık, PDF |
+| 29 | Kişisel takip merkezi | Kısmen | Favoriler, alarmlar; not ve işlem günlüğü yok |
+| 30 | Aracı kurum | Yok | En son aşama, önce salt okunur |
+| 31 | Veri güvenliği | Var | Anahtarlar GitHub Secrets'ta; kişisel veri depoda yok |
+| 32 | Altı rollü ekip | Yok | Kural tabanlı rol raporları olarak yapılabilir |
+
+## Talimatla çelişen ve bilinçli değiştirilen noktalar
+- **Özel (private) depo:** Özel depoda GitHub Actions ayda 2.000 dakika ile sınırlı.
+  Yalnız 30 dakikalık alarm işi ayda yaklaşık 3.000 dakika harcar.
+  Depo açık kalır; anahtarlar Secrets'ta, kişisel portföy depoda tutulmaz.
+- **Sıfırdan Vite/PWA:** Çalışan motoru atmak yerine, ileride `bulten` dalındaki JSON'u okuyan hafif bir PWA ön yüzü (Cloudflare Pages, ücretsiz) eklenebilir.
+- **Gerçek zamanlı BIST:** Ücretsiz değil, lisanslı; gecikmeli veri açıkça yazılır.
+- **KAP iç API'si:** Kullanılmaz (pykap ve borsa-mcp bunu kullanıyor).
+
+## Önerilen aşamalar
+- 6. Veri kalite etiketi + yedek kaynak tablosu + TCMB/TÜİK enflasyonu (resmi sayfa).
+- 7. Teknik motoru tamamla: WMA, HMA, Heikin Ashi, RVOL, order block/breaker, likidite süpürme, harmonik formasyonlar (her biri geçmiş testle).
+- 8. Kendi taramanı kur: filtre birleştirme, kayıtlı şablonlar, sinyal yaşı / sinyalden beri değişim sütunları.
+- 9. Risk hesaplayıcı (pozisyon büyüklüğü, komisyon) + sanal işlem portföyü.
+- 10. Kullanıcı tanımlı alarmlar (RSI, EMA kesişimi, seviye kırılımı) + alarm geçmişi.
+- 11. Korelasyon ve göreceli güç modülü (BTC/Nasdaq, altın/DXY, BIST/S&P…).
+- 12. Dünya borsaları, döviz majörleri, getiri eğrisi, emtia vade yapısı.
+- 13. Opsiyon: BTC/ETH için Deribit'in herkese açık verisi (IV, Greeks).
+- 14. Altı rollü araştırma ekibi (kural tabanlı; ücretsiz dil modeli anahtarı gelirse yorum katmanı).
+- 15. PWA ön yüzü (isteğe bağlı).
+- 16. Aracı kurum araştırması, yalnız salt okunur.
+
+## Değerlendirilen KAP repoları
+- **cemsinano/pykap (MIT):** KAP'ın iç `/tr/api` uçlarını kullanıyor. Kuralımız gereği eklenmez.
+- **saidsurucu/borsa-mcp (MIT):** Geniş bir MCP sunucusu; KAP kısmı yine iç API.
+  Fikir alınabilecek ve kurallara uyan parça: TCMB'nin herkese açık enflasyon sayfası (Aşama 6).
+  Sunucunun tamamı kurulmaz.
+- **zer0dayf/Bist-KAP-Dataset-Builder (MIT):** Haberleri elle girip 5 gün sonraki fiyata göre etiketleyen küçük bir araç.
+  Bizde `haber.py` haber sonrası fiyat tepkisini zaten otomatik ölçüyor; eklenmez.
