@@ -594,9 +594,9 @@ def mini_kart(ad_, v):
         import logolar as LG
         u = LG.logo_url(*MINI_LOGO[ad_])
         if u: lg = f'<img src="{u}" alt="" class="mk-l">'
-    vk = VK.rozet_html(VK.etiket(v.get("zaman"), v.get("tur"))) if v.get("tur") else ""
-    return (f'<div class="mk"><div class="mk-a">{lg}{ad_}</div><div class="mk-d">{deger}</div>'
-            f'<div class="mk-y" style="color:{renk}">{ok} {br.yz(d)} {vk}</div>{spark_svg(v["seri"], renk, 116, 30)}</div>')
+    vk = VK.rozet_kucuk(VK.etiket(v.get("zaman"), v.get("tur"))) if v.get("tur") else ""
+    return (f'<div class="mk"><div class="mk-a"><span class="mk-ad">{lg}{ad_}</span>{vk}</div><div class="mk-d">{deger}</div>'
+            f'<div class="mk-y" style="color:{renk}">{ok} {br.yz(d)}</div>{spark_svg(v["seri"], renk, 116, 30)}</div>')
 
 
 def _arama_secenekleri():

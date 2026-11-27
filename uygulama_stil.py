@@ -181,7 +181,9 @@ div[role="radiogroup"] > label:has(input:checked) p {color:var(--altin-a) !impor
 .serit-k::-webkit-scrollbar {height:0;}
 .mk {flex:none; width:132px; background:linear-gradient(180deg,#18191C,#111214); border:1px solid var(--cizgi); border-radius:16px;
      padding:9px 10px 4px; scroll-snap-align:start; box-shadow:0 8px 20px rgba(0,0,0,.35);}
-.mk-a {font-size:.7rem; color:var(--soluk); font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.mk-a {font-size:.7rem; color:var(--soluk); font-weight:700; display:flex; justify-content:space-between; align-items:center; gap:4px;}
+.mk-ad {white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+.vk-k {font-size:.52rem; padding:0 5px; flex:none;}
 .mk-d {font-size:1.06rem; font-weight:850; margin-top:2px; font-variant-numeric:tabular-nums;}
 .mk-y {font-size:.72rem; font-weight:800;}
 .vk {display:inline-flex; align-items:center; gap:4px; font-size:.6rem; font-weight:800; letter-spacing:.3px; border:1px solid; border-radius:20px; padding:1px 6px; vertical-align:1px; text-transform:uppercase; white-space:nowrap;}
