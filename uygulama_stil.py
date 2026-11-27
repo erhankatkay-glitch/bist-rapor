@@ -418,8 +418,8 @@ CANLI_JS = """
     const W=window.parent, P=W.document, OGE=__OGE__;
     let st=P.getElementById("kk-nav-stil");
     if(!st){st=P.createElement("style"); st.id="kk-nav-stil"; P.head.appendChild(st);} st.textContent=__STIL__;
-    if(!P.getElementById("kk-nav-js2")){
-      const sc=P.createElement("script"); sc.id="kk-nav-js2";
+    if(!P.getElementById("kk-nav-js3")){
+      const sc=P.createElement("script"); sc.id="kk-nav-js3";
       sc.textContent=`
         window.kkSekmeler=function(){return [...document.querySelectorAll('.stTabs [data-testid="stTab"], .stTabs [role="tab"], .stTabs [data-baseweb="tab"]')];};
         window.kkAd=function(t){const p=t.querySelector('[data-testid="stMarkdownContainer"] p')||t; return (p.innerText||p.textContent||"").trim();};
@@ -437,8 +437,17 @@ CANLI_JS = """
           setTimeout(function(){
             const t=window.kkSekmeler().find(x=>window.kkAd(x).endsWith("Teknik")); if(t) t.click();
             let n=0; const iv=setInterval(function(){ n++;
-              const h=document.querySelector(bolum==="seviye"?".sv":".vb");
+              const h=[...document.querySelectorAll(bolum==="seviye"?".sv":".vb")].find(x=>x.offsetParent);
               if(h){h.scrollIntoView({behavior:"smooth",block:"start"}); clearInterval(iv);} if(n>90) clearInterval(iv); },700);
+          },350);
+        };
+        window.kkSekmeGit=function(sekme,secici){
+          window.kkGit("Keşfet");
+          setTimeout(function(){
+            const t=window.kkSekmeler().find(x=>window.kkAd(x).endsWith(sekme)); if(t) t.click();
+            let n=0; const iv=setInterval(function(){ n++;
+              const hs=[...document.querySelectorAll(secici)].filter(x=>x.offsetParent);
+              if(hs.length){hs[0].scrollIntoView({behavior:"smooth",block:"start"}); clearInterval(iv);} if(n>110) clearInterval(iv); },700);
           },350);
         };
         window.kkIstek=function(deger){
@@ -452,7 +461,7 @@ CANLI_JS = """
           document.addEventListener("click",function(e){
             const b=e.target.closest("[data-kk]"); if(!b) return; e.preventDefault(); e.stopPropagation();
             const bolum=(b.dataset.kk.split("|")[2]||"");
-            if(window.kkIstek(b.dataset.kk)) window.kkTeknikGit(bolum);
+            if(window.kkIstek(b.dataset.kk)){ if(bolum==="rapor") window.kkSekmeGit("Hisse",".vb"); else window.kkTeknikGit(bolum); }
           },true);
         }
         window.kkIsaretle=function(){
