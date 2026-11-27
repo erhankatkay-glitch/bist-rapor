@@ -47,11 +47,13 @@ def sinyaller(yol, d, sure=8):
     except Exception:
         df["time"] = (np.arange(len(d)) * 86_400_000 + 1.6e12).astype(float)
     ns = {"df": df, "params": {}, "np": np, "pd": pd, "math": math, "__name__": "qd"}
-    eski = signal.signal(signal.SIGALRM, _alarm); signal.alarm(sure)
+    import threading
+    ana = threading.current_thread() is threading.main_thread()   # zaman aşımı sinyali yalnız ana iş parçacığında kurulabilir
+    if ana: eski = signal.signal(signal.SIGALRM, _alarm); signal.alarm(sure)
     try:
         exec(_derle(yol), ns)
     finally:
-        signal.alarm(0); signal.signal(signal.SIGALRM, eski)
+        if ana: signal.alarm(0); signal.signal(signal.SIGALRM, eski)
     out = ns.get("output") or {}
     al, sat = set(), set()
     for s in out.get("signals") or []:

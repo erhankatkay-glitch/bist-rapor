@@ -61,6 +61,7 @@ try:
     QD_KABUL = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "qd_kabul.json"), encoding="utf-8"))
 except Exception:
     QD_KABUL = {}
+QD_KABUL = {k: v for k, v in QD_KABUL.items() if isinstance(v, list)}
 for _l in QD_KABUL.values():
     for _q in _l:
         _k = f"QD:{_q['ad']}"; _e = KURULUM.get(_k, ("", "", "", ""))

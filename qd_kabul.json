@@ -1,0 +1,215 @@
+{
+ "_not": "Aşama 10b (28.11.2026) arastirma_qd.py sıkı testini geçen QuantDinger göstergeleri. test: geliştirme dönemi n/ortR/tarih eşlemeli rastgele girişe göre fazla R/p; parca_ok: 4 dönemin kaçında tabanı geçti; kor_*: son %20 kör dönem.",
+ "bist|G": [
+  {
+   "ad": "cup_finder",
+   "dosya": "121_quantdinger_cup_finder.py",
+   "yon": 1,
+   "baslik": "Fincan formasyonu kırılımı",
+   "aciklama": "Yuvarlak dipli fincan formasyonu tamamlandı ve fiyat formasyonun üst sınırını yukarı kırdı.",
+   "test": {
+    "n": 80,
+    "ortR": 0.6616,
+    "fazla": 0.2365,
+    "p": 0.012993503248375811,
+    "parca_ok": 4,
+    "kor_n": 21,
+    "kor_ortR": 0.5279,
+    "kor_fazla": 0.0889
+   }
+  }
+ ],
+ "abd|G": [
+  {
+   "ad": "pivot_break_monitor",
+   "dosya": "002_quantdinger_pivot_break_monitor.py",
+   "yon": 1,
+   "baslik": "Pivot direnci kırılımı",
+   "aciklama": "Teyitli salınım tepesinden çizilen direnç ortalamanın üzerindeki hacimle yukarı kırıldı ya da desteğe alt fitille dokunulup dönüldü.",
+   "test": {
+    "n": 650,
+    "ortR": 0.207,
+    "fazla": 0.0978,
+    "p": 0.004997501249375313,
+    "parca_ok": 4,
+    "kor_n": 140,
+    "kor_ortR": 0.0732,
+    "kor_fazla": 0.0239
+   }
+  },
+  {
+   "ad": "pivot_supertrend",
+   "dosya": "048_quantdinger_pivot_supertrend.py",
+   "yon": 1,
+   "baslik": "Pivot SuperTrend al dönüşü",
+   "aciklama": "Pivot merkezli ATR izi (SuperTrend) yukarı döndü.",
+   "test": {
+    "n": 1013,
+    "ortR": 0.2488,
+    "fazla": 0.0857,
+    "p": 0.005997001499250375,
+    "parca_ok": 3,
+    "kor_n": 230,
+    "kor_ortR": 0.1098,
+    "kor_fazla": 0.0316
+   }
+  },
+  {
+   "ad": "rsi_t3_pmax",
+   "dosya": "049_quantdinger_rsi_t3_pmax.py",
+   "yon": 1,
+   "baslik": "RSI-T3 momentum dönüşü",
+   "aciklama": "T3 ile yumuşatılmış RSI kendi oynaklık izini yukarı kesti; momentum rejimi yukarı döndü.",
+   "test": {
+    "n": 665,
+    "ortR": 0.2762,
+    "fazla": 0.0778,
+    "p": 0.017991004497751123,
+    "parca_ok": 4,
+    "kor_n": 149,
+    "kor_ortR": 0.1241,
+    "kor_fazla": 0.0506
+   }
+  },
+  {
+   "ad": "mavilim_weighted_trend",
+   "dosya": "024_quantdinger_mavilim_weighted_trend.py",
+   "yon": 1,
+   "baslik": "Mavilim yukarı dönüş",
+   "aciklama": "Altı aşamalı ağırlıklı ortalama (Mavilim) eğimini yukarı çevirdi.",
+   "test": {
+    "n": 1190,
+    "ortR": 0.1639,
+    "fazla": 0.0631,
+    "p": 0.012993503248375811,
+    "parca_ok": 3,
+    "kor_n": 274,
+    "kor_ortR": 0.0856,
+    "kor_fazla": 0.0229
+   }
+  }
+ ],
+ "kripto|G": [
+  {
+   "ad": "mad_adaptive_trend_score",
+   "dosya": "289_quantdinger_mad_adaptive_trend_score.py",
+   "yon": -1,
+   "baslik": "Medyan trend skoru sat",
+   "aciklama": "Aşırı uçlardan arındırılmış medyan trend filtresi aşağı yönde kalıcılaştı.",
+   "test": {
+    "n": 69,
+    "ortR": 0.4346,
+    "fazla": 0.3189,
+    "p": 0.0014992503748125937,
+    "parca_ok": 3,
+    "kor_n": 20,
+    "kor_ortR": 0.1751,
+    "kor_fazla": 0.1071
+   }
+  },
+  {
+   "ad": "impulse_retention_map",
+   "dosya": "265_quantdinger_impulse_retention_map.py",
+   "yon": 1,
+   "baslik": "İtki tutunması",
+   "aciklama": "ATR boyutunda verimli bir yükseliş itkisi oluştu ya da geri verilen itki geri kazanıldı.",
+   "test": {
+    "n": 192,
+    "ortR": 0.2445,
+    "fazla": 0.1492,
+    "p": 0.006496751624187906,
+    "parca_ok": 4,
+    "kor_n": 78,
+    "kor_ortR": 0.3763,
+    "kor_fazla": 0.0345
+   }
+  },
+  {
+   "ad": "three_way_bollinger_trend",
+   "dosya": "179_quantdinger_three_way_bollinger_trend.py",
+   "yon": 1,
+   "baslik": "Hull bandı geri çekilme alımı",
+   "aciklama": "Hull ortalamalı oynaklık bandında, RSI trend hafızası yukarıyken teyitli geri çekilme alımı geldi.",
+   "test": {
+    "n": 398,
+    "ortR": 0.2839,
+    "fazla": 0.1443,
+    "p": 0.0009995002498750624,
+    "parca_ok": 3,
+    "kor_n": 176,
+    "kor_ortR": 0.1976,
+    "kor_fazla": 0.0458
+   }
+  },
+  {
+   "ad": "fibonacci_entry_bands",
+   "dosya": "250_quantdinger_fibonacci_entry_bands.py",
+   "yon": 1,
+   "baslik": "Fibonacci bant trend girişi",
+   "aciklama": "Çift EMA trend tabanı ve Fibonacci oynaklık bantlarına göre trend yönünde giriş sinyali oluştu.",
+   "test": {
+    "n": 594,
+    "ortR": 0.1498,
+    "fazla": 0.0953,
+    "p": 0.0034982508745627187,
+    "parca_ok": 4,
+    "kor_n": 209,
+    "kor_ortR": 0.2252,
+    "kor_fazla": 0.0531
+   }
+  },
+  {
+   "ad": "st0p",
+   "dosya": "037_quantdinger_st0p.py",
+   "yon": -1,
+   "baslik": "Yüzde stop aşağı kesişim",
+   "aciklama": "Fiyatla birlikte kayan yüzde stop çizgisi aşağı kesildi.",
+   "test": {
+    "n": 723,
+    "ortR": 0.1334,
+    "fazla": 0.0763,
+    "p": 0.00399800099950025,
+    "parca_ok": 4,
+    "kor_n": 280,
+    "kor_ortR": 0.0361,
+    "kor_fazla": 0.092
+   }
+  }
+ ],
+ "kripto|4S": [
+  {
+   "ad": "alpha_trend",
+   "dosya": "016_quantdinger_alpha_trend.py",
+   "yon": -1,
+   "baslik": "AlphaTrend sat dönüşü",
+   "aciklama": "Para akışı/RSI yönlü ATR izi (AlphaTrend) aşağı döndü.",
+   "test": {
+    "n": 329,
+    "ortR": 0.1187,
+    "fazla": 0.1297,
+    "p": 0.0024987506246876563,
+    "parca_ok": 4,
+    "kor_n": 45,
+    "kor_ortR": 0.2822,
+    "kor_fazla": 0.0851
+   }
+  },
+  {
+   "ad": "zero_lag_trend_levels",
+   "dosya": "084_quantdinger_zero_lag_trend_levels.py",
+   "yon": -1,
+   "baslik": "Sıfır gecikmeli trend aşağı dönüşü",
+   "aciklama": "Sıfır gecikmeli ortalama temel EMA'nın altına geçti ya da ATR trend bölgesi aşağı kırıldı.",
+   "test": {
+    "n": 944,
+    "ortR": 0.1251,
+    "fazla": 0.1034,
+    "p": 0.0009995002498750624,
+    "parca_ok": 4,
+    "kor_n": 152,
+    "kor_ortR": 0.3629,
+    "kor_fazla": 0.0049
+   }
+  }
+ ]
+}
