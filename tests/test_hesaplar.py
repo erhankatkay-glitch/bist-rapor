@@ -350,3 +350,27 @@ def test_qd_kabul_ve_tetik():
     F._QD_ONB.clear()
     th = threading.Thread(target=lambda: sonuc.setdefault("m", F.qd_tetik(d, M, q, 1)[0])); th.start(); th.join()
     assert sonuc["m"].sum() == m.sum()
+
+
+def test_rejim_durum_makinesi():
+    """Aşama 10c: düzeltme → ralli denemesi → takip günü (FTD) → yükseliş; dağıtım günleri sayılır."""
+    import rejim as RJ
+    idx = pd.bdate_range("2024-01-01", periods=330)
+    c = list(np.linspace(100, 130, 240))                     # yükseliş
+    c += list(np.linspace(130, 105, 40))                     # sert düşüş (düzeltme)
+    c += [106, 107, 107.5, 109.5]                            # ralli: 4. gün +%1,9
+    c += list(np.linspace(110, 118, 330 - len(c)))
+    c = np.array(c); v = np.full(len(c), 1e6); v[283] = 2e6   # FTD günü hacim artışı
+    h = pd.DataFrame({"Open": c, "High": c * 1.005, "Low": c * 0.995, "Close": c, "Volume": v}, index=idx)
+    S, son = RJ.durum_makinesi(h, 0.0125, 0.07)
+    assert "duzeltme" in set(S["durum"]) and "ralli" in set(S["durum"])
+    assert son["durum"] == "yukselis" and son["ftd"] == str(idx[283].date())
+    # dağıtım: hacim artışıyla %0,2+ düşüş
+    h2 = h.copy(); cc = h2["Close"].to_numpy().copy(); vv = h2["Volume"].to_numpy().copy()
+    for i in (320, 323, 326, 328):
+        cc[i] = cc[i - 1] * 0.995; vv[i] = vv[i - 1] * 1.5
+    h2["Close"] = cc; h2["Low"] = cc * 0.995; h2["Volume"] = vv
+    _, son2 = RJ.durum_makinesi(h2, 0.0125, 0.07)
+    assert son2["dagitim"] == 4 and son2["durum"] == "baski"
+    p, neden, _ = RJ.maruziyet(son2, None, vix=35)
+    assert p == 40 and any("VIX" in x for x in neden)

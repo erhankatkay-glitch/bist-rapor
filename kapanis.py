@@ -331,6 +331,17 @@ def mum_metni(p, tf, mum):
     return f"{m:%d.%m.%Y}"
 
 
+def rejim_turu(p, analizler, endeks, bot):
+    """Aşama 10c: piyasa rejimi (genişlik, dağıtım günleri, takip günü, maruziyet koçu) → rejim/{p}.json + Telegram kartı."""
+    try:
+        import rejim as RJ
+        r = RJ.hesapla(p, analizler, endeks["tf"]["G"]["h"], CIKTI, vix=RJ.vix_al() if p == "abd" else None)
+        log("Rejim:", r["ozet"])
+        RJ.telegram(p, r, CIKTI, bot)
+    except Exception as ex:
+        log("rejim:", ex)
+
+
 REJIM = {}   # (piyasa, tf) → piyasa öncüsünün yönü (+1/0/-1); fırsat filtresi için (firsat.FILTRE)
 
 
@@ -577,6 +588,7 @@ def bist(slot, zorla):
             likit = lambda s: float((s["tf"]["G"]["h"]["Close"] * s["tf"]["G"]["h"]["Volume"]).iloc[-20:].median()) >= MIN_TL_HACIM
             gunluk_tf_turu(bot, D, analizler, ("G", "H", "A"), zorla, False, lambda s: "₺", likit, ekstra_fn=bist_bilanco_riski)
             TB.telegram_gonder("bist", *r, klasor=CIKTI, bot=bot)
+            rejim_turu("bist", analizler, TB.SON["bist"]["endeks"], bot)
     if olay: takip_mesaji(bot, D)
     bot.bag_guncelle([k["id"] for k in D.acik])
     D.kaydet(); bot.kaydet()
@@ -769,6 +781,7 @@ def abd(slot, zorla):
             except Exception as ex: log(f"S&P 500 {tf_} yönü:", ex)
         gunluk_tf_turu(bot, D, analizler, ("G", "H", "A"), zorla, False, lambda s: "$", lambda s: s["kod"] in likit, ekstra_fn=abd_bilanco_riski)
         TB.telegram_gonder("abd", *r, klasor=CIKTI, bot=bot)
+        rejim_turu("abd", analizler, TB.SON["abd"]["endeks"], bot)
     if olay: takip_mesaji(bot, D)
     bot.bag_guncelle([k["id"] for k in D.acik])
     D.kaydet(); bot.kaydet()
