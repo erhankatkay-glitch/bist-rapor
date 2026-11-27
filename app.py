@@ -1020,6 +1020,16 @@ with tab_pr:
                              expanded=ad_ == "Piyasa"):
                 st.dataframe(t_.sort_values("Adet", ascending=False), hide_index=True, use_container_width=True,
                              column_config={"Ort. R": st.column_config.NumberColumn(format="%+.2f")})
+        st.markdown("**Kapanan kurulumlar** (en yeniden eskiye)")
+        _sebep = {"stop": "Stop", "tüm hedefler": "Tüm hedefler", "süre doldu": "Süre doldu"}
+        st.dataframe(pd.DataFrame([{
+            "Kapanış": r.kapanis_t.strftime("%d.%m %H:%M") if pd.notna(r.kapanis_t) else "", "Piyasa": r.Piyasa,
+            "Varlık": FR.gorunen(r.kod, r.ad), "Dilim": TK.TF_AD.get(r.tf, r.tf), "Yön": "AL" if r.yon == 1 else "SAT",
+            "Kurulum": r.kurulum, "Giriş": r.giris, "Çıkış": r.cikis, "Sonuç": _sebep.get(r.sebep, str(r.sebep).capitalize()),
+            "R": r.R, "Açılış": str(r.olusma)[:16].replace("T", " ")} for r in df_.iloc[::-1].itertuples()]),
+            hide_index=True, use_container_width=True,
+            column_config={"R": st.column_config.NumberColumn(format="%+.2f"), "Giriş": st.column_config.NumberColumn(format="%.4g"),
+                           "Çıkış": st.column_config.NumberColumn(format="%.4g")})
         en_ = df_.nlargest(3, "R"); kt_ = df_.nsmallest(3, "R")
         c1, c2 = st.columns(2)
         c1.markdown("**En iyi sonuçlar**\n" + "\n".join(f"- {FR.gorunen(r.kod, r.ad)} {FR.rrs(r.R)}" for r in en_.itertuples()))
