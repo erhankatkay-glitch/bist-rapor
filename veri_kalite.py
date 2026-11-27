@@ -115,10 +115,11 @@ def rozet_html(e):
 # ---------------------------------------------------------------- kaynak ve yedek tablosu (talimat bölüm 2)
 KAYNAKLAR = [
     # (alan, birincil, yedek, gecikme, not)
-    ("BIST fiyatları", "Yahoo Finance (yfinance)", "Yahoo tek tek sorgu", "~15 dk", "Anlık BIST verisi lisanslıdır, ücretsiz değildir."),
+    ("BIST fiyatları", "Yahoo Finance (yfinance)", "Yahoo 15 dk mumları (günlük bar gecikirse)", "~15 dk", "Kapanış: 18:00–18:10 kapanış seansı dahil resmi fiyat. Anlık BIST verisi lisanslıdır."),
     ("ABD hisse ve endeksleri", "Yahoo Finance", "Yahoo tek tek sorgu", "~15 dk", "Seans öncesi/sonrası dahil değildir."),
     ("Kripto", "Binance (data-api.binance.vision)", "OKX, ardından Yahoo", "anlık", "Anahtarsız, ücretsiz herkese açık uçlar."),
-    ("Emtia (altın, gümüş, petrol)", "Yahoo vadeli kontratlar (=F)", "—", "~10–15 dk", "Spot değil, en yakın vadeli kontrat fiyatıdır."),
+    ("Ons altın ve gram altın", "Binance PAXG (spot ons, 7/24)", "Yahoo altın vadeli (GC=F)", "anlık", "Gram altın = spot ons × USD/TRY ÷ 31,1035; Kapalıçarşı fiyatı yerel prim nedeniyle biraz farklı olabilir."),
+    ("Gümüş, petrol", "Yahoo vadeli kontratlar (=F)", "—", "~10–15 dk", "Spot değil, en yakın vadeli kontrat fiyatıdır."),
     ("Döviz", "Yahoo (=X)", "TCMB EVDS (anahtar girilirse)", "dakikalar", "TCMB kuru günde bir kez yayımlanır."),
     ("Türkiye enflasyonu, politika faizi", "TCMB internet sitesi (herkese açık tablo)", "TCMB EVDS, ardından son kayıtlı değer", "aylık / karar günü", "TÜFE her ayın 3'ünde açıklanır."),
     ("Temel analiz (BIST)", "İş Yatırım mali tablolar", "—", "çeyreklik", ""),

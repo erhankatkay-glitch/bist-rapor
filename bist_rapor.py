@@ -552,6 +552,10 @@ def canli_guncelle(h, sembol):
         g = _naive(g); gun = g.index[-1].normalize(); bugun = g[g.index.normalize() == gun]
         h = h.copy(); son = float(bugun["Close"].iloc[-1])
         if gun in h.index:
+            # Piyasa kapandıysa günlük bardaki resmi kapanış korunur (BIST'te 18:00–18:10 kapanış seansı dakikalık veride yok).
+            import veri_kalite as _VK
+            if not _VK.piyasa_acik(_VK.tur_bul(sembol)) or gun.date() < dt.datetime.now().date() - dt.timedelta(days=0 if _VK.tur_bul(sembol) == "bist" else 1):
+                return h, zaman
             h.loc[gun, "Close"] = son
             if "High" in h: h.loc[gun, "High"] = max(float(h.loc[gun, "High"]), float(bugun["High"].max()))
             if "Low" in h: h.loc[gun, "Low"] = min(float(h.loc[gun, "Low"]), float(bugun["Low"].min()))
