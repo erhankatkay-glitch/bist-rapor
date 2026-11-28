@@ -1,0 +1,38 @@
+name: PDF raporlar (hızlı uygulama)
+
+# Teknik ve şirket araştırma PDF'leri her gece üretilir, "raporlar" sürümüne yüklenir; dizin bulten/pdf/<tur>.json
+on:
+  schedule:
+    - cron: "20 2 * * *"   # 05:20 TSİ
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pdf-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        tur: [teknik, arastirma]
+    env:
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: PDF üret ve yükle
+        run: python pdf_uret.py cikti ${{ matrix.tur }}
+      - name: Yayınla
+        if: always()
+        run: python yayinla.py cikti "PDF ${{ matrix.tur }} $(date -u +%FT%H%M)"
