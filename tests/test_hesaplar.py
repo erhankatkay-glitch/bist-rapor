@@ -483,3 +483,21 @@ def test_canli_emtia_sapma_korumasi():
         assert CE.fiyat("GUMUS", referans=44.0) is None and CE.fiyat("BRENT") is None
     finally:
         CE.okx, CE.bitget = eski_okx, eski_bg
+
+
+def test_arastirma_ekibi_rapor():
+    """Aşama 14: 6 rol, 3 senaryo, tez bozucular, rakamla kayıp; çelişkide güven düşer; başarısız sinyaller listelenir."""
+    import bist_teknik as T, arastirma_ekibi as EK
+    T._KIYAS_ONB["hisse"] = None
+    rng = np.random.default_rng(7); idx = pd.bdate_range("2021-01-01", periods=1300)
+    c = 100 * np.exp(np.cumsum(rng.normal(0.0005, 0.02, len(idx)))); o = c * (1 + rng.normal(0, .005, len(idx)))
+    h = pd.DataFrame({"Open": o, "High": np.maximum(o, c) * 1.01, "Low": np.minimum(o, c) * .99, "Close": c,
+                      "Volume": rng.integers(1e5, 1e6, len(idx)).astype(float)}, index=idx)
+    s = T.analiz_h("TEST", "Test", h, "hisse", "₺")
+    r = EK.rapor(s, temel={"Sağlık skoru": 30, "Potansiyel": -0.2}, rejim={"durum": "duzeltme", "durum_ad": "Düzeltme", "maruziyet": 10})
+    assert [x["rol"] for x in r["roller"]] == list(EK.ROLLER) and len(r["senaryolar"]) == 3
+    assert r["senaryolar"][2]["degisim"] < 0 < r["senaryolar"][0]["degisim"]
+    assert r["tez_bozucular"] and r["risk"]["kayip"] > 0 and "TL" in r["roller"][4]["bulgular"][0]
+    assert r["guven"] in ("Orta", "Düşük")                      # eski veri + çelişki → yüksek güven verilmez
+    t = r["roller"][3]["bulgular"]
+    assert any("kaybetti" in x for x in t) or not r["gecmis"]["n"]
