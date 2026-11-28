@@ -124,7 +124,7 @@ const PZ_AD = {bist: "BIST", abd: "ABD", kripto: "Kripto", emtia: "Emtia"};
 document.getElementById("uyg").href = UYG;
 
 const tr = (x, nd = 2) => x == null || isNaN(x) ? "–" : Number(x).toLocaleString("tr-TR", {minimumFractionDigits: nd, maximumFractionDigits: nd});
-const fy = x => x == null ? "–" : tr(x, Math.abs(x) >= 1000 ? 0 : Math.abs(x) >= 10 ? 2 : Math.abs(x) >= 1 ? 3 : 5);
+const fy = x => x == null ? "–" : x !== 0 && Math.abs(x) < 0.01 ? Number(x).toPrecision(4).replace(".", ",") : tr(x, Math.abs(x) >= 1000 ? 0 : Math.abs(x) >= 10 ? 2 : Math.abs(x) >= 1 ? 3 : 5);
 const yz = (x, nd = 1) => x == null || isNaN(x) ? "–" : (x >= 0 ? "+" : "-") + "%" + tr(Math.abs(x) * 100, nd);
 const rk = x => x > 0 ? "ust" : x < 0 ? "alt" : "not";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));

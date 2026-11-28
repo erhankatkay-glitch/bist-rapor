@@ -80,7 +80,7 @@ def gunu_tamamla(veri, parca=150):
     """Yahoo'nun geride kalan günlük barlarını gün içi (15 dk) veriyle tamamlar (bkz. bist_makro.gun_ici_tamamla)."""
     import yfinance as yf, bist_makro as MK
     semboller = list(veri)
-    eklenen = 0
+    eklenen = 0; eklenen_semboller = set()
     for i in range(0, len(semboller), parca):
         grup = semboller[i:i + parca]
         try:
@@ -91,10 +91,37 @@ def gunu_tamamla(veri, parca=150):
             try:
                 d = gi[s] if isinstance(gi.columns, pd.MultiIndex) else gi
                 yeni = MK.gun_ici_tamamla(veri[s], d, s)
-                eklenen += len(yeni) - len(veri[s]); veri[s] = yeni
+                kc = (veri[s]["Close"] if isinstance(veri[s], pd.DataFrame) else veri[s]).dropna()
+                if len(yeni) and (not len(kc) or yeni.index[-1] > kc.index[-1]): eklenen_semboller.add(s)
+                eklenen += len(yeni) - len(kc); veri[s] = yeni
             except Exception:
                 continue
     print(f"Gün içi tamamlama: {eklenen} eksik günlük bar eklendi")
+    # BIST: gün içi verinin son fiyatı 18:00–18:10 kapanış seansını içermez. Piyasa kapandıysa, gün içinden kurulan son günün
+    # kapanışını resmi kapanışla (fast_info.lastPrice) düzelt. Yalnız günlükte eksik olup gün içinden eklenen barlar için.
+    try:
+        import veri_kalite as VK
+        from concurrent.futures import ThreadPoolExecutor
+        if not VK.piyasa_acik("bist"):
+            bugun_bist = dt.datetime.now(TSI).date()
+            aday = [s for s in semboller if s.endswith(".IS") and s in eklenen_semboller and len(veri[s]) and veri[s].index[-1].date() <= bugun_bist]
+            def resmi(s):
+                try: return s, float(yf.Ticker(s).fast_info["lastPrice"])
+                except Exception: return s, None
+            duz = 0
+            with ThreadPoolExecutor(8) as ex:
+                for s, fl in ex.map(resmi, aday):
+                    d = veri[s]; son = float(d["Close"].iloc[-1]) if isinstance(d, pd.DataFrame) else float(d.iloc[-1])
+                    if fl and son and abs(fl / son - 1) < 0.05 and fl != son:
+                        t = d.index[-1]
+                        if isinstance(d, pd.DataFrame):
+                            d.loc[t, "Close"] = fl; d.loc[t, "High"] = max(float(d.loc[t, "High"]), fl); d.loc[t, "Low"] = min(float(d.loc[t, "Low"]), fl)
+                        else:
+                            d.loc[t] = fl
+                        duz += 1
+            print(f"Resmi kapanış düzeltmesi: {duz} / {len(aday)} hisse")
+    except Exception as ex:
+        print("resmi kapanış düzeltmesi yapılamadı:", ex, file=sys.stderr)
     return veri
 
 
