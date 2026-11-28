@@ -1,0 +1,37 @@
+name: Temel analiz özetleri (hızlı uygulama)
+
+# Her gece BIST (tüm hisseler) ve ABD (en likit 300) için değerleme / finansal sağlık özeti → bulten/temel/<piyasa>.json
+on:
+  schedule:
+    - cron: "40 3 * * *"   # 06:40 TSİ
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: temel-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  temel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        piyasa: [bist, abd]
+    env:
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Temel özetler
+        run: python temel.py cikti ${{ matrix.piyasa }}
+      - name: Yayınla
+        if: always()
+        run: python yayinla.py cikti "Temel ${{ matrix.piyasa }} $(date -u +%FT%H%M)"
