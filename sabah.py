@@ -2,6 +2,7 @@
 """Sabah özeti: her sabah (09:00 TSİ) tek kartlık "bugün neyi izlemeli" özeti + kısa sesli anlatım.
 İçerik: gece piyasalar (ABD kapanışı, kripto, altın, petrol, kur, VIX), günün ekonomik takvimi, açık kurulumlar ve
 hedef/stopa yakın olanlar, son kapanışların en güçlü fırsatları, son 12 saatin önemli haberleri, portföy.
+Ardından ayrı bir "Temel özet" kartı (temel_bildirim.py): BIST'te değerinin en altındaki 5 hisse, yeni halka arzlar, kripto ve emtia.
 Çıktı: cikti/sabah/{kart.png, ozet.mp3, ozet.json}; Telegram'a kart (+ ses) gönderilir, 20 saat sonra silinir."""
 import os, sys, json, textwrap, datetime as dt
 import numpy as np
@@ -305,6 +306,11 @@ def calistir():
             if j.get("ok"): b._kaydet([j["result"]["message_id"]], "sabah", 20, None)
         except Exception as ex:
             print("Ses gönderilemedi:", ex, file=sys.stderr)
+    try:   # sabah temel özeti kartı (BIST değer, halka arzlar, kripto, emtia)
+        import temel_bildirim as TBL
+        TBL.gonder(b)
+    except Exception as ex:
+        print("Temel özet gönderilemedi:", ex, file=sys.stderr)
     b.kaydet()
     print("Sabah özeti hazır:", madde)
 

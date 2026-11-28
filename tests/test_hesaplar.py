@@ -583,3 +583,32 @@ def test_yogunluk_siniri_ve_hisse_tokeni():
     assert K.hisse_tokeni_mu("XOKTA") and K.hisse_tokeni_mu("PDDB") and K.hisse_tokeni_mu("XSPCX")
     assert not K.hisse_tokeni_mu("XRP") and not K.hisse_tokeni_mu("XNET") and not K.hisse_tokeni_mu("BTC") and not K.hisse_tokeni_mu("BNB")
     K._ABD = None
+
+
+def test_temel_ozet_karti(tmp_path, monkeypatch):
+    import json
+    import datetime as dt
+    import tg
+    import kart as K
+    import temel_bildirim as TBL
+    import temel_varlik as TV
+    z = dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes")
+    (tmp_path / "temel").mkdir()
+    yaz = lambda ad, d: (tmp_path / "temel" / f"{ad}.json").write_text(json.dumps(dict(d, zaman=z)), encoding="utf-8")
+    yaz("bist", {"satirlar": {"AAA": {"Görüş": "DEĞERİNİN ALTINDA", "Fırsat skoru": 90, "Potansiyel": 0.4, "F/K": 5, "Şirket": "A"},
+                              "ISATR": {"Görüş": "DEĞERİNİN ALTINDA", "Fırsat skoru": 99, "Potansiyel": 0.8, "F/K": 0.2},
+                              "BBB": {"Görüş": "DEĞERİNİN ÜZERİNDE", "Fırsat skoru": 95}}})
+    yaz("bebek", {"modlar": {"resmi": {"liste": [{"Kod": "YENI", "İlk işlem": "2026-11-01", "İlk işlemden getiri": 0.2}], "derin": [{"Kod": "YENI", "Bebek skoru": 70}]}}})
+    yaz("kripto", {"genel": {"Korku endeksi": 20, "Korku sınıfı": "Aşırı korku", "BTC dominansı": 0.58},
+                   "satirlar": {"BTC/USDT": {"Temel puan": 80, "Sıra": 1, "Ad": "Bitcoin", "Potansiyel": 0.1, "PD / FDV": 0.95}}})
+    yaz("emtia", {"satirlar": {"SEKER": {"Ad": "Şeker", "COT": {"spek_yuzdelik_3y": 0.95}, "Görünüm": "POZİTİF"},
+                               "WTI": {"Ad": "WTI", "Vade yapısı": {"yapi": "backwardation", "yillik": -0.12}}}})
+    monkeypatch.setattr(tg, "KLON", str(tmp_path))
+    B, M = TBL.bolumler(K.C)
+    assert len(B) == 4 and [s["sol"].split(" ")[0] for s in B[0]["satirlar"]] == ["AAA"]   # F/K<1 ve değerinin üzerinde elenir
+    assert "YENI" in M[1] and "BTC" in M[2] and "Şeker" in M[3]
+    K.bildirim_karti("TEMEL ÖZET", "b", "a", B, str(tmp_path / "t.png"))
+    assert (tmp_path / "t.png").stat().st_size > 10000
+    assert tg.uygulama_dugme("temel")["inline_keyboard"][0][0]["url"].endswith("#piyasa/temel")
+    assert "karamsar" in TV.cot_yorum({"spek_yuzdelik_3y": 0.05, "spek_d1h": 10})
+    assert TV._t({"a": float("nan"), "b": [1.5, None]}) == {"a": None, "b": [1.5, None]}

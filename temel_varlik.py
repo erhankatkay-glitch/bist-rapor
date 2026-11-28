@@ -254,7 +254,10 @@ def emtia(klasor):
         if m.get("oran"): r["Oran"] = m["oran"]
         v = VY.get(kod)
         if v:
-            r["Vade yapısı"] = {"yapi": v["yapi"], "yillik": v["yillik"], "ay": v["ay"], "yorum": v["yorum"],
+            yorum = v["yorum"]
+            if EMTIA_VADE[kod][0] in ("GC", "SI", "PL", "PA") and v["yapi"] == "contango" and v["yillik"] < 0.07:
+                yorum = "Değerli metallerde hafif contango normaldir: büyük ölçüde faiz (taşıma) maliyetini yansıtır, arz bolluğu sinyali değildir."
+            r["Vade yapısı"] = {"yapi": v["yapi"], "yillik": v["yillik"], "ay": v["ay"], "yorum": yorum,
                                 "noktalar": [[p["vade"], p["fiyat"]] for p in v["noktalar"]]}
             (r["Güçlü"] if v["yapi"] == "backwardation" else r["Zayıf"] if v["yapi"] == "contango" and v["yillik"] > 0.08 else []).append(
                 "Vadeli eğri backwardation: yakın teslim primli, fiziksel talep güçlü." if v["yapi"] == "backwardation"

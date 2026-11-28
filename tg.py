@@ -31,7 +31,7 @@ UYG = "https://erhankatkay-glitch.github.io/bist-rapor/"
 # mesaj anahtarının başı → hızlı uygulamada açılacak bölüm (her mesajın altında "Uygulamada aç" düğmesi)
 UYG_BOLUM = {"firsat": "firsat", "rejim": "piyasa", "dunya": "piyasa", "korelasyon": "piyasa", "opsiyon": "piyasa", "yabanci": "piyasa",
              "takvim": "piyasa", "haber": "haber", "sabah": "ozet", "alarm": "bildirim", "igne": "bildirim", "bulten": "piyasa",
-             "teknik": "piyasa", "durum": "ozet", "portfoy": "portfoy", "pf": "portfoy", "takip": "firsat"}
+             "teknik": "piyasa", "durum": "ozet", "portfoy": "portfoy", "pf": "portfoy", "takip": "firsat", "temel": "piyasa/temel"}
 
 
 def uygulama_dugme(anahtar="", kod=None, metin=None):
