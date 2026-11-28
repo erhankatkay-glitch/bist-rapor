@@ -53,7 +53,7 @@ def _marka(ax, H, x=48, boy=36):
     try:
         if _LOGO_IMG is None:
             import matplotlib.image as mpimg, os
-            _LOGO_IMG = mpimg.imread(os.path.join(os.path.dirname(os.path.abspath(__file__)), "varlik", "logo_96.png"))
+            _LOGO_IMG = mpimg.imread(os.path.join(os.path.dirname(os.path.abspath(__file__)), "varlik", "logo.png"))
         xl, yl = ax.get_xlim(), ax.get_ylim()
         ax.imshow(_LOGO_IMG, extent=[x, x + boy, H - 86, H - 86 + boy], aspect="auto", zorder=5, interpolation="lanczos")
         ax.set_xlim(*xl); ax.set_ylim(*yl)
@@ -367,12 +367,17 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
         _t(ax, 68, y1 + 100 - i * 30, sat_, 18, C["yazi"])
     # --- en güçlüler & günün en çok yükselen/düşenleri
     y2 = y1 - 40
+    lp = {"BIST": "bist", "ABD": "abd", "KRİPTO": "kripto", "KRIPTO": "kripto"}.get(str(piyasa_ad).upper().replace("İ", "I").replace("I", "I"), None)
+    lp = lp or {"bist": "bist", "abd": "abd", "kripto": "kripto"}.get(str(meta.get("piyasa", "")).replace("kripto_tl", "kripto"))
+
+    def lg_(kod, x, y, boy=28):   # varlık logosu çizildiyse yazının kayacağı x
+        return x + boy + 8 if lp and logo_ciz(ax, kod, x, y - 6, boy, lp) else x
     bolum_baslik(ax, 48, y2, "En güçlü görünüm", x2=540, boy=15)
     bolum_baslik(ax, 580, y2, "Günün hareketlileri", x2=W - 40, boy=15)
     top = df.nlargest(5, "Teknik puan") if n else df
     for i, (_, r) in enumerate(top.iterrows()):
         yy = y2 - 50 - i * 46
-        _t(ax, 48, yy, _kod(r["Kod"]), 20, weight="bold")
+        _t(ax, lg_(r["Kod"], 48, yy), yy, _kod(r["Kod"]), 20, weight="bold")
         ax.add_patch(Rectangle((210, yy - 2), 260, 18, color=C["cizgi"]))
         ax.add_patch(Rectangle((210, yy - 2), 260 * r["Teknik puan"] / 100, 18, color=C["yesil"]))
         _t(ax, 485, yy, f"{r['Teknik puan']:.0f}", 18, C["yesil"], "bold")
@@ -383,7 +388,7 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
         hk = list(g.nlargest(3, "Değişim").itertuples()) + list(g.nsmallest(2, "Değişim").itertuples())
         for i, r in enumerate(hk):
             yy = y2 - 50 - i * 46
-            _t(ax, 580, yy, _kod(r.Kod), 20, weight="bold")
+            _t(ax, lg_(r.Kod, 580, yy), yy, _kod(r.Kod), 20, weight="bold")
             _t(ax, W - 48, yy, _yz(r.Değişim), 20, C["yesil"] if r.Değişim >= 0 else C["kirmizi"], "bold", ha="right")
     # --- sinyal rozetleri
     y3 = y2 - 300
@@ -391,9 +396,13 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
         _t(ax, 48, y, baslik, 15, renk, "semibold")
         x = 48; y_ = y - 50
         for k in kodlar[:8]:
-            m = _kod(k); w_ = 28 + 13 * len(m)
+            m = _kod(k); w_ = 28 + 13 * len(m) + (26 if lp else 0)
             if x + w_ > W - 40: break
-            _kutu(ax, x, y_, w_, 36, C["panel2"], r=18, kenar=renk); _t(ax, x + w_ / 2, y_ + 11, m, 16, renk, "semibold", ha="center"); x += w_ + 10
+            _kutu(ax, x, y_, w_, 36, C["panel2"], r=18, kenar=renk)
+            logolu = bool(lp) and logo_ciz(ax, k, x + 9, y_ + 7, 22, lp)
+            bas_ = x + 35 if logolu else x
+            _t(ax, bas_ + (x + w_ - bas_) / 2 - (4 if logolu else 0), y_ + 11, m, 16, renk, "semibold", ha="center")
+            x += w_ + 10
         return y - 95
     if n:
         dg = df["Değişim"].fillna(0) if "Değişim" in df else pd.Series(0, index=df.index)
@@ -472,6 +481,8 @@ def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
                     pz_ = pz_ or _LG.tahmin_piyasa(kod_)
                     lg = bool(pz_) and logo_ciz(ax, kod_, 50, y - 7, 32, pz_)
                 if not lg and s.get("nokta"): ax.add_patch(Circle((66, y + 8), 8, color=s["nokta"]))
+                if lg and s.get("nokta"):   # logonun köşesinde yön rozeti
+                    ax.add_patch(Circle((80, y - 4), 7.5, color=C["panel"])); ax.add_patch(Circle((80, y - 4), 5.5, color=s["nokta"]))
                 _t(ax, 92 if lg else 86 if s.get("nokta") else 62, y, textwrap.shorten(str(s["sol"]), 52, placeholder="…"), 20, weight="bold")
                 if s.get("sag"): _t(ax, W - 62, y, str(s["sag"]), 20, s.get("sag_renk") or C["yazi"], "bold", ha="right")
                 yy = y - 30

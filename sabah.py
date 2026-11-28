@@ -237,7 +237,8 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
     acik_s = sorted(acik, key=lambda k: min(k["yak_h"], k["yak_s"]))[:3]
     for k in acik_s:
         renk = C["yesil"] if k["ger"] >= 0 else C["kirmizi"]
-        K._t(ax, 580, y, _kod(k["kod"]), 20, weight="bold"); K._t(ax, W - 48, y, _y(k["ger"]), 17, renk, "semibold", ha="right"); y -= 36
+        kx = 614 if k.get("pz") in ("kripto", "bist", "abd") and K.logo_ciz(ax, k["kod"], 580, y - 6, 26, k["pz"]) else 580
+        K._t(ax, kx, y, _kod(k["kod"]), 20, weight="bold"); K._t(ax, W - 48, y, _y(k["ger"]), 17, renk, "semibold", ha="right"); y -= 36
     if not acik: K._t(ax, 580, y, "Açık kurulum yok.", 16, C["soluk"])
     y = min(y, y0 - 36 * 3) - 20
     # haberler

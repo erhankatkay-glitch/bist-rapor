@@ -514,6 +514,18 @@ GRUP_KART = [("💼", "Portföyünüz", "altin"), ("⚡", "Sert hareket ve fiyat
              ("📰", "Şirket haberleri (KAP)", "altin"), ("•", "Diğer", "soluk")]
 
 
+def _logo_kod(sol):
+    """Alarm satırındaki varlık → (kod, piyasa) ya da None. 'NVDA (Nvidia)' → ABD, 'SOL/USDT' → kripto, 'ASELS' → BIST."""
+    import logolar as LG
+    m = re.match(r"^([A-Z0-9.]{1,6}) \(", sol)
+    if m: return (m.group(1) + ".US", "abd")
+    m = re.match(r"^([A-Z0-9]{2,10}/(?:USDT|TRY))\b", sol)
+    if m: return (m.group(1), "kripto")
+    m = re.match(r"^([A-ZÇĞİÖŞÜ0-9]{3,6})\b", sol)
+    if m and LG.tahmin_piyasa(m.group(1)): return (m.group(1), LG.tahmin_piyasa(m.group(1)))
+    return None
+
+
 def gonder(mesajlar):
     """Alarmlar görsel kart olarak (konu başlıklarına göre gruplu) sessiz gönderilir; 12 saat sonra silinir."""
     if not mesajlar: return False
@@ -527,6 +539,9 @@ def gonder(mesajlar):
         try:
             import kart as K
             sat = [_satir(m) for m in parca]
+            for _, sx, _u in sat:   # varlığın kendi logosu (hisse: logo.dev, kripto: yerel set); yön rengi logonun köşesinde
+                lk = _logo_kod(sx.get("sol", ""))
+                if lk: sx["logo"] = lk
             bol = [{"baslik": ad, "renk": K.C[r], "satirlar": [x[1] for x in sat if x[0] == g]} for g, ad, r in GRUP_KART]
             bol = [x for x in bol if x["satirlar"]]
             os.makedirs("alarm_cikti", exist_ok=True); yol = os.path.join("alarm_cikti", f"kart_{i}.png")
