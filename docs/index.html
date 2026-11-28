@@ -680,8 +680,8 @@ function temelHtml(t, para) {
   if (!t) return "";
   const m = (a, d, alt, cls = "") => `<div class="mini"><small>${a}</small><b class="${cls}">${d}</b>${alt ? `<span class="not" style="font-size:10.5px;font-weight:600">${alt}</span>` : ""}</div>`;
   const sk = t["Sağlık skoru"];
-  return `<h2>Temel analiz</h2><div class="kart"><div class="satir"><div class="a"><b><span class="rozet ${gorusSinif(t["Görüş"])}" style="margin:0">${esc(t["Görüş"] || "–")}</span></b>
-      <span style="margin-top:6px">${esc(t["Sektör"] || "")} · güven ${esc(t["Güven"] || "–")} · kaynak ${esc(t["Kaynak"] || "")}</span></div>
+  return `<h2>Temel analiz</h2><div class="kart"><div class="satir"><div class="a"><b style="align-self:flex-start"><span class="rozet ${gorusSinif(t["Görüş"])}" style="margin:0">${esc(t["Görüş"] || "–")}</span></b>
+      <span style="margin-top:6px;white-space:normal">${esc(t["Sektör"] || "")} · güven ${esc(t["Güven"] || "–")} · kaynak ${esc(t["Kaynak"] || "")}</span></div>
       ${t["Fırsat skoru"] != null ? `<div class="f"><b style="font-size:20px;color:var(--a)">${tr(t["Fırsat skoru"], 0)}</b><span class="not">fırsat skoru</span></div>` : ""}</div>
       ${t["Gerekçe"] ? `<div class="metin" style="margin-top:6px;color:var(--s)">${esc(t["Gerekçe"])}</div>` : ""}</div>
     <div class="izgara">${m("Adil değer", para + fy(t["Adil değer"]), "potansiyel " + yzD(t["Potansiyel"], 0), rk(t["Potansiyel"]))}
@@ -715,8 +715,8 @@ function varlikTemelHtml(t, pz, para, tarih) {
   const m = (a, d, alt, cls = "") => `<div class="mini"><small>${a}</small><b class="${cls}">${d}</b>${alt ? `<span class="not" style="font-size:10.5px;font-weight:600">${alt}</span>` : ""}</div>`;
   const sat = (a, b) => `<tr><td>${a}</td><td>${b}</td></tr>`;
   const kr = pz === "kripto", sk = t.Skor;
-  let h = `<h2>Temel görünüm</h2><div class="kart"><div class="satir"><div class="a"><b><span class="rozet ${gorunumSinif(t["Görünüm"])}" style="margin:0">${esc(t["Görünüm"] || "–")}</span></b>
-      <span style="margin-top:6px">genel skor ${sk == null ? "–" : tr(sk, 1)}/5${t["Değer etiketi"] ? " · model değere göre " + esc(t["Değer etiketi"]).toLowerCase() : ""}</span></div>
+  let h = `<h2>Temel görünüm</h2><div class="kart"><div class="satir"><div class="a"><b style="align-self:flex-start"><span class="rozet ${gorunumSinif(t["Görünüm"])}" style="margin:0">${esc(t["Görünüm"] || "–")}</span></b>
+      <span style="margin-top:6px;white-space:normal">genel skor ${sk == null ? "–" : tr(sk, 1)}/5${t["Değer etiketi"] ? " · model değere göre " + esc(t["Değer etiketi"]).toLowerCase() : ""}</span></div>
       ${kr && t["Temel puan"] != null ? `<div class="f"><b style="font-size:20px;color:var(--a)">${t["Temel puan"]}</b><span class="not">temel puan</span></div>` : ""}</div>
       ${t.Not ? `<div class="uyari" style="margin-top:6px">${esc(t.Not)}</div>` : ""}
       <div class="not" style="font-size:11px;margin-top:6px">${kr ? "Kriptoların bilançosu yoktur; temel görünüm arz yapısı, likidite, değerleme bantları, türev piyasa ve ağ kullanımına dayanır." : "Emtiaların bilançosu yoktur; temel görünüm vadeli eğri, spekülatör konumu (CFTC), mevsimsellik ve değerleme bantlarına dayanır."}</div></div>
