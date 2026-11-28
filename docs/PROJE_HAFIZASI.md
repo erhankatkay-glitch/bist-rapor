@@ -358,3 +358,35 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   (1H/1A/3A: liste vs eşit ağırlıklı evren, fark, geçme oranı), degisim (dünden bugüne: listeye giren, COT aşırılığı, kripto puan ±20)}.json.
   temel_bildirim kartının başında "Dünden bugüne değişenler". PWA: Piyasa › Temel › Karne; Özet'te #pf-temel (pfTemelUyari: portföy/sanal/
   takip varlıklarının görüş-puan değişimi, LS kk_temel_gordum; ilk açılışta yalnız kaydeder, ±15 puan veya görüş değişimi uyarır).
+
+## FiboAyna (kullanıcının TradingView göstergesi) — 28.11.2026
+- Kaynak: kullanıcının Pine v6 "FiboAyna Tarayıcı" kodu (PDF olarak verildi). Yalnız YAPI (f_find, f_refTop, f_struct, f_d, f_stgCode, f_zoneP,
+  f_extra), BÖLGELER (PDA-1/PDA-2/GZ/alım bölgesi/stop, f_scan'in bölge kısmı), BOĞA ÇİZGİSİ (haftalık VIDYA 5, f_htf) ve VIDYA 5-8-14 bulutu /
+  HO tablosu (f_vidya, f_htf) Python'a birebir çevrildi. Göstergenin BIST puanlama/tarama/formasyon kısmı KULLANILMAZ (kullanıcı isteği).
+  Kurallar ve sabitler referanslarla düzeltilmiştir: DEĞİŞTİRİLMEZ. Doğrulama: BTC 1=87.395 / stop 57.800 ve ETH 1.505/2.807 kod yorumlarındaki
+  referanslarla aynı çıktı.
+- GİZLİLİK: kod depoda yalnız şifreli (ozel/fibo.enc, Fernet). Anahtar GitHub Secrets FIBO_ANAHTAR (kullanıcı ekledi). fibo_yukle.py paketi
+  çalışma anında geçici klasöre açar. Düz metin kaynak yalnız oturumda (/home/claude/.ozel) vardı; ileride değişiklik için kullanıcıdan anahtarı
+  ya da paketi açmak gerekir. Sonuçlar (iş çıktıları) da şifreli: fibo-sonuc dalı (fibo-<pz>.enc, fibo-analiz.enc). Loglara kural yazılmaz.
+- Paket: fibo_cekirdek.py (çekirdek; numba, düz mumda ZigZag dizisi 2n+2, sıfıra bölme = na), fibo_arastirma.py (geçmiş test, K0 rastgele
+  giriş kontrol grubu), fibo_analiz.py, fibo_tarama.py (günlük tarama, kayıt, seri), fibo_model.json (ekibin seçimi + puan modeli).
+- Araştırma sonucu (2019-23 eğitim / 2024-26 sınama, aynı çıkış kuralıyla rastgele girişe göre fark): kripto "bölge dönüşü" (B2/B3/B4)
+  +0,1…+0,24R iki dönemde de; BIST bulut trendi (T2, bulut çıkışı) ve bölge dönüşü +0,06…+0,10R (sınamada zayıfladı); ABD bulut trendi +0,05…
+  +0,09R; emtia T2 (az örnek). GZ tepkisi (B5) ve tek başına çıkış uyarıları (Boğa altı vb.) işe yaramadı. Puan (ridge, beklenen R) yalnız
+  kripto ve ABD'de sınamada doğrulandı; BIST/emtia'da puan gösterilmez (puan_gecerli=False).
+- Günlük: fibo_tarama.yml (18:50 BIST, 00:45 ABD+emtia, 03:15 kripto) → bulten/fibo/{<pz>.json, kayit_<pz>.json (FiboAyna'nın ayrı performans
+  defteri), s_<pz>/<kod>.json (VIDYA serileri)}. Normal fırsat sisteminden tamamen bağımsız.
+- PWA: Fırsatlar › FiboAyna (Sinyaller / Performans), varlık sayfasında FiboAyna kartı + HO tablosu.
+- QuantDinger (kullanıcının fork'u): BIST verisi yok. saglamlik.py = deflated Sharpe, PBO, blok bootstrap (Apache-2.0, kaynak belirtildi).
+- Twelve Data: BIST yalnız gün sonu (Grow planı); canlı BIST lisanslı — alınmadı.
+
+## TradingView grafikleri (PWA) — 28.11.2026
+- Varlık sayfasında TradingView Lightweight Charts™ 4.2.0 (jsDelivr, SW önbelleği; Apache-2.0, attributionLogo açık): mum, SMA 20/50/200,
+  FiboAyna seviyeleri (Pine renkleri), PDA/GZ/stop/Boğa fiyat çizgileri, VIDYA 5-8-14, sinyal işareti; katman düğmeleri LS kk_grafik_kat.
+  Kütüphane yüklenemezse eski SVG grafik kalır.
+
+## Otomatik sanal hesaplar — 28.11.2026
+- oto_sanal.py (oto_sanal.yml, 2 saatte bir) → bulten/oto/<firsat|fibo>_<bist|abd|emtia|kripto_spot|kripto_vadeli>.json. Fırsat ve FiboAyna için
+  ayrı hesaplar; işlem yaşam döngüsü kaynaktan (R), hesap yalnız para yönetimi: BIST 100 bin TL / 20 bin, diğer 1000 $ / 200 $, en çok 5,
+  puan sırası. Kripto spot yalnız AL; vadeli izole, kaldıraç 20/10/5 içinden stop×L ≤ 0,5 ve tasfiye ≥ 1,5×stop olan en yüksek (yoksa girilmez).
+  Hesaplar 28.11.2026'dan sonraki sinyallerle başlar. PWA: Portföy › Oto hesaplar. Elle sanal defterden (kk_sanal) ayrı.
