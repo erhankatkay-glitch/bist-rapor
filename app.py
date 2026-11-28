@@ -262,7 +262,7 @@ def renk_skor(s):
 def analiz(kod, emsal, prm, gun, surum):
     klasor = tempfile.mkdtemp()
     d, m, emsaller, endeks = br.analiz_et(kod, emsal, log=lambda x: None, **dict(prm))
-    dosya = os.path.join(klasor, f"{m['kod']}_Arastirma_Raporu_{dt.date.today():%Y%m%d}.pdf")
+    dosya = os.path.join(klasor, f"{dosya_adi(m['kod'])}_Arastirma_Raporu_{dt.date.today():%Y%m%d}.pdf")
     br.pdf_olustur(d, m, emsaller, endeks, dosya)
     with open(dosya, "rb") as f:
         pdf = f.read()
@@ -351,6 +351,11 @@ def varlik_goster(r, on="v"):
 
 
 @st.cache_data(ttl=15 * 60, show_spinner=False, max_entries=40)
+def dosya_adi(kod):
+    """Varlık kodundan güvenli dosya adı ("BTC/USDT" → "BTC-USDT"; eğik çizgi klasör sanılmasın)."""
+    return str(kod).replace("/", "-").replace("\\", "-").replace("@", "_").replace(":", "-")
+
+
 def ekip_raporu(s, temel=None):
     """Aşama 14: altı rollü araştırma ekibi (piyasa istatistiği, rejim ve opsiyon verisiyle)."""
     import arastirma_ekibi as EK
@@ -428,7 +433,7 @@ def ekip_goster(e, on):
 def teknik_analiz(kod, zaman, surum, kisa=False):
     s = TK.analiz(kod, kisa_vade=kisa)
     ekip = ekip_raporu(s)
-    klasor = tempfile.mkdtemp(); yol = os.path.join(klasor, f"{s['kod']}_Teknik_{dt.date.today():%Y%m%d}.pdf")
+    klasor = tempfile.mkdtemp(); yol = os.path.join(klasor, f"{dosya_adi(s['kod'])}_Teknik_{dt.date.today():%Y%m%d}.pdf")
     TKR.teknik_pdf(s, yol, ekip=ekip)
     with open(yol, "rb") as f: pdf = f.read()
     graf = {tf: TKR.g_teknik(a, f"{s['kod']} · {TK.TF_AD[tf]} · {a['etiket']}", dpi=130).getvalue() for tf, a in s["tf"].items() if a}
