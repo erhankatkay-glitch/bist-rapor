@@ -779,7 +779,7 @@ def opsiyon_bolumu():
         hucre = [(f"{d.get('deger', 0):.0f}", "DVOL", f"1 yıllık sıra {d.get('yuzdelik', 0) * 100:.0f}/100"),
                  (yz(p.get("gerceklesen_30g"), 0), "gerçekleşen 30g", "geçmiş oynaklık"),
                  (f"{sk:+.1f}".replace(".", ",") if sk is not None else "–", "25Δ çarpıklık", "+: put pahalı"),
-                 (f"{pc:.2f}".replace(".", ",") if pc else "–", "put/call (OI)", "1 üstü korunma ağır"),
+                 (f"{pc:.2f}".replace(".", ",") if pc else "–", "put/call (OI)", "0,8 üstü korunma ağır"),
                  (f"${tl(p.get('oi_usd') / 1e9 if p.get('oi_usd') else 0)} mr" if p.get("oi_usd") else "–", "açık pozisyon", "toplam"),
                  ("ters" if p.get("ters_yapi") else "normal", "vade yapısı", "ters = stres")]
         st.markdown('<div class="kl"><div class="kl-g">' + "".join(f"<div><b>{x}</b><span>{y}<br><i style='font-style:normal;color:#71717A'>{z}</i></span></div>"
