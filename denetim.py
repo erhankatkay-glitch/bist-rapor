@@ -19,10 +19,11 @@ with sync_playwright() as pw:
         fr.wait_for_timeout(2000)
     fr.evaluate("localStorage.setItem('kk_gorulen', JSON.stringify(Array.from({length:80},(_, i)=>'x'+i)))")
     for kod in ("BTC/USDT|kripto|seviye|",):
-        print("   istek:", fr.evaluate("(document.querySelector('.oc .oc-t2')||{}).dataset && document.querySelector('.oc .oc-t2').dataset.kk"))
-        fr.locator(".oc .oc-t2").first.click()
+        ist = fr.evaluate("(()=>{const r=[...document.querySelectorAll('.oc')].find(x=>x.innerText.includes('BTC')); return r? r.getAttribute('data-kk') : null;})()") or "BTC/USDT|Kripto|seviye|"
+        print("   istek:", ist)
+        fr.evaluate(f"window.kkIstek('{ist}')")
         ok = False
-        for _ in range(80):
+        for _ in range(100):
             fr.wait_for_timeout(3000)
             if fr.evaluate("[...document.querySelectorAll('summary')].some(x=>x.innerText.includes('Araştırma ekibi'))") and \
                not fr.evaluate("!!document.querySelector('[data-testid=stStatusWidget]')"): ok = True; break
