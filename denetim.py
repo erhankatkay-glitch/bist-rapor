@@ -1,14 +1,27 @@
-import sys, pandas as pd, numpy as np
-sys.path.insert(0,".")
-import teknik_bulten as TB, rejim as RJ, bist_teknik as T
-kod=TB.evren("bist")
-sem=[T.yahoo_sembol(k)[0] for k in kod]
-v=TB.gunu_tamamla(TB.toplu_veri(sem,"10y"))
-ham={k: v[s]["Close"] for k,s in zip(kod,sem) if s in v and v[s] is not None and len(v[s])}
-G=RJ.genislik(ham); print(G.tail(4))
-C=pd.DataFrame({k:s[~s.index.duplicated()] for k,s in ham.items() if len(s)>=60}).sort_index()
-print("son 4 tarih", [str(i) for i in C.index[-4:]], "son satir dolu", int(C.iloc[-1].notna().sum()))
-C2=C.ffill(limit=3); s200=C2.rolling(200,min_periods=200).mean()
-print("s200 gecerli son", int(s200.iloc[-1].notna().sum()), "ust", int((C2.iloc[-1]>s200.iloc[-1]).sum()))
-print("s200 gecerli 5 gun once", int(s200.iloc[-6].notna().sum()))
-r=C2.iloc[-260:]; nn=r.isna().sum(axis=1); print("NaN cok olan satirlar", nn[nn>50].tail(8).to_dict())
+import subprocess, sys; subprocess.run([sys.executable, "-m", "playwright", "install", "--with-deps", "webkit"], check=True)
+import asyncio, os, json, urllib.request
+from playwright.async_api import async_playwright
+os.makedirs("denetim_graf", exist_ok=True)
+R="https://raw.githubusercontent.com/erhankatkay-glitch/bist-rapor/bulten/"
+j=lambda y: json.load(urllib.request.urlopen(R+y))
+d=j("dunya/ozet.json"); b=[x for x in d["borsalar"] if x["ad"]=="BIST 100"][0]; print("DUNYA BIST100", b["son"], b["d1"])
+x=j("karne/bist/XU100.json"); print("KARNE XU100", x["tf"]["G"]["fiyat"], x["tf"]["G"]["degisim"], x["grafik"]["t"][-1])
+t=j("karne/bist/THYAO.json"); print("KARNE THYAO", t["tf"]["G"]["fiyat"], t["grafik"]["t"][-1])
+r=j("rejim/bist.json"); print("REJIM BIST", r["durum_ad"], r["maruziyet"], r["kapanis"], r["genislik"]["ust50"], r["genislik"]["ust200"])
+for pz in ["bist","abd","kripto","emtia"]: print("LISTE", pz, len(j(f"karne/{pz}/liste.json")["varliklar"]))
+async def main():
+  async with async_playwright() as p:
+    bw=await p.webkit.launch(); c=await bw.new_context(**p.devices["iPhone 13"]); pg=await c.new_page(); hata=[]
+    pg.on("pageerror",lambda e:hata.append(str(e)))
+    await pg.goto("https://erhankatkay-glitch.github.io/bist-rapor/"); await pg.wait_for_timeout(6000)
+    for q in ["nvda","kchol","pepe","gumus"]:
+      await pg.fill("#oara", q); await pg.wait_for_timeout(600)
+      print("ARA", q, (await pg.inner_text("#osonuc"))[:90].replace("\n"," | "))
+    await pg.fill("#oara","nvda"); await pg.wait_for_timeout(500); await pg.locator("#osonuc a").first.tap(); await pg.wait_for_timeout(3000)
+    print("NVDA sayfa", (await pg.inner_text("#s-varlik"))[:160].replace("\n"," | "))
+    await pg.screenshot(path="denetim_graf/nvda.png")
+    await pg.go_back(); await pg.wait_for_timeout(800)
+    await pg.tap("nav button[data-s=piyasa]"); await pg.wait_for_timeout(3000)
+    print("PIYASA", (await pg.inner_text("#s-piyasa"))[:120].replace("\n"," | "))
+    print("HATA", hata); await bw.close()
+asyncio.run(main())
