@@ -48,6 +48,9 @@ def _sabirli(fn, deneme=6):
 
 
 def main(klasor, pz):
+    if pz in ("kripto", "emtia"):          # bilançosuz varlıklar: arz/likidite, türev, vade eğrisi, COT (temel_varlik.py)
+        import temel_varlik as TV
+        return (TV.kripto if pz == "kripto" else TV.emtia)(klasor)
     import bist_rapor as br
     import teknik_bulten as TB
     kodlar = TB.evren(pz)

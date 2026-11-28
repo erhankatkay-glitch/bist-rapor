@@ -1,10 +1,15 @@
 name: Temel analiz özetleri (hızlı uygulama)
 
-# Her gece BIST (tüm hisseler) ve ABD (en likit 300) için değerleme / finansal sağlık özeti → bulten/temel/<piyasa>.json
+# Her gece BIST (tüm hisseler), ABD (en likit 300), kripto ve emtia için temel özet → bulten/temel/<piyasa>.json
 on:
   schedule:
     - cron: "40 3 * * *"   # 06:40 TSİ
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      piyasalar:
+        description: 'Piyasalar (JSON liste)'
+        required: false
+        default: '["bist","abd","kripto","emtia"]'
 
 permissions:
   contents: write
@@ -20,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        piyasa: [bist, abd]
+        piyasa: ${{ fromJSON(inputs.piyasalar || '["bist","abd","kripto","emtia"]') }}
     env:
       GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
     steps:

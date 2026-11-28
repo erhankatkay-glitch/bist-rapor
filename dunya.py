@@ -131,11 +131,12 @@ def kontratlar(kok, borsa, bugun=None, ay=14):
     return out
 
 
-def vade_yapisi():
-    hepsi = {ad: kontratlar(kok, borsa) for ad, kok, borsa in EMTIA}
-    K = _indir([s for l in hepsi.values() for s, _ in l] + [f"{kok}=F" for _, kok, _ in EMTIA], gun="10d")
+def vade_yapisi(liste=None):
+    liste = liste or EMTIA
+    hepsi = {ad: kontratlar(kok, borsa) for ad, kok, borsa in liste}
+    K = _indir([s for l in hepsi.values() for s, _ in l] + [f"{kok}=F" for _, kok, _ in liste], gun="10d")
     out = []
-    for ad, kok, borsa in EMTIA:
+    for ad, kok, borsa in liste:
         pts = []
         for s, ay in hepsi[ad]:
             x = K.get(s)
