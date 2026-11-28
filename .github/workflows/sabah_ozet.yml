@@ -48,6 +48,9 @@ jobs:
       - name: Dünya piyasaları (Aşama 12)
         continue-on-error: true
         run: python dunya.py cikti
+      - name: Temel listeler karnesi ve değişimler
+        continue-on-error: true
+        run: python temel_karne.py cikti
       - name: Sabah özetini üret ve gönder
         run: python sabah.py
       - name: Yayınla

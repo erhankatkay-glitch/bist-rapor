@@ -782,11 +782,63 @@ function varlikTemelListe(T, pz, ust) {
         <span>${esc(((t["Güçlü"] || [])[0] || (t["Zayıf"] || [])[0] || ""))}</span></div>
         <div class="f"><b style="color:var(--a)">${kr ? t["Temel puan"] : tr(t.Skor, 1)}</b><span class="${rk(t.Potansiyel)}">${yzD(t.Potansiyel, 0)}</span></div></div></a>`).join("") || "<div class='bos'>Temel veri henüz yok (her gece güncellenir).</div>");
 }
+// temel listelerin karnesi (temel_karne.py → temel/karne.json): puanlar gerçekten işe yarıyor mu?
+async function temelKarneHtml(ust) {
+  const K = await al("temel/karne.json");
+  let h = `<h2>Temel listelerin karnesi</h2>${ust}<div class="not" style="font-size:11px;margin:-2px 2px 8px">Her sabah temel listelerin (değerinin altındakiler, halka arzlar, kripto temel puanı, emtia skoru) fotoğrafı arşivlenir; 1 hafta, 1 ay ve 3 ay sonra
+    listenin ortalama getirisi, aynı dönemde tüm evrenin (eşit ağırlıklı) ortalamasıyla karşılaştırılır. <b>Fark</b> pozitifse liste piyasayı geçmiştir. Örnek sayısı az olduğunda sonuçlar şans eseri olabilir.</div>`;
+  if (!K || !K.listeler) return h + "<div class='bos'>Karne henüz hazır değil; ilk arşiv bir sonraki sabah özetiyle oluşur.</div>";
+  const ilk = K.ilk ? new Date(K.ilk) : null;
+  if (ilk) h += `<div class="uyari" style="margin-bottom:8px">Arşiv ${ilk.toLocaleDateString("tr-TR")} tarihinden beri tutuluyor (${K.gun_sayisi} gün). İlk 1 haftalık sonuç ${new Date(ilk.getTime() + 7 * 864e5).toLocaleDateString("tr-TR")}, 1 aylık ${new Date(ilk.getTime() + 30 * 864e5).toLocaleDateString("tr-TR")} itibarıyla görünür.</div>`;
+  for (const [ad, L] of Object.entries(K.listeler)) {
+    const U = Object.entries(L.ufuklar || {});
+    h += `<div class="kart"><b style="font-size:13.5px">${esc(L.baslik)}</b>` + (U.length ? `<table class="tablo" style="margin-top:6px"><tr><td class="not">Süre</td><td class="not">Liste</td><td class="not">Evren</td><td class="not">Fark</td><td class="not">Geçti</td></tr>${U.map(([u, x]) =>
+      `<tr><td>${{"1H": "1 hafta", "1A": "1 ay", "3A": "3 ay"}[u]} <span class="not">(${x.n})</span></td><td class="${rk(x.liste)}">${yz(x.liste, 1)}</td><td class="${rk(x.evren)}">${yz(x.evren, 1)}</td><td><b class="${rk(x.fark)}">${yz(x.fark, 1)}</b></td><td>${yuzde(x.gecti)}</td></tr>`).join("")}</table>`
+      : `<div class="not" style="font-size:11.5px;margin-top:4px">Henüz ölçülecek kadar süre geçmedi.</div>`);
+    if (L.izlenen) h += `<div class="not" style="font-size:11px;margin-top:8px">${new Date(L.izlenen.t0).toLocaleDateString("tr-TR")} listesi bugüne kadar (evren ${yz(L.izlenen.evren, 1)}):</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">${L.izlenen.kodlar.map(([k, r]) =>
+      `<a class="etk ${r > (L.izlenen.evren || 0) ? "al" : "sat"}" href="#v/${encodeURIComponent(k)}">${esc(k.split("/")[0])} ${yzD(r, 0)}</a>`).join("")}</div>`;
+    else if ((L.guncel || []).length) h += `<div class="not" style="font-size:11px;margin-top:8px">Bugünkü liste: ${L.guncel.map(k => esc(k.split("/")[0])).join(", ")}</div>`;
+    h += `</div>`;
+  }
+  return h;
+}
+
+// portföy temel uyarısı (Özet): portföydeki, sanal işlemdeki ve takipteki varlıkların temel görünümü son bakıştan beri değiştiyse
+async function pfTemelDurum() {
+  const kaynak = {};
+  LS.get("kk_pf_metin", "").split(/\n/).map(x => (x.trim().split(/\s+/)[0] || "").toUpperCase()).filter(Boolean).forEach(k => { const v = varlikBul(k); if (v) kaynak[v.kod] = {v, n: "portföy"}; });
+  try { islemler(defter()).filter(a => a.kalan > 1e-12).forEach(a => { const v = varlikBul(a.kod); if (v && !kaynak[v.kod]) kaynak[v.kod] = {v, n: "sanal işlem"}; }); } catch (e) {}
+  LS.get("kk_takip", []).forEach(k => { const v = varlikBul(k); if (v && !kaynak[v.kod]) kaynak[v.kod] = {v, n: "takip"}; });
+  const out = [];
+  for (const [kod, {v, n}] of Object.entries(kaynak)) {
+    if (!["bist", "abd", "kripto", "emtia"].includes(v.pz)) continue;
+    const T = await temelAl(v.pz), t = T && T.satirlar && T.satirlar[kod]; if (!t) continue;
+    const g = v.pz === "bist" || v.pz === "abd" ? t["Görüş"] : t["Görünüm"], p = v.pz === "kripto" ? t["Temel puan"] : v.pz === "emtia" ? (t.Skor == null ? null : Math.round(t.Skor * 20)) : t["Fırsat skoru"];
+    out.push({kod, v, n, g: g || "–", p: p == null ? null : Math.round(p)});
+  }
+  return out;
+}
+async function pfTemelUyari() {
+  const el = document.getElementById("pf-temel"); if (!el) return;
+  await karneListe(); const D = await pfTemelDurum(); if (!D.length) return;
+  const eski = LS.get("kk_temel_gordum", null), yeni = Object.fromEntries(D.map(x => [x.kod, {g: x.g, p: x.p}]));
+  if (!eski) { LS.set("kk_temel_gordum", yeni); return; }   // ilk açılış: yalnız kaydet
+  const deg = D.filter(x => eski[x.kod] && (eski[x.kod].g !== x.g || (x.p != null && eski[x.kod].p != null && Math.abs(x.p - eski[x.kod].p) >= 15)));
+  const yeniler = D.filter(x => !eski[x.kod]); if (yeniler.length) { yeniler.forEach(x => eski[x.kod] = {g: x.g, p: x.p}); LS.set("kk_temel_gordum", eski); }
+  if (!deg.length) { el.innerHTML = ""; return; }
+  el.innerHTML = `<h2>Portföyünde temel değişiklik</h2><div class="kart">${deg.map(x => { const e = eski[x.kod], dp = x.p != null && e.p != null ? x.p - e.p : null;
+    return `<a class="dok" href="#v/${encodeURIComponent(x.kod)}" style="display:block;padding:6px 0;border-bottom:1px solid var(--c)"><div class="satir"><div class="a"><b>${logo(x.kod, x.v.pz, x.v.ad)}${esc(x.kod.split("/")[0].replace(".US", ""))} <span class="not" style="font-weight:600">${esc(x.n)}</span></b>
+      <span>${e.g !== x.g ? `${esc(e.g)} → <b class="${/ALTINDA|POZİTİF/.test(x.g) ? "ust" : /ÜZERİNDE|NEGATİF/.test(x.g) ? "alt" : ""}" style="display:inline;font-size:inherit">${esc(x.g)}</b>` : esc(x.g)}</span></div>
+      ${dp != null ? `<div class="f"><b class="${rk(dp)}">${dp > 0 ? "+" : ""}${dp}</b><span class="not">puan</span></div>` : ""}</div></a>`; }).join("")}
+    <button class="btn" id="pft-tamam" style="border:none;margin-top:10px">Gördüm</button><div class="not" style="font-size:10.5px;margin-top:6px">Portföy listen yalnız bu telefonda saklanır; karşılaştırma da burada yapılır.</div></div>`;
+  document.getElementById("pft-tamam").onclick = () => { LS.set("kk_temel_gordum", yeni); el.innerHTML = ""; };
+}
 async function temelBolum(el) {   // Piyasa › Temel: değer sıralaması (BIST / ABD) ve bebek şirketler (resmi / genç / küçük)
   const mod = LS.get("kk_temel_mod", "bist");
-  const ust = `<div class="cip">${[["bist", "BIST değer"], ["abd", "ABD değer"], ["kripto", "Kripto"], ["emtia", "Emtia"], ["resmi", "Bebekler"], ["genc", "Genç şirketler"], ["kucuk", "Küçük şirketler"]].map(([k, a]) => `<button data-tz="${k}" class="${k === mod ? "s" : ""}">${a}</button>`).join("")}</div>`;
+  const ust = `<div class="cip">${[["bist", "BIST değer"], ["abd", "ABD değer"], ["kripto", "Kripto"], ["emtia", "Emtia"], ["resmi", "Bebekler"], ["genc", "Genç şirketler"], ["kucuk", "Küçük şirketler"], ["karne", "Karne"]].map(([k, a]) => `<button data-tz="${k}" class="${k === mod ? "s" : ""}">${a}</button>`).join("")}</div>`;
   const bagla = () => el.querySelectorAll("[data-tz]").forEach(b => b.onclick = () => { LS.set("kk_temel_mod", b.dataset.tz); temelBolum(el); });
   await karneListe();
+  if (mod === "karne") { el.innerHTML = await temelKarneHtml(ust); return bagla(); }
   if (mod === "kripto" || mod === "emtia") { el.innerHTML = varlikTemelListe(await temelAl(mod), mod, ust); return bagla(); }
   if (mod === "bist" || mod === "abd") {
     const T = await temelAl(mod);
@@ -990,6 +1042,7 @@ async function ozet() {
   h += `<input class="ara" id="oara" placeholder="🔍 Herhangi bir varlığı ara: THYAO, NVDA, BTC, altın…" style="margin-top:2px"><div id="osonuc"></div>`;
   h += "<div id='cuzdan'></div>";
   h += await sabahKart();
+  h += "<div id='pf-temel'></div>";
   // canlı kripto (Binance): ilk değer REST, sonra WebSocket ile saniye saniye
   h += "<h2>Kripto ve altın · <span class='canli'><i></i>canlı</span></h2><div class='izgara'>" + SEM.map(x => {
     const k = x.replace("USDT", ""), pz = k === "PAXG" ? "emtia" : "kripto", kod = k === "PAXG" ? "ALTIN" : k + "/USDT";
@@ -1015,7 +1068,7 @@ async function ozet() {
   const bl = await al("alarm/son.json");
   if (bl && bl.length) h += "<h2>Son bildirimler</h2>" + bl.slice(0, 3).map(bildirimHtml).join("");
   el.innerHTML = h || "<div class='bos'>Veri alınamadı.</div>";
-  SEM.forEach(x => kutuYaz(x, false)); canliBasla(); cuzdan();
+  SEM.forEach(x => kutuYaz(x, false)); canliBasla(); cuzdan(); pfTemelUyari().catch(() => {});
   document.getElementById("oara").oninput = async e => {
     const q = e.target.value.trim().toLocaleUpperCase("tr"), L = (await karneListe()).varliklar;
     document.getElementById("osonuc").innerHTML = q.length < 2 ? "" : (ara(q, 12).map(karneSatir).join("") || "<div class='bos'>Bulunamadı.</div>");

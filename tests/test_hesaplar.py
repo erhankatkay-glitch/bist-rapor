@@ -612,3 +612,16 @@ def test_temel_ozet_karti(tmp_path, monkeypatch):
     assert tg.uygulama_dugme("temel")["inline_keyboard"][0][0]["url"].endswith("#piyasa/temel")
     assert "karamsar" in TV.cot_yorum({"spek_yuzdelik_3y": 0.05, "spek_d1h": 10})
     assert TV._t({"a": float("nan"), "b": [1.5, None]}) == {"a": None, "b": [1.5, None]}
+
+
+def test_temel_karne_ve_degisim():
+    import temel_karne as TK
+    f0 = {"A": 10, "B": 10, "C": 10, "D": 10}; f1 = {"A": 12, "B": 11, "C": 9, "D": 10}
+    g = lambda f, l, cot=None, kp=None: {"listeler": {"bist_deger": l}, "fiyat": {"bist": f}, "cot": cot or {}, "kpuan": kp or {}}
+    G = {"2026-11-01": g(f0, ["A", "B"], {"SEKER": 0.5}, {"X": 80}), "2026-11-08": g(f1, ["A", "C"], {"SEKER": 0.95}, {"X": 55})}
+    K = TK.karne(G)["bist_deger"]
+    u = K["ufuklar"]["1H"]
+    assert u["n"] == 1 and abs(u["liste"] - 0.15) < 1e-9 and abs(u["evren"] - 0.05) < 1e-9 and abs(u["fark"] - 0.10) < 1e-9 and u["gecti"] == 1
+    assert K["izlenen"]["t0"] == "2026-11-01" and K["guncel"] == ["A", "C"]
+    O = TK.degisim(G)["olaylar"]
+    assert {(o["tur"], o["kod"]) for o in O} == {("liste", "C"), ("liste_cikti", "B"), ("cot", "SEKER"), ("kpuan", "X")}

@@ -38,6 +38,19 @@ def _tarih(s):
 def bolumler(C):
     """(kart bölümleri, Telegram metni satırları)"""
     B, M = [], []
+    try: D = json.load(open(os.path.join(tg.CIKTI, "temel", "degisim.json"), encoding="utf-8"))   # temel_karne.py (aynı iş akışı)
+    except Exception: D = {}
+    O = [o for o in D.get("olaylar", []) if o["tur"] != "liste_cikti"]
+    EA = {k: t.get("Ad") for k, t in ((_oku("emtia") or {}).get("satirlar") or {}).items()}
+    for o in O: o["ad"] = EA.get(o["kod"]) or (o["kod"].split("/")[0] if o["pz"] == "kripto" else o["kod"])
+    if O:
+        O.sort(key=lambda o: {"cot": 0, "kpuan": 1, "liste": 2}.get(o["tur"], 3))
+        B.append({"baslik": "DÜNDEN BUGÜNE DEĞİŞENLER", "renk": C["altin"],
+                  "satirlar": [{"sol": o["ad"], "logo": (o["kod"], o["pz"]), "alt": o["metin"],
+                                "nokta": C["yesil"] if o["yon"] > 0 else C["kirmizi"] if o["yon"] < 0 else None,
+                                "sag": {"liste": "YENİ", "cot": "COT", "kpuan": "PUAN"}.get(o["tur"], ""), "sag_renk": C["yesil"] if o["yon"] > 0 else C["kirmizi"]}
+                               for o in O[:6]]})
+        M.append("🔔 <b>Değişenler:</b> " + "; ".join(f"{o['ad']} ({o['metin'].split(':')[0].split(' (')[0].lower()})" for o in O[:6]))
     T = _oku("bist")
     if T:
         R = [(k, t) for k, t in T["satirlar"].items() if "ALTINDA" in str(t.get("Görüş") or "") and t.get("Fırsat skoru") is not None
