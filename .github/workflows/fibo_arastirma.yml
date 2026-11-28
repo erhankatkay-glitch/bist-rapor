@@ -1,0 +1,43 @@
+name: FiboAyna strateji araştırması
+
+# Kullanıcının FiboAyna göstergesi (şifreli: ozel/fibo.enc, anahtar FIBO_ANAHTAR) ile geçmiş test; sonuçlar iş çıktısı (artifact)
+on:
+  workflow_dispatch:
+    inputs:
+      piyasalar:
+        description: 'Piyasalar (JSON liste)'
+        required: false
+        default: '["bist","abd","kripto","emtia"]'
+      adet:
+        description: 'Piyasa başına sembol'
+        required: false
+        default: '150'
+
+permissions:
+  contents: read
+
+jobs:
+  arastirma:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        piyasa: ${{ fromJSON(inputs.piyasalar || '["bist","abd","kripto","emtia"]') }}
+    env:
+      FIBO_ANAHTAR: ${{ secrets.FIBO_ANAHTAR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt cryptography numba
+      - name: Araştırma
+        run: python fibo_yukle.py fibo_arastirma fibo_cikti ${{ matrix.piyasa }} ${{ inputs.adet || '150' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fibo-${{ matrix.piyasa }}
+          path: fibo_cikti/
+          retention-days: 30
