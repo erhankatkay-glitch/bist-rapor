@@ -314,3 +314,13 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   zaman damgası data-api /api/v3/time'dan. Anahtar değerleri asla depoya/sunucuya/sohbete gelmez.
 - PWA güncelleme: sw.js SURUM her değişiklikte artırılır; sayfa ağ-önce, controllerchange'de bir kez yenilenir.
 
+## Hızlı uygulama 1. adım + veri düzeltmeleri (28.11.2026)
+- Karneler: karne.py → bulten/karne/<bist|abd|kripto|emtia>/<kod>.json + liste.json. Kapanış taraması (teknik_bulten._yaz) her piyasada
+  tüm evrenin karnesini yazar; karne.yml (4'lü matris, 12:10 TSİ + elle) gün ortası tazeler, rejim ve dünya özetini de günceller (Telegram yok).
+  Evren: BIST ~630, ABD ~1900 (likit), kripto ~660, emtia 16. yayinla ALT_BIRIM'e "karne" eklendi.
+- VERİ HATASI (düzeltildi): Yahoo bazı günlerin satırını kapanışı NaN verir (27.11.2026 BIST hisseleri). gun_ici_tamamla ve canli_guncelle
+  bu satırı "var" sayıp günü tamamlamıyordu → analizler bir önceki günde kalıyordu. Artık NaN satırlar atılıp gün içi veriden kuruluyor;
+  BIST piyasa kapalıyken tek varlıkta resmi kapanış fast_info.lastPrice ile. dunya._indir de 15 dk veriyle tamamlanıyor.
+- VERİ HATASI (düzeltildi): rejim.genislik — tek hissenin tatil satırı (30–31.05.2026) 200 günlük genişliği aylarca %0 yapıyordu;
+  yalnız hisselerin en az yarısının işlem gördüğü günler kullanılıyor.
+
