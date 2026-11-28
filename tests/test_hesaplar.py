@@ -531,3 +531,14 @@ def test_ekstre_okuma():
     liste, _ = EK.coz("Sembol;Miktar;Alış Fiyatı\nGARAN;2.000;95,40\nSİSE;300;41,2\n".encode("cp1254"), "a.csv", K)
     assert {k: a for k, a, _ in liste} == {"GARAN": 2000, "SISE": 300}
     assert EK.satirlar([("GARAN", 2000.0, 95.4)]) == "GARAN 2000 @ 95,4"
+
+
+def test_genislik_basibos_satir():
+    import numpy as np
+    import pandas as pd
+    import rejim as RJ
+    t = pd.bdate_range("2025-01-01", periods=320)
+    kap = {f"H{i}": pd.Series(np.linspace(100, 150 + i, len(t)), index=t) for i in range(20)}
+    kap["H0"] = pd.concat([kap["H0"], pd.Series([140.0], index=[t[150] + pd.Timedelta(days=1)])]).sort_index()   # tatilde tek satır
+    G = RJ.genislik(kap)
+    assert G["ust200"].iloc[-1] > 0.9 and G["n"].iloc[-1] == 20
