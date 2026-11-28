@@ -337,3 +337,7 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   solan altın çizgi), kart.alt_bant (uygulama adresi + yasal not); bildirim_karti ızgara bölümü (izgara=True). Bütün kartlar bunları kullanır
   (fırsat, bülten, bildirim tabanlı tüm kartlar, sabah). Her mesajın altında hızlı uygulamayı açan düğme: tg.uygulama_dugme (fırsat → #v/KOD,
   alarm → #bildirim, rejim/dünya/… → #piyasa). Düğme reddedilirse mesaj düğmesiz gider.
+- Fırsat performansı incelemesi (28.11.2026): kapanan 21 fırsatın 20'si kripto 4S, 17'si SAT; 24–27.11 kripto toparlanmasında birlikte stop
+  (BTC rejim filtresi SAT'a izin veriyordu). 4'ü tokenleştirilmiş hisseydi (XSPCX, SPCXB, QQQB, XQQQ). Önlemler: bist_kripto.hisse_tokeni_mu
+  geniş ABD listesiyle (142 token daha elendi, _GERCEK_KRIPTO istisnaları), kapanis.yogunluk_siniri (YON_YENI / YON_ACIK). Kurulum
+  istatistikleri (geçmiş test) değiştirilmedi: GERI|-1|4S n=2793, H1 %51, ort +0,09R — canlı örnek henüz istatistiksel olarak anlamlı değil.

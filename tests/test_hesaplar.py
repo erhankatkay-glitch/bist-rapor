@@ -569,3 +569,17 @@ def test_kartlar_cizilir(tmp_path):
         {"baslik": "Liste", "renk": K.C["kirmizi"], "satirlar": [{"sol": "ASELS", "sag": "+%5,4", "nokta": K.C["yesil"], "alt": "açıklama"}]}],
         str(tmp_path / "k.png"), not_="not")
     assert (tmp_path / "k.png").stat().st_size > 10000
+
+
+def test_yogunluk_siniri_ve_hisse_tokeni():
+    import types
+    import bist_kripto as K
+    import kapanis as KP
+    D = types.SimpleNamespace(p="kripto", acik=[{"yon": -1}, {"yon": -1}])
+    sec = [{"kod": f"C{i}/USDT", "yon": -1} for i in range(5)] + [{"kod": "A/USDT", "yon": 1}]
+    out = KP.yogunluk_siniri(D, sec)
+    assert sum(1 for f in out if f["yon"] == -1) == 2 and any(f["yon"] == 1 for f in out)
+    K._ABD = {"OKTA", "STLL", "PDD", "NET"}
+    assert K.hisse_tokeni_mu("XOKTA") and K.hisse_tokeni_mu("PDDB") and K.hisse_tokeni_mu("XSPCX")
+    assert not K.hisse_tokeni_mu("XRP") and not K.hisse_tokeni_mu("XNET") and not K.hisse_tokeni_mu("BTC") and not K.hisse_tokeni_mu("BNB")
+    K._ABD = None

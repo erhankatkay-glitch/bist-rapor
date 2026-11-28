@@ -347,6 +347,25 @@ def rejim_turu(p, analizler, endeks, bot):
         log("rejim:", ex)
 
 
+# Yoğunlaşma sınırı (risk kuralı; beklenen getiriyi değiştirmez, toplu kaybı sınırlar). Kasım 2026'da kriptoda tek bir piyasa
+# toparlanmasında aynı yöndeki 17 SAT fırsatı birlikte stop olmuştu: aynı yöndeki kurulumlar aslında tek bir bahis.
+YON_YENI = {"kripto": 2, "bist": 3, "abd": 3, "emtia": 2}     # bir taramada aynı yönde en çok yeni fırsat
+YON_ACIK = {"kripto": 4, "bist": 6, "abd": 6, "emtia": 3}     # piyasada aynı yönde en çok açık fırsat (tüm zaman dilimleri)
+
+
+def yogunluk_siniri(D, secilen):
+    """Puan sırasındaki seçimden, aynı yönde fazla yoğunlaşanları çıkarır."""
+    acik = {1: 0, -1: 0}
+    for k in D.acik: acik[k["yon"]] = acik.get(k["yon"], 0) + 1
+    yeni = {1: 0, -1: 0}; out = []
+    for f in secilen:
+        y = f["yon"]
+        if yeni[y] >= YON_YENI.get(D.p, 3) or acik[y] + yeni[y] >= YON_ACIK.get(D.p, 6):
+            log(f"{D.p}: {f['kod']} {'AL' if y == 1 else 'SAT'} yoğunlaşma sınırı nedeniyle alınmadı"); continue
+        yeni[y] += 1; out.append(f)
+    return out
+
+
 REJIM = {}   # (piyasa, tf) → piyasa öncüsünün yönü (+1/0/-1); fırsat filtresi için (firsat.FILTRE)
 
 
@@ -364,7 +383,8 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
     try: portfoy_uyari(bot, D, tf, varliklar, adaylar)
     except Exception as ex: log("portföy uyarısı:", ex)
     acik_anahtar = {(k["kod"], k["tf"], k["yon"]) for k in D.acik}
-    secilen = [f for f in secilen if (f["kod"], f["tf"], f["yon"]) not in acik_anahtar][:ADET]
+    secilen = [f for f in secilen if (f["kod"], f["tf"], f["yon"]) not in acik_anahtar]
+    secilen = yogunluk_siniri(D, secilen)[:ADET]
     log(f"{D.p} {tf}: {len(varliklar)} varlık, {len(adaylar)} aday, {len(secilen)} fırsat ({time.time() - t0:.0f} sn)")
     by = {v["kod"]: v for v in varliklar}
     for f in secilen:
