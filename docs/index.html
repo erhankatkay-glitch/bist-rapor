@@ -351,6 +351,7 @@ async function varlik(kod) {
   if (!k) { el.innerHTML = `<button class="geri" onclick="history.back()">‹ Geri</button><div class="kart"><div class="metin">${esc(kod)} için hazır karne yok.</div>
       <a class="btn" target="_blank" href="${ac(kod, "bist")}">Tam uygulamada analiz et ›</a></div>`; return; }
   const g = k.tf.G || Object.values(k.tf)[0], para = {"₺": "₺", "$": "$"}[k.para] || "";
+  const PDFD = await pdfDizin();
   const e = k.ekip, gor = e ? (e.gorunum.startsWith("AL") ? "al" : e.gorunum.startsWith("SAT") ? "sat" : "n") : "";
   const sev = (l, renk) => (l || []).map(x => `<tr><td><span style="color:${renk}">●</span> ${x[1]} temas</td><td>${para}${fy(x[0])}</td></tr>`).join("");
   let h = `<button class="geri" onclick="history.length > 1 ? history.back() : git('ozet')">‹ Geri</button>
@@ -376,7 +377,8 @@ async function varlik(kod) {
   }
   h += `<h2>Sinyaller (günlük)</h2><div class="kart">${(g.sinyal || []).map(x => `<div class="sin"><b class="${rk(x.yon)}">${x.yon > 0 ? "▲" : x.yon < 0 ? "▼" : "•"} ${esc(x.ad)}</b><p>${esc(x.aciklama)}</p></div>`).join("") || "<div class='bos'>Taze sinyal yok.</div>"}</div>
     <details class="kart"><summary>Gösterge durumları (${(g.durum || []).length})</summary><table class="tablo">${(g.durum || []).map(d => `<tr><td>${esc(d.ad)}<br><span class="not" style="font-size:11px">${esc(d.aciklama)}</span></td><td class="${rk(d.yon)}">${esc(d.deger)}</td></tr>`).join("")}</table></details>
-    <a class="btn" target="_blank" rel="noopener" href="${ac(k.kod, k.pz)}">Canlı analiz ve PDF rapor (tam uygulama) ›</a>
+    ${pdfDugmeleri(PDFD, k.kod)}
+    <a class="btn" target="_blank" rel="noopener" href="${ac(k.kod, k.pz)}" style="background:var(--k);color:var(--y);border:1px solid var(--c)">Canlı analiz (tam uygulama) ›</a>
     <div class="uyari">Karne ${new Date(k.zaman).toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"})} itibarıyla hesaplandı (veri: ${esc(k.fiyat_zamani)}).</div>`;
   el.innerHTML = h;
   { const c = canliAl({kod: k.kod, pz: k.pz, tarih: k.grafik.t[k.grafik.t.length - 1]});
@@ -724,6 +726,16 @@ async function temelBolum(el) {   // Piyasa › Temel: değer sıralaması (BIST
   bagla();
 }
 
+// ---------------------------------------------------------------- önceden üretilmiş PDF raporlar (GitHub sürüm ekleri; dizin bulten/pdf/)
+let PDF_D = null;
+async function pdfDizin() { if (!PDF_D) { const [t, a] = await Promise.all([al("pdf/teknik.json"), al("pdf/arastirma.json")]); PDF_D = {teknik: (t || {}).dosyalar || {}, arastirma: (a || {}).dosyalar || {}}; } return PDF_D; }
+function pdfDugmeleri(D, kod) {
+  const b = [];
+  if (D.teknik[kod]) b.push(`<a class="btn" href="${D.teknik[kod].url}" target="_blank" rel="noopener">📄 Teknik analiz PDF</a>`);
+  if (D.arastirma[kod]) b.push(`<a class="btn" href="${D.arastirma[kod].url}" target="_blank" rel="noopener">📄 Şirket araştırma raporu PDF</a>`);
+  return b.join("") + (b.length ? `<div class="uyari" style="margin-top:4px">PDF'ler her gece yenilenir (${new Date((D.teknik[kod] || D.arastirma[kod]).zaman).toLocaleDateString("tr-TR")}).</div>` : "");
+}
+
 // ---------------------------------------------------------------- 3. adım: takvim, ekonomi, tarayıcı, karşılaştır, fırsat performansı, sabah özeti
 let PV = null;   // docs/pwa_veri.json: tam uygulamanın sözlükleri (takvim Türkçe adları, tarayıcı alanları ve hazır taramalar)
 async function pwaVeri() { if (!PV) { try { PV = await fetch("pwa_veri.json").then(r => r.json()); } catch (e) { PV = {veri: [], ulke: {}, alanlar: {}, hazir: {}}; } } return PV; }
@@ -1068,7 +1080,7 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => git(b.dat
 async function yenile(b) {   // tüm veriyi önbelleği atlayarak yeniden çek, açık sayfayı yeniden çiz
   const etiketler = [document.getElementById("yenile"), document.getElementById("yenile2")];
   etiketler.forEach(x => x && (x.disabled = true)); document.getElementById("yenile").textContent = "↻ Yenileniyor…";
-  ZORLA = Date.now(); KARNE = null; BEBEK = null; Object.keys(TEMEL).forEach(k => delete TEMEL[k]); Object.keys(yuklendi).forEach(k => yuklendi[k] = false);
+  ZORLA = Date.now(); KARNE = null; BEBEK = null; PDF_D = null; Object.keys(TEMEL).forEach(k => delete TEMEL[k]); Object.keys(yuklendi).forEach(k => yuklendi[k] = false);
   const s = decodeURIComponent((location.hash || "#ozet").slice(1));
   try { git(YUK[s] || s.startsWith("v/") ? s : "ozet"); await karneListe(); } catch (e) {}
   setTimeout(() => { ZORLA = 0; }, 8000);
