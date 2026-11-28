@@ -40,6 +40,7 @@ def main(klasor, pz):
         print("hata nedenleri:", collections.Counter(str(v)[:70] for v in hatalar.values()).most_common(6))
         s2, hatalar = br.tara(list(hatalar), isci=2)
         satirlar += s2
+        br.firsat_ekle(satirlar)   # fırsat skoru (yüzdelik sıra) birleşik listede yeniden
         if hatalar: print("ikinci tur sonrası:", collections.Counter(str(v)[:70] for v in hatalar.values()).most_common(4))
     out = {}
     for r in satirlar:
