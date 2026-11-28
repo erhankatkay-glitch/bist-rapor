@@ -224,6 +224,8 @@ def _yon(y):
 
 
 SOZLUK_TEKNIK = [
+    ("Tez bozucu", "Gerçekleşirse mevcut görünümü geçersiz kılan önceden yazılmış koşul (ör. belirli bir desteğin altında kapanış)."),
+    ("VaR (riske maruz değer)", "Geçmiş 1 yılın en kötü %5 (ya da %1) günlerinde görülen kayıp; gelecekte daha kötüsü olabilir."),
     ("DVOL", "Deribit'in 30 günlük zımni oynaklık endeksi (kriptonun 'VIX'i): opsiyon fiyatlarından çıkarılan, piyasanın beklediği yıllık oynaklık."),
     ("Max pain", "Opsiyon vadesinde, opsiyon alıcılarına toplamda en az ödeme yaptıran kullanım fiyatı; vadeye yakın fiyat bazen buraya çekilir, garanti değildir."),
     ("25 delta çarpıklık", "Aynı vadede ~%25 olasılıklı put ve call opsiyonların zımni oynaklık farkı; pozitifse düşüşe karşı korunma pahalıdır."),
@@ -254,7 +256,7 @@ SOZLUK_TEKNIK = [
 ]
 
 
-def teknik_pdf(s, dosya):
+def teknik_pdf(s, dosya, ekip=None):
     W = A4[0] - 3.0 * cm; PW = (W - 10) / 2; sym = s["para"]
     sayfa = sayfa_cizici(s["kod"], "Teknik Analiz Raporu", f"{dt.date.today():%d.%m.%Y}", kapak_yuk=4.7 * cm)
     doc = SimpleDocTemplate(dosya, pagesize=A4, leftMargin=1.5 * cm, rightMargin=1.5 * cm, topMargin=1.6 * cm,
@@ -348,6 +350,25 @@ def teknik_pdf(s, dosya):
             E += IR.ileri_bolum(gg["h"], paket, W, {"₺": "TL", "$": "$"}.get(sym, ""), n)
         except Exception as ex:
             print("ileri analiz atlandı:", ex)
+    if ekip is None:
+        try:
+            import arastirma_ekibi as EK
+            ekip = EK.rapor(s)
+        except Exception as ex:
+            print("araştırma ekibi atlandı:", ex)
+    if ekip:   # Aşama 14: altı rollü araştırma ekibi
+        n += 1; E.append(PageBreak()); E.append(Bolum(n, "Araştırma ekibi (6 rol)", W))
+        E.append(Paragraph(f"<b>{ekip['gorunum']}</b> · güven: <b>{ekip['guven']}</b> · {ekip['ufuk']}", ST["madde"]))
+        E.append(Spacer(1, 4))
+        E.append(TS.tablo([["Senaryo (20 gün)", "Fiyat", "Değişim", "Koşul"]] +
+                          [[x["ad"], _f(x["fiyat"]), f"{'+' if x['degisim'] >= 0 else '-'}%{abs(x['degisim']) * 100:.1f}".replace(".", ","), Paragraph(x["kosul"], ST["hucre"])]
+                           for x in ekip["senaryolar"]], [W * .17, W * .15, W * .13, W * .55], hizala_sol=(0, 3), font=7.6))
+        E.append(Spacer(1, 6)); E.append(Paragraph("Tez bozucular", ST["h2"]))
+        E += [Paragraph("• " + x, ST["madde"]) for x in ekip["tez_bozucular"]]
+        for rl in ekip["roller"]:
+            E.append(KeepTogether([Paragraph(f"{rl['ad']}", ST["h2"]), Paragraph(f"<i>İlke: {rl['ilke']}</i>", ST["kucuk"])] +
+                                  [Paragraph("• " + x, ST["madde"]) for x in rl["bulgular"]]))
+        E.append(Paragraph(ekip["uyari"] + " Rol ilkeleri agency-agents (MIT) şablonlarından uyarlanmıştır.", ST["kucuk"]))
     E.append(PageBreak()); E.append(Bolum(n + 1, "Sözlük ve uyarılar", W))
     E.append(TS.tablo([["Terim", "Sade anlatım"]] + [[a_, Paragraph(b_, ST["hucre"])] for a_, b_ in SOZLUK_TEKNIK], [W * .28, W * .72], hizala_sol=(0, 1), font=7.4))
     E.append(Spacer(1, 6))

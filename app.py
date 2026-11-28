@@ -278,7 +278,7 @@ def analiz(kod, emsal, prm, gun, surum):
         "saglik": m["saglik"],
         "akis_ozet": (m.get("akis") or {}).get("ozet"), "akis_yorum": br.akis_yorumlari(m),
         "genel": br.genel_degerlendirme(m), "haber": m.get("haber"), "seviye": m.get("seviye"), "ileri": ileri_ozet(m, br.PB),
-        "tek": AN.karne(m), "sade": br.sade_ozet(m),
+        "tek": AN.karne(m), "sade": br.sade_ozet(m), "ekip": ekip_raporu(m["mta"], br.ozet_satir(m)) if m.get("mta") else None,
         "baslik": AN.baslik_tezi(m), "gorus": AN.gorus(m)[0], "ozet_kisa": AN.yonetici_ozeti(m, kisa=True), "ozet_tam": AN.yonetici_ozeti(m),
         "tez": AN.yatirim_tezi(m), "katalizor": AN.katalizorler(m), "risk": AN.riskler(m), "senaryo": AN.senaryolar(m),
         "teknik": {tf: (a_["etiket"], a_["puan"]) for tf, a_ in ((m.get("mta") or {}).get("tf") or {}).items() if a_},
@@ -334,6 +334,7 @@ def varlik_goster(r, on="v"):
     kart(c2, "VOLATİLİTE", br.yz(r["vol"]), f"Zirveden: {br.yz(r['zirveden'])}")
     st.download_button(":material/download: PDF Raporu İndir", data=r["pdf"], file_name=r["dosya"], mime="application/pdf", type="primary", key=f"{on}_dl")
     ozet_goster(r["baslik"], r["gorus_v"], r["ozet_kisa"], r["ozet_tam"], r["tez"], r["kr"][0], r["kr"][1])
+    ekip_goster(r.get("ekip"), on)
     b1, b2, b3 = st.tabs(["Göstergeler karnesi", "Grafikler", "Değerlendirme"])
     with b1:
         for soru, cevap, durum in r["tek"]:
@@ -350,10 +351,50 @@ def varlik_goster(r, on="v"):
 
 
 @st.cache_data(ttl=15 * 60, show_spinner=False, max_entries=40)
+def ekip_raporu(s, temel=None):
+    """Aşama 14: altı rollü araştırma ekibi (piyasa istatistiği, rejim ve opsiyon verisiyle)."""
+    import arastirma_ekibi as EK
+    try:
+        pz = EK.PIYASA.get(s.get("tur"), "bist")
+        ist = json_oku(f"firsat/{pz}/istatistik.json", ZAMAN)
+        rj = json_oku(f"rejim/{pz}.json", ZAMAN) if pz in ("bist", "abd") else None
+        op = s.get("opsiyon")
+        if op is None and s.get("tur") == "kripto":
+            baz = str(s.get("kod", "")).split("/")[0]
+            op = ((json_oku("opsiyon/ozet.json", ZAMAN) or {}).get("paralar") or {}).get(baz)
+        return EK.rapor(s, temel, ist, rj, op)
+    except Exception as ex:
+        print("ekip:", ex); return None
+
+
+def ekip_goster(e, on):
+    """Araştırma ekibi raporu: özet, senaryolar, tez bozucular, roller."""
+    import html as _h
+    if not e: return
+    renk = "#22C55E" if e["gorunum"].startswith("AL") else "#EF4444" if e["gorunum"].startswith("SAT") else "#E8B84A"
+    gr = {"Yüksek": "#22C55E", "Orta": "#E8B84A", "Düşük": "#EF4444"}[e["guven"]]
+    with st.expander(":material/groups: Araştırma ekibi (6 rol) — senaryolar, tez bozucular, güven", expanded=False):
+        st.markdown(f'<div class="ko" style="border-color:{gr}"><div class="ko-u"><b style="color:{renk}">{_h.escape(e["gorunum"])}</b>'
+                    f'<span style="color:{gr}">güven: {e["guven"]}</span></div><div class="ko-y2">{_h.escape(e["ozet"])}</div></div>', unsafe_allow_html=True)
+        st.markdown("".join(
+            f'<div class="dn"><div class="dn-a"><b>{x["ad"]}</b><span>{_h.escape(x["kosul"])}</span></div><div class="dn-f"><b>{TK.sayi(x["fiyat"])}</b>'
+            f'<span style="color:{"#22C55E" if x["degisim"] > 0 else "#EF4444" if x["degisim"] < 0 else "#A1A1AA"}">{br.yz(x["degisim"])}</span></div></div>'
+            for x in e["senaryolar"]), unsafe_allow_html=True)
+        st.markdown("**Tez bozucular** — bu olursa görünüm geçersiz olur:")
+        for x in e["tez_bozucular"]: st.markdown(f"- {x}")
+        sekme = st.tabs([rl["ad"] for rl in e["roller"]])
+        for t_, rl in zip(sekme, e["roller"]):
+            with t_:
+                st.caption(f"İlke: {rl['ilke']}")
+                for b in rl["bulgular"]: st.markdown(f"- {b}")
+        st.caption(e["uyari"] + " Rol ilkeleri agency-agents (MIT) şablonlarından uyarlanmıştır.")
+
+
 def teknik_analiz(kod, zaman, surum, kisa=False):
     s = TK.analiz(kod, kisa_vade=kisa)
+    ekip = ekip_raporu(s)
     klasor = tempfile.mkdtemp(); yol = os.path.join(klasor, f"{s['kod']}_Teknik_{dt.date.today():%Y%m%d}.pdf")
-    TKR.teknik_pdf(s, yol)
+    TKR.teknik_pdf(s, yol, ekip=ekip)
     with open(yol, "rb") as f: pdf = f.read()
     graf = {tf: TKR.g_teknik(a, f"{s['kod']} · {TK.TF_AD[tf]} · {a['etiket']}", dpi=130).getvalue() for tf, a in s["tf"].items() if a}
     graf_ha = {}
@@ -369,7 +410,7 @@ def teknik_analiz(kod, zaman, surum, kisa=False):
            for tf, a in s["tf"].items() if a}
     g = s["tf"].get("G") or {}
     return {"kod": s["kod"], "ad": s["ad"], "etiket": s["etiket"], "puan": s["puan"], "yorum": AN.teknik_ozet(s), "baslik": AN.teknik_baslik(s),
-            "senaryo": AN.teknik_senaryo(s), "pdf": pdf,
+            "senaryo": AN.teknik_senaryo(s), "pdf": pdf, "ekip": ekip,
             "dosya": os.path.basename(yol), "graf": graf, "graf_ha": graf_ha, "tf": tfo, "para": s["para"], "fiyat": g.get("fiyat"), "degisim": g.get("degisim"),
             "fiyat_zamani": ts.zaman_metni(s.get("fiyat_zamani")), "ileri": ileri_ozet(None, {"₺": "TL", "$": "$"}.get(s["para"], ""), s),
             "gun": _gun_ozeti(g.get("h"))}
@@ -489,7 +530,7 @@ def varlik_analiz(kod, prm, saat, surum):
             "genel": V.genel_degerlendirme(m), "ileri": ileri_ozet(m, "$" if m["para"] == "USD" else "TL"), "graf": graf, "korku": {k: v for k, v in (m.get("korku") or {}).items() if k != "seri"} or None,
             "cg": m.get("cg"), "global": m.get("global"), "turev": m.get("turev"), "sharpe": m.get("sharpe"),
             "adil": m.get("adil"), "pot": m.get("potansiyel"), "etiket": (m.get("deger") or {}).get("etiket"),
-            "saglik": m.get("saglik"), "fiyat_zamani": ts.zaman_metni(m.get("fiyat_zamani")),
+            "saglik": m.get("saglik"), "fiyat_zamani": ts.zaman_metni(m.get("fiyat_zamani")), "ekip": ekip_raporu(m["mta"]) if m.get("mta") else None,
             "uretim": dt.datetime.now(dt.timezone(dt.timedelta(hours=3))).strftime("%d.%m.%Y %H:%M")}
 
 
@@ -1738,6 +1779,7 @@ with tab_r:
                          "#1E8E5A" if (u["r"].get("1Y") or 0) > 0 else "#C0392B")
                 if r.get("baslik"):
                     ozet_goster(r["baslik"], r["gorus"], r["ozet_kisa"], r["ozet_tam"], r["tez"], r["katalizor"], r["risk"], r.get("senaryo"))
+                    ekip_goster(r.get("ekip"), "hs")
                 if r.get("teknik"):
                     cols = st.columns(3)
                     for c_, tf in zip(cols, ("G", "H", "A")):
@@ -1811,6 +1853,7 @@ with tab_x:
             st.markdown(katkay_notu(r), unsafe_allow_html=True)
         except Exception as ex:
             st.markdown(f"### {r['ad']} ({r['kod']})"); st.caption(f"Görünüm kartı çizilemedi: {ex}")
+        ekip_goster(r.get("ekip"), "tk")
         if r["tf"].get("1S") or r["tf"].get("4S"):
             cols = st.columns(2)
             for c_, tf in zip(cols, ("1S", "4S")):
