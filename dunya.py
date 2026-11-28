@@ -40,6 +40,16 @@ def _indir(semboller, gun="2y"):
             if len(x): out[s] = x[~x.index.duplicated(keep="last")]
         except Exception:
             pass
+    try:   # Yahoo günlük barı geride kalabiliyor (ör. XU100 27.11'i sabah hâlâ boş): gün içi 15 dk veriyle tamamla
+        import bist_makro as MK
+        gi = yf.download(list(out), period="5d", interval="15m", auto_adjust=False, progress=False, group_by="ticker", threads=True)
+        for s in list(out):
+            try:
+                out[s] = MK.gun_ici_tamamla(out[s], gi[s] if len(out) > 1 else gi, s)
+            except Exception:
+                pass
+    except Exception:
+        pass
     return out
 
 

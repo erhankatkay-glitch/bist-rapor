@@ -1,16 +1,15 @@
-"""PWA 1. adım: seçili varlıkların teknik karnesini önceden hesaplar → karne/<kod>.json + karne/liste.json (bulten dalı).
+"""Hızlı uygulama (PWA) varlık karneleri: piyasadaki TÜM varlıkların teknik karnesi → karne/<piyasa>/<kod>.json + karne/<piyasa>/liste.json.
 
-Hızlı uygulama (docs/index.html) bu dosyaları okuyup varlık sayfasını sunucusuz gösterir: genel görünüm, zaman dilimi puanları,
-grafik (son 160 günlük mum + SMA20/50/200 + destek/direnç), seviyeler, pivot, Fibonacci, sinyaller, durum tablosu ve araştırma ekibi.
-Varlık listesi: sabit çekirdek liste + açık fırsatlar + son alarmlardaki varlıklar + portföy.txt.
-Kullanım: python karne.py <cikti_klasoru>
+Kaynak: kapanış taramasının (teknik_bulten.calistir) zaten hesapladığı analizler; ek veri çekmez. Kapanış taraması her piyasada
+(BIST, ABD, kripto, emtia) karneleri de yazar (teknik_bulten._yaz → yaz_piyasa). Ayrıca bu dosya tek başına çalıştırılabilir:
+    python karne.py <cikti> <piyasa>      (piyasa: bist | abd | kripto | emtia)
+Hızlı uygulama karneyi okuyup varlık sayfasını sunucusuz gösterir: genel görünüm, zaman dilimleri, grafik (son 160 gün mum + SMA20/50/200
++ destek/direnç), seviyeler, pivot, Fibonacci, sinyaller, gösterge durumları ve araştırma ekibi (kural tabanlı).
 """
-import concurrent.futures as cf
 import datetime as dt
 import json
 import math
 import os
-import re
 import sys
 import time
 
@@ -18,11 +17,6 @@ import numpy as np
 import pandas as pd
 
 REPO = "erhankatkay-glitch/bist-rapor"
-BIST = ["XU100", "XU030", "AKBNK", "ALARK", "ASELS", "ASTOR", "BIMAS", "EKGYO", "ENKAI", "EREGL", "FROTO", "GARAN", "GUBRF", "ISCTR", "KCHOL",
-        "KONTR", "KRDMD", "MGROS", "PETKM", "PGSUS", "SAHOL", "SASA", "SISE", "TAVHL", "TCELL", "THYAO", "TOASO", "TUPRS", "YKBNK"]
-KRIPTO = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "DOGE/USDT", "ADA/USDT", "AVAX/USDT"]
-EMTIA = ["GRAMALTIN", "ALTIN", "GUMUS", "PLATIN", "BAKIR", "BRENT", "WTI", "DOGALGAZ"]
-ABD = ["SP500", "NASDAQ", "AAPL.US", "MSFT.US", "NVDA.US", "TSLA.US", "AMZN.US", "GOOGL.US", "META.US", "AVGO.US"]
 TUR_PZ = {"hisse": "bist", "abd": "abd", "kripto": "kripto", "emtia": "emtia"}
 
 
@@ -30,16 +24,18 @@ def dosya_adi(kod):
     return str(kod).replace("/", "-").replace("\\", "-").replace("@", "_").replace(":", "-")
 
 
-def _f(x, nd=6):
+def _f(x, anlamli=6):
+    """Sayıyı 6 anlamlı basamağa yuvarlar (dosyalar küçük kalsın)."""
     try:
         x = float(x)
-        return None if not math.isfinite(x) else round(x, nd)
+        if not math.isfinite(x): return None
+        if x == 0: return 0.0
+        return round(x, max(0, anlamli - 1 - int(math.floor(math.log10(abs(x))))))
     except Exception:
         return None
 
 
 def _j(o):
-    """JSON'a güvenli dönüştürme (numpy, zaman damgası, NaN)."""
     if isinstance(o, dict): return {str(k): _j(v) for k, v in o.items()}
     if isinstance(o, (list, tuple)): return [_j(v) for v in o]
     if isinstance(o, (np.integer,)): return int(o)
@@ -56,28 +52,6 @@ def bulten(yol):
         return r.json() if r.status_code == 200 else None
     except Exception:
         return None
-
-
-def varliklar():
-    v = list(BIST) + KRIPTO + EMTIA + ABD
-    for pz in ("bist", "abd", "kripto", "emtia"):
-        for x in bulten(f"firsat/{pz}/acik.json") or []:
-            if x.get("durum") == "açık": v.append(x["kod"])
-    for x in (bulten("alarm/son.json") or [])[:60]:
-        m = re.match(r"^\W*\s*([A-Z0-9]{2,10}(?:/USDT)?)(\s*\()?\s*[:·]?", x.get("mesaj", ""))
-        if not m: continue
-        if m.group(2): v.append(m.group(1) + ".US")      # "NVDA (Nvidia)" → ABD hissesi
-        elif m.group(1) == "BIST": continue
-        elif m.group(1) in EMTIA or "/" in m.group(1) or re.fullmatch(r"[A-Z]{4,6}", m.group(1)): v.append(m.group(1))
-    try:
-        for s in open("portfoy.txt", encoding="utf-8"):
-            if s.strip() and not s.startswith("#"): v.append(s.split()[0].upper())
-    except Exception:
-        pass
-    gor, out = set(), []
-    for k in v:
-        if k not in gor: gor.add(k); out.append(k)
-    return out
 
 
 def tf_ozet(a):
@@ -102,67 +76,82 @@ def grafik(a, n=160):
             "sma20": [_f(x) for x in G["SMA20"]], "sma50": [_f(x) for x in G["SMA50"]], "sma200": [_f(x) for x in G["SMA200"]]}
 
 
-def karne(kod, ek):
+def ek_veri(pz):
+    """Araştırma ekibi için piyasa bağlamı (bulten dalından): fırsat istatistikleri, rejim, kripto opsiyon."""
+    return {"ist": bulten(f"firsat/{pz}/istatistik.json"), "rejim": bulten(f"rejim/{pz}.json") if pz in ("bist", "abd") else None,
+            "opsiyon": bulten("opsiyon/ozet.json") if pz == "kripto" else None}
+
+
+def karne(s, ek):
+    """Hazır analizden (bist_teknik.analiz çıktısı) karne sözlüğü."""
     import analist as AN
     import arastirma_ekibi as EK
-    import bist_teknik as TK
-    s = TK.analiz(kod)
     g = s["tf"].get("G")
     if not g: return None
     pz = TUR_PZ.get(s.get("tur"), "bist")
-    op = None
-    if s.get("tur") == "kripto":
-        op = ((ek.get("opsiyon") or {}).get("paralar") or {}).get(str(s["kod"]).split("/")[0])
-    e = None
-    try: e = EK.rapor(s, None, ek.get("ist_" + pz), ek.get("rejim_" + pz), op)
-    except Exception as x: print("  ekip:", kod, x)
-    if e and os.environ.get("GEMINI_API_KEY") or e and os.environ.get("GROQ_API_KEY"):
-        try:
-            import llm_katman as LLM
-            yz = LLM.yorum(e)
-            if yz and yz.get("metin"): e["yz"] = yz
-        except Exception as x:
-            print("  yz:", kod, x)
-    return _j({"kod": s["kod"], "ad": s["ad"], "tur": s.get("tur"), "pz": pz, "para": s["para"], "zaman": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"),
-               "fiyat_zamani": str(s.get("fiyat_zamani"))[:16], "etiket": s["etiket"], "puan": round(s["puan"], 1),
-               "baslik": AN.teknik_baslik(s), "yorum": AN.teknik_ozet(s), "senaryo": AN.teknik_senaryo(s),
-               "tf": {tf: tf_ozet(a) for tf, a in s["tf"].items() if a}, "grafik": grafik(g),
+    op = ((ek.get("opsiyon") or {}).get("paralar") or {}).get(str(s["kod"]).split("/")[0]) if pz == "kripto" else None
+    try: e = EK.rapor(s, None, ek.get("ist"), ek.get("rejim"), op)
+    except Exception: e = None
+    return _j({"kod": s["kod"], "ad": s["ad"], "tur": s.get("tur"), "pz": pz, "para": s["para"],
+               "zaman": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"), "fiyat_zamani": str(s.get("fiyat_zamani"))[:16],
+               "etiket": s["etiket"], "puan": round(s["puan"], 1), "baslik": AN.teknik_baslik(s), "yorum": AN.teknik_ozet(s),
+               "senaryo": AN.teknik_senaryo(s), "tf": {tf: tf_ozet(a) for tf, a in s["tf"].items() if a}, "grafik": grafik(g),
                "gun": {"yuksek": _f(g["h"]["High"].iloc[-1]), "dusuk": _f(g["h"]["Low"].iloc[-1])}, "ekip": e})
 
 
-def main(klasor):
-    os.makedirs(os.path.join(klasor, "karne"), exist_ok=True)
-    ek = {"opsiyon": bulten("opsiyon/ozet.json")}
-    for pz in ("bist", "abd", "kripto", "emtia"):
-        ek["ist_" + pz] = bulten(f"firsat/{pz}/istatistik.json")
-        if pz in ("bist", "abd"): ek["rejim_" + pz] = bulten(f"rejim/{pz}.json")
-    liste, hata, bas = [], [], time.time()
-    v = varliklar(); print(len(v), "varlık")
-    yz_var = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GROQ_API_KEY"))
-
-    def is_(kod):
+def yaz_piyasa(pz, analizler, klasor, endeks=None):
+    """Bir piyasanın tüm analizlerini karne/<pz>/ altına yazar (klasör yayında bütün olarak değişir)."""
+    hedef = os.path.join(klasor, "karne", pz)
+    os.makedirs(hedef, exist_ok=True)
+    ek = ek_veri(pz); liste = []
+    for s in ([endeks] if endeks else []) + list(analizler):
         try:
-            try: k = karne(kod, ek)
-            except Exception as x:
-                if "locked" not in str(x): raise
-                time.sleep(3); k = karne(kod, ek)   # yfinance önbellek veritabanı kilidi (eşzamanlı iş) → bir kez daha
-            if yz_var: time.sleep(4)   # ücretsiz dil modeli dakika sınırı
-            return kod, k, None
+            k = karne(s, ek)
         except Exception as x:
-            return kod, None, str(x)[:200]
+            print("  karne", s.get("kod"), x, file=sys.stderr); continue
+        if not k or any(v["kod"] == k["kod"] for v in liste): continue
+        k["pz"] = pz
+        with open(os.path.join(hedef, dosya_adi(k["kod"]) + ".json"), "w", encoding="utf-8") as f:
+            json.dump(k, f, ensure_ascii=False, separators=(",", ":"))
+        G = k["tf"]["G"]
+        liste.append({"kod": k["kod"], "ad": k["ad"], "etiket": k["etiket"], "puan": k["puan"], "fiyat": G["fiyat"], "degisim": G["degisim"],
+                      "para": k["para"], "seri": k["grafik"]["c"][-30:], "tarih": k["grafik"]["t"][-1], "gorunum": (k.get("ekip") or {}).get("gorunum")})
+    with open(os.path.join(hedef, "liste.json"), "w", encoding="utf-8") as f:
+        json.dump({"zaman": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"), "pz": pz, "varliklar": liste},
+                  f, ensure_ascii=False, separators=(",", ":"))
+    print(f"Karne ({pz}): {len(liste)} varlık → {hedef}")
+    return len(liste)
 
-    with cf.ThreadPoolExecutor(2 if yz_var else 4) as hav:
-        for kod, k, h in hav.map(is_, v):
-            if not k: hata.append({"kod": kod, "hata": h}); print("  ✗", kod, h); continue
-            json.dump(k, open(os.path.join(klasor, "karne", dosya_adi(k["kod"]) + ".json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-            liste.append({"kod": k["kod"], "ad": k["ad"], "pz": k["pz"], "etiket": k["etiket"], "puan": k["puan"], "fiyat": k["tf"]["G"]["fiyat"],
-                          "degisim": k["tf"]["G"]["degisim"], "para": k["para"], "dosya": dosya_adi(k["kod"]),
-                          "seri": [x for x in k["grafik"]["c"][-30:]], "gorunum": (k.get("ekip") or {}).get("gorunum")})
-            print("  ✓", kod, k["etiket"])
-    json.dump({"zaman": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"), "varliklar": liste, "hatalar": hata, "sure_sn": round(time.time() - bas)},
-              open(os.path.join(klasor, "karne", "liste.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-    print(f"{len(liste)} karne, {len(hata)} hata, {time.time() - bas:.0f} sn")
+
+def main(klasor, pz):
+    """Kapanış taramasından bağımsız tam yenileme (ör. elle ya da gün ortası)."""
+    import concurrent.futures as cf
+    import bist_teknik as T
+    import teknik_bulten as TB
+    kodlar = TB.evren(pz); ref = TB.REFERANS[pz]
+    print(pz, len(kodlar), "varlık")
+    if pz == "kripto":
+        def is_(k):
+            try: return T.analiz(k)
+            except Exception as x: print("  ✗", k, str(x)[:80]); return None
+        with cf.ThreadPoolExecutor(4) as hav:
+            analizler = [s for s in hav.map(is_, kodlar) if s]
+        try: endeks = T.analiz(ref)
+        except Exception: endeks = None
+    else:
+        semboller = [T.yahoo_sembol(k)[0] for k in kodlar + [ref]] + (["TRY=X", "GC=F"] if pz == "emtia" else [])
+        veri = TB.gunu_tamamla(TB.toplu_veri(semboller, "10y"))
+        fn = lambda y, *a: veri[y]
+        analizler = []
+        for k in kodlar:
+            try: analizler.append(T.analiz(k, fiyat_fn=fn))
+            except Exception as x: print("  ✗", k, str(x)[:80])
+        try:
+            endeks = T.analiz(ref, fiyat_fn=fn)
+            endeks["ad"] = {"XU100": "BIST 100", "SP500": "S&P 500"}.get(ref, endeks["ad"])
+        except Exception: endeks = None
+    yaz_piyasa(pz, analizler, klasor, endeks)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "cikti")
+    main(sys.argv[1] if len(sys.argv) > 1 else "cikti", sys.argv[2] if len(sys.argv) > 2 else "bist")

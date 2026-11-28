@@ -538,6 +538,8 @@ def kur_cevir(d, fx):
 def canli_guncelle(h, sembol):
     """Günlük fiyat serisinin son satırını gün içi (1–5 dk) veriyle günceller.
     Yahoo BIST verisi ~15 dk gecikmelidir. (seri, son_fiyat_zamanı) döndürür."""
+    if "Close" in h and len(h):   # kapanışı boş (NaN) gelen gün satırı "var" sayılmasın → gün içi veriden kurulur
+        h = h[h["Close"].notna()]
     zaman = h.index[-1] if len(h) else None
     try:
         import yfinance as yf
@@ -568,6 +570,16 @@ def canli_guncelle(h, sembol):
             for c in ("Dividends", "Stock Splits"):
                 if c in h.columns: yeni[c] = 0.0
             h.loc[gun] = pd.Series(yeni)
+            # BIST'te 18:00–18:10 kapanış seansı dakikalık veride yok: piyasa kapandıysa resmi kapanışı (son işlem fiyatı) kullan
+            import veri_kalite as _VK
+            if _VK.tur_bul(sembol) == "bist" and not _VK.piyasa_acik("bist"):
+                try:
+                    fl = float(yf.Ticker(sembol).fast_info["lastPrice"])
+                    if fl > 0 and abs(fl / son - 1) < 0.05:
+                        h.loc[gun, "Close"] = fl
+                        h.loc[gun, "High"] = max(float(h.loc[gun, "High"]), fl); h.loc[gun, "Low"] = min(float(h.loc[gun, "Low"]), fl)
+                except Exception:
+                    pass
     except Exception:
         pass
     return h, zaman

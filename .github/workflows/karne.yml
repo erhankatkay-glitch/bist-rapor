@@ -1,28 +1,29 @@
 name: Varlık karneleri (hızlı uygulama)
 
-# Hızlı uygulamanın (PWA) varlık sayfaları için seçili varlıkların teknik karnesini önceden hesaplar → bulten/karne/
+# Karneler normalde kapanış taramalarıyla birlikte yazılır (teknik_bulten → karne/<piyasa>/). Bu iş ek olarak
+# gün ortası tazeleme yapar ve elle tüm piyasaları yeniden üretmek için çalıştırılabilir.
 on:
   schedule:
-    - cron: "25 15 * * 1-5"   # 18:25 TSİ: BIST kapanışı sonrası
-    - cron: "35 21 * * 1-5"   # 00:35 TSİ: ABD kapanışı sonrası
-    - cron: "10 3,9 * * *"    # 06:10 ve 12:10 TSİ: kripto / emtia tazeleme (hafta sonu dahil)
+    - cron: "10 9 * * *"   # 12:10 TSİ: gün ortası tazeleme (hafta sonu yalnız kripto anlamlı değişir)
   workflow_dispatch: {}
 
 permissions:
   contents: write
 
 concurrency:
-  group: karne
+  group: karne-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   karne:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        piyasa: [bist, abd, kripto, emtia]
     env:
       GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -31,7 +32,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
       - name: Karneleri hesapla
-        run: python karne.py cikti
+        run: python karne.py cikti ${{ matrix.piyasa }}
       - name: Yayınla
         if: always()
-        run: python yayinla.py cikti "Karneler $(date -u +%FT%H%M)"
+        run: python yayinla.py cikti "Karneler ${{ matrix.piyasa }} $(date -u +%FT%H%M)"

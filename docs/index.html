@@ -274,7 +274,13 @@ function bnPanel() {
 
 // ---------------------------------------------------------------- Varlık sayfası (önceden hesaplanmış karne: bulten/karne/)
 let KARNE = null;   // liste.json
-async function karneListe() { if (!KARNE) KARNE = (await al("karne/liste.json")) || {varliklar: []}; return KARNE; }
+async function karneListe() {   // dört piyasanın karne listeleri (karne/<pz>/liste.json) tek listede
+  if (!KARNE) {
+    const l = await Promise.all(["bist", "abd", "kripto", "emtia"].map(async pz => ((await al(`karne/${pz}/liste.json`)) || {varliklar: []}).varliklar.map(v => ({...v, pz}))));
+    KARNE = {varliklar: l.flat()};
+  }
+  return KARNE;
+}
 const dosyaAdi = k => String(k).replace(/[\/\\:]/g, "-").replace(/@/g, "_");
 // içeride karnesi varsa uygulama içi sayfa, yoksa tam uygulama
 function varlikLink(kod, pz) {
@@ -315,7 +321,9 @@ const TF_AD = {G: "Günlük", H: "Haftalık", A: "Aylık", "4S": "4 saatlik", "1
 async function varlik(kod) {
   const el = document.getElementById("s-varlik");
   el.innerHTML = `<button class="geri" onclick="history.length > 1 ? history.back() : git('ozet')">‹ Geri</button><div class="bos">${esc(kod)} yükleniyor…</div>`;
-  const k = await al(`karne/${dosyaAdi(kod)}.json`);
+  await karneListe();
+  const kv = KARNE.varliklar.find(x => x.kod === kod);
+  const k = kv ? await al(`karne/${kv.pz}/${dosyaAdi(kod)}.json`) : null;
   if (!k) { el.innerHTML = `<button class="geri" onclick="history.back()">‹ Geri</button><div class="kart"><div class="metin">${esc(kod)} için hazır karne yok.</div>
       <a class="btn" target="_blank" href="${ac(kod, "bist")}">Tam uygulamada analiz et ›</a></div>`; return; }
   const g = k.tf.G || Object.values(k.tf)[0], para = {"₺": "₺", "$": "$"}[k.para] || "";
@@ -356,6 +364,7 @@ async function varlik(kod) {
 async function ozet() {
   const el = document.getElementById("s-ozet");
   let h = "";
+  h += `<input class="ara" id="oara" placeholder="🔍 Herhangi bir varlığı ara: THYAO, NVDA, BTC, altın…" style="margin-top:2px"><div id="osonuc"></div>`;
   h += "<div id='cuzdan'></div>";
   // canlı kripto (Binance): ilk değer REST, sonra WebSocket ile saniye saniye
   h += "<h2>Kripto ve altın · <span class='canli'><i></i>canlı</span></h2><div class='izgara'>" + SEM.map(x => {
@@ -383,6 +392,11 @@ async function ozet() {
   if (bl && bl.length) h += "<h2>Son bildirimler</h2>" + bl.slice(0, 3).map(bildirimHtml).join("");
   el.innerHTML = h || "<div class='bos'>Veri alınamadı.</div>";
   SEM.forEach(x => kutuYaz(x, false)); canliBasla(); cuzdan();
+  document.getElementById("oara").oninput = async e => {
+    const q = e.target.value.trim().toLocaleUpperCase("tr"), L = (await karneListe()).varliklar;
+    document.getElementById("osonuc").innerHTML = q.length < 2 ? "" : (L.filter(v => (v.kod + " " + (v.ad || "")).toLocaleUpperCase("tr").includes(q))
+      .sort((a, b) => (b.kod.startsWith(q) - a.kod.startsWith(q))).slice(0, 12).map(karneSatir).join("") || "<div class='bos'>Bulunamadı.</div>");
+  };
   if (bl && bl.length) bant(bl.slice(0, 5));
 }
 
@@ -463,10 +477,12 @@ async function karneBolum(el) {
   const ciz = () => {
     const q = (document.getElementById("kara") || {}).value || "";
     const sec = L.filter(v => q ? (v.kod + " " + (v.ad || "")).toLocaleUpperCase("tr").includes(q.toLocaleUpperCase("tr")) : v.pz === K_PZ);
-    document.getElementById("kliste").innerHTML = sec.map(karneSatir).join("") || "<div class='bos'>Bulunamadı.</div>";
+    const goster = q ? sec.slice(0, 60) : sec.slice().sort((a, b) => b.puan - a.puan).slice(0, 150);
+    document.getElementById("kliste").innerHTML = (goster.map(karneSatir).join("") || "<div class='bos'>Bulunamadı.</div>")
+      + (sec.length > goster.length ? `<div class="bos">${goster.length} / ${sec.length} gösteriliyor (puana göre). Diğerleri için yukarıdan ara.</div>` : "");
     el.querySelectorAll("[data-k]").forEach(b => b.classList.toggle("s", !q && b.dataset.k === K_PZ));
   };
-  el.insertAdjacentHTML("afterbegin", `<h2>Varlık karneleri · ${L.length}</h2><input class="ara" id="kara" placeholder="Varlık ara (ör. THYAO, BTC, altın)">
+  el.insertAdjacentHTML("afterbegin", `<h2>Tüm varlıklar · ${L.length}</h2><input class="ara" id="kara" placeholder="Varlık ara (ör. THYAO, NVDA, BTC, altın)">
     <div class="cip">${[["bist", "BIST"], ["abd", "ABD"], ["kripto", "Kripto"], ["emtia", "Emtia"]].map(([k, a]) => `<button data-k="${k}">${a}</button>`).join("")}</div><div id="kliste"></div>`);
   el.querySelectorAll("[data-k]").forEach(b => b.onclick = () => { K_PZ = b.dataset.k; document.getElementById("kara").value = ""; ciz(); });
   document.getElementById("kara").oninput = ciz; ciz();
@@ -515,7 +531,7 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => git(b.dat
 document.getElementById("yenile").onclick = () => { const s = (location.hash || "#ozet").slice(1); yuklendi[s] = false; git(s); saat(); };
 function saat() { document.getElementById("saat").textContent = new Date().toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"}) + " TSİ"; }
 saat(); setInterval(saat, 30000);
-setInterval(() => { if (document.visibilityState === "visible" && (location.hash || "#ozet") === "#ozet" && !document.getElementById("bn-k")) { yuklendi.ozet = false; git("ozet"); } }, 120000);
+setInterval(() => { if (document.visibilityState === "visible" && (location.hash || "#ozet") === "#ozet" && !document.getElementById("bn-k") && !((document.getElementById("oara") || {}).value)) { yuklendi.ozet = false; git("ozet"); } }, 120000);
 addEventListener("online", () => cevrim(false)); addEventListener("offline", () => cevrim(true)); cevrim(false);
 const ios = /iphone|ipad|ipod/i.test(navigator.userAgent), kurulu = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
 if (ios && !kurulu) document.getElementById("kur").classList.add("ac");
