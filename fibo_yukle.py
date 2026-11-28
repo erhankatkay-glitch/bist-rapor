@@ -26,7 +26,20 @@ def ac():
     return hedef
 
 
+def sifrele_klasor(klasor, hedef):
+    """Sonuç klasörünü aynı anahtarla şifreler (iş çıktısı açık depoda herkese görünebildiği için)."""
+    from cryptography.fernet import Fernet
+    b = io.BytesIO()
+    with zipfile.ZipFile(b, "w", zipfile.ZIP_DEFLATED) as z:
+        for kok, _, dosyalar in os.walk(klasor):
+            for f in dosyalar:
+                yol = os.path.join(kok, f); z.write(yol, os.path.relpath(yol, klasor))
+    open(hedef, "wb").write(Fernet(os.environ["FIBO_ANAHTAR"].strip().encode()).encrypt(b.getvalue()))
+
+
 if __name__ == "__main__":
+    if sys.argv[1] == "sifrele":      # python fibo_yukle.py sifrele <klasör> <hedef.enc>
+        sifrele_klasor(sys.argv[2], sys.argv[3]); sys.exit(0)
     ac()
     mod = sys.argv[1]; sys.argv = [mod + ".py"] + sys.argv[2:]
     runpy.run_module(mod, run_name="__main__")
