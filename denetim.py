@@ -1,11 +1,6 @@
 """Aşama 13: yeniden yayın + canlı Emtia & Kripto opsiyon bölümü."""
 import os, sys, subprocess
 os.makedirs("denetim_graf", exist_ok=True); os.makedirs("cikti", exist_ok=True)
-import opsiyon as OP
-o = OP.hesapla("cikti")
-p = o["paralar"]["BTC"]; print("BTC", [v["vade_ad"] for v in p["buyuk_vadeler"]], p["yorum"][:2])
-print("ETH", o["paralar"]["ETH"]["yorum"][1])
-subprocess.run([sys.executable, "yayinla.py", "cikti", "opsiyon yeniden yayın (denetim)"])
 from playwright.sync_api import sync_playwright
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
@@ -19,6 +14,9 @@ with sync_playwright() as pw:
                 if f_.evaluate("!!document.querySelector('[data-testid=stTab]')"): fr = f_; break
             except Exception: pass
         if fr: break
+    for _ in range(40):
+        if fr.evaluate("typeof window.kkGitAlt === 'function'"): break
+        fr.wait_for_timeout(2000)
     fr.evaluate("localStorage.setItem('kk_gorulen', JSON.stringify(Array.from({length:80},(_, i)=>'x'+i)))")
     fr.evaluate("window.kkGitAlt('Keşfet|Emtia & Kripto')"); fr.wait_for_timeout(15000)
     print("özetler:", fr.evaluate("[...document.querySelectorAll('summary')].map(x=>x.innerText.slice(0,45))"))
