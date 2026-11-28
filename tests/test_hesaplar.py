@@ -437,3 +437,21 @@ def test_dunya_egri_ve_seans():
     assert VK.piyasa_acik(VK.tur_bul("^GDAXI"), t) and not VK.piyasa_acik(VK.tur_bul("^N225"), t)
     k = DN.kontratlar("CL", "NYM", dt_.date(2026, 11, 28), 3)
     assert [s for s, _ in k] == ["CLZ26.NYM", "CLF27.NYM", "CLG27.NYM"]
+
+
+def test_opsiyon_bs_maxpain_carpiklik():
+    """Aşama 13: Black-Scholes deltası, max pain, 25Δ çarpıklık, vade özeti."""
+    import opsiyon as OP, datetime as dt_
+    d, g, v, t = OP.bs(100, 100, 0.25, 0.5, "C")
+    assert 0.53 < d < 0.56 and g > 0 and v > 0 and t < 0
+    assert abs(OP.bs(100, 100, 0.25, 0.5, "P")[0] - (d - 1)) < 1e-12
+    vade = dt_.datetime(2027, 1, 29, 8, tzinfo=dt_.timezone.utc)
+    L = [{"vade": vade, "vade_ad": "29JAN27", "strike": k, "tip": t_, "iv": iv, "oi": oi, "hacim": 0, "alt": 100, "mark": 0}
+         for k, t_, iv, oi in [(80, "P", .70, 500), (90, "P", .60, 300), (100, "P", .50, 100), (100, "C", .50, 100),
+                               (110, "C", .48, 300), (120, "C", .47, 50), (90, "C", .55, 10), (110, "P", .5, 10)]]
+    assert OP.max_pain(L) == 100                                 # 100: ödeme 200 (90: 1200, 110: 1300)
+    sk = OP.carpiklik(L, 100, 0.25)
+    assert sk is not None and sk > 0                              # put'lar pahalı
+    o = OP.vade_ozeti(L, dt_.datetime(2026, 11, 28, tzinfo=dt_.timezone.utc))
+    assert o["put_duvari"] == 80 and o["call_duvari"] == 110 and abs(o["atm_iv"] - 0.5) < 0.03 and o["aralik"][0] < 100 < o["aralik"][1]
+    assert OP.vade_coz("29JAN27") == vade

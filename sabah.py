@@ -107,6 +107,15 @@ def izlenecekler(PV, tk, acik, firs, hab):
         if oz: m.append(f"Türkiye: {oz}" + (" (son kayıtlı değer)" if (mm.get("tufe") or {}).get("bayat") else "") + ".")
     except Exception:
         pass
+    try:   # Aşama 13: BTC opsiyon piyasası (kripto iş akışı 4 saatte bir üretir)
+        op = (oku("opsiyon/ozet.json") or {}).get("paralar", {}).get("BTC")
+        if op and op.get("dvol"):
+            v = (op.get("buyuk_vadeler") or [None])[0]
+            m.append(f"BTC opsiyon: DVOL {op['dvol']['deger']:.0f} (1 yılın %{op['dvol']['yuzdelik'] * 100:.0f}'lik dilimi)"
+                     + (f", {v['vade_ad']} vadesinde max pain {v['max_pain']:,.0f} $".replace(",", ".") if v and v.get("max_pain") else "")
+                     + (f", beklenen hareket ±%{v['beklenen_hareket'] * 100:.1f}".replace(".", ",") if v and v.get("beklenen_hareket") else "") + ".")
+    except Exception:
+        pass
     try:   # Aşama 12: gece Asya seansı ve ABD getiri eğrisi
         yd = os.path.join(CIKTI, "dunya", "ozet.json")
         do = json.load(open(yd, encoding="utf-8")) if os.path.exists(yd) else oku("dunya/ozet.json")
@@ -146,7 +155,7 @@ def izlenecekler(PV, tk, acik, firs, hab):
     if firs: m.append(f"Son kapanışların en güçlü fırsatı: {_kod(firs[0]['kod'])} ({'AL' if firs[0]['yon'] == 1 else 'SAT'}, puan {firs[0]['puan']:.0f}).")
     if hab:
         import haber as H; a = hab[0]; m.append(f"Öne çıkan haber: {a['tur']} ({H.etki_ad(a)}).")
-    return m[:7]
+    return m[:8]
 
 
 def _kod(k):

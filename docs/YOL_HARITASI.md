@@ -87,7 +87,10 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 - 11. ✅ TAMAM (28.11): korelasyon.py — 8 ana çift (20/60/250 gün, kırılma ≥ 0,4), 12'li matris, 6 oran (göreceli güç), BIST sektör rotasyonu.
   Sabah iş akışında korelasyon/ozet.json; Telegram kartı Pazartesi ve yeni kırılmada; sabah özeti maddesi; Ekonomi bölümü;
   teknik karne/PDF: endekse göre 3 aylık göreceli güç + 60 günlük korelasyon/beta (hisse→XU100, ABD→S&P 500, kripto→BTC).
-- 12. Dünya borsaları, döviz majörleri, getiri eğrisi, emtia vade yapısı.
+- 12. ✅ TAMAM (28.11): dunya.py — 16 borsa (seans durumu), 11 döviz, ABD Hazinesi resmî getiri eğrisi (bugün/1 ay/1 yıl, 10Y–2Y, ters gün sayısı),
+  8 emtianın vade yapısı (contango/backwardation). Sabah iş akışında dunya/ozet.json; Keşfet › Dünya (alt menü Piyasalar), ana sayfa DAX/FTSE/Nikkei/
+  Hang Seng/EUR/USD kartları, çekmece; sabah özetinde Asya ve ters eğri maddesi; Telegram kartı Pazartesi ve eğri işareti değişince.
+  Not: app.py yerel modülleri dosyası değişince yeniden yükler (Streamlit Cloud eski modül hatası).
 - 13. Opsiyon: BTC/ETH için Deribit'in herkese açık verisi (IV, Greeks).
 - 14. Altı rollü araştırma ekibi (kural tabanlı; ücretsiz dil modeli anahtarı gelirse yorum katmanı).
   - Kullanıcının yüklediği erhankatkay-glitch/agency-agents (MIT) rol dosyaları şablon olarak kullanılacak (kullanıcı isteği, 27.11):
