@@ -34,7 +34,7 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt cryptography numba
       - name: Araştırma
-        run: python fibo_yukle.py fibo_arastirma fibo_cikti ${{ matrix.piyasa }} ${{ inputs.adet || '150' }}
+        run: python -u -X faulthandler fibo_yukle.py fibo_arastirma fibo_cikti ${{ matrix.piyasa }} ${{ inputs.adet || '150' }}
       - name: Sonuçları şifrele ve fibo-sonuc dalına yaz
         if: success()
         env:
