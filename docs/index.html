@@ -1092,7 +1092,31 @@ const CIKIS_AD = {yapi: "hedef: 0/1 seviyesi", bulut: "çıkış: VIDYA 5 < 14",
 function fiboPlan(s, para) {
   return `giriş ≈ ${para}${fy(s.giris)} · stop ${para}${fy(s.stop)} (${yz(-s.risk, 1)})${s.hedef ? ` · hedef ${para}${fy(s.hedef)}` : ""} · ${CIKIS_AD[s.cikis] || ""}`;
 }
+async function fiboPerf(el, ust) {   // FiboAyna'nın kendi performans defteri (normal fırsat performansından bağımsız)
+  const P = ["bist", "abd", "kripto", "emtia"], AD = {bist: "BIST", abd: "ABD", kripto: "Kripto", emtia: "Emtia"};
+  const [K, D] = await Promise.all([Promise.all(P.map(p => al(`fibo/kayit_${p}.json`))), Promise.all(P.map(fiboAl))]);
+  await karneListe();
+  const adi = (i, a) => (((D[i] || {}).secim || {})[a] || {}).ad || a;
+  const acik = [], kapali = [];
+  P.forEach((pz, i) => { ((K[i] || {}).acik || []).forEach(x => acik.push({...x, pz, sad: adi(i, x.ad)})); ((K[i] || {}).kapali || []).forEach(x => kapali.push({...x, pz, sad: adi(i, x.ad)})); });
+  const R = kapali.filter(x => x.R != null), top = R.reduce((t, x) => t + x.R, 0);
+  let h = `<h2>FiboAyna performansı</h2>${ust}<div class="not" style="font-size:11px;margin:-2px 2px 8px">Yalnız FiboAyna sinyalleri: her sinyal oluştuğu gün kaydedilir, ertesi gün açılıştan girilmiş sayılır ve geçmiş testteki kurallarla kapatılır (stop altında kapanış, hedef, bulut çıkışı ya da 40 gün). Normal fırsat performansından ayrıdır.</div>`;
+  h += `<div class="izgara">${[["Kapanan", R.length, ""], ["Kazanma", R.length ? "%" + tr(R.filter(x => x.R > 0).length / R.length * 100, 0) : "–", ""], ["Ort. sonuç", R.length ? tr(top / R.length, 2) + "R" : "–", ""], ["Açık", acik.length, ""]]
+    .map(([a, b]) => `<div class="mini"><small>${a}</small><b>${b}</b></div>`).join("")}</div>`;
+  const satir = (x, ac) => { const vk = fiboVKod(x.pz, x.kod), k = varlikBul(vk), r = ac ? x.anlik_R : x.R;
+    return `<a class="kart dok" href="#v/${encodeURIComponent(vk)}"><div class="satir"><div class="a"><b>${logo(vk, x.pz, k && k.ad)}${esc(x.pz === "kripto" ? x.kod.split("/")[0] : x.kod)} <span class="not" style="font-weight:600">${AD[x.pz]}</span></b>
+      <span>${esc(x.sad)} · sinyal ${esc(String(x.tarih).split("-").reverse().join("."))}${x.puan != null ? " · puan " + x.puan : ""}</span>
+      <span>${ac ? `giriş ${x.giris == null ? "yarın açılış" : fy(x.giris)} · stop ${fy(x.stop)}${x.hedef ? " · hedef " + fy(x.hedef) : ""}` : `${esc(x.neden || "")} · ${esc(String(x.sonuc_tarih || "").split("-").reverse().join("."))} · giriş ${fy(x.giris)} → ${fy(x.cikis_fiyat)}`}</span></div>
+      <div class="f"><b class="${rk(r)}">${r == null ? "–" : (r >= 0 ? "+" : "") + tr(r, 2) + "R"}</b><span class="not">${ac ? "şu an" : yzD(x.getiri, 1)}</span></div></div></a>`; };
+  h += `<h2>Açık · ${acik.length}</h2>` + (acik.sort((a, b) => String(b.tarih).localeCompare(a.tarih)).map(x => satir(x, true)).join("") || "<div class='bos'>Açık FiboAyna işlemi yok.</div>");
+  h += `<h2>Kapanan · ${kapali.length}</h2>` + (kapali.slice().reverse().slice(0, 150).map(x => satir(x, false)).join("") || "<div class='bos'>Henüz kapanan yok; ilk sonuçlar sinyallerden birkaç gün/hafta sonra oluşur.</div>");
+  el.innerHTML = h;
+}
 async function fiboBolum(el) {   // Fırsatlar › FiboAyna
+  const alt = LS.get("kk_fibo_alt", "sin");
+  const ust = `<div class="cip">${[["sin", "Sinyaller"], ["perf", "Performans"]].map(([k, a]) => `<button data-fa="${k}" class="${k === alt ? "s" : ""}">${a}</button>`).join("")}</div>`;
+  const bagla = () => el.querySelectorAll("[data-fa]").forEach(b => b.onclick = () => { LS.set("kk_fibo_alt", b.dataset.fa); fiboBolum(el); });
+  if (alt === "perf") { await fiboPerf(el, ust); return bagla(); }
   const P = ["bist", "abd", "kripto", "emtia"], D = await Promise.all(P.map(fiboAl));
   await karneListe();
   const mod = LS.get("kk_fibo_pz", "Tümü");
@@ -1100,7 +1124,7 @@ async function fiboBolum(el) {   // Fırsatlar › FiboAyna
   P.forEach((pz, i) => Object.entries((D[i] || {}).varliklar || {}).forEach(([kod, v]) => (v.sin || []).forEach(s => L.push({pz, kod, v, s, sec: ((D[i] || {}).secim || {})[s.ad] || {}}))));
   const goster = L.filter(x => mod === "Tümü" || x.pz === {BIST: "bist", ABD: "abd", Kripto: "kripto", Emtia: "emtia"}[mod]).sort((a, b) => (b.s.puan || 0) - (a.s.puan || 0));
   const zaman = D.filter(Boolean).map(d => new Date(d.zaman)).sort((a, b) => b - a)[0];
-  let h = `<h2>FiboAyna sinyalleri · ${goster.length}</h2><div class="cip">${["Tümü", "BIST", "ABD", "Kripto", "Emtia"].map(k => `<button data-fp="${k}" class="${k === mod ? "s" : ""}">${k}</button>`).join("")}</div>
+  let h = `<h2>FiboAyna sinyalleri · ${goster.length}</h2>${ust}<div class="cip">${["Tümü", "BIST", "ABD", "Kripto", "Emtia"].map(k => `<button data-fp="${k}" class="${k === mod ? "s" : ""}">${k}</button>`).join("")}</div>
     <div class="not" style="font-size:11px;margin:-2px 2px 8px">Senin FiboAyna göstergenin çizimi (PDA / Golden Zone / alım bölgesi), Boğa Çizgisi ve 5-8-14 VIDYA bulutu üzerinden ekibin geçmiş testle seçtiği alım sinyalleri.
     Puan: işlem başına beklenen sonucun geçmişteki dağılımda yeri (75+ güçlü). Sinyal son 3 gün içinde oluşmuş, stopu ve hedefi henüz görülmemiş olanlar listelenir.${zaman ? " Son tarama " + zaman.toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"}) + "." : ""}</div>`;
   h += goster.map(({pz, kod, v, s, sec}) => { const vk = fiboVKod(pz, kod), k = varlikBul(vk), para = k ? ({"₺": "₺", "$": "$"}[k.para] || "") : (pz === "bist" ? "₺" : "$"), [pe, pc] = puanEtk(s.puan);
@@ -1117,6 +1141,7 @@ async function fiboBolum(el) {   // Fırsatlar › FiboAyna
   h += `<div class="uyari">Geçmiş test 2019-2026, günlük grafik, ertesi gün açılıştan giriş. Gösterge bazlı analizdir, yatırım tavsiyesi değildir.</div>`;
   el.innerHTML = h;
   el.querySelectorAll("[data-fp]").forEach(b => b.onclick = () => { LS.set("kk_fibo_pz", b.dataset.fp); fiboBolum(el); });
+  bagla();
 }
 function fiboHtml(v, sec, para) {   // varlık sayfası: FiboAyna çizimi
   if (!v) return "";
