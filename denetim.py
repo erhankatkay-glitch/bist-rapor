@@ -32,6 +32,8 @@ with sync_playwright() as pw:
         oz = fr.evaluate("(()=>{const k=[...document.querySelectorAll('.ko')].find(x=>x.innerText.includes('Ekip özeti')); return k? k.innerText : null;})()")
         print("CANLI", kod.split("|")[0], "| bölüm:", ok, "| Ekip özeti:", (oz or "YOK")[:900].replace("\n", " ‖ "))
         print("   teşhis:", fr.evaluate("[...document.querySelectorAll('[data-testid=stCaptionContainer]')].map(x=>x.innerText).filter(t=>t.includes('Yapay zekâ özeti'))"))
+        print("   uyarılar:", fr.evaluate("[...document.querySelectorAll('[data-testid=stAlert], [data-testid=stStatusWidget], [data-testid=stExpander] summary')].map(x=>x.innerText.slice(0,160)).filter(t=>/analiz|Hazır|yapıl|hata|Teknik/i.test(t))"))
+        print("   tk başlık:", fr.evaluate("[...document.querySelectorAll('.kn-t, .sv-b')].map(x=>x.innerText.slice(0,80))"))
         print("   hata:", fr.evaluate("[...document.querySelectorAll('[data-testid=stException]')].map(x=>x.innerText.slice(0,200))"))
         pg.screenshot(path=f"denetim_graf/yz_{kod.split('|')[0].replace('/', '_')}.png")
     br.close()
