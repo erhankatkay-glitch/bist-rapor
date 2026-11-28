@@ -466,3 +466,20 @@ def test_alarm_seans_gunu_gece_yarisi_tekrar_yok():
     assert A.seans_gunu("ASELS", gun) == A.seans_gunu("ASELS", gece) == dt_.date(2026, 11, 27)
     assert A.seans_gunu("Nasdaq", gece) == dt_.date(2026, 11, 27)
     assert A.son_tamam_seans("ASELS", gece) == dt_.date(2026, 11, 27)
+
+
+def test_canli_emtia_sapma_korumasi():
+    """Anlık emtia kaynağı Yahoo referansından %10+ saparsa kullanılmaz; eski (15 dk+) veri anlık sayılmaz."""
+    import canli_emtia as CE, datetime as dt_
+    simdi = dt_.datetime.now(dt_.timezone.utc)
+    eski_okx, eski_bg = CE.okx, CE.bitget
+    try:
+        CE.okx = lambda s: {"fiyat": 50.0, "d24": 0.01, "zaman": simdi}
+        CE.bitget = lambda s: {"fiyat": 44.0, "d24": 0.02, "zaman": simdi}
+        assert CE.fiyat("GUMUS", referans=44.0)["kaynak"].startswith("Bitget")   # OKX %13,6 sapıyor → Bitget
+        assert CE.fiyat("GUMUS", referans=49.0)["kaynak"].startswith("OKX")
+        CE.okx = lambda s: {"fiyat": 44.0, "d24": 0.01, "zaman": simdi - dt_.timedelta(hours=1)}
+        CE.bitget = lambda s: (_ for _ in ()).throw(ValueError("yok"))
+        assert CE.fiyat("GUMUS", referans=44.0) is None and CE.fiyat("BRENT") is None
+    finally:
+        CE.okx, CE.bitget = eski_okx, eski_bg

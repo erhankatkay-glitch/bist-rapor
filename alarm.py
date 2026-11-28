@@ -151,6 +151,14 @@ def anlik(kod):
             return son, float(g[[t.date() == once_gun for t in g.index]]["Close"].iloc[-1])
         once = gd[[t.date() < gun for t in gd.index]]
         return son, (float(once.iloc[-1]) if len(once) else son)
+    if kod.upper() in ("GUMUS", "PLATIN", "BAKIR", "WTI", "DOGALGAZ"):   # anlık 7/24 türev fiyatı (OKX/Bitget); olmazsa Yahoo
+        try:
+            import canli_emtia as CE
+            ref, _ = _son_ve_onceki(_yahoo(kod))
+            b = CE.fiyat(kod, referans=ref)
+            if b and b["d24"] is not None: return b["fiyat"], b["d24"]
+        except Exception:
+            pass
     if kod.upper() in ("ALTIN", "GRAMALTIN"):    # spot ons: Binance PAXG (vadeli GC=F spotun ~%1 üstünde olabilir)
         try:
             import bist_makro as MK
