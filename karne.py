@@ -151,6 +151,19 @@ def main(klasor, pz):
             endeks["ad"] = {"XU100": "BIST 100", "SP500": "S&P 500"}.get(ref, endeks["ad"])
         except Exception: endeks = None
     yaz_piyasa(pz, analizler, klasor, endeks)
+    if pz in ("bist", "abd") and endeks:   # piyasa rejimini de aynı (tamamlanmış) veriyle tazele — Telegram göndermez
+        try:
+            import rejim as RJ
+            r = RJ.hesapla(pz, analizler, endeks["tf"]["G"]["h"], klasor, vix=RJ.vix_al() if pz == "abd" else None)
+            print("Rejim:", r["durum_ad"], r["maruziyet"], r.get("kapanis"))
+        except Exception as x:
+            print("Rejim tazelenemedi:", x, file=sys.stderr)
+    if pz == "bist":   # dünya piyasaları özeti (Telegram göndermez)
+        try:
+            import dunya as DN
+            DN.hesapla(klasor)
+        except Exception as x:
+            print("Dünya özeti tazelenemedi:", x, file=sys.stderr)
 
 
 if __name__ == "__main__":
