@@ -1,0 +1,37 @@
+name: Varlık karneleri (hızlı uygulama)
+
+# Hızlı uygulamanın (PWA) varlık sayfaları için seçili varlıkların teknik karnesini önceden hesaplar → bulten/karne/
+on:
+  schedule:
+    - cron: "25 15 * * 1-5"   # 18:25 TSİ: BIST kapanışı sonrası
+    - cron: "35 21 * * 1-5"   # 00:35 TSİ: ABD kapanışı sonrası
+    - cron: "10 3,9 * * *"    # 06:10 ve 12:10 TSİ: kripto / emtia tazeleme (hafta sonu dahil)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: karne
+  cancel-in-progress: false
+
+jobs:
+  karne:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Karneleri hesapla
+        run: python karne.py cikti
+      - name: Yayınla
+        if: always()
+        run: python yayinla.py cikti "Karneler $(date -u +%FT%H%M)"
