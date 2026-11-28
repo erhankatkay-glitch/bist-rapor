@@ -295,3 +295,10 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 ## Aşama 11 (28.11.2026)
 - korelasyon.py (sabah_ozet.yml adımı) → korelasyon/ozet.json; app.korelasyon_bolumu (Ekonomi); sabah.izlenecekler kırılma maddesi;
   bist_teknik.goreceli_satirlar (tf_analiz G, tur ile) → karne + PDF. Sayfa dili "tr" (CSS büyük harfte İ).
+
+## Anlık emtia (28.11.2026, kullanıcı isteği; Firecrawl değerlendirmesi sonrası)
+- Firecrawl/firecrawl-mcp-server değerlendirildi: genel web kazıyıcı, piyasa verisi yok; BIST anlık veri lisanslı → kazınmaz (kural).
+  Firecrawl AGPL-3.0 ve ağır öz-barındırma (Playwright, Redis, RabbitMQ, PostgreSQL); kullanılmadı.
+- canli_emtia.py: OKX / Bitget herkese açık TradFi sürekli vadeli kontratları (GUMUS, PLATIN, BAKIR, WTI, DOGALGAZ); Yahoo'ya göre %10 sapma
+  ve 15 dk tazelik koruması, yedek Yahoo. Binance XAU/XAG ABD'den 451 (kullanılmaz); Bybit 403. Brent için açık anlık kaynak yok.
+  Bağlı: bist_makro.piyasa_paneli (kaynak "OKX/Bitget 7/24 türev", tur kripto), alarm.anlik, app.ana_satirlar emtia satırları, veri_kalite.KAYNAKLAR.
