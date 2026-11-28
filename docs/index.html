@@ -1395,7 +1395,7 @@ function git(s) {
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("s", b.dataset.s === s));
   document.querySelectorAll(".sayfa").forEach(x => x.classList.toggle("ac", x.id === "s-" + s));
   if (!yuklendi[s]) { yuklendi[s] = true; YUK[s](); }
-  window.scrollTo(0, 0); if (location.hash !== "#" + s) history.replaceState(null, "", "#" + s);
+  window.scrollTo(0, 0); if (location.hash !== "#" + s && !location.hash.startsWith("#" + s + "/")) history.replaceState(null, "", "#" + s);
 }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => git(b.dataset.s));
 async function yenile(b) {   // tüm veriyi önbelleği atlayarak yeniden çek, açık sayfayı yeniden çiz
