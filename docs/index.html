@@ -317,7 +317,9 @@ document.addEventListener("click", ev => {
   if (v) { ev.preventDefault(); location.hash = "#v/" + encodeURIComponent(v.kod); }
 }, true);
 function altRota(h) {   // #piyasa/temel/kripto gibi derin bağlantılar (Telegram düğmeleri): alt sekmeyi seç, bölümü aç
-  const [b, alt, mod] = h.split("/"); if (b !== "piyasa" || !alt) return h;
+  const [b, alt, mod] = h.split("/");
+  if (b === "firsat" && alt) { FR_SEKME = alt; yuklendi.firsat = false; return "firsat"; }
+  if (b !== "piyasa" || !alt) return h;
   PY_SEKME = alt; LS.set("kk_py_sekme", alt); if (mod) LS.set("kk_temel_mod", mod); yuklendi.piyasa = false; return "piyasa";
 }
 addEventListener("hashchange", () => { const h = altRota(decodeURIComponent((location.hash || "#ozet").slice(1))); if (h.startsWith("v/") || YUK[h]) git(h); });
@@ -366,6 +368,7 @@ async function varlik(kod) {
     ${grafikSvg(k.grafik, g)}
     <h2>Zaman dilimleri</h2><div class="tfk">${Object.entries(k.tf).map(([t, a]) => `<div><small>${TF_AD[t] || t}</small><b class="${rk(a.puan - 50)}">${esc(a.etiket)}</b><div class="cub"><div style="width:${a.puan}%"></div></div></div>`).join("")}</div>
     <h2>Teknik yorum</h2><div class="kart metin">${md(k.yorum)}</div>`;
+  { const FD = await fiboAl(k.pz); if (FD && FD.varliklar) h += fiboHtml(FD.varliklar[fiboKod(k.pz, k.kod)], FD.secim || {}, para); }
   if (k.pz === "kripto" || k.pz === "emtia") { const T = await temelAl(k.pz); h += varlikTemelHtml(T && T.satirlar && T.satirlar[k.kod], k.pz, para, T && new Date(T.zaman).toLocaleDateString("tr-TR")); }
   if (k.pz === "bist" || k.pz === "abd") { const T = await temelAl(k.pz); h += temelHtml(T && T.satirlar && T.satirlar[k.kod] && Object.assign({tarih: new Date(T.zaman).toLocaleDateString("tr-TR")}, T.satirlar[k.kod]), para); }
   if (k.senaryo && k.senaryo.length) h += `<h2>Senaryolar</h2>` + k.senaryo.map(x => `<div class="kart"><b style="font-size:13.5px">${esc(x[0])}</b><div class="metin" style="margin-top:4px">Koşul: ${esc(x[1])} · hedef ${esc(x[2])}<br><span class="not">${esc(x[3])}</span></div></div>`).join("");
@@ -1078,15 +1081,75 @@ async function ozet() {
   if (taze.length) bant(taze.slice(0, 5)); else { clearInterval(BANT_T); const d = document.getElementById("dus"); if (d) d.className = ""; }
 }
 
+// ---------------------------------------------------------------- FiboAyna (kullanıcının göstergesi; kurallar şifreli, burada yalnız sonuçlar: bulten/fibo/<pz>.json)
+const FIBO = {};
+async function fiboAl(pz) { if (!(pz in FIBO)) FIBO[pz] = (await al(`fibo/${pz}.json`)) || null; return FIBO[pz]; }
+const fiboKod = (pz, kod) => pz === "abd" ? String(kod).replace(/\.US$/, "") : kod;
+const fiboVKod = (pz, kod) => pz === "abd" && !String(kod).endsWith(".US") ? kod + ".US" : kod;
+const TIP_AD = {dusus: "↘ Düşüş yapısı", gz: "↗ Golden Zone", bant: "↔ Bant", yukselis: "↑ Yükseliş yapısı"};
+const puanEtk = p => p == null ? ["–", "n"] : p >= 75 ? ["GÜÇLÜ", "al"] : p >= 50 ? ["ORTA", "n"] : ["ZAYIF", "sat"];
+const CIKIS_AD = {yapi: "hedef: 0/1 seviyesi", bulut: "çıkış: VIDYA 5 < 14", r2: "hedef: 2R"};
+function fiboPlan(s, para) {
+  return `giriş ≈ ${para}${fy(s.giris)} · stop ${para}${fy(s.stop)} (${yz(-s.risk, 1)})${s.hedef ? ` · hedef ${para}${fy(s.hedef)}` : ""} · ${CIKIS_AD[s.cikis] || ""}`;
+}
+async function fiboBolum(el) {   // Fırsatlar › FiboAyna
+  const P = ["bist", "abd", "kripto", "emtia"], D = await Promise.all(P.map(fiboAl));
+  await karneListe();
+  const mod = LS.get("kk_fibo_pz", "Tümü");
+  const L = [];
+  P.forEach((pz, i) => Object.entries((D[i] || {}).varliklar || {}).forEach(([kod, v]) => (v.sin || []).forEach(s => L.push({pz, kod, v, s, sec: ((D[i] || {}).secim || {})[s.ad] || {}}))));
+  const goster = L.filter(x => mod === "Tümü" || x.pz === {BIST: "bist", ABD: "abd", Kripto: "kripto", Emtia: "emtia"}[mod]).sort((a, b) => (b.s.puan || 0) - (a.s.puan || 0));
+  const zaman = D.filter(Boolean).map(d => new Date(d.zaman)).sort((a, b) => b - a)[0];
+  let h = `<h2>FiboAyna sinyalleri · ${goster.length}</h2><div class="cip">${["Tümü", "BIST", "ABD", "Kripto", "Emtia"].map(k => `<button data-fp="${k}" class="${k === mod ? "s" : ""}">${k}</button>`).join("")}</div>
+    <div class="not" style="font-size:11px;margin:-2px 2px 8px">Senin FiboAyna göstergenin çizimi (PDA / Golden Zone / alım bölgesi), Boğa Çizgisi ve 5-8-14 VIDYA bulutu üzerinden ekibin geçmiş testle seçtiği alım sinyalleri.
+    Puan: işlem başına beklenen sonucun geçmişteki dağılımda yeri (75+ güçlü). Sinyal son 3 gün içinde oluşmuş, stopu ve hedefi henüz görülmemiş olanlar listelenir.${zaman ? " Son tarama " + zaman.toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"}) + "." : ""}</div>`;
+  h += goster.map(({pz, kod, v, s, sec}) => { const vk = fiboVKod(pz, kod), k = varlikBul(vk), para = k ? ({"₺": "₺", "$": "$"}[k.para] || "") : (pz === "bist" ? "₺" : "$"), [pe, pc] = puanEtk(s.puan);
+    return `<a class="kart dok" href="#v/${encodeURIComponent(vk)}"><div class="satir"><div class="a"><b>${logo(vk, pz, k && k.ad)}${esc(pz === "kripto" ? kod.split("/")[0] : kod)} <span class="etk ${pc}" style="margin-left:4px">${pe}</span></b>
+      <span>${esc(sec.ad || s.ad)} · ${s.gun === 0 ? "bugün" : s.gun + " gün önce"} · ${esc(TIP_AD[v.tip] || "")} · ${esc(v.bas || "")}</span>
+      <span>${fiboPlan(s, para)}</span></div>
+      <div class="f"><b style="color:var(--a)">${s.puan ?? "–"}</b><span class="not">puan</span>${s.tahR != null ? `<small style="display:block;color:var(--s2);font-size:10px">beklenen ${tr(s.tahR, 2)}R</small>` : ""}</div></div></a>`; }).join("") || "<div class='bos'>Şu an geçerli FiboAyna sinyali yok.</div>";
+  // strateji kartları: ekibin seçimi ve geçmiş test
+  h += `<h2>Ekibin seçtiği stratejiler</h2>`;
+  P.forEach((pz, i) => { const S = Object.entries((D[i] || {}).secim || {}); if (!S.length) return;
+    h += `<details class="kart"><summary>${{bist: "BIST", abd: "ABD", kripto: "Kripto", emtia: "Emtia"}[pz]} · ${S.length} strateji</summary>${S.map(([ad, x]) => `<div style="margin-top:10px"><b style="font-size:13px">${esc(x.ad)}</b>
+      <div class="metin" style="font-size:12px;margin-top:2px">${esc(x.aciklama)}</div><div class="not" style="font-size:11px;margin-top:2px">${esc(x.cikis_aciklama)}</div>
+      ${x.sinama ? `<div class="not" style="font-size:11px;margin-top:4px">Sınama (${esc(((D[i] || {}).test || {}).sinama || "2024-26")}): ${x.sinama.n} işlem · kazanma %${tr(x.sinama.kazanma * 100, 0)} · işlem başı ${tr(x.sinama.R, 2)}R · rastgele girişe göre <b class="${rk(x.fark_sinama)}" style="display:inline;font-size:inherit">${x.fark_sinama >= 0 ? "+" : ""}${tr(x.fark_sinama, 2)}R</b> (eğitim ${x.fark_egitim >= 0 ? "+" : ""}${tr(x.fark_egitim, 2)}R)</div>` : ""}</div>`).join("")}</details>`; });
+  h += `<div class="uyari">Geçmiş test 2019-2026, günlük grafik, ertesi gün açılıştan giriş. Gösterge bazlı analizdir, yatırım tavsiyesi değildir.</div>`;
+  el.innerHTML = h;
+  el.querySelectorAll("[data-fp]").forEach(b => b.onclick = () => { LS.set("kk_fibo_pz", b.dataset.fp); fiboBolum(el); });
+}
+function fiboHtml(v, sec, para) {   // varlık sayfası: FiboAyna çizimi
+  if (!v) return "";
+  const sat = (a, b) => `<tr><td>${a}</td><td>${b}</td></tr>`, p = x => x == null ? "–" : para + fy(x);
+  const bolgeAd = v.tip === "gz" ? "Golden Zone" : v.tip === "bant" ? "Alım bölgesi" : "PDA-1";
+  let h = `<h2>FiboAyna</h2><div class="kart"><div class="satir"><div class="a"><b style="align-self:flex-start"><span class="rozet ${v.tip === "yukselis" ? "n" : "al"}" style="margin:0">${esc(TIP_AD[v.tip] || "Yapı yok")}</span></b>
+      <span style="margin-top:6px;white-space:normal">${esc(v.bas || "")}${v.giris != null ? ` · bölgeye ${v.giris}. giriş` : ""}</span></div>
+      <div class="f"><b class="${v.f > v.boga ? "ust" : "alt"}">${v.f > v.boga ? "Boğa üstü" : "Boğa altı"}</b><span class="not">bulut ${({yukari: "yukarı", asagi: "aşağı", karisik: "karışık"})[v.bd] || ""}</span></div></div>
+    <table class="tablo" style="margin-top:8px">${sat("1 noktası", p(v.S) + (v.b1 != null ? ` <span class="not">(${v.b1} bar önce)</span>` : ""))}${sat("0 noktası", p(v.E) + (v.b0 != null ? ` <span class="not">(${v.b0} bar önce)</span>` : ""))}
+      ${v.tip !== "gz" ? sat("Tepki zirvesi", p(v.R)) : ""}${v.p1 ? sat(bolgeAd, p(v.p1[0]) + " – " + p(v.p1[1])) : ""}${v.p2 ? sat("PDA-2", p(v.p2[0]) + " – " + p(v.p2[1])) : ""}
+      ${sat("Stop (altında kapanış)", p(v.stop))}${sat("Boğa Çizgisi", p(v.boga))}${sat("VIDYA 5 / 8 / 14", (v.bulut || []).map(x => fy(x)).join(" / "))}</table></div>`;
+  for (const s of v.sin || []) { const x = sec[s.ad] || {}, [pe, pc] = puanEtk(s.puan);
+    h += `<div class="kart"><b style="font-size:13.5px">${esc(x.ad || s.ad)}</b> <span class="etk ${pc}">${pe} · ${s.puan ?? "–"}</span>
+      <div class="metin" style="font-size:12px;margin-top:4px">${esc(x.aciklama || "")} ${s.gun === 0 ? "Bugün" : s.gun + " gün önce"} oluştu.</div><div class="metin" style="font-size:12.5px;margin-top:4px">${fiboPlan(s, para)}</div>
+      ${x.sinama ? `<div class="not" style="font-size:11px;margin-top:4px">Geçmiş test (2024-26): işlem başı ${tr(x.sinama.R, 2)}R, kazanma %${tr(x.sinama.kazanma * 100, 0)}, bu sinyalin beklenen sonucu ${tr(s.tahR, 2)}R.</div>` : ""}</div>`; }
+  const HO = [5, 8, 14, 21, 34, 55, 89, 144, 233], ho = v.ho || {};
+  h += `<details class="kart"><summary>Hareketli ortalamalar (VIDYA · günlük / haftalık / aylık)</summary><table class="tablo">
+    <tr><td class="not">HO</td><td class="not">Günlük</td><td class="not">Haftalık</td><td class="not">Aylık</td></tr>${HO.map((n, i) => `<tr><td>${n}</td>${["g", "h", "a"].map(k => { const x = (ho[k] || [])[i];
+      return `<td class="${x == null ? "" : v.f > x ? "ust" : "alt"}">${x == null ? "–" : fy(x)}</td>`; }).join("")}</tr>`).join("")}</table>
+    <div class="not" style="font-size:10.5px;margin-top:6px">Yeşil: fiyat ortalamanın üstünde. Boğa Çizgisi = haftalık VIDYA 5.</div></details>`;
+  return h;
+}
+
 // ---------------------------------------------------------------- Fırsatlar
 let FIRSAT = [], F_PZ = "Tümü";
-let FR_SEKME = "acik";
+var FR_SEKME = "acik";
 async function firsatlar() {
   const ust = document.getElementById("s-firsat");
-  ust.innerHTML = `<div class="cip" style="margin-top:4px">${[["acik", "Açık kurulumlar"], ["son", "Son taramalar"], ["perf", "Performans"]].map(([k, a]) => `<button data-fr="${k}" class="${k === FR_SEKME ? "s" : ""}">${a}</button>`).join("")}</div><div id="fr-ic"></div>`;
+  ust.innerHTML = `<div class="cip" style="margin-top:4px">${[["acik", "Açık kurulumlar"], ["fibo", "FiboAyna"], ["son", "Son taramalar"], ["perf", "Performans"]].map(([k, a]) => `<button data-fr="${k}" class="${k === FR_SEKME ? "s" : ""}">${a}</button>`).join("")}</div><div id="fr-ic"></div>`;
   ust.querySelectorAll("[data-fr]").forEach(b => b.onclick = () => { FR_SEKME = b.dataset.fr; firsatlar(); });
   const el = document.getElementById("fr-ic");
   if (FR_SEKME === "son") return sonTarama(el);
+  if (FR_SEKME === "fibo") return fiboBolum(el);
   if (FR_SEKME === "perf") return firsatPerformans(el);
   const l = await Promise.all(["bist", "abd", "kripto", "emtia"].map(async p => ((await al(`firsat/${p}/acik.json`)) || []).map(x => ({...x, piyasa: p}))));
   FIRSAT = l.flat().filter(x => x.durum === "açık").sort((a, b) => b.puan - a.puan);
@@ -1221,7 +1284,7 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => git(b.dat
 async function yenile(b) {   // tüm veriyi önbelleği atlayarak yeniden çek, açık sayfayı yeniden çiz
   const etiketler = [document.getElementById("yenile"), document.getElementById("yenile2")];
   etiketler.forEach(x => x && (x.disabled = true)); document.getElementById("yenile").textContent = "↻ Yenileniyor…";
-  ZORLA = Date.now(); KARNE = null; BEBEK = null; PDF_D = null; Object.keys(TEMEL).forEach(k => delete TEMEL[k]); Object.keys(yuklendi).forEach(k => yuklendi[k] = false);
+  ZORLA = Date.now(); KARNE = null; BEBEK = null; PDF_D = null; Object.keys(TEMEL).forEach(k => delete TEMEL[k]); Object.keys(FIBO).forEach(k => delete FIBO[k]); Object.keys(yuklendi).forEach(k => yuklendi[k] = false);
   const s = decodeURIComponent((location.hash || "#ozet").slice(1));
   try { git(YUK[s] || s.startsWith("v/") ? s : "ozet"); await karneListe(); } catch (e) {}
   setTimeout(() => { ZORLA = 0; }, 8000);
