@@ -844,6 +844,20 @@ def goreceli_satirlar(h, tur):
     return out
 
 
+_OPS_ONB = {}
+
+
+def opsiyon_ozeti(baz, sure=900):
+    """Deribit opsiyon özeti (15 dk süreç içi önbellek)."""
+    import time as _t, opsiyon as _OP
+    z, v = _OPS_ONB.get(baz, (0, None))
+    if _t.time() - z > sure:
+        try: v = _OP.para_ozeti(baz)
+        except Exception: v = None
+        _OPS_ONB[baz] = (_t.time(), v)
+    return v
+
+
 QD_PIYASA = {"hisse": "bist", "abd": "abd", "kripto": "kripto", "emtia": "emtia"}
 
 
@@ -985,6 +999,17 @@ def analiz(kod, fiyat_fn=None, tfler=("G", "H", "A"), kisa_vade=False):
                 sonuc["tf"][tf] = tf_analiz(yeniden_ornekle(hs, tf, tur_s), tf, tur_s)
         except Exception as ex:
             sonuc["kisa_hata"] = str(ex)[:100]
+    if tur == "kripto" and not fiyat_fn:   # Aşama 13: BTC/ETH opsiyon piyasası (Deribit) → karne satırları
+        try:
+            baz_ = kod.split("/")[0].split("@")[0]
+            if baz_ in ("BTC", "ETH") and sonuc["tf"].get("G"):
+                op = opsiyon_ozeti(baz_)
+                if op:
+                    import opsiyon as _OP
+                    sonuc["opsiyon"] = op
+                    sonuc["tf"]["G"]["durum"].extend(_OP.karne_satirlari(op))
+        except Exception as ex:
+            sonuc["opsiyon_hata"] = str(ex)[:100]
     ag = {"G": 0.3, "H": 0.4, "A": 0.3}
     v = [(ag[t], a["puan"]) for t, a in sonuc["tf"].items() if a and t in ag]
     kv = [a["puan"] for t, a in sonuc["tf"].items() if a and t in ("1S", "4S")]

@@ -762,6 +762,58 @@ def dunya_sekmesi():
         st.caption("Vadeli kontrat fiyatları gecikmeli günlük kapanıştır; vade yapısı arz-talep dengesine dair ipucudur, tek başına al-sat sinyali değildir.")
 
 
+def opsiyon_bolumu():
+    """Aşama 13: BTC/ETH opsiyon piyasası (opsiyon/ozet.json, kripto iş akışı 4 saatte bir; kaynak Deribit)."""
+    import html as _h
+    try: o = json_oku("opsiyon/ozet.json", ZAMAN)
+    except Exception: o = None
+    if not o or not o.get("paralar"): return
+    with st.expander(":material/stacked_line_chart: Opsiyon piyasası (BTC · ETH) — oynaklık, çarpıklık, vade seviyeleri", expanded=False):
+        c = st.radio("Para", list(o["paralar"]), horizontal=True, key="op_para", label_visibility="collapsed")
+        p = o["paralar"][c]; d = p.get("dvol") or {}
+        tl = lambda x: f"{x:,.0f}".replace(",", ".") if x else "–"
+        yz = lambda x, nd=1: f"%{x * 100:.{nd}f}".replace(".", ",") if x is not None else "–"
+        t_ = dt.datetime.fromisoformat(p["zaman"]).astimezone(ZoneInfo("Europe/Istanbul"))
+        st.caption(f"Deribit herkese açık verisi · {t_:%d.%m %H:%M} TSİ · endeks {tl(p['endeks'])} $")
+        sk = p.get("skew_25d"); pc = p.get("pc_oi")
+        hucre = [(f"{d.get('deger', 0):.0f}", "DVOL", f"1 yılın %{d.get('yuzdelik', 0) * 100:.0f}'i"),
+                 (yz(p.get("gerceklesen_30g"), 0), "gerçekleşen 30g", "geçmiş oynaklık"),
+                 (f"{sk:+.1f}".replace(".", ",") if sk is not None else "–", "25Δ çarpıklık", "+: put pahalı"),
+                 (f"{pc:.2f}".replace(".", ",") if pc else "–", "put/call (OI)", "1 üstü korunma ağır"),
+                 (f"${tl(p.get('oi_usd') / 1e9 if p.get('oi_usd') else 0)} mr" if p.get("oi_usd") else "–", "açık pozisyon", "toplam"),
+                 ("ters" if p.get("ters_yapi") else "normal", "vade yapısı", "ters = stres")]
+        st.markdown('<div class="kl"><div class="kl-g">' + "".join(f"<div><b>{x}</b><span>{y}<br><i style='font-style:normal;color:#71717A'>{z}</i></span></div>"
+                                                                    for x, y, z in hucre) + "</div>"
+                    + "".join(f'<div class="kl-o">• {_h.escape(m)}</div>' for m in p.get("yorum", [])) + "</div>", unsafe_allow_html=True)
+        if d.get("seri"):
+            st.markdown('<div class="ko"><div class="ko-u"><b>DVOL · son 120 gün</b><span style="color:#E8B84A">' + f"{d['deger']:.0f}</span></div>"
+                        + spark_svg(d["seri"], "#E8B84A", 320, 50) + f'<div class="ko-s">1 yıllık aralık {d["yil_min"]:.0f} – {d["yil_max"]:.0f}</div></div>',
+                        unsafe_allow_html=True)
+        vy = p.get("vade_yapisi") or []
+        if len(vy) >= 3:
+            W, H = 320, 70; lo = min(v["atm_iv"] for v in vy); hi = max(v["atm_iv"] for v in vy)
+            pts = " ".join(f"{i * W / (len(vy) - 1):.1f},{(H - 6) - (v['atm_iv'] - lo) / ((hi - lo) or 1) * (H - 14):.1f}" for i, v in enumerate(vy))
+            st.markdown(f'<div class="ko"><div class="ko-u"><b>Vade yapısı (ATM zımni oynaklık)</b><span>{yz(vy[0]["atm_iv"], 0)} → {yz(vy[-1]["atm_iv"], 0)}</span></div>'
+                        f'<svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" style="width:100%;height:70px"><polyline points="{pts}" fill="none" stroke="#E8B84A" stroke-width="2"/></svg>'
+                        f'<div class="ko-e"><span>{vy[0]["vade_ad"]}</span><span>{vy[-1]["vade_ad"]}</span></div>'
+                        '<div class="ko-s">Yükselen eğri normaldir; yakın vadenin uzaktan yüksek olması kısa vadeli stres demektir.</div></div>', unsafe_allow_html=True)
+        bv_ = p.get("buyuk_vadeler") or []
+        pcs = lambda v: f"{v['pc_oi']:.2f}".replace(".", ",") if v.get("pc_oi") else "–"
+        if bv_:
+            st.markdown(TS.bb("Büyük vadeler"), unsafe_allow_html=True)
+            st.markdown("".join(
+                f'<div class="ko"><div class="ko-u"><b>{v["vade_ad"]} · {v["gun"]:.0f} gün</b><span style="color:#E8B84A">max pain {tl(v["max_pain"])}</span></div>'
+                f'<div class="ko-y2">Beklenen hareket ±{yz(v["beklenen_hareket"])} → <b>{tl(v["aralik"][0])} – {tl(v["aralik"][1])}</b> (%68 olasılık bandı)</div>'
+                f'<div class="ko-y2">Call duvarı <b style="color:#EF4444">{tl(v["call_duvari"])}</b> ({tl(v["call_duvari_oi"])} {c}) · '
+                f'put duvarı <b style="color:#22C55E">{tl(v["put_duvari"])}</b> ({tl(v["put_duvari_oi"])} {c}) · P/C {pcs(v)}</div></div>'
+                if v.get("aralik") else "" for v in bv_), unsafe_allow_html=True)
+            st.caption("Max pain: vadede opsiyon alıcılarına en az ödeme yaptıran fiyat. Call duvarı direnç, put duvarı destek gibi çalışabilir; garanti değildir.")
+        g = p.get("greeks_atm_30g")
+        if g:
+            st.caption(f"ATM greeks ({p.get('skew_vade')} vadesi, {tl(g['strike'])} call): delta {g['delta']:.2f} · gamma {g['gamma']:.2e} · "
+                       f"vega {g['vega']:.1f} $ / IV puanı · theta {g['theta']:.1f} $ / gün".replace(".", ","))
+
+
 def makro_karti(m):
     """TÜFE + politika faizi + reel faiz kartı (TCMB)."""
     t = m["tufe"]["seri"]; s = t[0]
@@ -2075,6 +2127,8 @@ with tab_v:
                "trend, momentum, risk, para akışı, mevsimsellik ve piyasa verilerine dayanır.")
     v_tur = st.radio("Tür", ["Kripto", "Emtia"], horizontal=True, key="v_tur")
     if v_tur == "Kripto":
+        try: opsiyon_bolumu()
+        except Exception as ex: st.caption(f"Opsiyon verisi okunamadı: {ex}")
         v_kod = kripto_sec("v_k"); v_sec = v_kod
     else:
         v_sec = st.selectbox("Emtia", [f"{k} — {v[1]}" for k, v in V.VARLIKLAR.items() if v[2] == "emtia"], index=None,

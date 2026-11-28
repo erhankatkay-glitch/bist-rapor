@@ -224,6 +224,10 @@ def _yon(y):
 
 
 SOZLUK_TEKNIK = [
+    ("DVOL", "Deribit'in 30 günlük zımni oynaklık endeksi (kriptonun 'VIX'i): opsiyon fiyatlarından çıkarılan, piyasanın beklediği yıllık oynaklık."),
+    ("Max pain", "Opsiyon vadesinde, opsiyon alıcılarına toplamda en az ödeme yaptıran kullanım fiyatı; vadeye yakın fiyat bazen buraya çekilir, garanti değildir."),
+    ("25 delta çarpıklık", "Aynı vadede ~%25 olasılıklı put ve call opsiyonların zımni oynaklık farkı; pozitifse düşüşe karşı korunma pahalıdır."),
+    ("Put/call oranı", "Satım (put) opsiyonlarının alım (call) opsiyonlarına oranı (açık pozisyon ya da hacim); yüksekse korunma ağırlıklı konumlanma."),
     ("VCP (Minervini)", "Volatilite daralma formasyonu: güçlü yükseliş trendinde her geri çekilme bir öncekinden sığdır ve hacim kurur; "
      "tabanın tepesi hacimle kırılınca alım noktası (pivot) oluşur."),
     ("Momentum patlaması", "Sakin bir günün ardından gelen sert (%4+), hacimli ve günün tepesine yakın kapanan yükseliş; kısa vadeli "
