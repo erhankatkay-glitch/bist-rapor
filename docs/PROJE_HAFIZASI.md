@@ -307,3 +307,10 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - llm_katman.py: Gemini (ücretsiz katman, GEMINI_API_KEY; açık "flash" modeli API'den seçilir) → yedek Groq (GROQ_API_KEY).
   Anahtarlar YALNIZ Streamlit Secrets / GitHub Secrets'ta; kullanıcıdan değer istenmez. Modele yalnız herkese açık piyasa raporu gider.
   dogrula(): çıktıdaki her sayı girdide geçmeli, yoksa metin atılır. app.ekip_yorum 6 saat önbellek. Anahtar yoksa kural tabanlı metin.
+
+## Aşama 16 — aracı kurum, yalnız okuma (28.11.2026)
+- ekstre.py: coz(bayt, ad, kodlar) → [(kod, adet, maliyet)]; başlık sütunu arama, olmazsa satır satır (PDF: pypdf). app._ekstre_aktar → pf_metin.
+- PWA Binance cüzdanı: localStorage "kk_binance_okuma"; wss://ws-api.binance.com:443/ws-api/v3 account.status (omitZeroBalances);
+  zaman damgası data-api /api/v3/time'dan. Anahtar değerleri asla depoya/sunucuya/sohbete gelmez.
+- PWA güncelleme: sw.js SURUM her değişiklikte artırılır; sayfa ağ-önce, controllerchange'de bir kez yenilenir.
+

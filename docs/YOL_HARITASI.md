@@ -103,7 +103,13 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
   - Raporlara eklenecek ilkeler: düşüş senaryosu yükseliş kadar ayrıntılı; "tez bozucular" (bu olursa görünüm bozulur);
     güven derecesi (veri kalitesi + geçmiş test); en kötü durumda rakamla kayıp; başarısız sinyaller de raporlanır.
 - 15. PWA ön yüzü (isteğe bağlı).
-- 16. Aracı kurum araştırması, yalnız salt okunur.
+- 16. ✅ Aracı kurum, yalnız okuma (28.11.2026):
+  - BIST: bankalar/aracı kurumlar bireysel yatırımcıya salt okunur API vermiyor (Deniz AlgoLab yalnız emir amaçlı, başvurulu; MKK servisleri kurumlara).
+    → ekstre.py: banka ekstresi (xlsx/xls/csv/pdf) yüklenir, hisse + adet (+ ortalama maliyet) Portföy kutusuna yazılır; dosya kaydedilmez.
+  - Kripto (Binance): PWA'da "Binance cüzdanını bağla". Anahtar yalnız telefonda (localStorage); istek telefondan Binance WebSocket API'ye
+    (account.status, HMAC imzası tarayıcıda). Sunucudan yapılamaz: Binance ABD IP'lerine 451, REST imzalı uçlar tarayıcıda CORS'a takılır.
+    IP kısıtsız anahtar Binance kuralı gereği yalnız okuyabilir. "Risk analizi" düğmesi bakiyeleri ?p= ile Streamlit Portföy'e taşır.
+  - ABD hisseleri: kullanıcı bankadan alıyor; aynı ekstre yolu. (IBKR kullanılırsa Flex Web Service seçeneği not edildi.)
 
 ## Değerlendirilen KAP repoları
 - **cemsinano/pykap (MIT):** KAP'ın iç `/tr/api` uçlarını kullanıyor. Kuralımız gereği eklenmez.

@@ -2704,11 +2704,40 @@ with tab_rh:
     risk_hesaplayici(st.session_state.get("rh_on"), "rh")
 
 
+def _ekstre_aktar(varsayilan):
+    """Aşama 16: yüklenen ekstredeki BIST hisseleri portföy kutusuna (BIST dışı satırlar korunur)."""
+    import ekstre as EK
+    d = st.session_state.get("pf_ekstre")
+    if d is None: return
+    kodlar = {v[0] for v in ARAMA_SECENEK.values() if v[1] == "Hisse"}
+    try:
+        liste, nasil = EK.coz(d.getvalue(), d.name, kodlar)
+    except Exception as e:
+        st.session_state["_ekstre_not"] = f"⚠️ Dosya okunamadı: {e}"; return
+    if not liste:
+        st.session_state["_ekstre_not"] = ("⚠️ Dosyada tanınan bir BIST hissesi bulunamadı. Ekstrenin 'portföy / varlık' sayfasını "
+                                           "Excel olarak indirmeyi dene; olmazsa hisseleri kutuya elle yaz.")
+        return
+    eski = st.session_state.get("pf_metin", varsayilan)
+    kalan = [x for x in eski.splitlines() if x.strip() and x.split()[0].upper() not in kodlar]
+    st.session_state["pf_metin"] = EK.satirlar(liste) + ("\n" + "\n".join(kalan) if kalan else "")
+    st.session_state["_ekstre_not"] = (f"✓ {len(liste)} hisse aktarıldı ({nasil}): " + ", ".join(k for k, _, _ in liste)
+                                       + ". Adetleri ekstreyle karşılaştır.")
+
+
 with tab_pf:
     st.caption("Elinizdeki hisse, kripto ve emtiaları yazın; portföyün TL değeri, dağılımı, riski (oynaklık, VaR), korelasyonları, "
                "risk katkıları ve teknik görünümü hesaplanır. Her satıra: KOD MİKTAR (isteğe bağlı @ maliyet).")
     varsayilan = st.query_params.get("p", "").replace(";", "\n") or "THYAO 100\nASELS 50\nBTC/TRY 0,01\nGRAMALTIN 10"
-    pf_metin = st.text_area("Portföy", varsayilan, height=160, key="pf_metin",
+    with st.expander(":material/upload_file: Banka / aracı kurum ekstresinden aktar (Excel, CSV, PDF)"):
+        st.caption("Bankanın yatırım ekranından indirdiğin portföy ekstresini seç: hisseler ve adetler (varsa ortalama maliyet) okunup "
+                   "aşağıdaki kutuya yazılır. Kutudaki kripto ve emtia satırları korunur. Dosya yalnız bu oturumda okunur; "
+                   "hiçbir yere kaydedilmez. Aktardıktan sonra kontrol edip **Portföyü analiz et**'e bas.")
+        st.file_uploader("Ekstre", type=["xlsx", "xls", "csv", "txt", "pdf"], key="pf_ekstre", label_visibility="collapsed",
+                         on_change=_ekstre_aktar, args=(varsayilan,))
+        if st.session_state.get("_ekstre_not"): st.caption(st.session_state["_ekstre_not"])
+    if "pf_metin" not in st.session_state: st.session_state["pf_metin"] = varsayilan
+    pf_metin = st.text_area("Portföy", height=160, key="pf_metin",
                             help="Örnekler: THYAO 1000 @ 280 · BTC/TRY 0,05 · ETH/USDT 1,2 · GRAMALTIN 50 (gram) · ALTIN 2 (ons)")
     if st.button(":material/work: Portföyü analiz et", type="primary", key="pf_btn"):
         try:

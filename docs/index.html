@@ -16,6 +16,7 @@
 <style>
 :root{--z:#0B0B0C;--k:#141518;--k2:#1B1C20;--c:#26272B;--y:#F4F4F5;--s:#A1A1AA;--s2:#71717A;--a:#E8B84A;--a2:#F5D27A;--g:#22C55E;--r:#EF4444}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+button,a,.dok{touch-action:manipulation;cursor:pointer}
 html,body{margin:0;background:var(--z);color:var(--y);font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;font-size:15px}
 body{padding:calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 92px)}
 header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
@@ -176,10 +177,91 @@ function bant(l) {
   el.onclick = () => git("bildirim");
 }
 
+// ---------------------------------------------------------------- Binance cüzdanı (Aşama 16, yalnız okuma)
+// Anahtar YALNIZ bu telefonda (localStorage) durur; sunucuya, depoya, kimseye gitmez. İstek doğrudan telefondan Binance'e gider
+// (WebSocket API: tarayıcı CORS engeline takılmaz; ABD sunucularındaki 451 engeli de yok). IP kısıtsız Binance anahtarı yalnız okuyabilir.
+const BN_ANAH = "kk_binance_okuma";
+const bnOku = () => { try { return JSON.parse(localStorage.getItem(BN_ANAH) || "null"); } catch (e) { return null; } };
+async function imza(gizli, metin) {
+  const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(gizli), {name: "HMAC", hash: "SHA-256"}, false, ["sign"]);
+  const s = await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(metin));
+  return [...new Uint8Array(s)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+async function bnHesap(a) {
+  const st = await fetch("https://data-api.binance.vision/api/v3/time").then(r => r.json()).catch(() => ({serverTime: Date.now()}));
+  const p = {apiKey: a.k, omitZeroBalances: true, recvWindow: 20000, timestamp: st.serverTime};
+  const yuk = Object.keys(p).sort().map(x => `${x}=${p[x]}`).join("&");
+  p.signature = await imza(a.g, yuk);
+  return new Promise((ok, red) => {
+    const ws = new WebSocket("wss://ws-api.binance.com:443/ws-api/v3"), sure = setTimeout(() => { ws.close(); red(new Error("Binance yanıt vermedi")); }, 15000);
+    ws.onopen = () => ws.send(JSON.stringify({id: "kk1", method: "account.status", params: p}));
+    ws.onmessage = m => { const d = JSON.parse(m.data); if (d.id !== "kk1") return; clearTimeout(sure); ws.close();
+      d.status === 200 ? ok(d.result) : red(new Error((d.error && d.error.msg) || "hata " + d.status)); };
+    ws.onerror = () => { clearTimeout(sure); red(new Error("bağlantı kurulamadı")); };
+  });
+}
+const STABIL = new Set(["USDT", "USDC", "FDUSD", "BUSD", "TUSD", "DAI", "USDP"]);
+async function cuzdan() {
+  const el = document.getElementById("cuzdan"); if (!el) return;
+  const a = bnOku();
+  if (!a) {
+    el.innerHTML = `<div class="kart dok" id="bn-bagla" style="cursor:pointer"><div class="satir"><div class="a"><b>🔗 Binance cüzdanını bağla</b>
+      <span>Yalnız okuma · anahtar sadece bu telefonda kalır</span></div><div class="f"><b style="color:var(--a)">›</b></div></div></div>`;
+    document.getElementById("bn-bagla").onclick = bnPanel; return;
+  }
+  el.innerHTML = `<div class="kart"><div class="bos" style="padding:6px">Binance cüzdanı okunuyor…</div></div>`;
+  try {
+    const h = await bnHesap(a);
+    const fiyat = Object.fromEntries((await fetch("https://data-api.binance.vision/api/v3/ticker/price").then(r => r.json())).map(x => [x.symbol, +x.price]));
+    const sat = h.balances.map(b => {
+      let v = b.asset, n = +b.free + +b.locked;
+      if (v.startsWith("LD") && (fiyat[v.slice(2) + "USDT"] || STABIL.has(v.slice(2)))) v = v.slice(2);   // Simple Earn esnek
+      const px = STABIL.has(v) ? 1 : fiyat[v + "USDT"] || (fiyat[v + "TRY"] && fiyat.USDTTRY ? fiyat[v + "TRY"] / fiyat.USDTTRY : v === "TRY" && fiyat.USDTTRY ? 1 / fiyat.USDTTRY : 0);
+      return {v, n, d: n * px};
+    }).reduce((m, x) => { const o = m[x.v] || {v: x.v, n: 0, d: 0}; o.n += x.n; o.d += x.d; m[x.v] = o; return m; }, {});
+    const l = Object.values(sat).filter(x => x.d >= 1).sort((x, y) => y.d - x.d), top = l.reduce((t, x) => t + x.d, 0);
+    const ch = l.length ? await fetch("https://data-api.binance.vision/api/v3/ticker/24hr?symbols=" + encodeURIComponent(JSON.stringify(l.filter(x => !STABIL.has(x.v) && fiyat[x.v + "USDT"]).map(x => x.v + "USDT")))).then(r => r.json()).catch(() => []) : [];
+    const deg = Object.fromEntries((ch || []).map(x => [x.symbol.replace("USDT", ""), +x.priceChangePercent / 100]));
+    const gun = top ? l.reduce((t, x) => t + x.d * ((deg[x.v] || 0) / (1 + (deg[x.v] || 0))), 0) / top : 0;
+    const pf = l.filter(x => !STABIL.has(x.v)).map(x => `${x.v}/USDT ${String(+x.n.toPrecision(6)).replace(".", ",")}`).join(";");
+    el.innerHTML = `<h2><span><span lang="en">Binance</span> cüzdanım</span> <span class="not" style="letter-spacing:0;text-transform:none;font-weight:600">· yalnız okuma</span></h2>
+      <div class="kart"><div class="satir"><div class="a"><b style="font-size:22px">$${tr(top, 0)}</b><span>≈ ₺${tr(top * (fiyat.USDTTRY || 0), 0)} · ${l.length} varlık</span></div>
+      <div class="f"><b class="${rk(gun)}">${yz(gun, 2)}</b><span class="not">24 saat</span></div></div>
+      ${l.slice(0, 8).map(x => `<div class="satir" style="margin-top:9px"><div class="a"><b style="font-size:13.5px">${esc(x.v)} <span class="not" style="display:inline;font-weight:600">${tr(x.n, x.n >= 100 ? 0 : 4)}</span></b>
+        <div class="cub" style="margin-top:4px"><div style="width:${(x.d / top * 100).toFixed(1)}%"></div></div></div>
+        <div class="f"><b style="font-size:13px">$${tr(x.d, 0)}</b><span class="${rk(deg[x.v])}">${deg[x.v] == null ? "%" + tr(x.d / top * 100, 0) : yz(deg[x.v])}</span></div></div>`).join("")}
+      <div style="display:flex;gap:8px;margin-top:12px">${pf ? `<a class="dok" style="flex:1;text-align:center;padding:9px;border-radius:11px;background:linear-gradient(180deg,var(--a2),#C99A2E);color:#0B0B0C;font-weight:900;font-size:12.5px;text-decoration:none" target="_blank" href="${UYG}/?p=${encodeURIComponent(pf)}">Risk analizi (Portföy sekmesi) ›</a>` : ""}
+      <button id="bn-sil" style="background:none;border:1px solid var(--c);color:var(--s);border-radius:11px;padding:9px 12px;font-size:12px">Bağlantıyı kaldır</button></div></div>`;
+    document.getElementById("bn-sil").onclick = () => { if (confirm("Binance anahtarı bu telefondan silinsin mi?")) { localStorage.removeItem(BN_ANAH); cuzdan(); } };
+  } catch (e) {
+    el.innerHTML = `<div class="kart bild k"><div class="m">Binance cüzdanı okunamadı: ${esc(e.message)}</div>
+      <div class="z">Anahtarda "Enable Reading" açık mı, saat doğru mu? <a href="#" id="bn-yeni" style="color:var(--a)">Anahtarı değiştir</a></div></div>`;
+    document.getElementById("bn-yeni").onclick = ev => { ev.preventDefault(); bnPanel(); };
+  }
+}
+function bnPanel() {
+  const el = document.getElementById("cuzdan");
+  el.innerHTML = `<h2><span><span lang="en">Binance</span>'i bağla · yalnız okuma</span></h2><div class="kart" style="font-size:12.5px;line-height:1.5">
+    <b>1.</b> Binance › Profil › <b>API Yönetimi</b> › API Oluştur › <i>Sistem tarafından oluşturulan</i>.<br>
+    <b>2.</b> İzinlerde yalnız <b>Enable Reading</b> kalsın. <b>IP kısıtlaması ekleme</b>: IP kısıtsız anahtar Binance kuralı gereği zaten yalnız okuyabilir, işlem ve para çekme yapamaz.<br>
+    <b>3.</b> API Key ve Secret Key'i aşağıya yapıştır. İkisi de <b>yalnız bu telefonda</b> saklanır; bana ya da başka bir yere göndermene gerek yok.
+    <input class="ara" id="bn-k" placeholder="API Key" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-top:10px">
+    <input class="ara" id="bn-g" placeholder="Secret Key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div style="display:flex;gap:8px"><button id="bn-kaydet" style="flex:1;border:none;border-radius:11px;padding:10px;font-weight:900;background:linear-gradient(180deg,var(--a2),#C99A2E);color:#0B0B0C">Bağla</button>
+    <button id="bn-vazgec" style="background:none;border:1px solid var(--c);color:var(--s);border-radius:11px;padding:10px 14px">Vazgeç</button></div></div>`;
+  document.getElementById("bn-vazgec").onclick = cuzdan;
+  document.getElementById("bn-kaydet").onclick = () => {
+    const k = document.getElementById("bn-k").value.trim(), g = document.getElementById("bn-g").value.trim();
+    if (k.length < 20 || g.length < 20) { alert("Anahtarlar eksik görünüyor."); return; }
+    localStorage.setItem(BN_ANAH, JSON.stringify({k, g})); cuzdan();
+  };
+}
+
 // ---------------------------------------------------------------- Özet
 async function ozet() {
   const el = document.getElementById("s-ozet");
   let h = "";
+  h += "<div id='cuzdan'></div>";
   // canlı kripto (Binance): ilk değer REST, sonra WebSocket ile saniye saniye
   h += "<h2>Kripto ve altın · <span class='canli'><i></i>canlı</span></h2><div class='izgara'>" + SEM.map(x => {
     const k = x.replace("USDT", ""), pz = k === "PAXG" ? "emtia" : "kripto", kod = k === "PAXG" ? "ALTIN" : k + "/USDT";
@@ -205,7 +287,7 @@ async function ozet() {
   const bl = await al("alarm/son.json");
   if (bl && bl.length) h += "<h2>Son bildirimler</h2>" + bl.slice(0, 3).map(bildirimHtml).join("");
   el.innerHTML = h || "<div class='bos'>Veri alınamadı.</div>";
-  SEM.forEach(x => kutuYaz(x, false)); canliBasla();
+  SEM.forEach(x => kutuYaz(x, false)); canliBasla(); cuzdan();
   if (bl && bl.length) bant(bl.slice(0, 5));
 }
 
@@ -300,11 +382,16 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => git(b.dat
 document.getElementById("yenile").onclick = () => { const s = (location.hash || "#ozet").slice(1); yuklendi[s] = false; git(s); saat(); };
 function saat() { document.getElementById("saat").textContent = new Date().toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"}) + " TSİ"; }
 saat(); setInterval(saat, 30000);
-setInterval(() => { if (document.visibilityState === "visible" && (location.hash || "#ozet") === "#ozet") { yuklendi.ozet = false; git("ozet"); } }, 120000);
+setInterval(() => { if (document.visibilityState === "visible" && (location.hash || "#ozet") === "#ozet" && !document.getElementById("bn-k")) { yuklendi.ozet = false; git("ozet"); } }, 120000);
 addEventListener("online", () => cevrim(false)); addEventListener("offline", () => cevrim(true)); cevrim(false);
 const ios = /iphone|ipad|ipod/i.test(navigator.userAgent), kurulu = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
 if (ios && !kurulu) document.getElementById("kur").classList.add("ac");
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+if ("serviceWorker" in navigator) {   // yeni sürüm yayınlanınca telefon eski kopyada takılı kalmasın: güncelle ve bir kez yenile
+  const ilkKontrol = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register("sw.js", {updateViaCache: "none"}).then(r => r.update()).catch(() => {});
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (ilkKontrol && !sessionStorage.getItem("kk_yenilendi")) { sessionStorage.setItem("kk_yenilendi", "1"); location.reload(); } });
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") navigator.serviceWorker.getRegistration().then(r => r && r.update()); });
+}
 git(["ozet", "firsat", "bildirim", "haber", "piyasa"].includes((location.hash || "").slice(1)) ? location.hash.slice(1) : "ozet");
 </script>
 </body>

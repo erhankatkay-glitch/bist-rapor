@@ -515,3 +515,19 @@ def test_llm_katman_uydurma_rakam_korumasi():
     for k in ("GEMINI_API_KEY", "GROQ_API_KEY"): os.environ.pop(k, None)
     assert LLM.yorum_metinden(girdi) is None
     assert "hata" in LLM.yorum_metinden(girdi, gemini_anahtar="gecersiz")
+
+
+def test_ekstre_okuma():
+    import io
+    import pandas as pd
+    import ekstre as EK
+    K = {"THYAO", "ASELS", "GARAN", "SISE"}
+    assert EK.sayi("1.000") == 1000 and EK.sayi("285,40") == 285.4 and EK.sayi("1.250,50") == 1250.5 and EK.sayi("0.125") == 0.125
+    df = pd.DataFrame([["Portföy Ekstresi", None, None], [None, None, None], ["Menkul Kıymet", "Kullanılabilir Adet", "Ort. Maliyet"],
+                       ["THYAO.E", 1000, 280.5], ["ASELS.E", 50, 300], ["THYAO.E", 500, 290.5], ["TOPLAM", None, None]])
+    b = io.BytesIO(); df.to_excel(b, index=False, header=False)
+    liste, _ = EK.coz(b.getvalue(), "e.xlsx", K)
+    assert {k: a for k, a, _ in liste} == {"THYAO": 1500, "ASELS": 50}
+    liste, _ = EK.coz("Sembol;Miktar;Alış Fiyatı\nGARAN;2.000;95,40\nSİSE;300;41,2\n".encode("cp1254"), "a.csv", K)
+    assert {k: a for k, a, _ in liste} == {"GARAN": 2000, "SISE": 300}
+    assert EK.satirlar([("GARAN", 2000.0, 95.4)]) == "GARAN 2000 @ 95,4"
