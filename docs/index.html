@@ -362,7 +362,7 @@ async function varlik(kod) {
     ${grafikSvg(k.grafik, g)}
     <h2>Zaman dilimleri</h2><div class="tfk">${Object.entries(k.tf).map(([t, a]) => `<div><small>${TF_AD[t] || t}</small><b class="${rk(a.puan - 50)}">${esc(a.etiket)}</b><div class="cub"><div style="width:${a.puan}%"></div></div></div>`).join("")}</div>
     <h2>Teknik yorum</h2><div class="kart metin">${md(k.yorum)}</div>`;
-  if (k.pz === "bist" || k.pz === "abd") { const T = await temelAl(k.pz); h += temelHtml(T && T.satirlar && T.satirlar[k.kod], para); }
+  if (k.pz === "bist" || k.pz === "abd") { const T = await temelAl(k.pz); h += temelHtml(T && T.satirlar && T.satirlar[k.kod] && Object.assign({tarih: new Date(T.zaman).toLocaleDateString("tr-TR")}, T.satirlar[k.kod]), para); }
   if (k.senaryo && k.senaryo.length) h += `<h2>Senaryolar</h2>` + k.senaryo.map(x => `<div class="kart"><b style="font-size:13.5px">${esc(x[0])}</b><div class="metin" style="margin-top:4px">Koşul: ${esc(x[1])} · hedef ${esc(x[2])}<br><span class="not">${esc(x[3])}</span></div></div>`).join("");
   h += `<h2>Seviyeler (günlük)</h2><div class="kart"><table class="tablo">${sev((g.direnc || []).slice().reverse(), "#EF4444")}<tr><td><b>Son fiyat</b></td><td style="color:var(--a)">${para}${fy(g.fiyat)}</td></tr>${sev(g.destek, "#22C55E")}</table></div>
     <div class="kart"><b style="font-size:13px">Pivot (klasik)</b><table class="tablo">${["R2", "R1", "P", "S1", "S2"].map(x => `<tr><td>${x}</td><td>${fy(g.pivot[x])}</td></tr>`).join("")}</table></div>`;
@@ -731,6 +731,7 @@ let PDF_D = null;
 async function pdfDizin() { if (!PDF_D) { const [t, a] = await Promise.all([al("pdf/teknik.json"), al("pdf/arastirma.json")]); PDF_D = {teknik: (t || {}).dosyalar || {}, arastirma: (a || {}).dosyalar || {}}; } return PDF_D; }
 function pdfDugmeleri(D, kod) {
   const b = [];
+  if (!D.teknik[kod] && !D.arastirma[kod] && /USDT$/.test(kod)) kod = kod.replace(/USDT$/, "/USDT");   // kripto PDF adları BTC/USDT biçiminde
   if (D.teknik[kod]) b.push(`<a class="btn" href="${D.teknik[kod].url}" target="_blank" rel="noopener">📄 Teknik analiz PDF</a>`);
   if (D.arastirma[kod]) b.push(`<a class="btn" href="${D.arastirma[kod].url}" target="_blank" rel="noopener">📄 Şirket araştırma raporu PDF</a>`);
   return b.join("") + (b.length ? `<div class="uyari" style="margin-top:4px">PDF'ler her gece yenilenir (${new Date((D.teknik[kod] || D.arastirma[kod]).zaman).toLocaleDateString("tr-TR")}).</div>` : "");
