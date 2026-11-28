@@ -316,10 +316,23 @@ async function firsatlar() {
 }
 
 // ---------------------------------------------------------------- Bildirimler
+// bildirimdeki varlığı bul → dokununca tam uygulamada o varlığın analizi açılır
+const EMTIA = new Set(["GRAMALTIN", "ALTIN", "GUMUS", "PLATIN", "PALADYUM", "BAKIR", "BRENT", "WTI", "DOGALGAZ", "BUGDAY", "MISIR", "SOYA", "KAHVE", "KAKAO", "SEKER", "PAMUK"]);
+const ENDEKS = {"S&P 500": ["SP500", "abd"], "Nasdaq": ["NASDAQ", "abd"], "VIX": ["VIX", "abd"], "BIST 100": ["XU100", "bist"], "BIST 30": ["XU030", "bist"], "BIST Banka": ["XBANK", "bist"]};
+function bildirimVarlik(m) {
+  const t = m.replace(/^[^A-Za-z0-9ÇĞİÖŞÜ]+/u, "");
+  for (const [ad, v] of Object.entries(ENDEKS)) if (t.startsWith(ad + " ") || t.startsWith(ad + ":")) return v;
+  let r = t.match(/^([A-Z0-9]{2,10})\/(USDT|TRY)\b/); if (r) return [r[1] + "/USDT", "kripto"];
+  r = t.match(/^([A-Z.]{1,6}) \(/); if (r) return [r[1] + ".US", "abd"];
+  r = t.match(/^([A-ZÇĞİÖŞÜ0-9]{3,10})\b/); if (!r) return null;
+  if (EMTIA.has(r[1])) return [r[1], "emtia"];
+  return /^[A-Z0-9]{4,6}$/.test(r[1]) ? [r[1], "bist"] : null;
+}
 function bildirimHtml(x) {
   const m = String(x.mesaj || "").replace(/⟦.+?⟧$/, "").trim();
-  const sinif = /^🟢/.test(m) ? "y" : /^(🔴|💼)/.test(m) ? "k" : "";
-  return `<div class="kart bild ${sinif}"><div class="m">${esc(m)}</div><div class="z">${esc(x.zaman)}</div></div>`;
+  const sinif = /^🟢/.test(m) ? "y" : /^(🔴|💼)/.test(m) ? "k" : "", v = bildirimVarlik(m);
+  return `<a class="kart bild dok ${sinif}" target="_blank" rel="noopener" href="${v ? ac(v[0], v[1]) : UYG}"><div class="m">${esc(m)}</div>
+    <div class="z">${esc(x.zaman)}<span style="float:right;color:var(--a);font-weight:800">${v ? "Analiz ›" : "Aç ›"}</span></div></a>`;
 }
 let BILD = [];
 async function bildirimler() {
