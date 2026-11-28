@@ -18,7 +18,7 @@ with sync_playwright() as pw:
         if fr.evaluate("typeof window.kkIstek === 'function'"): break
         fr.wait_for_timeout(2000)
     fr.evaluate("localStorage.setItem('kk_gorulen', JSON.stringify(Array.from({length:80},(_, i)=>'x'+i)))")
-    for kod in ("THYAO|hisse|seviye|", "BTC/USDT|kripto|seviye|"):
+    for kod in ("BTC/USDT|kripto|seviye|",):
         fr.evaluate(f"window.kkIstek('{kod}')")
         ok = False
         for _ in range(80):
