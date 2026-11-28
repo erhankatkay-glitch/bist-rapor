@@ -93,7 +93,7 @@ details.kart summary{font-weight:800;font-size:13.5px;list-style:none;cursor:poi
 <header>
   <img src="icon-192.png" alt="">
   <div class="ad"><b>KATKAY <span>YATIRIM</span></b><i>BIST · ABD · KRİPTO · EMTİA</i></div>
-  <div class="sag"><a id="uyg" href="#" target="_blank" rel="noopener">Tam uygulama ›</a><small id="saat">—</small></div>
+  <div class="sag"><a id="uyg" href="#" target="_blank" rel="noopener">Tam uygulama ›</a><small><button id="yenile2" aria-label="Yenile" style="background:none;border:none;color:var(--a);font-size:15px;padding:0 6px 0 0;vertical-align:-1px">↻</button><span id="saat">—</span></small></div>
 </header>
 <div class="bant" id="kur">📲 <b>Ana ekrana ekle:</b> Safari'de alttaki Paylaş düğmesine dokun › <b>Ana Ekrana Ekle</b>. Uygulama gibi tam ekran açılır.</div>
 <div class="bant" id="cevrim">⚠️ Çevrimdışısın — son kaydedilen veriler gösteriliyor.</div>
@@ -130,8 +130,9 @@ const rk = x => x > 0 ? "ust" : x < 0 ? "alt" : "not";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const ac = (kod, pz, bolum = "seviye") => UYG + "/?kk=" + encodeURIComponent(`${kod}|${TUR[pz] || "Hisse"}|${bolum}|`);
 
+let ZORLA = 0;   // Yenile'ye basılınca önbellek atlanır
 async function al(yol) {
-  try { const r = await fetch(VERI + yol + "?t=" + Math.floor(Date.now() / 300000)); if (r.ok) return await r.json(); } catch (e) {}
+  try { const r = await fetch(VERI + yol + "?t=" + (ZORLA || Math.floor(Date.now() / 300000)), ZORLA ? {cache: "no-store"} : {}); if (r.ok) return await r.json(); } catch (e) {}
   try { const c = await caches.match(VERI + yol); if (c) { cevrim(true); return await c.json(); } } catch (e) {}
   return null;
 }
@@ -397,7 +398,9 @@ async function ozet() {
     document.getElementById("osonuc").innerHTML = q.length < 2 ? "" : (L.filter(v => (v.kod + " " + (v.ad || "")).toLocaleUpperCase("tr").includes(q))
       .sort((a, b) => (b.kod.startsWith(q) - a.kod.startsWith(q))).slice(0, 12).map(karneSatir).join("") || "<div class='bos'>Bulunamadı.</div>");
   };
-  if (bl && bl.length) bant(bl.slice(0, 5));
+  const taze = (bl || []).filter(x => { const m = String(x.zaman || "").match(/(\d\d)\.(\d\d)\.(\d{4}) (\d\d):(\d\d)/);
+    return m && Date.now() - new Date(`${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}:00+03:00`) < 18 * 3600e3; });
+  if (taze.length) bant(taze.slice(0, 5)); else { clearInterval(BANT_T); const d = document.getElementById("dus"); if (d) d.className = ""; }
 }
 
 // ---------------------------------------------------------------- Fırsatlar
@@ -528,7 +531,18 @@ function git(s) {
   window.scrollTo(0, 0); if (location.hash !== "#" + s) history.replaceState(null, "", "#" + s);
 }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => git(b.dataset.s));
-document.getElementById("yenile").onclick = () => { const s = (location.hash || "#ozet").slice(1); yuklendi[s] = false; git(s); saat(); };
+async function yenile(b) {   // tüm veriyi önbelleği atlayarak yeniden çek, açık sayfayı yeniden çiz
+  const etiketler = [document.getElementById("yenile"), document.getElementById("yenile2")];
+  etiketler.forEach(x => x && (x.disabled = true)); document.getElementById("yenile").textContent = "↻ Yenileniyor…";
+  ZORLA = Date.now(); KARNE = null; Object.keys(yuklendi).forEach(k => yuklendi[k] = false);
+  const s = decodeURIComponent((location.hash || "#ozet").slice(1));
+  try { git(YUK[s] || s.startsWith("v/") ? s : "ozet"); await karneListe(); } catch (e) {}
+  setTimeout(() => { ZORLA = 0; }, 8000);
+  saat(); etiketler.forEach(x => x && (x.disabled = false));
+  document.getElementById("yenile").textContent = "✓ Güncellendi " + new Date().toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"});
+  setTimeout(() => { document.getElementById("yenile").textContent = "↻ Yenile"; }, 4000);
+}
+document.getElementById("yenile").onclick = () => yenile(); document.getElementById("yenile2").onclick = () => yenile();
 function saat() { document.getElementById("saat").textContent = new Date().toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"}) + " TSİ"; }
 saat(); setInterval(saat, 30000);
 setInterval(() => { if (document.visibilityState === "visible" && (location.hash || "#ozet") === "#ozet" && !document.getElementById("bn-k") && !((document.getElementById("oara") || {}).value)) { yuklendi.ozet = false; git("ozet"); } }, 120000);
