@@ -1,39 +1,46 @@
-"""Canlı: Gemini yorum katmanı (Ekip özeti) geliyor mu."""
-import os
+import asyncio, os
+from playwright.async_api import async_playwright
 os.makedirs("denetim_graf", exist_ok=True)
-from playwright.sync_api import sync_playwright
-with sync_playwright() as pw:
-    br = pw.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
-    pg = br.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=2).new_page()
-    pg.goto("https://cuz9rz7rlsx7bfwolrb8xq.streamlit.app", timeout=180000)
-    fr = None
-    for _ in range(100):
-        pg.wait_for_timeout(3000)
-        for f_ in pg.frames:
-            try:
-                if f_.evaluate("!!document.querySelector('[data-testid=stTab]')"): fr = f_; break
-            except Exception: pass
-        if fr: break
-    for _ in range(40):
-        if fr.evaluate("typeof window.kkIstek === 'function'"): break
-        fr.wait_for_timeout(2000)
-    fr.evaluate("localStorage.setItem('kk_gorulen', JSON.stringify(Array.from({length:80},(_, i)=>'x'+i)))")
-    for kod in ("BTC/USDT|kripto|seviye|",):
-        ist = fr.evaluate("(()=>{const r=[...document.querySelectorAll('.oc')].find(x=>x.innerText.includes('BTC')); return r? r.getAttribute('data-kk') : null;})()") or "BTC/USDT|Kripto|seviye|"
-        print("   istek:", ist)
-        fr.evaluate(f"window.kkIstek('{ist}')")
-        ok = False
-        for _ in range(100):
-            fr.wait_for_timeout(3000)
-            if fr.evaluate("[...document.querySelectorAll('summary')].some(x=>x.innerText.includes('Araştırma ekibi'))") and \
-               not fr.evaluate("!!document.querySelector('[data-testid=stStatusWidget]')"): ok = True; break
-        fr.evaluate("(()=>{const s=[...document.querySelectorAll('summary')].find(x=>x.innerText.includes('Araştırma ekibi')); if(s && !s.parentElement.open){s.click();} s&&s.scrollIntoView();})()")
-        fr.wait_for_timeout(3000)
-        oz = fr.evaluate("(()=>{const k=[...document.querySelectorAll('.ko')].find(x=>x.innerText.includes('Ekip özeti')); return k? k.innerText : null;})()")
-        print("CANLI", kod.split("|")[0], "| bölüm:", ok, "| Ekip özeti:", (oz or "YOK")[:900].replace("\n", " ‖ "))
-        print("   teşhis:", fr.evaluate("[...document.querySelectorAll('[data-testid=stCaptionContainer]')].map(x=>x.innerText).filter(t=>t.includes('Yapay zekâ özeti'))"))
-        print("   uyarılar:", fr.evaluate("[...document.querySelectorAll('[data-testid=stAlert], [data-testid=stStatusWidget], [data-testid=stExpander] summary')].map(x=>x.innerText.slice(0,160)).filter(t=>/analiz|Hazır|yapıl|hata|Teknik/i.test(t))"))
-        print("   tk başlık:", fr.evaluate("[...document.querySelectorAll('.kn-t, .sv-b')].map(x=>x.innerText.slice(0,80))"))
-        print("   hata:", fr.evaluate("[...document.querySelectorAll('[data-testid=stException]')].map(x=>x.innerText.slice(0,200))"))
-        pg.screenshot(path=f"denetim_graf/yz_{kod.split('|')[0].replace('/', '_')}.png")
-    br.close()
+PWA="https://erhankatkay-glitch.github.io/bist-rapor/"
+UYG="https://cuz9rz7rlsx7bfwolrb8xq.streamlit.app/?kk=BTC%2FUSDT%7CKripto%7Cseviye%7C"
+async def main():
+  async with async_playwright() as p:
+    b=await p.chromium.launch(); c=await b.new_context(viewport={"width":390,"height":844},device_scale_factor=2)
+    pg=await c.new_page(); hata=[]
+    pg.on("pageerror",lambda e:hata.append(str(e)))
+    await pg.goto(PWA); await pg.wait_for_timeout(5000)
+    print("SW:", await pg.evaluate("navigator.serviceWorker.controller ? 'kontrol' : 'yok'"))
+    print("manifest:", (await (await pg.request.get(PWA+"manifest.webmanifest")).json())["name"])
+    for s in ["ozet","firsat","bildirim","haber","piyasa"]:
+      await pg.click(f"nav button[data-s={s}]"); await pg.wait_for_timeout(2500)
+      await pg.screenshot(path=f"denetim_graf/pwa_{s}.png")
+      t=await pg.inner_text(f"#s-{s}"); print("SEKME",s,len(t),t[:200].replace("\n"," | "))
+    await pg.reload(); await pg.wait_for_timeout(3000)
+    print("SW2:", await pg.evaluate("navigator.serviceWorker.controller ? 'kontrol' : 'yok'"))
+    await c.set_offline(True); await pg.reload(); await pg.wait_for_timeout(4000)
+    t=await pg.inner_text("body"); print("CEVRIMDISI", len(t), "Ralli" in t or "rejim" in t.lower(), t[:250].replace("\n"," | "))
+    await pg.screenshot(path="denetim_graf/pwa_cevrimdisi.png")
+    print("PWA HATA", hata)
+    await c.set_offline(False)
+    # derin bağlantı
+    q=await c.new_page(); await q.goto(UYG, timeout=120000)
+    fr=None
+    for _ in range(90):
+      for f in q.frames:
+        try:
+          if await f.evaluate("!!window.kkIstek"): fr=f; break
+        except Exception: pass
+      if fr: break
+      await q.wait_for_timeout(2000)
+    print("UYG cerceve", bool(fr))
+    if fr:
+      for _ in range(40):
+        t=await fr.inner_text("body")
+        if "Hazır" in t or "Teknik analiz yapılamadı" in t: break
+        await q.wait_for_timeout(3000)
+      t=await fr.inner_text("body")
+      i=t.find("BTC/USDT"); print("DERIN", "Hazır" in t, "yapılamadı" in t, t[i-50:i+300].replace("\n"," | ") if i>=0 else t[:300])
+      print("URL", fr.url[:200])
+      await q.screenshot(path="denetim_graf/derin.png", full_page=False)
+    await b.close()
+asyncio.run(main())
