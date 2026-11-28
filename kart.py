@@ -53,16 +53,62 @@ def _marka(ax, H, x=48, boy=36):
     try:
         if _LOGO_IMG is None:
             import matplotlib.image as mpimg, os
-            _LOGO_IMG = mpimg.imread(os.path.join(os.path.dirname(os.path.abspath(__file__)), "varlik", "logo_96.png"))
+            _LOGO_IMG = mpimg.imread(os.path.join(os.path.dirname(os.path.abspath(__file__)), "varlik", "logo.png"))
         xl, yl = ax.get_xlim(), ax.get_ylim()
-        hero = _hero()
-        if hero is not None:
-            ax.imshow(hero, extent=[xl[0], xl[1], H - 300, H - 8], aspect="auto", zorder=0, interpolation="bilinear")
-        ax.imshow(_LOGO_IMG, extent=[x, x + boy, H - 38 - boy, H - 38], aspect="auto", zorder=5, interpolation="lanczos")
+        ax.imshow(_LOGO_IMG, extent=[x, x + boy, H - 86, H - 86 + boy], aspect="auto", zorder=5, interpolation="lanczos")
         ax.set_xlim(*xl); ax.set_ylim(*yl)
         return x + boy + 12
     except Exception:
         return x
+
+
+UYG_ADRES = "erhankatkay-glitch.github.io/bist-rapor"
+
+
+def ust_bant(ax, H, ust, sag=None, vurgu=None):
+    """Uygulamayla aynı üst bant: logo + KATKAY YATIRIM yazısı, altında kartın türü (altın, aralıklı büyük harf), sağda tarih.
+    Eski 'altın şerit + logo + başlık' düzeninin yerini alır; aynı yükseklikte (H−38 … H−84) kalır."""
+    import datetime as _dt
+    vurgu = vurgu or C["altin"]
+    x = _marka(ax, H, boy=44)
+    t1 = _t(ax, x, H - 56, "KATKAY", 19, C["yazi"], "bold")
+    _t(ax, _sag_kenar(ax, t1) + 6, H - 56, "YATIRIM", 19, C["altin"], "bold")
+    _t(ax, x, H - 82, " ".join(str(ust).split()).replace(" · ", "  ·  "), 13.5, vurgu, "semibold")
+    import re as _re
+    m_ = _re.search(r"\s*·?\s*(\d{2}\.\d{2}\.\d{4})\s*$", str(ust))
+    if m_ and sag is None: ust, sag = str(ust)[:m_.start()], m_.group(1)   # tarih başlıkta tekrar etmesin: sağa
+    if sag is None:
+        sag = _dt.datetime.now(_dt.timezone(_dt.timedelta(hours=3))).strftime("%d.%m.%Y · %H:%M TSİ")
+    if sag: _t(ax, W - 48, H - 56, sag, 14, C["soluk"], ha="right")
+    ax.add_patch(Rectangle((48, H - 100), W - 96, 1.2, color=C["cizgi"]))
+
+
+def _sag_kenar(ax, t):
+    """Yazının sağ kenarı (veri koordinatında) — iki renkli yazı ve başlık çizgisi için."""
+    try:
+        r = ax.figure.canvas.get_renderer()
+        return ax.transData.inverted().transform(t.get_window_extent(renderer=r))[1][0]
+    except Exception:
+        return t.get_position()[0] + len(t.get_text()) * t.get_fontsize() * 0.6
+
+
+def bolum_baslik(ax, x, y, metin, renk=None, x2=None, boy=17):
+    """Uygulamadaki bölüm başlığı: aralıklı büyük harf + sağa doğru solan altın çizgi. renk verilirse başa renkli nokta."""
+    x2 = x2 or W - 40
+    if renk and renk != C["altin"]:
+        ax.add_patch(Circle((x + 7, y + 7), 7, color=renk)); x += 22
+    m = " ".join(str(metin).replace("i", "İ").replace("ı", "I").upper())
+    bas = _sag_kenar(ax, _t(ax, x, y, m, boy * 0.78, C["yazi"], "bold")) + 14
+    n = 24
+    for i in range(n):   # altın → saydam degrade çizgi
+        a0 = bas + (x2 - bas) * i / n
+        ax.add_patch(Rectangle((a0, y + 6), (x2 - bas) / n + 0.5, 1.6, color=C["altin"], alpha=0.75 * (1 - i / n), lw=0))
+
+
+def alt_bant(ax, y=18):
+    """Ortak alt bilgi: uygulama adresi + yasal not."""
+    _t(ax, W / 2, y + 26, "Tüm analizler ve canlı fiyatlar: " + UYG_ADRES, 14, C["altin"], "semibold", ha="center")
+    _t(ax, W / 2, y, "KATKAY YATIRIM A.Ş. · Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 12.5, C["silik"], ha="center")
 
 
 _LOGO_ON = {}
@@ -144,24 +190,23 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
         if x_ + w_ > W - 40: sat_, x_ = sat_ + 1, 48
         x_ += w_ + 10
     ek = 50 * max(0, sat_ - 2)
-    H = 1660 + ek; OF = 160 + ek   # alttaki "Basitçe" kutusu ve teyit satırları için ek alan
+    H = 1730 + ek; OF = 190 + ek   # alttaki "Basitçe" kutusu ve teyit satırları için ek alan
     fig = plt.figure(figsize=(W / 100, H / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
     yon = f["yon"]; ana = C["yesil"] if yon == 1 else C["kirmizi"]; p = f["plan"]; g = p["giris"]
     # ---- başlık
-    ax.add_patch(Rectangle((0, H - 8), W, 8, color=C["altin"]))
     import tg
-    _t(ax, _marka(ax, H), H - 58, f"{tg.buyuk(piyasa_ad)}  ·  {tg.buyuk(tf_ad)}  ·  FIRSAT", 15, C["altin"], "semibold")
+    ust_bant(ax, H, f"{tg.buyuk(piyasa_ad)} · {tg.buyuk(tf_ad)} · FIRSAT")
     bx = 48
-    if f.get("piyasa") in ("kripto", "bist", "abd") and logo_ciz(ax, f["kod"], 48, H - 152, 64, f["piyasa"]): bx = 128
-    _t(ax, bx, H - 140, F.gorunen(f["kod"], None), 54, weight="bold")
+    if f.get("piyasa") in ("kripto", "bist", "abd") and logo_ciz(ax, f["kod"], 48, H - 187, 64, f["piyasa"]): bx = 128
+    _t(ax, bx, H - 175, F.gorunen(f["kod"], None), 54, weight="bold")
     ad = f.get("ad") or ""
-    if ad and ad not in f["kod"]: _t(ax, bx, H - 180, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
-    _kutu(ax, 48, H - 250, 150, 48, ana, r=24)
-    _t(ax, 123, H - 234, "AL" if yon == 1 else "SAT", 22, "#FFFFFF", "bold", ha="center")
+    if ad and ad not in f["kod"]: _t(ax, bx, H - 215, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
+    _kutu(ax, 48, H - 285, 150, 48, ana, r=24)
+    _t(ax, 123, H - 269, "AL" if yon == 1 else "SAT", 22, "#FFFFFF", "bold", ha="center")
     ku = f["kurulum_ad"]
-    _t(ax, 214, H - 234, textwrap.shorten(ku, 40 if len(ku) <= 40 else 54, placeholder="…"), 18 if len(ku) <= 40 else 15, C["yazi"], "medium")
-    _halka(ax, W - 125, H - 150, 82, f["puan"], ana)
+    _t(ax, 214, H - 269, textwrap.shorten(ku, 40 if len(ku) <= 40 else 54, placeholder="…"), 18 if len(ku) <= 40 else 15, C["yazi"], "medium")
+    _halka(ax, W - 125, H - 200, 82, f["puan"], ana)
     # ---- grafik
     _grafik(fig, f, a, [0.045, (757 + OF) / H, 0.90, 450 / H])
     # ---- işlem merdiveni
@@ -191,7 +236,7 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
         _t(ax, x + bw / 2, 340 + OF, d, 30, C["yazi"], "bold", ha="center")
         _t(ax, x + bw / 2, 315 + OF, alt, 12, C["silik"], ha="center")
     # ---- teyit rozetleri
-    _t(ax, 48, 262 + OF, "TEYİTLER", 15, C["altin"], "semibold")
+    bolum_baslik(ax, 48, 262 + OF, "Teyitler")
     x, y = 48, 210 + OF
     for metin, ok in f["teyit"]:
         w_ = 30 + 11.2 * len(metin)
@@ -213,12 +258,12 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
         ax.add_patch(Circle((58, y + 7), 7, color=C["altin"])); _t(ax, 76, y, textwrap.shorten(r_, 92, placeholder="…"), 16, C["altin"])
         y -= 34
     # ---- basitçe (bilmeyenin anlayacağı dil)
-    _kutu(ax, 40, 40, W - 80, 172, C["panel2"], kenar=C["altin"])
-    _t(ax, 68, 182, "BASİTÇE", 14, C["altin"], "semibold")
+    _kutu(ax, 40, 70, W - 80, 172, C["panel2"], kenar=C["altin"])
+    _t(ax, 68, 212, "BASİTÇE", 14, C["altin"], "semibold")
     for i_, sat_ in enumerate(textwrap.wrap(basitce(f), 82)[:4]):
-        _t(ax, 68, 150 - i_ * 28, sat_, 17, C["yazi"])
+        _t(ax, 68, 180 - i_ * 28, sat_, 17, C["yazi"])
     # ---- alt bilgi
-    _t(ax, W / 2, 16, "KATKAY YATIRIM A.Ş. · Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    alt_bant(ax, 14)
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
     return dosya
 
@@ -281,8 +326,7 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
     df = pd.DataFrame(satir)
     fig = plt.figure(figsize=(W / 100, H / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
-    ax.add_patch(Rectangle((0, H - 8), W, 8, color=C["altin"]))
-    _t(ax, _marka(ax, H), H - 58, f"{tg.buyuk(piyasa_ad)}  ·  KAPANIŞ ÖZETİ", 15, C["altin"], "semibold")
+    ust_bant(ax, H, f"{tg.buyuk(piyasa_ad)} · KAPANIŞ ÖZETİ", sag="")
     import datetime as _dt
     try: tarih = _dt.date.fromisoformat(str(meta["kapanis"])[:10]).strftime("%d.%m.%Y")
     except Exception: tarih = str(meta["kapanis"])
@@ -301,7 +345,7 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
         _t(ax, W - 170, H - 322, E.get("etiket", ""), 17, renk, "bold", ha="center")
     # --- piyasa genişliği
     n = len(df); y0 = H - 470
-    _t(ax, 48, y0 + 105, "PİYASA GENİŞLİĞİ", 15, C["altin"], "semibold")
+    bolum_baslik(ax, 48, y0 + 105, "Piyasa genişliği", x2=W - 190)
     _t(ax, W - 48, y0 + 105, f"{n:,} varlık".replace(",", "."), 15, C["soluk"], ha="right")
     if n:
         x = 48; ws = W - 96
@@ -323,12 +367,17 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
         _t(ax, 68, y1 + 100 - i * 30, sat_, 18, C["yazi"])
     # --- en güçlüler & günün en çok yükselen/düşenleri
     y2 = y1 - 40
-    _t(ax, 48, y2, "EN GÜÇLÜ TEKNİK GÖRÜNÜM", 15, C["altin"], "semibold")
-    _t(ax, 580, y2, "GÜNÜN HAREKETLİLERİ", 15, C["altin"], "semibold")
+    lp = {"BIST": "bist", "ABD": "abd", "KRİPTO": "kripto", "KRIPTO": "kripto"}.get(str(piyasa_ad).upper().replace("İ", "I").replace("I", "I"), None)
+    lp = lp or {"bist": "bist", "abd": "abd", "kripto": "kripto"}.get(str(meta.get("piyasa", "")).replace("kripto_tl", "kripto"))
+
+    def lg_(kod, x, y, boy=28):   # varlık logosu çizildiyse yazının kayacağı x
+        return x + boy + 8 if lp and logo_ciz(ax, kod, x, y - 6, boy, lp) else x
+    bolum_baslik(ax, 48, y2, "En güçlü görünüm", x2=540, boy=15)
+    bolum_baslik(ax, 580, y2, "Günün hareketlileri", x2=W - 40, boy=15)
     top = df.nlargest(5, "Teknik puan") if n else df
     for i, (_, r) in enumerate(top.iterrows()):
         yy = y2 - 50 - i * 46
-        _t(ax, 48, yy, _kod(r["Kod"]), 20, weight="bold")
+        _t(ax, lg_(r["Kod"], 48, yy), yy, _kod(r["Kod"]), 20, weight="bold")
         ax.add_patch(Rectangle((210, yy - 2), 260, 18, color=C["cizgi"]))
         ax.add_patch(Rectangle((210, yy - 2), 260 * r["Teknik puan"] / 100, 18, color=C["yesil"]))
         _t(ax, 485, yy, f"{r['Teknik puan']:.0f}", 18, C["yesil"], "bold")
@@ -339,7 +388,7 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
         hk = list(g.nlargest(3, "Değişim").itertuples()) + list(g.nsmallest(2, "Değişim").itertuples())
         for i, r in enumerate(hk):
             yy = y2 - 50 - i * 46
-            _t(ax, 580, yy, _kod(r.Kod), 20, weight="bold")
+            _t(ax, lg_(r.Kod, 580, yy), yy, _kod(r.Kod), 20, weight="bold")
             _t(ax, W - 48, yy, _yz(r.Değişim), 20, C["yesil"] if r.Değişim >= 0 else C["kirmizi"], "bold", ha="right")
     # --- sinyal rozetleri
     y3 = y2 - 300
@@ -347,9 +396,13 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
         _t(ax, 48, y, baslik, 15, renk, "semibold")
         x = 48; y_ = y - 50
         for k in kodlar[:8]:
-            m = _kod(k); w_ = 28 + 13 * len(m)
+            m = _kod(k); w_ = 28 + 13 * len(m) + (26 if lp else 0)
             if x + w_ > W - 40: break
-            _kutu(ax, x, y_, w_, 36, C["panel2"], r=18, kenar=renk); _t(ax, x + w_ / 2, y_ + 11, m, 16, renk, "semibold", ha="center"); x += w_ + 10
+            _kutu(ax, x, y_, w_, 36, C["panel2"], r=18, kenar=renk)
+            logolu = bool(lp) and logo_ciz(ax, k, x + 9, y_ + 7, 22, lp)
+            bas_ = x + 35 if logolu else x
+            _t(ax, bas_ + (x + w_ - bas_) / 2 - (4 if logolu else 0), y_ + 11, m, 16, renk, "semibold", ha="center")
+            x += w_ + 10
         return y - 95
     if n:
         dg = df["Değişim"].fillna(0) if "Değişim" in df else pd.Series(0, index=df.index)
@@ -364,7 +417,7 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
         if k and y3 > 140: y3 = satir_("AŞAĞI KIRILIMLAR", k, C["kirmizi"], y3)
         k = df[df["RSI"] < 30].nsmallest(8, "RSI")["Kod"].tolist() if "RSI" in df else []
         if k and y3 > 140: y3 = satir_("AŞIRI SATIM (TEPKİ ADAYI)", k, C["altin"], y3)
-    _t(ax, W / 2, 22, "KATKAY YATIRIM A.Ş. · Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    alt_bant(ax, 16)
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
     return dosya
 
@@ -375,53 +428,67 @@ def _sar(s, n):
 
 
 def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
-    """Bildirimler için ortak tasarım. bolumler: [{"baslik", "renk", "aciklama"(ops.), "satirlar": [
+    """Bildirimler için ortak tasarım (uygulamayla aynı: üst bant, aralıklı bölüm başlıkları, ince çerçeveli kartlar, alt bilgi).
+    bolumler: [{"baslik", "renk", "aciklama"(ops.), "izgara"(ops.: satırlar 3'lü kutucuk), "satirlar": [
     {"sol", "sag"(ops.), "sag_renk"(ops.), "nokta"(renk, ops.), "logo"((kod, piyasa), ops.), "alt"(ops.)}]}]. Yükseklik içeriğe göre ayarlanır."""
     vurgu = vurgu or C["altin"]
-    # --- yükseklik hesabı
+    IZ_H, IZ_S = 112, 3          # ızgara kutucuk yüksekliği, sütun sayısı
+    # --- yükseklik hesabı (çizimle birebir aynı ölçüler)
     ust_y = 250; h = ust_y
-    for b in bolumler:   # çizimle birebir aynı ölçüler
-        h += 46
+    for b in bolumler:
+        h += 50
         if b.get("aciklama"): h += 30 * len(_sar(b["aciklama"], 70)[:3]) + 10
-        for s in b["satirlar"]:
-            h += 44 + 26 * (len(_sar(s.get("alt", ""), 80)[:4]) if s.get("alt") else 0) + 14
+        if b.get("izgara"):
+            h += ((len(b["satirlar"]) + IZ_S - 1) // IZ_S) * (IZ_H + 12)
+        else:
+            for s in b["satirlar"]:
+                h += 44 + 26 * (len(_sar(s.get("alt", ""), 80)[:4]) if s.get("alt") else 0) + 14
         h += 20
     if not_: h += 30 * len(_sar(not_, 82)[:4]) + 30
-    H_ = int(h + 60)
+    H_ = int(h + 100)
     fig = plt.figure(figsize=(W / 100, H_ / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H_); ax.axis("off")
-    ax.add_patch(Rectangle((0, H_ - 8), W, 8, color=vurgu))
-    _t(ax, _marka(ax, H_), H_ - 58, ust, 15, vurgu, "semibold")
-    _t(ax, 48, H_ - 140, baslik, 40, weight="bold")
-    if alt: _t(ax, 48, H_ - 185, alt, 18, C["soluk"])
+    ust_bant(ax, H_, ust, vurgu=vurgu)
+    _t(ax, 48, H_ - 160, baslik, 40, weight="bold")
+    if alt: _t(ax, 48, H_ - 200, alt, 18, C["soluk"])
     y = H_ - ust_y
     for b in bolumler:
         renk = b.get("renk") or vurgu
-        # bölüm başlığı
-        ax.add_patch(Rectangle((40, y - 8), 6, 34, color=renk))
-        _t(ax, 62, y, b["baslik"], 20, renk, "bold")
-        y -= 46
+        bolum_baslik(ax, 44, y, b["baslik"], renk if renk != vurgu else None)
+        y -= 50
         if b.get("aciklama"):
             for sat in _sar(b["aciklama"], 70)[:3]:
-                _t(ax, 62, y, sat, 18, C["yazi"], style="italic"); y -= 30
+                _t(ax, 48, y, sat, 18, C["yazi"], style="italic"); y -= 30
             y -= 10
-        for s in b["satirlar"]:
-            alt_s = _sar(s.get("alt", ""), 80)[:4] if s.get("alt") else []
-            kh = 44 + 26 * len(alt_s)
-            _kutu(ax, 40, y - kh + 30, W - 80, kh, C["panel"], r=12)
-            lg = False
-            if s.get("logo"):
-                kod_, pz_ = s["logo"] if isinstance(s["logo"], (tuple, list)) else (s["logo"], None)
-                import logolar as _LG
-                pz_ = pz_ or _LG.tahmin_piyasa(kod_)
-                lg = bool(pz_) and logo_ciz(ax, kod_, 50, y - 7, 32, pz_)
-            if not lg and s.get("nokta"): ax.add_patch(Circle((66, y + 8), 8, color=s["nokta"]))
-            _t(ax, 92 if lg else 86 if s.get("nokta") else 62, y, textwrap.shorten(str(s["sol"]), 52, placeholder="…"), 20, weight="bold")
-            if s.get("sag"): _t(ax, W - 62, y, str(s["sag"]), 20, s.get("sag_renk") or C["yazi"], "bold", ha="right")
-            yy = y - 30
-            for sat in alt_s:
-                _t(ax, 86 if s.get("nokta") else 62, yy, sat, 15.5, C["soluk"]); yy -= 26
-            y -= kh + 14
+        if b.get("izgara"):
+            kw = (W - 80 - (IZ_S - 1) * 12) / IZ_S
+            for i, s in enumerate(b["satirlar"]):
+                sx = 40 + (i % IZ_S) * (kw + 12); sy = y - (i // IZ_S) * (IZ_H + 12) - IZ_H + 30
+                _kutu(ax, sx, sy, kw, IZ_H, C["panel"], r=14)
+                _t(ax, sx + 16, sy + IZ_H - 30, textwrap.shorten(str(s["sol"]), 20, placeholder="…"), 15, C["soluk"], "semibold")
+                _t(ax, sx + 16, sy + IZ_H - 66, str(s.get("sag", "")), 23, s.get("sag_renk") or C["yazi"], "bold")
+                if s.get("alt"): _t(ax, sx + 16, sy + 16, textwrap.shorten(str(s["alt"]), 26, placeholder="…"), 12.5, C["silik"])
+            y -= ((len(b["satirlar"]) + IZ_S - 1) // IZ_S) * (IZ_H + 12)
+        else:
+            for s in b["satirlar"]:
+                alt_s = _sar(s.get("alt", ""), 80)[:4] if s.get("alt") else []
+                kh = 44 + 26 * len(alt_s)
+                _kutu(ax, 40, y - kh + 30, W - 80, kh, C["panel"], r=14)
+                lg = False
+                if s.get("logo"):
+                    kod_, pz_ = s["logo"] if isinstance(s["logo"], (tuple, list)) else (s["logo"], None)
+                    import logolar as _LG
+                    pz_ = pz_ or _LG.tahmin_piyasa(kod_)
+                    lg = bool(pz_) and logo_ciz(ax, kod_, 50, y - 7, 32, pz_)
+                if not lg and s.get("nokta"): ax.add_patch(Circle((66, y + 8), 8, color=s["nokta"]))
+                if lg and s.get("nokta"):   # logonun köşesinde yön rozeti
+                    ax.add_patch(Circle((80, y - 4), 7.5, color=C["panel"])); ax.add_patch(Circle((80, y - 4), 5.5, color=s["nokta"]))
+                _t(ax, 92 if lg else 86 if s.get("nokta") else 62, y, textwrap.shorten(str(s["sol"]), 52, placeholder="…"), 20, weight="bold")
+                if s.get("sag"): _t(ax, W - 62, y, str(s["sag"]), 20, s.get("sag_renk") or C["yazi"], "bold", ha="right")
+                yy = y - 30
+                for sat in alt_s:
+                    _t(ax, 86 if s.get("nokta") else 62, yy, sat, 15.5, C["soluk"]); yy -= 26
+                y -= kh + 14
         y -= 20
     if not_:
         nl = _sar(not_, 82)[:4]
@@ -429,6 +496,6 @@ def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
         yy = y - 4
         for sat in nl:
             _t(ax, 62, yy, sat, 15.5, C["soluk"]); yy -= 30
-    _t(ax, W / 2, 20, "KATKAY YATIRIM A.Ş. · Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    alt_bant(ax, 16)
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
     return dosya

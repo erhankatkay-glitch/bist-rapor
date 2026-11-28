@@ -1,20 +1,18 @@
-import subprocess, sys; subprocess.run([sys.executable, "-m", "playwright", "install", "--with-deps", "webkit"], check=True)
-import asyncio
-from playwright.async_api import async_playwright
-async def main():
-  async with async_playwright() as p:
-    b=await p.webkit.launch(); c=await b.new_context(**p.devices["iPhone 13"]); pg=await c.new_page(); hata=[]
-    pg.on("pageerror",lambda e:hata.append(str(e)))
-    await pg.goto("https://erhankatkay-glitch.github.io/bist-rapor/"); await pg.wait_for_timeout(6000)
-    print("SABAH", await pg.locator("#s-ozet details").count())
-    await pg.tap("nav button[data-s=piyasa]"); await pg.wait_for_timeout(3000)
-    for k in ["takvim","ekonomi","tarayici","karsilastir","genel"]:
-      await pg.tap(f"[data-py={k}]"); await pg.wait_for_timeout(3500)
-      print(k.upper(), (await pg.inner_text("#py-ic"))[:160].replace("\n"," | "))
-    await pg.tap("[data-py=tarayici]"); await pg.wait_for_timeout(2500); await pg.locator("[data-th]").nth(1).tap(); await pg.wait_for_timeout(1500)
-    t=await pg.inner_text("#py-ic"); i=t.find("SONUÇ"); print("HAZIR", t[i-6:i+120].replace("\n"," | "))
-    await pg.tap("nav button[data-s=firsat]"); await pg.wait_for_timeout(2500)
-    for k in ["son","perf"]:
-      await pg.tap(f"[data-fr={k}]"); await pg.wait_for_timeout(3000); print("FR", k, (await pg.inner_text("#fr-ic"))[:140].replace("\n"," | "))
-    print("HATA", hata); await b.close()
-asyncio.run(main())
+import os, sys, json, urllib.request, pandas as pd
+sys.path.insert(0, ".")
+os.makedirs("denetim_graf", exist_ok=True)
+import kart as K, alarm as A
+R = "https://raw.githubusercontent.com/erhankatkay-glitch/bist-rapor/bulten/"
+for pz, ad in [("bist", "BIST"), ("abd", "ABD")]:
+    meta = json.load(urllib.request.urlopen(R + f"{pz}/meta.json")); satir = pd.read_csv(R + f"{pz}/ozet.csv").to_dict("records")
+    K.bulten_karti(meta, satir, f"denetim_graf/bulten_{pz}.png", ad); print("bulten", pz)
+msj = ["🟢 SOL/USDT: Alçalan kama – YUKARI KIRILIM (günlük, 28.11) · fiyat 71,78 (+%0,2)", "🔴 ASELS: AB=CD (ayı) (günlük, 27.11) · fiyat 332,00 (+%5,4)",
+       "🔴 NVDA (Nvidia): Ölüm kesişimi (günlük, 27.11) · fiyat 150,62 (+%0,9)", "⚡ THYAO bugün +%1,4 hareket etti (fiyat 314,00)"]
+sat = [A._satir(m) for m in msj]
+for _, sx, _u in sat:
+    lk = A._logo_kod(sx.get("sol", ""))
+    if lk: sx["logo"] = lk
+bol = [{"baslik": a, "renk": K.C[r], "satirlar": [x[1] for x in sat if x[0] == g]} for g, a, r in A.GRUP_KART]
+K.bildirim_karti("ALARMLAR · 28.11 12:30", "4 yeni alarm", "Fiyat, formasyon ve şirket haberleri", [x for x in bol if x["satirlar"]], "denetim_graf/alarm.png")
+import logolar as LG
+for k, p in [("ASELS", "bist"), ("NVDA.US", "abd"), ("THYAO", "bist"), ("BTC/USDT", "kripto")]: print("LOGO", k, LG.logo_dosya(k, p))

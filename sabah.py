@@ -164,6 +164,15 @@ def _kod(k):
 
 
 # ---------------------------------------------------------------- kart
+def _veri_ad(e):
+    """Takvim verisinin Türkçe adı (uygulamadaki gibi)."""
+    try:
+        import ses as SES
+        return SES.veri_adi(e["baslik"], e.get("ulke"))
+    except Exception:
+        return f"{e.get('ulke', '')} · {e['baslik']}"
+
+
 def kart(PV, tk, acik, firs, hab, madde, dosya):
     import kart as K
     from matplotlib.patches import Rectangle
@@ -172,10 +181,9 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
     fig = plt.figure(figsize=(W / 100, H / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis("off")
     t = dt.datetime.now(TSI)
-    ax.add_patch(Rectangle((0, H - 8), W, 8, color=C["altin"]))
-    K._t(ax, K._marka(ax, H), H - 58, "SABAH ÖZETİ", 15, C["altin"], "semibold")
-    K._t(ax, 48, H - 140, f"{t.day} {AYLAR[t.month - 1]} {GUNLER[t.weekday()]}", 44, weight="bold")
-    K._t(ax, 48, H - 182, "Bugün neyi izlemeli?", 20, C["soluk"])
+    K.ust_bant(ax, H, "SABAH ÖZETİ")
+    K._t(ax, 48, H - 160, f"{t.day} {AYLAR[t.month - 1]} {GUNLER[t.weekday()]}", 44, weight="bold")
+    K._t(ax, 48, H - 200, "Bugün neyi izlemeli?", 20, C["soluk"])
     # piyasa ızgarası
     sira = ["BIST 100", "S&P 500", "Nasdaq", "USD/TRY", "Gram altın", "Ons altın", "Brent petrol", "Bitcoin", "VIX"]
     goster = [x for x in sira if x in PV][:9]
@@ -205,18 +213,18 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
         yy -= 4
     y = y - kh - 30
     # takvim
-    K._t(ax, 48, y, "BUGÜNÜN VERİLERİ (TSİ)", 14, C["altin"], "semibold"); y -= 38
+    K.bolum_baslik(ax, 48, y, "Bugünün verileri (TSİ)", boy=15); y -= 38
     if tk:
         for e in tk[:4]:
             t_ = dt.datetime.fromisoformat(e["zaman"])
-            K._t(ax, 48, y, f"{t_:%H:%M}", 18, C["yazi"], "bold"); K._t(ax, 130, y, textwrap.shorten(f"{e['ulke']} · {e['baslik']}", 50, placeholder="…"), 17, C["yazi"])
+            K._t(ax, 48, y, f"{t_:%H:%M}", 18, C["yazi"], "bold"); K._t(ax, 130, y, textwrap.shorten(_veri_ad(e), 54, placeholder="…"), 17, C["yazi"])
             if e.get("beklenti"): K._t(ax, W - 48, y, f"beklenti {e['beklenti']}", 15, C["soluk"], ha="right")
             y -= 32
     else:
         K._t(ax, 48, y, "Bugün yüksek etkili veri yok.", 17, C["soluk"]); y -= 32
     y -= 18
     # fırsatlar ve açık kurulumlar
-    K._t(ax, 48, y, "ÖNE ÇIKAN FIRSATLAR", 14, C["altin"], "semibold"); K._t(ax, 580, y, "AÇIK KURULUMLAR", 14, C["altin"], "semibold"); y -= 40
+    K.bolum_baslik(ax, 48, y, "Öne çıkan fırsatlar", x2=540, boy=15); K.bolum_baslik(ax, 580, y, "Açık kurulumlar", x2=W - 40, boy=15); y -= 40
     y0 = y
     for f in firs[:3]:
         renk = C["yesil"] if f["yon"] == 1 else C["kirmizi"]
@@ -229,19 +237,20 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
     acik_s = sorted(acik, key=lambda k: min(k["yak_h"], k["yak_s"]))[:3]
     for k in acik_s:
         renk = C["yesil"] if k["ger"] >= 0 else C["kirmizi"]
-        K._t(ax, 580, y, _kod(k["kod"]), 20, weight="bold"); K._t(ax, W - 48, y, _y(k["ger"]), 17, renk, "semibold", ha="right"); y -= 36
+        kx = 614 if k.get("pz") in ("kripto", "bist", "abd") and K.logo_ciz(ax, k["kod"], 580, y - 6, 26, k["pz"]) else 580
+        K._t(ax, kx, y, _kod(k["kod"]), 20, weight="bold"); K._t(ax, W - 48, y, _y(k["ger"]), 17, renk, "semibold", ha="right"); y -= 36
     if not acik: K._t(ax, 580, y, "Açık kurulum yok.", 16, C["soluk"])
     y = min(y, y0 - 36 * 3) - 20
     # haberler
     if hab and y > 120:
-        K._t(ax, 48, y, "SON HABERLER", 14, C["altin"], "semibold"); y -= 36
+        K.bolum_baslik(ax, 48, y, "Son haberler", boy=15); y -= 36
         for a in hab[:3]:
             if y < 70: break
             renk = C["yesil"] if a["yon"] > 0 else C["kirmizi"]
             from matplotlib.patches import Circle
             ax.add_patch(Circle((58, y + 7), 7, color=renk))
             K._t(ax, 76, y, textwrap.shorten(a["baslik"], 70, placeholder="…"), 16, C["yazi"]); y -= 32
-    K._t(ax, W / 2, 18, "KATKAY YATIRIM A.Ş. · Gösterge bazlı analizdir, yatırım tavsiyesi değildir.", 13, C["silik"], ha="center")
+    K.alt_bant(ax, 14)
     fig.savefig(dosya, dpi=100, facecolor=C["bg"]); plt.close(fig)
     try:   # içerik bittiği yerin altındaki boşluğu kırp (alt bilgi korunur)
         from PIL import Image
