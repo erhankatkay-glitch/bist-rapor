@@ -10,7 +10,8 @@ import os, re, json, time, urllib.request
 _MODEL_ONB = {"zaman": 0, "ad": None}
 TALIMAT = (
     "Sen bir yatırım araştırma ekibinin editörüsün. Aşağıdaki yapılandırılmış rapordan 5-7 cümlelik, sade ve akıcı Türkçe bir özet yaz.\n"
-    "Kurallar: 1) YALNIZ raporda geçen sayıları aynen kullan; yeni sayı, hedef fiyat, yüzde ya da tarih UYDURMA. "
+    "Kurallar: 1) YALNIZ raporda geçen sayıları aynen ve RAKAMLA yaz (ör. -%6,4; 57.550,29 $); sayıları asla yazıyla yazma; "
+    "yeni sayı, hedef fiyat, yüzde ya da tarih UYDURMA. "
     "2) Düşüş senaryosunu ve riskleri yükseliş kadar açık yaz. 3) Güven derecesini ve neden o seviyede olduğunu söyle. "
     "4) En önemli tez bozucuyu belirt. 5) Al/sat tavsiyesi verme, emir cümlesi kurma. 6) Başlık, madde işareti, markdown kullanma. "
     "7) Son cümle tam olarak: 'Bu değerlendirme otomatik üretilmiştir, yatırım tavsiyesi değildir.'")
@@ -91,8 +92,13 @@ def _sayilar(t):
     return {x.replace(".", "").replace(",", ".").strip(".") for x in re.findall(r"\d[\d.,]*\d|\d", t)}
 
 
+YAZIYLA = re.compile(r"\b(yüzde|eksi|artı)\s+(sıfır|bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz|on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan|yüz)\b"
+                     r"|\bvirgül\b|\b(bin|milyon|milyar)\s+(dolar|lira|tl)\b", re.I)
+
+
 def dogrula(cikti, girdi):
-    """Çıktıdaki her sayı girdide geçmeli (uydurma rakam koruması)."""
+    """Çıktıdaki her sayı girdide geçmeli (uydurma rakam koruması); yazıyla yazılmış sayı kabul edilmez (kontrolden kaçmasın)."""
+    if YAZIYLA.search(cikti): return False, ["yazıyla sayı: " + YAZIYLA.search(cikti).group(0)]
     izin = _sayilar(girdi) | {"0", "1", "2", "3", "4", "5", "6", "7", "8", "10", "20"}
     fazla = [x for x in _sayilar(cikti) if x not in izin]
     return not fazla, fazla

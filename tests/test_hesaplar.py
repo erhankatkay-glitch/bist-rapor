@@ -508,6 +508,8 @@ def test_llm_katman_uydurma_rakam_korumasi():
     import llm_katman as LLM, os
     girdi = "Kötümser senaryoda -%9,0, stop gelirse -%6,4. Destek 57.550,29 $. Güven: Düşük."
     assert LLM.dogrula("Kötümser senaryoda %9,0 düşüş, stop -%6,4; destek 57.550,29 $.", girdi)[0]
+    assert not LLM.dogrula("Kayıp eksi yüzde altı virgül dört olabilir.", girdi)[0]
+    assert LLM.dogrula("Ufuk iki ila altı hafta; stop -%6,4.", girdi)[0]
     ok, fazla = LLM.dogrula("Hedef 75.000 $ olabilir.", girdi)
     assert not ok and "75000" in fazla
     for k in ("GEMINI_API_KEY", "GROQ_API_KEY"): os.environ.pop(k, None)
