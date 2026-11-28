@@ -8,7 +8,7 @@ alt klasör/dosya bazında değiştirilir (diğer piyasaların durumu korunur).
 Kullanım: python yayinla.py <cikti_klasoru> "<mesaj>"   (GH_URL ortam değişkeni: kimlikli depo adresi)"""
 import os, sys, shutil, subprocess, tempfile, time, random
 
-ALT_BIRIM = {"firsat", "durum", "donem", "tarama", "rejim"}
+ALT_BIRIM = {"firsat", "durum", "donem", "tarama", "rejim", "karne", "canli", "temel", "pdf"}
 
 
 def sh(*a, cwd=None, kontrol=True):
@@ -48,6 +48,10 @@ def yayinla(cikti, mesaj):
                 elif os.path.exists(hedef): os.remove(hedef)
                 os.makedirs(os.path.dirname(hedef) or tmp, exist_ok=True)
                 (shutil.copytree if os.path.isdir(kaynak) else shutil.copy2)(kaynak, hedef)
+            kd = os.path.join(tmp, "karne")   # karne/ altında yalnız piyasa klasörleri durur (eski düz dosyalar temizlenir)
+            if any(b.startswith("karne" + os.sep) for b in B) and os.path.isdir(kd):
+                for x in os.listdir(kd):
+                    if os.path.isfile(os.path.join(kd, x)): os.remove(os.path.join(kd, x))
             shutil.rmtree(os.path.join(tmp, ".git"), ignore_errors=True)
             sh("git", "init", "-q", cwd=tmp); sh("git", "checkout", "-q", "-b", dal, cwd=tmp)
             sh("git", "add", "-A", cwd=tmp)
