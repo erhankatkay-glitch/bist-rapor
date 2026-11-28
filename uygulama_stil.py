@@ -30,6 +30,12 @@ iframe[title="st.iframe"], .stElementContainer:has(> iframe) {border:none;}
 /* yüksekliği 0 olan betik çerçeveleri (alt menü, kaydetme, yükleme) sayfada boşluk bırakmasın */
 .stElementContainer:has(> iframe[height="0"]), [data-testid="stElementContainer"]:has(iframe[height="0"]) {position:absolute !important; width:0 !important; height:0 !important; overflow:hidden !important; margin:0 !important; padding:0 !important;}
 
+/* açılış perdesi: alt menü betiği eski sekme çubuklarını gizleyene kadar sayfa görünmez (eski tasarım bir an görünmesin);
+   betik çalışmazsa 8 sn sonra sayfa yine açılır */
+body:not(.kk-hazir) [data-testid="stMain"] {visibility:hidden; animation:kkAcil 0s 8s forwards;}
+body:not(.kk-hazir)::after {content:""; position:fixed; left:50%; top:45%; width:38px; height:38px; margin:-19px; border-radius:50%;
+  border:3px solid rgba(232,184,74,.18); border-top-color:#E8B84A; animation:kkDon .8s linear infinite, kkSon 0s 8s forwards; z-index:99;}
+@keyframes kkAcil {to {visibility:visible;}} @keyframes kkDon {to {transform:rotate(360deg);}} @keyframes kkSon {to {opacity:0; visibility:hidden;}}
 /* ---------- Sekmeler: bölmeli çubuk, etkin sekme eğik yeşil + altın çerçeve ---------- */
 .stTabs [data-baseweb="tab-list"] {gap:0; overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; padding:5px;
        background:linear-gradient(180deg, #17181B, #0F1012); border:1px solid var(--cizgi); border-radius:18px;
@@ -667,6 +673,7 @@ CANLI_JS = """
               let e=tl; while(e.parentElement && !e.parentElement.querySelector('[role="tabpanel"]')) e=e.parentElement; e.style.display="none";
               const ust=tl.parentElement; if(ust) ust.querySelectorAll(':scope > [data-baseweb="tab-border"], :scope > [data-baseweb="tab-highlight"]').forEach(e=>e.style.display="none"); }
           });
+          if(ilk && ilk.dataset.kkGizli) document.body.classList.add("kk-hazir");
           try{ const kp=localStorage.getItem("kk_uyari_kapali"); if(kp) document.querySelectorAll('.kk-uyari[data-id="'+kp+'"]').forEach(u=>u.style.display="none"); }catch(x){}
           const nav=document.getElementById("kk-nav"); if(!nav) return;
           // seçili sekme yolu: üst sekme + açık paneldeki seçili alt sekme ("Keşfet|Teknik")
