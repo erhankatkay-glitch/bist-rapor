@@ -27,11 +27,42 @@ _HISSE = {"SPY", "QQQ", "IVV", "VOO", "VTI", "DIA", "IWM", "TQQQ", "SQQQ", "GLD"
           "CRWD", "PANW", "NVO", "MRVL", "APP", "SPOT", "BAC", "GS", "MS", "BLK", "SCHW", "TMO", "MRK", "PFE", "JNJ", "BA", "CAT"}
 
 
+# Tokenleştirilmiş hisse / ETF (xStocks "X…", Backed "…B", Ondo "…ON"): kripto değil, ABD seans saatlerine bağlı ince likidite.
+# Geniş ABD listesiyle yakalanır (Kasım 2026: XSPCX, SPCXB, XSTLL, XBRKB, XOKTA… kripto taramasına girip toplu stop olmuştu).
+_GERCEK_KRIPTO = {"XAUT", "XVG", "XEM", "XNO", "XDC", "XCN", "XYO", "XLM", "XRP", "XTZ", "XEC", "XAI", "XVS", "XCH", "XPR", "XPRT", "XWG",
+                  "XION", "XPL", "XCAD", "XNY", "XTER", "XUSD", "XMR", "XDB", "XCV", "XEN", "XETA", "XRD", "XNC", "XPLA", "XBG", "XMW"}
+_ETF = {"EWZ", "EWJ", "EEM", "EFA", "FXI", "KWEB", "XLF", "XLE", "XLK", "SOXX", "SMH", "IBIT", "ETHA", "GDX", "USO", "UNG", "HYG", "LQD",
+        "SPCX", "STLL", "BRKB", "BRKA"}
+_ABD = None
+
+
+def _abd_listesi():
+    """ABD hisse kodları (tokenleştirilmiş hisse tespiti için): yerel liste, yoksa bülten dalındaki liste; olmazsa boş."""
+    global _ABD
+    if _ABD is None:
+        _ABD = set()
+        try:
+            import io
+            if os.path.exists("abd_listesi.csv"): df = pd.read_csv("abd_listesi.csv", dtype=str)
+            else:
+                import requests
+                r = requests.get("https://raw.githubusercontent.com/erhankatkay-glitch/bist-rapor/bulten/firsat/abd/abd_listesi.csv", timeout=20)
+                df = pd.read_csv(io.StringIO(r.text), dtype=str)
+            _ABD = {str(x).upper().replace(".", "").replace("-", "") for x in df["Sembol"].dropna()}
+        except Exception:
+            _ABD = set()
+    return _ABD
+
+
 def hisse_tokeni_mu(baz):
     b = str(baz).upper().split("/")[0].split("@")[0]
-    if b in _HISSE: return True
+    if b in _HISSE or b in _ETF: return True
     uz = lambda x: x in _HISSE and len(x) >= 3
-    return (b.startswith("X") and uz(b[1:])) or (b[-1:] in "BX" and uz(b[:-1])) or (b.endswith("ON") and uz(b[:-2]))
+    if (b.startswith("X") and uz(b[1:])) or (b[-1:] in "BX" and uz(b[:-1])) or (b.endswith("ON") and uz(b[:-2])): return True
+    if b in _GERCEK_KRIPTO: return False
+    genis = _abd_listesi() | _ETF
+    return ((b.startswith("X") and len(b) >= 4 and b[1:] in genis) or (b[-1:] == "B" and len(b) >= 4 and b[:-1] in genis)
+            or (b.endswith("ON") and len(b) >= 5 and b[:-2] in genis))
 
 
 def _get(url, **params):
