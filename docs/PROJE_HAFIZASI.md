@@ -345,3 +345,12 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   bebek: EV.bebekler + bebek_skoru, derin analiz temel satırlarından). pdf_uret.py (pdf.yml, 05:20 TSİ) → teknik ve araştırma PDF'leri
   GitHub sürüm "raporlar" eklerine (--clobber), dizin bulten/pdf/{teknik,arastirma}.json. Hızlı uygulama: varlık sayfasında temel bölüm ve
   PDF düğmeleri, Piyasa › Temel (değer sıralaması, bebekler, genç, küçük).
+- Kripto / emtia temel (28.11.2026): temel_varlik.py (temel.yml matrisi kripto, emtia) → bulten/temel/{kripto,emtia}.json. bist_varlik.analiz
+  (detay=False) + kripto: CoinGecko markets (arz, FDV, hacim/PD, ATH, 7g/30g/1y), ilk 60'ta OKX türev (turev_verisi, KR.vadeli) ve DefiLlama
+  (KR.protokol); "Temel puan" (liste içi yüzdelik: büyüklük %25, likidite %20, PD/FDV %20, potansiyel %15, skor %20); stablecoin, hisse tokeni
+  ve CoinGecko dışı coinler "Not" ile puansız. Emtia: dunya.vade_yapisi(liste) tüm 16 emtia için, CFTC COT (publicreporting.cftc.gov 6dca-aqww,
+  COT_KOD), mevsimsellik, altın/gümüş oranı. temel.yml workflow_dispatch input "piyasalar" (JSON liste).
+- PWA: varlikTemelHtml / varlikTemelListe; Piyasa › Temel çipleri Kripto ve Emtia; derin bağlantı #piyasa/<alt>[/<mod>] (altRota).
+  BIST değer sıralamasında F/K < 1 (hatalı veri: ISATR vb.) elenir.
+- Telegram: temel_bildirim.py, sabah.py içinden aynı Bot ile sabah kartından sonra "Temel özet" kartı (BIST değerinin altındaki 5, yeni halka
+  arzlar, kripto ilk 100'de temel puanı en yüksek 3, emtia COT/backwardation aşırılıkları); düğme #piyasa/temel (tg.UYG_BOLUM "temel").
