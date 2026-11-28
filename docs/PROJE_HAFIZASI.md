@@ -333,3 +333,7 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   yabanci/akis, donem/haftalik), Tarayıcı (tarama/<pz>.csv; tarayici.ALANLAR/HAZIR → docs/pwa_veri.json, pwa_veri.py ile üretilir, test denetler),
   Karşılaştır (karnelerden, tarihe göre hizalı). Fırsatlar: Açık / Son taramalar / Performans (gecmis + istatistik). Özet: sabah özeti + ses.
   Tam uygulamada kalan (sunucu gerektiren): Hisse temel analizi, Bebek taraması, PDF raporlar, alarm tanımlama.
+- Telegram A–Z yeni tasarım (28.11.2026): kart.ust_bant (logo + KATKAY YATIRIM + kart türü, sağda tarih), kart.bolum_baslik (aralıklı başlık +
+  solan altın çizgi), kart.alt_bant (uygulama adresi + yasal not); bildirim_karti ızgara bölümü (izgara=True). Bütün kartlar bunları kullanır
+  (fırsat, bülten, bildirim tabanlı tüm kartlar, sabah). Her mesajın altında hızlı uygulamayı açan düğme: tg.uygulama_dugme (fırsat → #v/KOD,
+  alarm → #bildirim, rejim/dünya/… → #piyasa). Düğme reddedilirse mesaj düğmesiz gider.

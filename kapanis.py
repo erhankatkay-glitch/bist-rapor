@@ -423,7 +423,7 @@ def firsat_turu(bot, D, tf, varliklar, ekstra_fn=None, tl_fn=None):
                 if tl_fn and tl_fn(f): ek.append("💱 " + F._e(tl_fn(f)))
                 if f["ekstra"].get("turev"): ek.append("📊 " + F._e(f["ekstra"]["turev"]))
                 alt = KT.baslik_metni(f) + ("\n" + "\n".join(ek) if ek else "")
-                if f["kod"] in grafik: bot.foto(os.path.join(D.kok, grafik[f["kod"]]), alt, anahtar, OMUR[tf], bag=bag)
+                if f["kod"] in grafik: bot.foto(os.path.join(D.kok, grafik[f["kod"]]), alt, anahtar, OMUR[tf], bag=bag, dugme=tg.uygulama_dugme(kod=f["kod"]))
                 else: sade_firsat_gonder(bot, f, anahtar, OMUR[tf], bag, alt, tl_fn)
     D.acik += yeni
     return secilen
@@ -447,10 +447,11 @@ def sade_firsat_gonder(bot, f, anahtar, omur, bag, alt, tl_fn=None):
                           f"{F.gorunen(f['kod'], f.get('ad'))} · {'AL' if f['yon'] == 1 else 'SAT'} · puan {f['puan']:.0f}",
                           f["kurulum_ad"][:70], bol, yol, vurgu=C["yesil"] if f["yon"] == 1 else C["kirmizi"],
                           not_=KT.basitce(f))
-        if bot.foto(yol, alt, anahtar, omur, bag=bag): return True
+        if bot.foto(yol, alt, anahtar, omur, bag=bag, dugme=tg.uygulama_dugme(kod=f["kod"])): return True
     except Exception as ex:
         log("sade fırsat kartı çizilemedi:", f.get("kod"), ex)
-    return bool(bot.mesaj(F.firsat_metni(f, tl_fn(f) if tl_fn else None), anahtar, omur, bag=bag, yerine=False, notlu=False))
+    return bool(bot.mesaj(F.firsat_metni(f, tl_fn(f) if tl_fn else None), anahtar, omur, bag=bag, yerine=False, notlu=False,
+                          dugme=tg.uygulama_dugme(kod=f["kod"])))
 
 
 def _pf_anahtar(kod):

@@ -549,3 +549,23 @@ def test_pwa_veri_guncel():
     import json
     import pwa_veri
     assert json.load(open("docs/pwa_veri.json", encoding="utf-8")) == json.loads(json.dumps(pwa_veri.veri(), ensure_ascii=False))
+
+
+def test_telegram_uygulama_dugmesi():
+    import json
+    import tg
+    d = tg.uygulama_dugme(kod="BTC/USDT")["inline_keyboard"][0][0]
+    assert d["url"].endswith("#v/BTC%2FUSDT") and "BTC/USDT" in d["text"]
+    assert tg.uygulama_dugme("alarm:202611281200:0")["inline_keyboard"][0][0]["url"].endswith("#bildirim")
+    assert tg.uygulama_dugme("rejim:bist:2026-11-28")["inline_keyboard"][0][0]["url"].endswith("#piyasa")
+    assert tg.uygulama_dugme("bilinmeyen")["inline_keyboard"][0][0]["url"].endswith("#ozet")
+    json.dumps(tg.uygulama_dugme("sabah"))
+
+
+def test_kartlar_cizilir(tmp_path):
+    import kart as K
+    K.bildirim_karti("TEST · 28.11.2026", "Başlık", "alt", [
+        {"baslik": "Izgara", "izgara": True, "satirlar": [{"sol": "DAX", "sag": "+%2,6", "alt": "yılbaşından +%10"}] * 4},
+        {"baslik": "Liste", "renk": K.C["kirmizi"], "satirlar": [{"sol": "ASELS", "sag": "+%5,4", "nokta": K.C["yesil"], "alt": "açıklama"}]}],
+        str(tmp_path / "k.png"), not_="not")
+    assert (tmp_path / "k.png").stat().st_size > 10000

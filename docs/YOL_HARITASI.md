@@ -121,3 +121,7 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 
 ## Son aşama (hepsi bitince)
 Telegram'da paylaşılan her şey baştan sona yeni tasarıma ve yeni modüllere göre güncellenecek (kullanıcı isteği).
+
+## Son adım ✅ Telegram A–Z yeni tasarım (28.11.2026)
+Kartlar uygulamayla aynı kimlikte (üst bant, bölüm başlıkları, ızgara kutucuklar, alt bilgide uygulama adresi); her mesajda "uygulamada aç" düğmesi.
+
