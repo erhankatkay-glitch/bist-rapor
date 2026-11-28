@@ -73,11 +73,61 @@ def logo_url(kod, piyasa):
     return None
 
 
+# ---- hisse ve kripto dışındaki bütün piyasalar: endeksler (borsanın / endeks sağlayıcısının logosu), emtialar (işlem gördüğü
+#      borsanın logosu), döviz (ülke bayrağı), tahvil (hazine). Anahtar: kod ya da uygulamadaki görünen ad.
+OZEL_ALAN = {
+    # Türkiye
+    "XU100": "borsaistanbul.com", "XU030": "borsaistanbul.com", "XBANK": "borsaistanbul.com", "XUSIN": "borsaistanbul.com",
+    "XHOLD": "borsaistanbul.com", "XUTEK": "borsaistanbul.com", "XHARZ": "borsaistanbul.com", "BIST 100": "borsaistanbul.com",
+    "BIST 30": "borsaistanbul.com", "BIST Banka": "borsaistanbul.com",
+    # ABD
+    "SP500": "spglobal.com", "S&P 500": "spglobal.com", "NASDAQ": "nasdaq.com", "Nasdaq": "nasdaq.com", "NDX": "nasdaq.com",
+    "DOW": "dowjones.com", "Dow Jones": "dowjones.com", "VIX": "cboe.com", "RUSSELL": "lseg.com", "Russell 2000": "lseg.com",
+    "US10Y": "treasury.gov", "ABD 10Y faiz": "treasury.gov", "S&P/TSX": "tmx.com", "Bovespa": "b3.com.br",
+    # Avrupa
+    "DAX": "deutsche-boerse.com", "FTSE 100": "lseg.com", "FTSE": "lseg.com", "CAC 40": "euronext.com", "Euro Stoxx 50": "stoxx.com",
+    # Asya-Pasifik
+    "Nikkei 225": "nikkei.com", "NIKKEI": "nikkei.com", "Hang Seng": "hsi.com.hk", "HSI": "hsi.com.hk", "Şanghay": "sse.com.cn",
+    "KOSPI": "krx.co.kr", "Sensex": "bseindia.com", "ASX 200": "asx.com.au",
+    # emtia: işlem gördüğü vadeli borsa (COMEX / NYMEX / CBOT = CME Group; Brent ve yumuşak emtialar = ICE)
+    "ALTIN": "cmegroup.com", "GRAMALTIN": "cmegroup.com", "GUMUS": "cmegroup.com", "PLATIN": "cmegroup.com", "PALADYUM": "cmegroup.com",
+    "BAKIR": "cmegroup.com", "WTI": "cmegroup.com", "DOGALGAZ": "cmegroup.com", "BUGDAY": "cmegroup.com", "MISIR": "cmegroup.com",
+    "SOYA": "cmegroup.com", "BRENT": "ice.com", "KAHVE": "ice.com", "KAKAO": "ice.com", "SEKER": "ice.com", "PAMUK": "ice.com",
+    "Altın": "cmegroup.com", "Ons altın": "cmegroup.com", "Gram altın": "cmegroup.com", "Gümüş": "cmegroup.com", "Platin": "cmegroup.com",
+    "Bakır": "cmegroup.com", "Ham petrol (WTI)": "cmegroup.com", "Doğal gaz": "cmegroup.com", "Mısır": "cmegroup.com", "Buğday": "cmegroup.com",
+    "Brent petrol": "ice.com", "Dolar endeksi": "ice.com", "DXY": "ice.com",
+}
+PARA_ULKE = {"USD": "us", "EUR": "eu", "GBP": "gb", "JPY": "jp", "CHF": "ch", "AUD": "au", "CAD": "ca", "CNY": "cn", "TRY": "tr",
+             "NZD": "nz", "SEK": "se", "NOK": "no", "RUB": "ru", "INR": "in", "BRL": "br", "MXN": "mx", "ZAR": "za", "KRW": "kr"}
+
+
+def doviz_ulke(kod):
+    """'USD/TRY' → 'tr' (TL paritelerinde Türkiye), 'EUR/USD' → 'eu', 'USD/JPY' → 'jp' (doların karşısındaki para)."""
+    k = str(kod).upper().replace(" ", "")
+    m = re.fullmatch(r"([A-Z]{3})/?([A-Z]{3})(=X)?", k)
+    if not m or m.group(1) not in PARA_ULKE or m.group(2) not in PARA_ULKE: return None
+    a, b = m.group(1), m.group(2)
+    if b == "TRY" and a == "USD": return "tr"
+    return PARA_ULKE[a] if a != "USD" else PARA_ULKE[b]
+
+
+def ozel_url(kod, boy=128):
+    """Hisse/kripto dışı varlığın logo adresi (endeks, emtia, döviz, tahvil) ya da None."""
+    k = str(kod).strip()
+    alan = OZEL_ALAN.get(k) or OZEL_ALAN.get(k.upper())
+    if alan: return f"https://img.logo.dev/{alan}?token={LOGO_DEV}&size={boy}&format=png&fallback=404"
+    u = doviz_ulke(k)
+    return f"https://flagcdn.com/w160/{u}.png" if u else None
+
+
 @functools.lru_cache(maxsize=512)
 def logo_dosya(kod, piyasa):
-    """Kart çizimi için yerel PNG yolu (hisseler indirilip önbelleğe alınır) ya da None."""
-    if piyasa not in ("kripto", "bist", "abd"): return None
-    if piyasa == "kripto":
+    """Kart çizimi için yerel PNG yolu (indirilip önbelleğe alınır) ya da None. Hisse, kripto, endeks, emtia, döviz, tahvil."""
+    oz = ozel_url(kod)
+    if oz:
+        u = oz; ad = "ozel_" + re.sub(r"[^A-Za-z0-9]+", "_", str(kod))
+    elif piyasa not in ("kripto", "bist", "abd"): return None
+    elif piyasa == "kripto":
         u = kripto_logo_url(kod); ad = "kripto_" + kripto_baz(kod)
     else:
         u = hisse_logo_url(kod, piyasa); ad = hisse_sembol(kod, piyasa) if u else None
@@ -100,7 +150,8 @@ _LOGOSUZ = {"XU100", "XU030", "XBANK", "XUSIN", "XHOLD", "XUTEK", "SP500", "NASD
 
 
 def tahmin_piyasa(kod):
-    """Koddan piyasa: 'BTC/USDT' → kripto, 'AAPL.US' → abd, 'THYAO' → bist; endeks ve emtia → None (logo yok)."""
+    """Koddan piyasa: 'BTC/USDT' → kripto, 'AAPL.US' → abd, 'THYAO' → bist; endeks / emtia / döviz → 'ozel' (kendi logosu)."""
+    if ozel_url(kod): return "ozel"
     k = str(kod).upper()
     if "/" in k or k.endswith("-USD") or "@" in k: return "kripto"
     if k.endswith(".US"): return "abd"

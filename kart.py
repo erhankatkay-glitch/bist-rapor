@@ -70,6 +70,11 @@ def ust_bant(ax, H, ust, sag=None, vurgu=None):
     Eski 'altın şerit + logo + başlık' düzeninin yerini alır; aynı yükseklikte (H−38 … H−84) kalır."""
     import datetime as _dt
     vurgu = vurgu or C["altin"]
+    hero = _hero()   # uygulamanın ana ekranındaki boğa–ayı görseli, aşağı doğru solarak
+    if hero is not None:
+        xl, yl = ax.get_xlim(), ax.get_ylim()
+        ax.imshow(hero, extent=[xl[0], xl[1], H - 300, H], aspect="auto", zorder=0, interpolation="bilinear")
+        ax.set_xlim(*xl); ax.set_ylim(*yl)
     x = _marka(ax, H, boy=44)
     t1 = _t(ax, x, H - 56, "KATKAY", 19, C["yazi"], "bold")
     _t(ax, _sag_kenar(ax, t1) + 6, H - 56, "YATIRIM", 19, C["altin"], "bold")
@@ -198,7 +203,7 @@ def firsat_karti(f, a, dosya, piyasa_ad, tf_ad):
     import tg
     ust_bant(ax, H, f"{tg.buyuk(piyasa_ad)} · {tg.buyuk(tf_ad)} · FIRSAT")
     bx = 48
-    if f.get("piyasa") in ("kripto", "bist", "abd") and logo_ciz(ax, f["kod"], 48, H - 187, 64, f["piyasa"]): bx = 128
+    if logo_ciz(ax, f["kod"], 48, H - 187, 64, f.get("piyasa")): bx = 128
     _t(ax, bx, H - 175, F.gorunen(f["kod"], None), 54, weight="bold")
     ad = f.get("ad") or ""
     if ad and ad not in f["kod"]: _t(ax, bx, H - 215, textwrap.shorten(ad, 44, placeholder="…"), 19, C["soluk"])
@@ -368,10 +373,12 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
     # --- en güçlüler & günün en çok yükselen/düşenleri
     y2 = y1 - 40
     lp = {"BIST": "bist", "ABD": "abd", "KRİPTO": "kripto", "KRIPTO": "kripto"}.get(str(piyasa_ad).upper().replace("İ", "I").replace("I", "I"), None)
-    lp = lp or {"bist": "bist", "abd": "abd", "kripto": "kripto"}.get(str(meta.get("piyasa", "")).replace("kripto_tl", "kripto"))
+    lp = lp or {"bist": "bist", "abd": "abd", "kripto": "kripto", "emtia": "emtia"}.get(str(meta.get("piyasa", "")).replace("kripto_tl", "kripto"))
 
     def lg_(kod, x, y, boy=28):   # varlık logosu çizildiyse yazının kayacağı x
-        return x + boy + 8 if lp and logo_ciz(ax, kod, x, y - 6, boy, lp) else x
+        if not lp: return x
+        logo_ciz(ax, kod, x, y - 6, boy, lp)
+        return x + boy + 8   # logosu olmayan da aynı hizada başlasın
     bolum_baslik(ax, 48, y2, "En güçlü görünüm", x2=540, boy=15)
     bolum_baslik(ax, 580, y2, "Günün hareketlileri", x2=W - 40, boy=15)
     top = df.nlargest(5, "Teknik puan") if n else df
@@ -427,7 +434,7 @@ def _sar(s, n):
     return textwrap.wrap(str(s), n) or [""]
 
 
-def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
+def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None, baslik_logo=None):
     """Bildirimler için ortak tasarım (uygulamayla aynı: üst bant, aralıklı bölüm başlıkları, ince çerçeveli kartlar, alt bilgi).
     bolumler: [{"baslik", "renk", "aciklama"(ops.), "izgara"(ops.: satırlar 3'lü kutucuk), "satirlar": [
     {"sol", "sag"(ops.), "sag_renk"(ops.), "nokta"(renk, ops.), "logo"((kod, piyasa), ops.), "alt"(ops.)}]}]. Yükseklik içeriğe göre ayarlanır."""
@@ -449,12 +456,20 @@ def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
     fig = plt.figure(figsize=(W / 100, H_ / 100), dpi=100); fig.patch.set_facecolor(C["bg"])
     ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H_); ax.axis("off")
     ust_bant(ax, H_, ust, vurgu=vurgu)
-    _t(ax, 48, H_ - 160, baslik, 40, weight="bold")
-    if alt: _t(ax, 48, H_ - 200, alt, 18, C["soluk"])
+    bx_ = 48
+    if baslik_logo:   # (kod, piyasa): başlığın solunda varlığın / endeksin logosu
+        kod_, pz_ = baslik_logo if isinstance(baslik_logo, (tuple, list)) else (baslik_logo, None)
+        if logo_ciz(ax, kod_, 48, H_ - 168, 52, pz_): bx_ = 112
+    _t(ax, bx_, H_ - 160, baslik, 40, weight="bold")
+    if alt: _t(ax, bx_, H_ - 200, alt, 18, C["soluk"])
     y = H_ - ust_y
     for b in bolumler:
         renk = b.get("renk") or vurgu
-        bolum_baslik(ax, 44, y, b["baslik"], renk if renk != vurgu else None)
+        bx_ = 44
+        if b.get("logo"):
+            kod_, pz_ = b["logo"] if isinstance(b["logo"], (tuple, list)) else (b["logo"], None)
+            if logo_ciz(ax, kod_, 44, y - 6, 28, pz_): bx_ = 82
+        bolum_baslik(ax, bx_, y, b["baslik"], renk if renk != vurgu else None)
         y -= 50
         if b.get("aciklama"):
             for sat in _sar(b["aciklama"], 70)[:3]:
@@ -465,6 +480,9 @@ def bildirim_karti(ust, baslik, alt, bolumler, dosya, vurgu=None, not_=None):
             for i, s in enumerate(b["satirlar"]):
                 sx = 40 + (i % IZ_S) * (kw + 12); sy = y - (i // IZ_S) * (IZ_H + 12) - IZ_H + 30
                 _kutu(ax, sx, sy, kw, IZ_H, C["panel"], r=14)
+                if s.get("logo"):
+                    kod_, pz_ = s["logo"] if isinstance(s["logo"], (tuple, list)) else (s["logo"], None)
+                    logo_ciz(ax, kod_, sx + kw - 46, sy + IZ_H - 46, 32, pz_)
                 _t(ax, sx + 16, sy + IZ_H - 30, textwrap.shorten(str(s["sol"]), 20, placeholder="…"), 15, C["soluk"], "semibold")
                 _t(ax, sx + 16, sy + IZ_H - 66, str(s.get("sag", "")), 23, s.get("sag_renk") or C["yazi"], "bold")
                 if s.get("alt"): _t(ax, sx + 16, sy + 16, textwrap.shorten(str(s["alt"]), 26, placeholder="…"), 12.5, C["silik"])

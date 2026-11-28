@@ -1,18 +1,23 @@
-import os, sys, json, urllib.request, pandas as pd
+import subprocess, sys; subprocess.run([sys.executable, "-m", "playwright", "install", "--with-deps", "webkit"], check=True)
+import os, json, urllib.request, asyncio
 sys.path.insert(0, ".")
 os.makedirs("denetim_graf", exist_ok=True)
-import kart as K, alarm as A
-R = "https://raw.githubusercontent.com/erhankatkay-glitch/bist-rapor/bulten/"
-for pz, ad in [("bist", "BIST"), ("abd", "ABD")]:
-    meta = json.load(urllib.request.urlopen(R + f"{pz}/meta.json")); satir = pd.read_csv(R + f"{pz}/ozet.csv").to_dict("records")
-    K.bulten_karti(meta, satir, f"denetim_graf/bulten_{pz}.png", ad); print("bulten", pz)
-msj = ["🟢 SOL/USDT: Alçalan kama – YUKARI KIRILIM (günlük, 28.11) · fiyat 71,78 (+%0,2)", "🔴 ASELS: AB=CD (ayı) (günlük, 27.11) · fiyat 332,00 (+%5,4)",
-       "🔴 NVDA (Nvidia): Ölüm kesişimi (günlük, 27.11) · fiyat 150,62 (+%0,9)", "⚡ THYAO bugün +%1,4 hareket etti (fiyat 314,00)"]
-sat = [A._satir(m) for m in msj]
-for _, sx, _u in sat:
-    lk = A._logo_kod(sx.get("sol", ""))
-    if lk: sx["logo"] = lk
-bol = [{"baslik": a, "renk": K.C[r], "satirlar": [x[1] for x in sat if x[0] == g]} for g, a, r in A.GRUP_KART]
-K.bildirim_karti("ALARMLAR · 28.11 12:30", "4 yeni alarm", "Fiyat, formasyon ve şirket haberleri", [x for x in bol if x["satirlar"]], "denetim_graf/alarm.png")
 import logolar as LG
-for k, p in [("ASELS", "bist"), ("NVDA.US", "abd"), ("THYAO", "bist"), ("BTC/USDT", "kripto")]: print("LOGO", k, LG.logo_dosya(k, p))
+for k in ["XU100", "S&P 500", "Nasdaq", "Dow Jones", "DAX", "FTSE 100", "CAC 40", "Euro Stoxx 50", "Nikkei 225", "Hang Seng", "Şanghay", "KOSPI", "Sensex", "ASX 200", "S&P/TSX", "Bovespa", "VIX", "ALTIN", "BRENT", "USD/TRY", "EUR/USD", "Dolar endeksi", "US10Y"]:
+    print("LOGO", k, "OK" if LG.logo_dosya(k, None) else "YOK")
+R = "https://raw.githubusercontent.com/erhankatkay-glitch/bist-rapor/bulten/"
+import dunya, rejim, opsiyon
+dunya.kart_ciz(json.load(urllib.request.urlopen(R + "dunya/ozet.json")), "denetim_graf/dunya.png")
+rejim.kart_ciz(json.load(urllib.request.urlopen(R + "rejim/abd.json")), "denetim_graf/rejim.png")
+opsiyon.kart_ciz(json.load(urllib.request.urlopen(R + "opsiyon/ozet.json")), "denetim_graf/opsiyon.png")
+from playwright.async_api import async_playwright
+async def main():
+  async with async_playwright() as p:
+    b=await p.webkit.launch(); c=await b.new_context(**p.devices["iPhone 13"]); pg=await c.new_page()
+    await pg.goto("https://erhankatkay-glitch.github.io/bist-rapor/"); await pg.wait_for_timeout(8000)
+    print("PWA logo", await pg.evaluate("(()=>{const l=[...document.querySelectorAll('img.lg')];return {toplam:l.length, yuklu:l.filter(i=>i.complete&&i.naturalWidth>0).length}})()"))
+    await pg.screenshot(path="denetim_graf/pwa_ozet.png")
+    await pg.tap("nav button[data-s=piyasa]"); await pg.wait_for_timeout(5000)
+    print("PWA piyasa", await pg.evaluate("(()=>{const l=[...document.querySelectorAll('#s-piyasa img.lg')];return {toplam:l.length, yuklu:l.filter(i=>i.complete&&i.naturalWidth>0).length}})()"))
+    await b.close()
+asyncio.run(main())

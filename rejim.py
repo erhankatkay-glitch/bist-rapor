@@ -25,6 +25,10 @@ TABAN = {"yukselis": 80, "baski": 50, "ralli": 30, "duzeltme": 15}
 def genislik(kapanislar, gun=130):
     """kapanislar: {kod: Close serisi (günlük)} → DataFrame(tarih: ust50, ust200, zirve, dip, n) son `gun` seans."""
     C = pd.DataFrame({k: s[~s.index.duplicated()] for k, s in kapanislar.items() if s is not None and len(s) >= 60}).sort_index()
+    # Tek tük hissenin tatil/hafta sonu günündeki başıboş satırı (ör. Kurban Bayramı 30–31.05.2026) tüm hisseleri o gün boş bırakıyor,
+    # 200 günlük ortalamayı 200 seans boyunca herkes için hesaplanamaz yapıyordu (genişlik %0 görünüyordu): yalnız seans günleri kalsın.
+    say = C.notna().sum(axis=1)
+    C = C[say >= 0.5 * say.max()]
     C = C.ffill(limit=3)
     s50 = C.rolling(50, min_periods=50).mean(); s200 = C.rolling(200, min_periods=200).mean()
     yz = C.rolling(252, min_periods=120).max(); yd = C.rolling(252, min_periods=120).min()
@@ -186,7 +190,7 @@ def kart_ciz(r, yol):
     if r.get("tepe_uyarisi"):
         bol.insert(0, {"baslik": "TEPE UYARISI", "renk": K.C["kirmizi"], "satirlar": [{"sol": "Genişlik bozuluyor, dağıtım artıyor", "nokta": K.C["kirmizi"]}]})
     K.bildirim_karti(f"PİYASA REJİMİ  ·  {r['endeks'].upper()}", r["durum_ad"], f"Önerilen hisse oranı %{r['maruziyet']} · kapanış {r['kapanis']:,.0f}".replace(",", "."),
-                     bol, yol, vurgu=renk, not_="Kural tabanlı bir değerlendirmedir, yatırım tavsiyesi değildir.")
+                     bol, yol, vurgu=renk, not_="Kural tabanlı bir değerlendirmedir, yatırım tavsiyesi değildir.", baslik_logo=(r["endeks"], None))
     return yol
 
 
