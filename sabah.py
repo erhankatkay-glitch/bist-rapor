@@ -111,7 +111,7 @@ def izlenecekler(PV, tk, acik, firs, hab):
         op = (oku("opsiyon/ozet.json") or {}).get("paralar", {}).get("BTC")
         if op and op.get("dvol"):
             v = (op.get("buyuk_vadeler") or [None])[0]
-            m.append(f"BTC opsiyon: DVOL {op['dvol']['deger']:.0f} (1 yılın %{op['dvol']['yuzdelik'] * 100:.0f}'lik dilimi)"
+            m.append(f"BTC opsiyon: DVOL {op['dvol']['deger']:.0f} (1 yıllık sıra {op['dvol']['yuzdelik'] * 100:.0f}/100)"
                      + (f", {v['vade_ad']} vadesinde max pain {v['max_pain']:,.0f} $".replace(",", ".") if v and v.get("max_pain") else "")
                      + (f", beklenen hareket ±%{v['beklenen_hareket'] * 100:.1f}".replace(".", ",") if v and v.get("beklenen_hareket") else "") + ".")
     except Exception:
