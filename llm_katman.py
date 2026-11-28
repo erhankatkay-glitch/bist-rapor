@@ -19,7 +19,7 @@ TALIMAT = (
 SON_HATA = {"metin": None}
 
 
-def _istek(url, veri=None, baslik=None, zaman_asimi=25):
+def _istek(url, veri=None, baslik=None, zaman_asimi=50):
     import urllib.error
     r = urllib.request.Request(url, data=json.dumps(veri).encode() if veri is not None else None,
                                headers={"Content-Type": "application/json", **(baslik or {})})
@@ -50,9 +50,9 @@ def gemini_model(anahtar):
     d = _g("models?pageSize=200", anahtar)
     adaylar = [m["name"] for m in d.get("models", []) if "generateContent" in m.get("supportedGenerationMethods", [])
                and "flash" in m["name"] and not any(k in m["name"] for k in ("image", "tts", "audio", "live", "embedding", "thinking-exp"))]
-    def anahtar_(n):   # en yüksek sürüm; kararlı sürüm önizlemeden, tam "flash" "lite"tan önde
+    def anahtar_(n):   # kararlı > önizleme; hızlı "flash-lite" önde (basit yeniden yazma işi); sonra en yüksek sürüm
         v = re.search(r"gemini-(\d+(?:\.\d+)?)", n)
-        return ("preview" not in n and "exp" not in n, float(v.group(1)) if v else 0.0, "lite" not in n)
+        return ("preview" not in n and "exp" not in n, "lite" in n, float(v.group(1)) if v else 0.0)
     ad = sorted(adaylar, key=anahtar_)[-1] if adaylar else "models/gemini-flash-latest"
     _MODEL_ONB.update(zaman=time.time(), ad=ad)
     return ad
@@ -60,9 +60,13 @@ def gemini_model(anahtar):
 
 def gemini(metin, anahtar):
     m = gemini_model(anahtar)
-    d = _g(f"{m}:generateContent", anahtar,
-               {"contents": [{"role": "user", "parts": [{"text": TALIMAT + "\n\nRAPOR:\n" + metin}]}],
-                "generationConfig": {"temperature": 0.3, "maxOutputTokens": 700}})
+    govde = {"contents": [{"role": "user", "parts": [{"text": TALIMAT + "\n\nRAPOR:\n" + metin}]}],
+             "generationConfig": {"temperature": 0.3, "maxOutputTokens": 900, "thinkingConfig": {"thinkingBudget": 0}}}
+    try:
+        d = _g(f"{m}:generateContent", anahtar, govde)
+    except RuntimeError as ex:   # modeli "düşünme" ayarını desteklemiyorsa onsuz dene
+        if "HTTP 400" not in str(ex): raise
+        govde["generationConfig"].pop("thinkingConfig"); d = _g(f"{m}:generateContent", anahtar, govde)
     return "".join(p.get("text", "") for p in d["candidates"][0]["content"]["parts"]).strip(), m.split("/")[-1]
 
 
