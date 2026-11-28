@@ -364,10 +364,29 @@ async function tvGrafik(kutu, g, tf, k, fv) {
   } else {
     (tf.destek || []).slice(0, 2).forEach(x => cz(x[0], "#22C55E", "destek")); (tf.direnc || []).slice(0, 2).forEach(x => cz(x[0], "#EF4444", "direnç"));
   }
-  if (fv && kat.bulut) {
-    const S = await al(`fibo/s_${k.pz}/${fiboKod(k.pz, k.kod).replace("/", "-").replace(/\./g, "_")}.json`);
-    if (S && S.t) { const ilk = g.t[0], i0 = Math.max(0, S.t.findIndex(t => t >= ilk)), t = S.t.slice(i0);
-      cizgi(t, S.v5.slice(i0), "#F4F4F5", 2, 1, ""); cizgi(t, S.v8.slice(i0), "#4CAF50", 2, 2, ""); cizgi(t, S.v14.slice(i0), "#2E7D32", 2, 0, ""); }
+  const S = fv ? await al(`fibo/s_${k.pz}/${fiboKod(k.pz, k.kod).replace("/", "-").replace(/\./g, "_")}.json`) : null;
+  const ilk = g.t[0], i0 = S && S.t ? Math.max(0, S.t.findIndex(t => t >= ilk)) : 0;
+  if (S && S.t && kat.bulut) { const t = S.t.slice(i0);
+    cizgi(t, S.v5.slice(i0), "#F4F4F5", 2, 1, ""); cizgi(t, S.v8.slice(i0), "#4CAF50", 2, 2, ""); cizgi(t, S.v14.slice(i0), "#2E7D32", 2, 0, ""); }
+  // alt panel (göstergedeki gibi): WT_CROSS_LB (WT1/WT2, OB/OS ±60/±53) + Stokastik RSI (K/D, +150 kaydırmalı; 170/200/230)
+  const alt = document.getElementById("tv-alt"); if (alt) alt.innerHTML = "";
+  if (alt && S && S.wt1 && kat.osil !== false) {
+    const c2 = L.createChart(alt, {height: 150, layout: {background: {type: "solid", color: "#0B0B0C"}, textColor: "#A1A1AA", fontSize: 10, attributionLogo: false},
+      grid: {vertLines: {color: "#17181B"}, horzLines: {color: "#17181B"}}, rightPriceScale: {borderColor: "#2A2B30"}, timeScale: {visible: false}, crosshair: {mode: 0},
+      localization: {locale: "tr-TR", priceFormatter: p => tr(p, 0)}, handleScale: false, handleScroll: false});
+    const t = S.t.slice(i0), ln = (d, renk, kal = 1, ofs = 0) => { const x = c2.addLineSeries({color: renk, lineWidth: kal, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+      x.setData(t.map((z, i) => ({time: z, value: d[i] == null ? null : d[i] + ofs})).filter(z => z.value != null)); return x; };
+    const w1 = ln(S.wt1.slice(i0), "#22C55E", 2); ln(S.wt2.slice(i0), "#EF4444", 1);
+    if (S.srK) { ln(S.srK.slice(i0), "#2962FF", 1, 150); ln(S.srD.slice(i0), "#FF6D00", 1, 150); }
+    [[0, "#787B86", 2], [60, "#EF4444", 0], [53, "#EF4444", 2], [-60, "#22C55E", 0], [-53, "#22C55E", 2], [230, "#787B86", 0], [200, "#787B86", 2], [170, "#787B86", 0]]
+      .forEach(([y, c, st]) => w1.createPriceLine({price: y, color: c, lineWidth: 1, lineStyle: st, axisLabelVisible: false}));
+    const mk = []; for (let i = 1; i < t.length; i++) { const a = S.wt1[i0 + i - 1], b = S.wt2[i0 + i - 1], c = S.wt1[i0 + i], d = S.wt2[i0 + i];
+      if ([a, b, c, d].some(v => v == null)) continue; if (a <= b && c > d) mk.push({time: t[i], position: "belowBar", color: "#22C55E", shape: "circle", size: 0.5});
+      if (a >= b && c < d) mk.push({time: t[i], position: "aboveBar", color: "#EF4444", shape: "circle", size: 0.5}); }
+    w1.setMarkers(mk);
+    const es = () => { const r = ch.timeScale().getVisibleLogicalRange(); if (r) c2.timeScale().setVisibleLogicalRange(r); };
+    ch.timeScale().subscribeVisibleLogicalRangeChange(es); setTimeout(es, 50);
+    new ResizeObserver(() => c2.applyOptions({width: alt.clientWidth})).observe(alt);
   }
   // sinyal işareti
   if (fv && (fv.sin || []).length) mum.setMarkers((fv.sin || []).map(s => ({time: s.tarih, position: "belowBar", color: "#E8B84A", shape: "arrowUp", text: "FiboAyna"})).sort((a, b) => a.time < b.time ? -1 : 1));
@@ -376,8 +395,8 @@ async function tvGrafik(kutu, g, tf, k, fv) {
   return true;
 }
 function tvAraclar(fv) {   // grafik katmanları (telefonda saklanır)
-  const kat = LS.get("kk_grafik_kat", {sma: true, fibo: true, bulut: true});
-  const d = [["sma", "SMA 20/50/200"], ...(fv ? [["fibo", "FiboAyna seviyeleri"], ["bulut", "VIDYA 5-8-14"]] : [])];
+  const kat = Object.assign({osil: true}, LS.get("kk_grafik_kat", {sma: true, fibo: true, bulut: true}));
+  const d = [["sma", "SMA 20/50/200"], ...(fv ? [["fibo", "FiboAyna seviyeleri"], ["bulut", "VIDYA 5-8-14"], ["osil", "WT + StochRSI"]] : [])];
   return `<div class="cip" style="margin:6px 0 4px">${d.map(([k, a]) => `<button data-gk="${k}" class="${kat[k] ? "s" : ""}">${a}</button>`).join("")}</div>`;
 }
 function grafikSvg(g, tf) {
@@ -420,7 +439,7 @@ async function varlik(kod) {
       <span class="rozet ${etkSinif(k.etiket)}">${esc(k.etiket)} · ${tr(k.puan, 0)}/100</span></div>
       <div class="f"><b id="v-fiyat">${para}${fy(g.fiyat)}</b><span id="v-deg" class="${rk(g.degisim)}">${yz(g.degisim, 2)}</span><br><span class="not" style="font-size:10.5px;font-weight:600">gün ${fy(k.gun.dusuk)} – ${fy(k.gun.yuksek)}</span></div></div>
       <div class="metin" style="margin-top:8px;color:var(--s)">${esc(k.baslik)}</div><div id="v-not" style="font-size:10.5px;color:var(--s2);margin-top:6px"></div></div>
-    <div id="tv-arac"></div><div id="tv-kutu" style="width:100%;min-height:340px;border-radius:14px;overflow:hidden;background:#0B0B0C">${grafikSvg(k.grafik, g)}</div>
+    <div id="tv-arac"></div><div id="tv-kutu" style="width:100%;min-height:340px;border-radius:14px 14px 0 0;overflow:hidden;background:#0B0B0C">${grafikSvg(k.grafik, g)}</div><div id="tv-alt" style="width:100%;border-radius:0 0 14px 14px;overflow:hidden;background:#0B0B0C"></div>
     <h2>Zaman dilimleri</h2><div class="tfk">${Object.entries(k.tf).map(([t, a]) => `<div><small>${TF_AD[t] || t}</small><b class="${rk(a.puan - 50)}">${esc(a.etiket)}</b><div class="cub"><div style="width:${a.puan}%"></div></div></div>`).join("")}</div>
     <h2>Teknik yorum</h2><div class="kart metin">${md(k.yorum)}</div>`;
   const FD = await fiboAl(k.pz), FV = FD && FD.varliklar ? FD.varliklar[fiboKod(k.pz, k.kod)] : null;
@@ -447,7 +466,7 @@ async function varlik(kod) {
   el.innerHTML = h;
   { const kutu = document.getElementById("tv-kutu"), arac = document.getElementById("tv-arac");
     const ciz = () => tvGrafik(kutu, k.grafik, g, k, FV).then(ok => { if (ok) { arac.innerHTML = tvAraclar(FV);
-      arac.querySelectorAll("[data-gk]").forEach(b => b.onclick = () => { const kt = LS.get("kk_grafik_kat", {sma: true, fibo: true, bulut: true}); kt[b.dataset.gk] = !kt[b.dataset.gk]; LS.set("kk_grafik_kat", kt); ciz(); }); } });
+      arac.querySelectorAll("[data-gk]").forEach(b => b.onclick = () => { const kt = LS.get("kk_grafik_kat", {sma: true, fibo: true, bulut: true}); kt[b.dataset.gk] = !(kt[b.dataset.gk] ?? true); LS.set("kk_grafik_kat", kt); ciz(); }); } });
     if (kutu && k.grafik && k.grafik.t) ciz(); }
   { const c = canliAl({kod: k.kod, pz: k.pz, tarih: k.grafik.t[k.grafik.t.length - 1]});
     if (c && k.pz !== "kripto") { document.getElementById("v-fiyat").textContent = para + fy(c.p); const d = document.getElementById("v-deg"); d.textContent = yz(c.d, 2); d.className = rk(c.d); }
