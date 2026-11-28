@@ -1,0 +1,28 @@
+name: FiboAyna çizim kontrolü
+
+# Seçilen sembollerde bugünkü FiboAyna çizimini yazdırır (TradingView ile karşılaştırma için)
+on:
+  workflow_dispatch:
+    inputs:
+      semboller:
+        description: 'Semboller (virgülle: THYAO,PGSUS,BTC/USDT,ALTIN,AAPL.US)'
+        required: true
+        default: 'THYAO,PGSUS,ASELS,BTC/USDT,ETH/USDT,ALTIN,GUMUS,AAPL.US'
+
+permissions:
+  contents: read
+
+jobs:
+  kontrol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FIBO_ANAHTAR: ${{ secrets.FIBO_ANAHTAR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt cryptography numba
+      - run: python fibo_yukle.py fibo_tarama kontrol "${{ inputs.semboller }}"
