@@ -718,6 +718,7 @@ function varlikTemelHtml(t, pz, para, tarih) {
   let h = `<h2>Temel görünüm</h2><div class="kart"><div class="satir"><div class="a"><b><span class="rozet ${gorunumSinif(t["Görünüm"])}" style="margin:0">${esc(t["Görünüm"] || "–")}</span></b>
       <span style="margin-top:6px">genel skor ${sk == null ? "–" : tr(sk, 1)}/5${t["Değer etiketi"] ? " · model değere göre " + esc(t["Değer etiketi"]).toLowerCase() : ""}</span></div>
       ${kr && t["Temel puan"] != null ? `<div class="f"><b style="font-size:20px;color:var(--a)">${t["Temel puan"]}</b><span class="not">temel puan</span></div>` : ""}</div>
+      ${t.Not ? `<div class="uyari" style="margin-top:6px">${esc(t.Not)}</div>` : ""}
       <div class="not" style="font-size:11px;margin-top:6px">${kr ? "Kriptoların bilançosu yoktur; temel görünüm arz yapısı, likidite, değerleme bantları, türev piyasa ve ağ kullanımına dayanır." : "Emtiaların bilançosu yoktur; temel görünüm vadeli eğri, spekülatör konumu (CFTC), mevsimsellik ve değerleme bantlarına dayanır."}</div></div>
     <div class="izgara">${m("Model değer", para + fy(t["Model değer"]), "potansiyel " + yzD(t.Potansiyel, 0), rk(t.Potansiyel))}
       ${m("Mayer çarpanı", t.Mayer == null ? "–" : tr(t.Mayer, 2), "fiyat / 200G ort.")}

@@ -386,7 +386,7 @@ def vadeli_yorum(v, fiyat_7g=None):
     if not v: return ""
     C = []
     if v.get("oi_7g") is not None:
-        t = f"Vadeli açık pozisyon son 7 günde {'+' if v['oi_7g'] > 0 else ''}%{v['oi_7g'] * 100:.1f}".replace(".", ",")
+        t = f"Vadeli açık pozisyon son 7 günde {'+' if v['oi_7g'] > 0 else '-'}%{abs(v['oi_7g']) * 100:.1f}".replace(".", ",")
         if fiyat_7g is not None:
             if v["oi_7g"] > 0.05 and fiyat_7g > 0: t += " arttı ve fiyat da yükseldi: yeni para girişiyle desteklenen bir yükseliş."
             elif v["oi_7g"] > 0.05 and fiyat_7g < 0: t += " arttı ancak fiyat düştü: açığa (short) pozisyonlar artıyor."
@@ -398,8 +398,9 @@ def vadeli_yorum(v, fiyat_7g=None):
         C.append(f"Vadeli piyasada son 7 günde agresif alım payı %{v['taker_7g'] * 100:.0f}" + (" (alıcılar baskın)." if v["taker_7g"] > 0.52 else " (satıcılar baskın)." if v["taker_7g"] < 0.48 else "."))
     lq = v.get("likidasyon")
     if lq:
+        b_ = lambda x: f"{x / 1e3:,.0f}".replace(",", ".")
         C.append(f"Son likidasyonların {'uzun (long)' if lq['long'] > lq['short'] else 'kısa (short)'} pozisyonlarda yoğunlaştığı görülüyor "
-                 f"(long {lq['long'] / 1e3:,.0f} bin $, short {lq['short'] / 1e3:,.0f} bin $).".replace(",", "."))
+                 f"(long {b_(lq['long'])} bin $, short {b_(lq['short'])} bin $).")
     return " ".join(C)
 
 

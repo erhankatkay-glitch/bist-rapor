@@ -161,8 +161,14 @@ def kripto(klasor):
         if fy is not None and fy < 0: r["Güçlü"].append("Fonlama oranı negatif; piyasa aşırı karamsar, ani yükseliş (short squeeze) riski.")
         time.sleep(0.3)
     # Arz & likidite puanı (tüm coinler, 0–100, liste içi yüzdelik): büyüklük, likidite, seyrelme, model değer potansiyeli
+    # Sıralamaya girmeyenler: stablecoinler, hisse / ETF tokenları, CoinGecko'da eşleşmeyenler (arz verisi yok)
+    for k, v in satir.items():
+        b = v["Baz"].upper(); f = v.get("Fiyat") or 0
+        if b in KR.STABIL or (0.97 <= f <= 1.03 and (v.get("Volatilite") or 1) < 0.05): v["Not"] = "Stablecoin: temel puan hesaplanmaz."
+        elif KR.hisse_tokeni_mu(b): v["Not"] = "Hisse / ETF tokenı: temel puan hesaplanmaz (dayanak varlığın kendi analizine bakın)."
+        elif not v.get("Sıra"): v["Not"] = "CoinGecko ilk 1000 dışında: arz verisi yok, temel puan hesaplanmaz."
     df = pd.DataFrame({k: {"sira": v.get("Sıra"), "lik": v.get("Hacim / PD"), "sey": v.get("PD / FDV"), "pot": v.get("Potansiyel"), "skor": v.get("Skor")}
-                       for k, v in satir.items()}).T.astype(float)
+                       for k, v in satir.items() if not v.get("Not")}).T.astype(float)
     if len(df):
         yp = lambda s, ters=False: (s.rank(pct=True, ascending=not ters)).fillna(0.5)
         lik = df["lik"].clip(upper=0.5)
