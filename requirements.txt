@@ -8,3 +8,4 @@ requests>=2.31
 tcmb>=0.5
 lxml
 openpyxl
+pypdf
