@@ -70,6 +70,11 @@ def gun_ici_tamamla(gunluk, gunici, kod):
         idx = g.index.tz_convert(_yerel_tz(kod)) if g.index.tz is not None else g.index
         gun = pd.Series(idx.date, index=g.index)
         out = gunluk.astype(float) if isinstance(gunluk, pd.Series) else gunluk.astype({c: float for c in gunluk.columns if c in ("Open", "High", "Low", "Close", "Volume")})
+        # Yahoo bazen günün satırını KAPANIŞI BOŞ (NaN) verir (ör. 27.11.2026 BIST hisseleri): o satır "var" sayılırsa gün hiç
+        # tamamlanmaz ve analiz bir önceki günde kalır. Boş kapanışlı satırlar atılır, gün içi veriden yeniden kurulur.
+        out = out[out.notna()] if isinstance(out, pd.Series) else out[out["Close"].notna()]
+        if len(out) == 0:
+            return gunluk
         son_gun = pd.Timestamp(out.index[-1]).normalize()
         for d, parca in g.groupby(gun.values):
             t = pd.Timestamp(d)

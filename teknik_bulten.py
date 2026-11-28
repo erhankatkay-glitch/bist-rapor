@@ -213,6 +213,12 @@ def _yaz(piyasa, analizler, endeks, ref, klasor, hata=None):
     try: ekler = _ekler(piyasa, analizler, endeks, satir)
     except Exception as ex: ekler = {}; print("Bülten ekleri:", ex, file=sys.stderr)
     SON[piyasa] = {"analizler": analizler, "endeks": endeks, "satir": satir}
+    if piyasa != "kripto_tl":   # hızlı uygulama: piyasadaki tüm varlıkların karnesi (karne/<piyasa>/)
+        try:
+            import karne as KA
+            KA.yaz_piyasa(piyasa, analizler, klasor, endeks)
+        except Exception as ex:
+            print("Karneler yazılamadı:", ex, file=sys.stderr)
     hedef = os.path.join(klasor, piyasa)
     shutil.rmtree(hedef, ignore_errors=True); os.makedirs(os.path.join(hedef, "grafik"), exist_ok=True); os.makedirs(os.path.join(hedef, "rapor"), exist_ok=True)
     one = sorted(analizler, key=lambda s: -(s["puan"] or 0))
