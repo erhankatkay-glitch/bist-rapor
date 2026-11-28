@@ -1,0 +1,59 @@
+name: FiboAyna günlük tarama
+
+# Kullanıcının FiboAyna göstergesi (şifreli) ile günlük çizim + ekibin seçtiği sinyaller → bulten/fibo/<piyasa>.json
+# Yalnız sonuçlar (seviyeler, bölgeler, sinyaller, puan) yayınlanır; kurallar şifreli kalır.
+on:
+  schedule:
+    - cron: "50 15 * * 1-5"   # 18:50 TSİ  BIST kapanışından sonra
+    - cron: "45 21 * * 1-5"   # 00:45 TSİ  ABD kapanışı + emtia
+    - cron: "15 0 * * *"      # 03:15 TSİ  kripto günlük mum kapanışı
+  workflow_dispatch:
+    inputs:
+      piyasalar:
+        description: 'Piyasalar (JSON liste)'
+        required: false
+        default: '["bist","abd","kripto","emtia"]'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fibo-tarama-${{ github.event.schedule || 'el' }}
+  cancel-in-progress: false
+
+jobs:
+  hazirla:
+    runs-on: ubuntu-latest
+    outputs:
+      liste: ${{ steps.s.outputs.liste }}
+    steps:
+      - id: s
+        run: |
+          case "${{ github.event.schedule }}" in
+            "50 15 * * 1-5") echo 'liste=["bist"]' >> $GITHUB_OUTPUT ;;
+            "45 21 * * 1-5") echo 'liste=["abd","emtia"]' >> $GITHUB_OUTPUT ;;
+            "15 0 * * *") echo 'liste=["kripto"]' >> $GITHUB_OUTPUT ;;
+            *) echo 'liste=${{ inputs.piyasalar || '["bist","abd","kripto","emtia"]' }}' >> $GITHUB_OUTPUT ;;
+          esac
+  tara:
+    needs: hazirla
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        piyasa: ${{ fromJSON(needs.hazirla.outputs.liste) }}
+    env:
+      FIBO_ANAHTAR: ${{ secrets.FIBO_ANAHTAR }}
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt cryptography numba
+      - name: Tara
+        run: python -u fibo_yukle.py fibo_tarama tara cikti ${{ matrix.piyasa }} 700
+      - name: Yayınla
+        run: python yayinla.py cikti "FiboAyna ${{ matrix.piyasa }} $(date -u +%FT%H%M)"
