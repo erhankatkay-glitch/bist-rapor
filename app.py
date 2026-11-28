@@ -385,7 +385,7 @@ def _sir(ad):
 
 
 @st.cache_data(ttl=6 * 3600, show_spinner=False, max_entries=300)
-def _ekip_yorum_onb(girdi, anahtar_var):
+def _ekip_yorum_onb(girdi, anahtar_var, surum=0):
     import llm_katman as LLM
     r = LLM.yorum_metinden(girdi, _sir("GEMINI_API_KEY"), _sir("GROQ_API_KEY"))
     if r and r.get("hata"): raise _YorumHata(r["hata"])   # hatalar önbelleğe alınmaz (bir sonraki denemede yeniden sorulur)
@@ -397,7 +397,8 @@ class _YorumHata(Exception):
 
 
 def ekip_yorum(girdi):
-    try: return _ekip_yorum_onb(girdi, bool(_sir("GEMINI_API_KEY") or _sir("GROQ_API_KEY")))
+    import llm_katman as LLM
+    try: return _ekip_yorum_onb(girdi, bool(_sir("GEMINI_API_KEY") or _sir("GROQ_API_KEY")), LLM.SURUM)
     except _YorumHata as ex: return {"hata": str(ex)}
 
 

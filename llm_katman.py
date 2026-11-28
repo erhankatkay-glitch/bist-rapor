@@ -7,6 +7,7 @@ Model yeni rakam üretemez: çıktıdaki her sayı girdi metninde geçmiyorsa ç
 """
 import os, re, json, time, urllib.request
 
+SURUM = 2   # talimat/doğrulama değişince artır: uygulamadaki önbellek geçersiz olur
 _MODEL_ONB = {"zaman": 0, "ad": None}
 TALIMAT = (
     "Sen bir yatırım araştırma ekibinin editörüsün. Aşağıdaki yapılandırılmış rapordan 5-7 cümlelik, sade ve akıcı Türkçe bir özet yaz.\n"
