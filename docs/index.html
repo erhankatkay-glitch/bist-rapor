@@ -1144,7 +1144,7 @@ async function ozet() {
 // ---------------------------------------------------------------- FiboAyna (kullanıcının göstergesi; kurallar şifreli, burada yalnız sonuçlar: bulten/fibo/<pz>.json)
 const FIBO = {};
 async function fiboAl(pz) { if (!(pz in FIBO)) FIBO[pz] = (await al(`fibo/${pz}.json`)) || null; return FIBO[pz]; }
-const fiboKod = (pz, kod) => pz === "abd" ? String(kod).replace(/\.US$/, "") : kod;
+const fiboKod = (pz, kod) => kod;   // ABD dahil karne koduyla aynı (ör. AAPL.US)
 const fiboVKod = (pz, kod) => pz === "abd" && !String(kod).endsWith(".US") ? kod + ".US" : kod;
 const TIP_AD = {dusus: "↘ Düşüş yapısı", gz: "↗ Golden Zone", bant: "↔ Bant", yukselis: "↑ Yükseliş yapısı"};
 const puanEtk = p => p == null ? ["–", "n"] : p >= 75 ? ["GÜÇLÜ", "al"] : p >= 50 ? ["ORTA", "n"] : ["ZAYIF", "sat"];
