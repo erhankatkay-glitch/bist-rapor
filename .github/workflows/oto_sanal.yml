@@ -1,0 +1,29 @@
+name: Otomatik sanal hesaplar
+
+# Fırsat ve FiboAyna sinyallerine kendiliğinden giren paper-trading hesapları → bulten/oto/<kaynak>_<hesap>.json
+on:
+  schedule:
+    - cron: "25 */2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: oto-sanal
+  cancel-in-progress: false
+
+jobs:
+  hesap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python oto_sanal.py cikti
+      - run: python yayinla.py cikti "Oto sanal $(date -u +%FT%H%M)"

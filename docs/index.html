@@ -566,12 +566,42 @@ async function portfoy() {
   const el = document.getElementById("s-portfoy");
   el.innerHTML = "<div class='bos'>Yükleniyor…</div>";
   await karneListe(); await kurAl();
-  el.innerHTML = `<div class="cip" style="margin-top:4px">${[["varlik", "Varlıklarım"], ["sanal", "Sanal işlem"], ["takip", "Takip"], ["risk", "Risk hesap"]].map(([k, a]) => `<button data-p="${k}" class="${k === PF_SEKME ? "s" : ""}">${a}</button>`).join("")}</div><div id="pf-ic"></div>`;
+  el.innerHTML = `<div class="cip" style="margin-top:4px">${[["varlik", "Varlıklarım"], ["sanal", "Sanal işlem"], ["oto", "Oto hesaplar"], ["takip", "Takip"], ["risk", "Risk hesap"]].map(([k, a]) => `<button data-p="${k}" class="${k === PF_SEKME ? "s" : ""}">${a}</button>`).join("")}</div><div id="pf-ic"></div>`;
   el.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { PF_SEKME = b.dataset.p; LS.set("kk_pf_sekme", PF_SEKME); portfoy(); });
-  ({varlik: pfVarlik, sanal: pfSanal, takip: pfTakip, risk: pfRisk})[PF_SEKME]();
+  ({varlik: pfVarlik, sanal: pfSanal, oto: pfOto, takip: pfTakip, risk: pfRisk})[PF_SEKME]();
 }
 const ic = () => document.getElementById("pf-ic");
 const durumRenk = {ok: "var(--g)", uyari: "var(--a)", hata: "var(--r)"};
+
+// ---------------------------------------------------------------- Otomatik sanal hesaplar (sunucuda; bulten/oto/) — elle sanal işlemden ayrı
+const OTO_AD = {bist: "BIST · 100.000 TL", abd: "ABD · 1.000 $", emtia: "Emtia · 1.000 $", kripto_spot: "Kripto spot · 1.000 USDT", kripto_vadeli: "Kripto vadeli (izole) · 1.000 USDT"};
+const OTO_PARA = {TL: "₺", USD: "$", USDT: "$"};
+function ozkEgri(e) {
+  if (!e || e.length < 2) return "";
+  const v = e.map(x => x[1]), a = Math.min(...v), b = Math.max(...v), W = 300, H = 44, P = v.map((y, i) => `${(i / (v.length - 1) * W).toFixed(1)},${(H - 4 - (b > a ? (y - a) / (b - a) : .5) * (H - 8)).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:44px;margin-top:6px"><polyline points="${P}" fill="none" stroke="${v[v.length - 1] >= v[0] ? "#22C55E" : "#EF4444"}" stroke-width="2"/></svg>`;
+}
+async function pfOto() {
+  const kaynak = LS.get("kk_oto_kaynak", "firsat");
+  const H = Object.keys(OTO_AD), D = await Promise.all(H.map(h => al(`oto/${kaynak}_${h}.json`)));
+  await karneListe();
+  let h = `<div class="cip">${[["firsat", "Fırsatlar"], ["fibo", "FiboAyna"]].map(([k, a]) => `<button data-ok="${k}" class="${k === kaynak ? "s" : ""}">${a}</button>`).join("")}</div>
+    <div class="not" style="font-size:11px;margin:-2px 2px 8px">${kaynak === "firsat" ? "Fırsatlar" : "FiboAyna"} sinyallerine kendiliğinden giren sanal hesaplar: her işleme sabit tutar (BIST 20.000 TL, diğerleri 200 $), aynı anda en çok 5 işlem, puanı en yüksek sinyaller önce.
+    Giriş, stop ve çıkışlar sinyal sisteminin kendisiyle aynı; hesaplar yalnız para yönetimini gösterir. Gerçek para ve emir yok. Senin elle tuttuğun sanal defterden ayrıdır.</div>`;
+  H.forEach((ad, i) => { const S = D[i]; if (!S) { h += `<div class="kart"><b>${OTO_AD[ad]}</b><div class="not">Henüz başlamadı.</div></div>`; return; }
+    const o = S.ozet || {}, pr = OTO_PARA[S.para] || "";
+    h += `<details class="kart"${i === 0 ? " open" : ""}><summary><b>${OTO_AD[ad]}</b> · <span class="${rk(o.getiri)}">${yz(o.getiri, 1)}</span></summary>
+      <div class="izgara" style="margin-top:8px">${[["Özkaynak", pr + tr(o.ozkaynak, 0)], ["Kapanan", `${o.kapanan} · %${o.kazanma == null ? "–" : tr(o.kazanma * 100, 0)}`], ["En büyük düşüş", yz(o.en_buyuk_dusus, 1)]]
+        .map(([a, b]) => `<div class="mini"><small>${a}</small><b>${b}</b></div>`).join("")}</div>${ozkEgri(S.egri)}
+      <div class="not" style="font-size:10.5px">${S.baslama ? "Başlangıç " + S.baslama.split("-").reverse().join(".") : ""}${S.kurallar && S.kurallar.kaldirac ? " · Kaldıraç: " + esc(S.kurallar.kaldirac) : ""}</div>
+      ${(S.acik || []).map(p => { const vk = fiboVKod(({bist: "bist", abd: "abd", emtia: "emtia"})[ad] || "kripto", p.kod);
+        return `<a class="dok" href="#v/${encodeURIComponent(vk)}" style="display:block;padding:7px 0;border-bottom:1px solid var(--c)"><div class="satir"><div class="a"><b>${esc(String(p.kod).split("/")[0])} ${p.yon < 0 ? '<span class="etk sat">SAT</span>' : '<span class="etk al">AL</span>'}${p.kaldirac ? ` <span class="etk n">${p.kaldirac}x</span>` : ""}</b>
+          <span>giriş ${fy(p.giris)} · ${pr}${tr(p.tutar, 0)}${p.puan != null ? " · puan " + tr(p.puan, 0) : ""}</span></div><div class="f"><b class="${rk(p.kar_simdi)}">${p.kar_simdi >= 0 ? "+" : ""}${pr}${tr(p.kar_simdi, 0)}</b><span class="not">${p.R_simdi == null ? "" : tr(p.R_simdi, 2) + "R"}</span></div></div></a>`; }).join("") || "<div class='not' style='margin-top:6px'>Açık işlem yok.</div>"}
+      ${(S.kapali || []).length ? `<div class="not" style="margin-top:8px;font-size:11px">Son kapananlar</div>` + S.kapali.slice(-8).reverse().map(x => `<div class="satir" style="font-size:12px;padding:4px 0"><span>${esc(String(x.kod).split("/")[0])}${x.kaldirac ? " " + x.kaldirac + "x" : ""} · ${esc(x.sebep || "")}</span><b class="${rk(x.kar)}">${x.kar >= 0 ? "+" : ""}${pr}${tr(x.kar, 0)}</b></div>`).join("") : ""}
+    </details>`; });
+  ic().innerHTML = h;
+  ic().querySelectorAll("[data-ok]").forEach(b => b.onclick = () => { LS.set("kk_oto_kaynak", b.dataset.ok); pfOto(); });
+}
 
 function pfVarlik() {
   const metin = LS.get("kk_pf_metin", "");

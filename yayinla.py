@@ -8,7 +8,7 @@ alt klasör/dosya bazında değiştirilir (diğer piyasaların durumu korunur).
 Kullanım: python yayinla.py <cikti_klasoru> "<mesaj>"   (GH_URL ortam değişkeni: kimlikli depo adresi)"""
 import os, sys, shutil, subprocess, tempfile, time, random
 
-ALT_BIRIM = {"firsat", "durum", "donem", "tarama", "rejim", "karne", "canli", "temel", "pdf", "fibo"}
+ALT_BIRIM = {"firsat", "durum", "donem", "tarama", "rejim", "karne", "canli", "temel", "pdf", "fibo", "oto"}
 
 
 def sh(*a, cwd=None, kontrol=True):

@@ -625,3 +625,19 @@ def test_temel_karne_ve_degisim():
     assert K["izlenen"]["t0"] == "2026-11-01" and K["guncel"] == ["A", "C"]
     O = TK.degisim(G)["olaylar"]
     assert {(o["tur"], o["kod"]) for o in O} == {("liste", "C"), ("liste_cikti", "B"), ("cot", "SEKER"), ("kpuan", "X")}
+
+
+def test_oto_sanal_kaldirac_ve_hesap():
+    import oto_sanal as O
+    assert O.kaldirac_sec(0.02) == 20 and O.kaldirac_sec(0.04) == 10 and O.kaldirac_sec(0.08) == 5 and O.kaldirac_sec(0.15) is None
+    H = O.HESAP["bist"]; s = "2026-11-28T10:00+00:00"
+    I = {str(i): {"id": str(i), "kod": f"K{i}", "yon": 1, "giris": 10, "risk_yuzde": 0.05, "puan": i, "acilis": "2026-11-28", "acik": True, "R_simdi": 0, "R_son": None} for i in range(8)}
+    S = O.guncelle({}, "firsat", "bist", H, I, s)
+    assert len(S["acik"]) == 5 and {p["kod"] for p in S["acik"]} == {"K7", "K6", "K5", "K4", "K3"} and S["nakit"] == 0
+    I["7"].update(acik=False, R_son=2.0)
+    S = O.guncelle(S, "firsat", "bist", H, I, "2026-11-29T10:00+00:00")
+    k = S["kapali"][0]; assert k["kod"] == "K7" and abs(k["kar"] - (20000 * 0.1 - 20000 * 0.004)) < 1e-6
+    assert len(S["acik"]) == 5    # boşalan yere sıradaki (K2) girdi
+    I2 = {"x": {"id": "x", "kod": "BTC/USDT", "yon": -1, "giris": 100, "risk_yuzde": 0.03, "puan": 50, "acilis": "2026-11-28", "acik": True, "R_simdi": 0, "R_son": None}}
+    assert O.guncelle({}, "firsat", "kripto_spot", O.HESAP["kripto_spot"], I2, s)["acik"] == []   # spotta SAT yok
+    assert O.guncelle({}, "firsat", "kripto_vadeli", O.HESAP["kripto_vadeli"], I2, s)["acik"][0]["kaldirac"] == 10
