@@ -324,3 +324,5 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - VERİ HATASI (düzeltildi): rejim.genislik — tek hissenin tatil satırı (30–31.05.2026) 200 günlük genişliği aylarca %0 yapıyordu;
   yalnız hisselerin en az yarısının işlem gördüğü günler kullanılıyor.
 
+- Canlı fiyatlar (canli.py, canli.yml): seans açıkken 15 dk'da bir canli/<bist|abd|emtia>.json; BIST kapanış sonrası resmi kapanış (fast_info).
+  Hızlı uygulama canlı fiyatı yalnız karneden yeniyse gösterir; kripto fiyatları tarayıcıda Binance'ten. Analiz metni kapanış/12:10/18:10 karnesinden.
