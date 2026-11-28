@@ -446,7 +446,8 @@ def test_opsiyon_bs_maxpain_carpiklik():
     assert 0.53 < d < 0.56 and g > 0 and v > 0 and t < 0
     assert abs(OP.bs(100, 100, 0.25, 0.5, "P")[0] - (d - 1)) < 1e-12
     vade = dt_.datetime(2027, 1, 29, 8, tzinfo=dt_.timezone.utc)
-    L = [{"vade": vade, "vade_ad": "29JAN27", "strike": k, "tip": t_, "iv": iv, "oi": oi, "hacim": 0, "alt": 100, "mark": 0}
+    assert OP.vade_tr("29JAN27") == "29 Oca 2027"
+    L = [{"vade": vade, "vade_ad": "29 Oca 2027", "strike": k, "tip": t_, "iv": iv, "oi": oi, "hacim": 0, "alt": 100, "mark": 0}
          for k, t_, iv, oi in [(80, "P", .70, 500), (90, "P", .60, 300), (100, "P", .50, 100), (100, "C", .50, 100),
                                (110, "C", .48, 300), (120, "C", .47, 50), (90, "C", .55, 10), (110, "P", .5, 10)]]
     assert OP.max_pain(L) == 100                                 # 100: ödeme 200 (90: 1200, 110: 1300)

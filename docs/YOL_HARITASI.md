@@ -91,7 +91,9 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
   8 emtianın vade yapısı (contango/backwardation). Sabah iş akışında dunya/ozet.json; Keşfet › Dünya (alt menü Piyasalar), ana sayfa DAX/FTSE/Nikkei/
   Hang Seng/EUR/USD kartları, çekmece; sabah özetinde Asya ve ters eğri maddesi; Telegram kartı Pazartesi ve eğri işareti değişince.
   Not: app.py yerel modülleri dosyası değişince yeniden yükler (Streamlit Cloud eski modül hatası).
-- 13. Opsiyon: BTC/ETH için Deribit'in herkese açık verisi (IV, Greeks).
+- 13. ✅ TAMAM (28.11): opsiyon.py (Deribit herkese açık API) — DVOL + 1 yıllık sıra, gerçekleşen oynaklık/prim, vade yapısı, 25Δ çarpıklık, P/C (OI, hacim),
+  büyük vadelerde max pain, OI duvarları, beklenen hareket; ATM greeks (Black-Scholes). Kripto iş akışında (4 saatte bir) opsiyon/ozet.json;
+  Telegram kartı Cuma sabahı (vade günü) ve DVOL %15+ sıçramada; Emtia & Kripto bölümü; BTC/ETH teknik karnesi + PDF; sözlük; sabah özeti.
 - 14. Altı rollü araştırma ekibi (kural tabanlı; ücretsiz dil modeli anahtarı gelirse yorum katmanı).
   - Kullanıcının yüklediği erhankatkay-glitch/agency-agents (MIT) rol dosyaları şablon olarak kullanılacak (kullanıcı isteği, 27.11):
     finance-investment-researcher, finance-financial-analyst, academic-statistician, testing-test-results-analyzer, testing-reality-checker.

@@ -17,6 +17,7 @@ import os, sys, json, math, datetime as dt
 import numpy as np
 
 API = "https://www.deribit.com/api/v2/public/"
+AY_TR = ["", "Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
 AY = {"JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6, "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12}
 
 
@@ -33,13 +34,19 @@ def vade_coz(s):
     return dt.datetime(y, a, g, 8, 0, tzinfo=dt.timezone.utc)
 
 
+def vade_tr(s):
+    """'4DEC26' → '4 Ara 2026'."""
+    try: v = vade_coz(s); return f"{v.day} {AY_TR[v.month]} {v.year}"
+    except Exception: return s
+
+
 def enstrumanlar(cur):
     """book summary → [{vade, strike, tip C/P, iv (ondalık), oi (coin), hacim (coin), alt (dayanak), mark (coin)}]"""
     out = []
     for x in _al("get_book_summary_by_currency", currency=cur, kind="option"):
         try:
             _, v, k, t = x["instrument_name"].split("-")
-            out.append({"vade": vade_coz(v), "vade_ad": v, "strike": float(k), "tip": t, "iv": (x.get("mark_iv") or 0) / 100,
+            out.append({"vade": vade_coz(v), "vade_ad": vade_tr(v), "strike": float(k), "tip": t, "iv": (x.get("mark_iv") or 0) / 100,
                         "oi": float(x.get("open_interest") or 0), "hacim": float(x.get("volume") or 0),
                         "alt": float(x.get("underlying_price") or 0), "mark": float(x.get("mark_price") or 0)})
         except Exception:
@@ -159,11 +166,12 @@ def yorumla(o):
     dv = o.get("dvol")
     if dv:
         dil = dv["yuzdelik"]
-        m.append(f"DVOL {dv['deger']:.0f}: son 1 yılın %{dil * 100:.0f}'lik diliminde — opsiyonlar "
+        m.append(f"DVOL {dv['deger']:.0f} (1 yıllık sıralamada 100 üzerinden {dil * 100:.0f}): opsiyonlar "
                  + ("pahalı (piyasa büyük hareket bekliyor)." if dil >= 0.8 else "ucuz (sakin beklenti; ani hareket riski fiyatlanmamış olabilir)." if dil <= 0.2 else "normal fiyatlı."))
     if o.get("oynaklik_primi") is not None:
         p = o["oynaklik_primi"]
-        m.append(f"Zımni oynaklık gerçekleşenden {abs(p) * 100:.0f} puan {'yüksek: piyasa geçmişten fazla hareket fiyatlıyor' if p > 0 else 'düşük: opsiyonlar geçmiş harekete göre ucuz'}.")
+        if abs(p) < 0.02: m.append("Zımni oynaklık gerçekleşen oynaklığa yakın: opsiyonlar geçmiş harekete göre makul fiyatlı.")
+        else: m.append(f"Zımni oynaklık gerçekleşenden {abs(p) * 100:.0f} puan {'yüksek: piyasa geçmişten fazla hareket fiyatlıyor' if p > 0 else 'düşük: opsiyonlar geçmiş harekete göre ucuz'}.")
     if o.get("skew_25d") is not None:
         s = o["skew_25d"]
         m.append(f"25Δ çarpıklık {s:+.1f} puan ({o['skew_vade']}): ".replace(".", ",", 1)
@@ -188,7 +196,7 @@ def karne_satirlari(p):
     """Teknik analiz karnesi satırları (ad, değer, yorum, yön)."""
     s = []; tl = lambda x: f"{x:,.0f}".replace(",", ".")
     if p.get("dvol"):
-        d = p["dvol"]; s.append(("Opsiyon: DVOL (30 gün zımni oynaklık)", f"{d['deger']:.0f} · 1 yılın %{d['yuzdelik'] * 100:.0f}'i",
+        d = p["dvol"]; s.append(("Opsiyon: DVOL (30 gün zımni oynaklık)", f"{d['deger']:.0f} · 1 yıllık sıra {d['yuzdelik'] * 100:.0f}/100",
                                  "Opsiyon piyasasının beklediği yıllık oynaklık; yüksekse büyük hareket bekleniyor.", 0))
     if p.get("skew_25d") is not None:
         k = p["skew_25d"]; s.append(("Opsiyon: 25Δ çarpıklık", f"{k:+.1f} puan".replace(".", ","),
@@ -211,7 +219,7 @@ def kart_ciz(o, yol):
     for c, p in o["paralar"].items():
         d = p.get("dvol") or {}
         sat = [{"sol": "DVOL", "sag": f"{d.get('deger', 0):.0f}", "sag_renk": K.C["altin"],
-                "alt": f"1 yılın %{d.get('yuzdelik', 0) * 100:.0f}'lik dilimi · gerçekleşen 30g {_y(p.get('gerceklesen_30g'), 0)}"},
+                "alt": f"1 yıllık sıra {d.get('yuzdelik', 0) * 100:.0f}/100 · gerçekleşen 30g {_y(p.get('gerceklesen_30g'), 0)}"},
                {"sol": "25Δ çarpıklık", "sag": f"{p['skew_25d']:+.1f}".replace(".", ",") if p.get("skew_25d") is not None else "–",
                 "sag_renk": K.C["kirmizi"] if (p.get("skew_25d") or 0) > 2 else K.C["yesil"] if (p.get("skew_25d") or 0) < -2 else K.C["soluk"],
                 "alt": "pozitif = put'lar pahalı"},

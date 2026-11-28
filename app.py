@@ -776,7 +776,7 @@ def opsiyon_bolumu():
         t_ = dt.datetime.fromisoformat(p["zaman"]).astimezone(ZoneInfo("Europe/Istanbul"))
         st.caption(f"Deribit herkese açık verisi · {t_:%d.%m %H:%M} TSİ · endeks {tl(p['endeks'])} $")
         sk = p.get("skew_25d"); pc = p.get("pc_oi")
-        hucre = [(f"{d.get('deger', 0):.0f}", "DVOL", f"1 yılın %{d.get('yuzdelik', 0) * 100:.0f}'i"),
+        hucre = [(f"{d.get('deger', 0):.0f}", "DVOL", f"1 yıllık sıra {d.get('yuzdelik', 0) * 100:.0f}/100"),
                  (yz(p.get("gerceklesen_30g"), 0), "gerçekleşen 30g", "geçmiş oynaklık"),
                  (f"{sk:+.1f}".replace(".", ",") if sk is not None else "–", "25Δ çarpıklık", "+: put pahalı"),
                  (f"{pc:.2f}".replace(".", ",") if pc else "–", "put/call (OI)", "1 üstü korunma ağır"),
