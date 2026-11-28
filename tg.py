@@ -27,6 +27,21 @@ def buyuk(s):
 
 
 AYRAC = "━━━━━━━━━━━━━━━━"
+UYG = "https://erhankatkay-glitch.github.io/bist-rapor/"
+# mesaj anahtarının başı → hızlı uygulamada açılacak bölüm (her mesajın altında "Uygulamada aç" düğmesi)
+UYG_BOLUM = {"firsat": "firsat", "rejim": "piyasa", "dunya": "piyasa", "korelasyon": "piyasa", "opsiyon": "piyasa", "yabanci": "piyasa",
+             "takvim": "piyasa", "haber": "haber", "sabah": "ozet", "alarm": "bildirim", "igne": "bildirim", "bulten": "piyasa",
+             "teknik": "piyasa", "durum": "ozet", "portfoy": "portfoy", "pf": "portfoy", "takip": "firsat", "temel": "piyasa/temel"}
+
+
+def uygulama_dugme(anahtar="", kod=None, metin=None):
+    """Telegram satır içi düğmesi: varlık verilirse hızlı uygulamada o varlığın sayfası, yoksa mesaj türüne uygun bölüm."""
+    import urllib.parse as _u
+    if kod:
+        return {"inline_keyboard": [[{"text": metin or f"📲 {kod} analizini aç", "url": UYG + "#v/" + _u.quote(str(kod), safe="")}]]}
+    bas = re.split(r"[:_]", str(anahtar or ""))[0]
+    bolum = UYG_BOLUM.get(bas, "ozet")
+    return {"inline_keyboard": [[{"text": metin or "📲 KATKAY uygulamasında aç", "url": UYG + "#" + bolum}]]}
 
 
 def simdi():
@@ -117,16 +132,20 @@ class Bot:
                                 "sil": (t + dt.timedelta(hours=omur)).isoformat(), "bag": list(bag or [])})
 
     # ---------------------------------------------------------------- gönderim
-    def mesaj(self, metin, anahtar, omur_saat, bag=None, yerine=True, notlu=True):
+    def mesaj(self, metin, anahtar, omur_saat, bag=None, yerine=True, notlu=True, dugme=None):
         """HTML metin; gerekirse birden çok parçaya bölünür. yerine=True: aynı anahtarlı eski mesajlar silinir.
         notlu=True: sona uyarı notu eklenir."""
         if notlu: metin = metin.rstrip() + "\n\n" + NOT
         if not self.aktif:
             print(f"[Telegram kapalı] {anahtar}:\n{re.sub('<[^>]+>', '', metin)[:1500]}\n"); return []
         ids = []
-        for parca in _parcala(metin):
-            j = self._api("sendMessage", {"chat_id": self.chat, "text": parca, "parse_mode": "HTML",
-                                          "disable_notification": True, "disable_web_page_preview": True})
+        parcalar = _parcala(metin)
+        for i_, parca in enumerate(parcalar):
+            veri = {"chat_id": self.chat, "text": parca, "parse_mode": "HTML", "disable_notification": True, "disable_web_page_preview": True}
+            if i_ == len(parcalar) - 1: veri["reply_markup"] = json.dumps(dugme or uygulama_dugme(anahtar), ensure_ascii=False)
+            j = self._api("sendMessage", veri)
+            if not j.get("ok") and "reply_markup" in veri:   # düğme reddedildiyse düğmesiz dene
+                veri.pop("reply_markup"); j = self._api("sendMessage", veri)
             if not j.get("ok"):   # HTML hatasında düz metin dene
                 j = self._api("sendMessage", {"chat_id": self.chat, "text": re.sub("<[^>]+>", "", parca), "disable_notification": True})
             if j.get("ok"): ids.append(j["result"]["message_id"])
@@ -134,11 +153,11 @@ class Bot:
         self._sonrasi(ids, anahtar, omur_saat, bag, yerine)
         return ids
 
-    def album(self, dosyalar, anahtar, omur_saat, bag=None, yerine=False):
+    def album(self, dosyalar, anahtar, omur_saat, bag=None, yerine=False, dugme=None):
         dosyalar = [(y, guvenli_aciklama(b)) for y, b in dosyalar]
-        return self._album(dosyalar, anahtar, omur_saat, bag, yerine)
+        return self._album(dosyalar, anahtar, omur_saat, bag, yerine, dugme)
 
-    def _album(self, dosyalar, anahtar, omur_saat, bag=None, yerine=False):
+    def _album(self, dosyalar, anahtar, omur_saat, bag=None, yerine=False, dugme=None):
         """dosyalar: [(yol, başlık)] — en fazla 10 görsel tek albümde."""
         if not self.aktif or not dosyalar: return []
         ids = []
@@ -149,12 +168,17 @@ class Bot:
                     files[f"f{i}"] = open(yol, "rb")
                     medya.append({"type": "photo", "media": f"attach://f{i}", "caption": bas[:1000], "parse_mode": "HTML"})
                 if len(medya) == 1:
-                    j = self._api("sendPhoto", {"chat_id": self.chat, "caption": medya[0]["caption"], "parse_mode": "HTML", "disable_notification": True},
-                                  files={"photo": files["f0"]}, timeout=120)
+                    rm = json.dumps(dugme or uygulama_dugme(anahtar), ensure_ascii=False)
+                    j = self._api("sendPhoto", {"chat_id": self.chat, "caption": medya[0]["caption"], "parse_mode": "HTML", "disable_notification": True,
+                                                "reply_markup": rm}, files={"photo": files["f0"]}, timeout=120)
+                    if not j.get("ok") and "parse" not in str(j.get("description", "")).lower():
+                        files["f0"].seek(0)   # düğme reddedildiyse düğmesiz gönder (kart her durumda gitsin)
+                        j = self._api("sendPhoto", {"chat_id": self.chat, "caption": medya[0]["caption"], "parse_mode": "HTML", "disable_notification": True},
+                                      files={"photo": files["f0"]}, timeout=120)
                     if not j.get("ok") and "parse" in str(j.get("description", "")).lower():   # HTML hatası: düz metinle tekrar
                         files["f0"].seek(0)
                         j = self._api("sendPhoto", {"chat_id": self.chat, "caption": re.sub("<[^>]+>", "", medya[0]["caption"]),
-                                                    "disable_notification": True}, files={"photo": files["f0"]}, timeout=120)
+                                                    "disable_notification": True, "reply_markup": rm}, files={"photo": files["f0"]}, timeout=120)
                     if j.get("ok"): ids.append(j["result"]["message_id"])
                 else:
                     j = self._api("sendMediaGroup", {"chat_id": self.chat, "media": json.dumps(medya, ensure_ascii=False),
@@ -166,9 +190,9 @@ class Bot:
         self._sonrasi(ids, anahtar, omur_saat, bag, yerine)
         return ids
 
-    def foto(self, yol, baslik, anahtar, omur_saat, bag=None):
-        """Tek görsel + HTML açıklama (her kart ayrı mesaj: açıklaması sohbette görünür)."""
-        return self.album([(yol, baslik)], anahtar, omur_saat, bag=bag, yerine=False)
+    def foto(self, yol, baslik, anahtar, omur_saat, bag=None, dugme=None):
+        """Tek görsel + HTML açıklama (her kart ayrı mesaj: açıklaması sohbette görünür) + 'uygulamada aç' düğmesi."""
+        return self.album([(yol, baslik)], anahtar, omur_saat, bag=bag, yerine=False, dugme=dugme)
 
     def belge(self, yol, ad, baslik, anahtar, omur_saat, yerine=False):
         if not self.aktif: return []
@@ -254,4 +278,14 @@ if __name__ == "__main__":
     elif len(sys.argv) > 1 and sys.argv[1] == "dene":
         b = Bot("deneme")
         ids = b.mesaj("✅ <b>Bağlantı testi</b>\nBu mesaj sessiz gönderildi ve 1 saat sonra otomatik silinecek.", "deneme", 1, notlu=False)
-        print("Gönderildi:", ids); b.kaydet()
+        print("Gönderildi:", ids)
+        try:   # yeni tasarımlı örnek kart + "uygulamada aç" düğmesi (rejim kartı, bülten verisiyle)
+            import urllib.request
+            import rejim as RJ
+            r = json.loads(urllib.request.urlopen("https://raw.githubusercontent.com/erhankatkay-glitch/bist-rapor/bulten/rejim/bist.json", timeout=20).read())
+            yol = RJ.kart_ciz(r, os.path.join(CIKTI, "telegram_test", "ornek_kart.png"))
+            print("Örnek kart:", b.foto(yol, "🧪 <b>Yeni tasarım örneği</b> · piyasa rejimi kartı\nAltındaki düğme hızlı uygulamayı açar. 1 saat sonra silinir.",
+                                       "deneme_kart", 1, dugme=uygulama_dugme(kod="XU100", metin="📲 BIST 100 analizini aç")))
+        except Exception as ex:
+            print("Örnek kart gönderilemedi:", ex)
+        b.kaydet()

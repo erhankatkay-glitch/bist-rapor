@@ -70,6 +70,9 @@ def ust_bant(ax, H, ust, sag=None, vurgu=None):
     Eski 'altın şerit + logo + başlık' düzeninin yerini alır; aynı yükseklikte (H−38 … H−84) kalır."""
     import datetime as _dt
     vurgu = vurgu or C["altin"]
+    import re as _re
+    m_ = _re.search(r"\s*·?\s*(\d{2}\.\d{2}\.\d{4})\s*$", str(ust))
+    if m_ and sag is None: ust, sag = str(ust)[:m_.start()], m_.group(1)   # tarih başlıkta tekrar etmesin: sağa
     hero = _hero()   # uygulamanın ana ekranındaki boğa–ayı görseli, aşağı doğru solarak
     if hero is not None:
         xl, yl = ax.get_xlim(), ax.get_ylim()
@@ -79,9 +82,6 @@ def ust_bant(ax, H, ust, sag=None, vurgu=None):
     t1 = _t(ax, x, H - 56, "KATKAY", 19, C["yazi"], "bold")
     _t(ax, _sag_kenar(ax, t1) + 6, H - 56, "YATIRIM", 19, C["altin"], "bold")
     _t(ax, x, H - 82, " ".join(str(ust).split()).replace(" · ", "  ·  "), 13.5, vurgu, "semibold")
-    import re as _re
-    m_ = _re.search(r"\s*·?\s*(\d{2}\.\d{2}\.\d{4})\s*$", str(ust))
-    if m_ and sag is None: ust, sag = str(ust)[:m_.start()], m_.group(1)   # tarih başlıkta tekrar etmesin: sağa
     if sag is None:
         sag = _dt.datetime.now(_dt.timezone(_dt.timedelta(hours=3))).strftime("%d.%m.%Y · %H:%M TSİ")
     if sag: _t(ax, W - 48, H - 56, sag, 14, C["soluk"], ha="right")
