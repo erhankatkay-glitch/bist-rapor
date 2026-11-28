@@ -29,7 +29,7 @@ def _tl(x, nd=2):
     return s
 
 
-SEBEP = {"hedef": "hedefe ulaştı", "stop": "stop oldu", "sure": "süre doldu", "süre": "süre doldu"}
+SEBEP = {"hedef": "3. hedefe ulaştı", "stop": "stop oldu", "başabaş": "hedef alındı, kalanı başabaşta kapandı", "sure": "süre doldu", "süre": "süre doldu"}
 
 
 def _r(x):
@@ -161,8 +161,9 @@ def rapor(s, temel=None, piyasa_ist=None, rejim=None, opsiyon=None, sermaye=10_0
     # --- 5) risk yöneticisi: rakamla kayıp
     stop = (dest[0] - 0.5 * at) if dest else p - 2 * at
     kayip = (p - stop) / p
-    R["risk"] += [f"Stop {_tl(stop)} {sym} (en yakın destek − 0,5 ATR) gelirse kayıp {_y(-kayip)} → {_tl(sermaye, 0)} TL'lik pozisyonda ≈ {_tl(sermaye * kayip, 0)} TL.",
-                  (f"Geçmiş 1 yılın en kötü %5'lik günlerinde kayıp {_y(st_['var95'])} ({_tl(sermaye * abs(st_['var95']), 0)} TL), en kötü %1'de {_y(st_['var99'])}; "
+    br_ = "$" if sym == "$" else "TL"
+    R["risk"] += [f"Alım pozisyonu için stop {_tl(stop)} {sym} (en yakın destek − 0,5 ATR) gelirse kayıp {_y(-kayip)} → {_tl(sermaye, 0)} {br_}'lik pozisyonda ≈ {_tl(sermaye * kayip, 0)} {br_}.",
+                  (f"Geçmiş 1 yılın en kötü %5'lik günlerinde kayıp {_y(st_['var95'])} ({_tl(sermaye * abs(st_['var95']), 0)} {br_}), en kötü %1'de {_y(st_['var99'])}; "
                    f"10 günlük %5 VaR {_y(st_['var95_10'])}.") if st_["var95"] is not None else "VaR için yeterli geçmiş yok.",
                   f"Son 1 yılın en kötü günü {_y(st_['en_kotu_gun'])}, en büyük düşüş {_y(st_['maks_dusus_1y'])}." if st_["maks_dusus_1y"] is not None else ""]
     if rejim and rejim.get("maruziyet") is not None:
@@ -195,6 +196,7 @@ def rapor(s, temel=None, piyasa_ist=None, rejim=None, opsiyon=None, sermaye=10_0
     if len(etk) >= 2 and len({yon(e) for e in etk}) == 1 and yon(etk[0]) != 0: puan += 1
     guven = "Yüksek" if puan >= 3 else "Orta" if puan == 2 else "Düşük"
     if guven == "Yüksek" and cel: guven = "Orta"   # şüphecilik: çelişki varken yüksek güven verilmez
+    if guven == "Yüksek" and 42 < g["puan"] < 58: guven = "Orta"   # yön yokken yüksek güven anlamsız
     R["denetci"] += (cel or ["Belirgin çelişki bulunmadı; yine de tek bir analiz kesinlik sağlamaz."]) + [f"Güven derecesi: {guven}."]
     gorunum = "AL eğilimli" if g["puan"] >= 58 else "SAT eğilimli" if g["puan"] <= 42 else "Nötr / kararsız"
     if guven == "Düşük" and gorunum != "Nötr / kararsız": gorunum += " (kanıt zayıf)"

@@ -94,7 +94,10 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 - 13. ✅ TAMAM (28.11): opsiyon.py (Deribit herkese açık API) — DVOL + 1 yıllık sıra, gerçekleşen oynaklık/prim, vade yapısı, 25Δ çarpıklık, P/C (OI, hacim),
   büyük vadelerde max pain, OI duvarları, beklenen hareket; ATM greeks (Black-Scholes). Kripto iş akışında (4 saatte bir) opsiyon/ozet.json;
   Telegram kartı Cuma sabahı (vade günü) ve DVOL %15+ sıçramada; Emtia & Kripto bölümü; BTC/ETH teknik karnesi + PDF; sözlük; sabah özeti.
-- 14. Altı rollü araştırma ekibi (kural tabanlı; ücretsiz dil modeli anahtarı gelirse yorum katmanı).
+- 14. ✅ TAMAM (28.11): arastirma_ekibi.py — 6 rol (araştırmacı, finansal analist, istatistikçi, test analisti, risk yöneticisi, gerçeklik denetçisi),
+  boğa/ayı tezi, 3 senaryo (20 gün, 1σ bandı + destek/direnç), tez bozucular, kendi geçmişi (başarısızlar dahil, %95 GA), stop kaybı + VaR,
+  çelişki/veri tazeliği → güven derecesi. Teknik, Hisse, Emtia/Kripto ekranlarında; teknik PDF bölümü + sözlük. Dil modeli katmanı: anahtar gelince.
+  (eski plan:) Altı rollü araştırma ekibi (kural tabanlı; ücretsiz dil modeli anahtarı gelirse yorum katmanı).
   - Kullanıcının yüklediği erhankatkay-glitch/agency-agents (MIT) rol dosyaları şablon olarak kullanılacak (kullanıcı isteği, 27.11):
     finance-investment-researcher, finance-financial-analyst, academic-statistician, testing-test-results-analyzer, testing-reality-checker.
   - Raporlara eklenecek ilkeler: düşüş senaryosu yükseliş kadar ayrıntılı; "tez bozucular" (bu olursa görünüm bozulur);

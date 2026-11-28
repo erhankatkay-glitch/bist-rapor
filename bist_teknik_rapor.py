@@ -359,6 +359,9 @@ def teknik_pdf(s, dosya, ekip=None):
     if ekip:   # Aşama 14: altı rollü araştırma ekibi
         n += 1; E.append(PageBreak()); E.append(Bolum(n, "Araştırma ekibi (6 rol)", W))
         E.append(Paragraph(f"<b>{ekip['gorunum']}</b> · güven: <b>{ekip['guven']}</b> · {ekip['ufuk']}", ST["madde"]))
+        if ekip.get("yz"):
+            E.append(Spacer(1, 4)); E.append(Paragraph(ekip["yz"]["metin"], ST["madde"]))
+            E.append(Paragraph(f"Ekip özeti dil modeliyle ({ekip['yz']['model']}) yazılmıştır; rakamlar kural tabanlı rapordan alınır ve otomatik kontrol edilir.", ST["kucuk"]))
         E.append(Spacer(1, 4))
         E.append(TS.tablo([["Senaryo (20 gün)", "Fiyat", "Değişim", "Koşul"]] +
                           [[x["ad"], _f(x["fiyat"]), f"{'+' if x['degisim'] >= 0 else '-'}%{abs(x['degisim']) * 100:.1f}".replace(".", ","), Paragraph(x["kosul"], ST["hucre"])]

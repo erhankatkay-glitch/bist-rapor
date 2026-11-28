@@ -302,3 +302,8 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - canli_emtia.py: OKX / Bitget herkese açık TradFi sürekli vadeli kontratları (GUMUS, PLATIN, BAKIR, WTI, DOGALGAZ); Yahoo'ya göre %10 sapma
   ve 15 dk tazelik koruması, yedek Yahoo. Binance XAU/XAG ABD'den 451 (kullanılmaz); Bybit 403. Brent için açık anlık kaynak yok.
   Bağlı: bist_makro.piyasa_paneli (kaynak "OKX/Bitget 7/24 türev", tur kripto), alarm.anlik, app.ana_satirlar emtia satırları, veri_kalite.KAYNAKLAR.
+
+## Yorum katmanı (28.11.2026)
+- llm_katman.py: Gemini (ücretsiz katman, GEMINI_API_KEY; açık "flash" modeli API'den seçilir) → yedek Groq (GROQ_API_KEY).
+  Anahtarlar YALNIZ Streamlit Secrets / GitHub Secrets'ta; kullanıcıdan değer istenmez. Modele yalnız herkese açık piyasa raporu gider.
+  dogrula(): çıktıdaki her sayı girdide geçmeli, yoksa metin atılır. app.ekip_yorum 6 saat önbellek. Anahtar yoksa kural tabanlı metin.
