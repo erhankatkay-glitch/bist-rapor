@@ -10,6 +10,10 @@ async def main():
     pg=await c.new_page(); hata=[]
     pg.on("pageerror",lambda e:hata.append(str(e)))
     await pg.goto(PWA); await pg.wait_for_timeout(5000)
+    o=[]
+    for _ in range(8):
+      o.append(await pg.inner_text("#c-BTCUSDT b")); await pg.wait_for_timeout(1000)
+    print("CANLI BTC", o, "farkli", len(set(o)), "bant", (await pg.inner_text("#dus"))[:90].replace("\n"," "))
     print("SW:", await pg.evaluate("navigator.serviceWorker.controller ? 'kontrol' : 'yok'"))
     print("manifest:", (await (await pg.request.get(PWA+"manifest.webmanifest")).json())["name"])
     for s in ["ozet","firsat","bildirim","haber","piyasa"]:
