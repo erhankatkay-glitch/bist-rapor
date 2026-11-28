@@ -1,3 +1,4 @@
+import subprocess, sys; subprocess.run([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"], check=True)
 import asyncio, os
 from playwright.async_api import async_playwright
 os.makedirs("denetim_graf", exist_ok=True)

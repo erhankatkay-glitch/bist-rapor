@@ -10,7 +10,7 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
 |---|---|---|---|
 | 1 | Ücretsizlik ilkeleri | Var | Tüm araçlar ücretsiz; ücretli servis yok |
 | 2 | Ana araç + yedek | Kısmen | Yahoo + İş Yatırım + Binance var; yedek tablosu yazılmadı |
-| 3 | iPhone'dan geliştirme / PWA | Kısmen | Streamlit ana ekrana eklenebiliyor; gerçek PWA yok |
+| 3 | iPhone'dan geliştirme / PWA | Var | Ayrı PWA (GitHub Pages, Aşama 15); tam analiz Streamlit'te |
 | 4 | GitHub düzeni | Kısmen | Depo herkese açık (bilinçli, aşağıya bak); modüller kök klasörde |
 | 5 | Ortak veri standardı | Kısmen | Kaynak/zaman var; "gecikmeli / gün sonu / bayat" etiketi her yerde yok |
 | 6 | BIST | Var | BIST 100 evreni, sektörler, KAP sınıflandırma |
@@ -102,7 +102,10 @@ talimattaki 32 bölüm eksik listesi olarak kullanılır ve aşama aşama tamaml
     finance-investment-researcher, finance-financial-analyst, academic-statistician, testing-test-results-analyzer, testing-reality-checker.
   - Raporlara eklenecek ilkeler: düşüş senaryosu yükseliş kadar ayrıntılı; "tez bozucular" (bu olursa görünüm bozulur);
     güven derecesi (veri kalitesi + geçmiş test); en kötü durumda rakamla kayıp; başarısız sinyaller de raporlanır.
-- 15. PWA ön yüzü (isteğe bağlı).
+- 15. ✅ PWA ön yüzü (28.11.2026): https://erhankatkay-glitch.github.io/bist-rapor/ — pwa/ klasörü, GitHub Pages (pages.yml).
+  Özet (anlık kripto + ons altın, rejim, borsalar, döviz, son bildirimler), Fırsatlar (piyasa süzgeci), Bildirimler (arama), Haberler, Piyasa
+  (kripto opsiyon, getiri eğrisi, korelasyon, vade yapısı). Veri tarayıcıda bulten dalından + Binance; servis çalışanı ile çevrimdışı açılır.
+  Varlığa dokununca Streamlit'e ?kk=KOD|Tür|bölüm| derin bağlantısı (app.py aynı gizli istek yolunu kullanır → Teknik sekmesi).
 - 16. Aracı kurum araştırması, yalnız salt okunur.
 
 ## Değerlendirilen KAP repoları

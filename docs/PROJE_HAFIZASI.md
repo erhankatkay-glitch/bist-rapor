@@ -307,3 +307,11 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - llm_katman.py: Gemini (ücretsiz katman, GEMINI_API_KEY; açık "flash" modeli API'den seçilir) → yedek Groq (GROQ_API_KEY).
   Anahtarlar YALNIZ Streamlit Secrets / GitHub Secrets'ta; kullanıcıdan değer istenmez. Modele yalnız herkese açık piyasa raporu gider.
   dogrula(): çıktıdaki her sayı girdide geçmeli, yoksa metin atılır. app.ekip_yorum 6 saat önbellek. Anahtar yoksa kural tabanlı metin.
+
+## Aşama 15 — PWA (28.11.2026)
+- Streamlit Cloud iframe içinde çalıştığı için kendisi PWA olamaz → ayrı hafif ön yüz: pwa/ (index.html, sw.js, manifest, simgeler).
+- Yayın: .github/workflows/pages.yml (pwa/** değişince). Adres: https://erhankatkay-glitch.github.io/bist-rapor/
+- Veri: raw.githubusercontent.com/.../bulten/ (firsat/*/acik.json, alarm/son.json, haber/son.json, rejim/, dunya/, korelasyon/, opsiyon/) + Binance anlık.
+  Yeni bir bulten JSON alanı adı değişirse pwa/index.html de güncellenmeli. sw.js SURUM değişince eski önbellek silinir.
+- Derin bağlantı: app.py ?kk=KOD|Tür|bölüm| → kk_istek + _kk_git (bir kez okunur, parametre silinir).
+
