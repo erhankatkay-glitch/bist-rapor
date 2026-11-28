@@ -22,10 +22,23 @@ def _istek(url, veri=None, baslik=None, zaman_asimi=25):
     return json.loads(urllib.request.urlopen(r, timeout=zaman_asimi).read())
 
 
+def _g(yol, anahtar, veri=None):
+    """Gemini isteği: anahtar biçiminden bağımsız. Önce API anahtarı başlığı (x-goog-api-key; "AIza…" ve yeni biçimler),
+    olmazsa OAuth/erişim belirteci gibi Bearer olarak dener."""
+    url = "https://generativelanguage.googleapis.com/v1beta/" + yol
+    try:
+        return _istek(url, veri, {"x-goog-api-key": anahtar.strip()})
+    except Exception as ilk:
+        try:
+            return _istek(url, veri, {"Authorization": f"Bearer {anahtar.strip()}"})
+        except Exception:
+            raise ilk
+
+
 def gemini_model(anahtar):
     """Açık 'flash' modellerinden en yenisini seçer (model adları sık değiştiği için sabit yazılmaz; 6 saat önbellek)."""
     if _MODEL_ONB["ad"] and time.time() - _MODEL_ONB["zaman"] < 6 * 3600: return _MODEL_ONB["ad"]
-    d = _istek(f"https://generativelanguage.googleapis.com/v1beta/models?key={anahtar}&pageSize=200")
+    d = _g("models?pageSize=200", anahtar)
     adaylar = [m["name"] for m in d.get("models", []) if "generateContent" in m.get("supportedGenerationMethods", [])
                and "flash" in m["name"] and not any(k in m["name"] for k in ("image", "tts", "audio", "live", "embedding", "thinking-exp"))]
     def anahtar_(n):   # en yüksek sürüm; kararlı sürüm önizlemeden, tam "flash" "lite"tan önde
@@ -38,7 +51,7 @@ def gemini_model(anahtar):
 
 def gemini(metin, anahtar):
     m = gemini_model(anahtar)
-    d = _istek(f"https://generativelanguage.googleapis.com/v1beta/{m}:generateContent?key={anahtar}",
+    d = _g(f"{m}:generateContent", anahtar,
                {"contents": [{"role": "user", "parts": [{"text": TALIMAT + "\n\nRAPOR:\n" + metin}]}],
                 "generationConfig": {"temperature": 0.3, "maxOutputTokens": 700}})
     return "".join(p.get("text", "") for p in d["candidates"][0]["content"]["parts"]).strip(), m.split("/")[-1]
