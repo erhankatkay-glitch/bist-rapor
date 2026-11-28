@@ -326,3 +326,6 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 
 - Canlı fiyatlar (canli.py, canli.yml): seans açıkken 15 dk'da bir canli/<bist|abd|emtia>.json; BIST kapanış sonrası resmi kapanış (fast_info).
   Hızlı uygulama canlı fiyatı yalnız karneden yeniyse gösterir; kripto fiyatları tarayıcıda Binance'ten. Analiz metni kapanış/12:10/18:10 karnesinden.
+- Hızlı uygulama 2. adım (28.11.2026): Portföy sekmesi — Varlıklarım (kk_pf_metin), Sanal işlem (kk_sanal: sanal.py ile aynı olay biçimi,
+  pozisyon_boyutu/kontrol_listesi/dusus_sigortasi JS karşılıkları; yedek dosyası tam uygulamayla iki yönlü uyumlu), Takip (kk_takip), Risk hesap.
+  Hepsi localStorage'da, yalnız telefonda.

@@ -57,7 +57,7 @@ h2:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(232,
 .sayfa{display:none}.sayfa.ac{display:block}
 nav{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);display:flex;background:rgba(20,21,24,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   border:1px solid rgba(232,184,74,.28);border-radius:22px;padding:6px 4px;box-shadow:0 12px 30px rgba(0,0,0,.55);z-index:9}
-nav button{flex:1;background:none;border:none;color:var(--s);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;padding:5px 0;border-radius:16px}
+nav button{flex:1;min-width:0;background:none;border:none;color:var(--s);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.8px;font-weight:700;padding:5px 0;border-radius:16px}
 nav button svg{width:22px;height:22px}nav button.s{color:#0B0B0C;background:radial-gradient(circle at 50% 30%,var(--a2),var(--a) 60%,#C99A2E)}
 .yenile{display:block;margin:12px auto 0;background:none;border:1px solid var(--c);color:var(--s);border-radius:12px;padding:8px 14px;font-size:12px}
 .uyari{font-size:10.5px;color:var(--s2);text-align:center;margin-top:16px;line-height:1.5}
@@ -87,6 +87,8 @@ nav button svg{width:22px;height:22px}nav button.s{color:#0B0B0C;background:radi
 details.kart summary{font-weight:800;font-size:13.5px;list-style:none;cursor:pointer}details.kart summary::after{content:" ›";color:var(--a)}details[open].kart summary::after{content:" ⌄"}
 .sin{padding:7px 0;border-bottom:1px solid #222327;font-size:12.5px}.sin b{font-size:13px}.sin p{margin:2px 0 0;color:var(--s);line-height:1.4}
 .btn{display:block;text-align:center;padding:12px;border-radius:13px;background:linear-gradient(180deg,var(--a2),#C99A2E);color:#0B0B0C;font-weight:900;font-size:14px;text-decoration:none;margin-top:6px}
+.satir .a span b{display:inline;font-size:inherit}
+.etiket{font-size:11.5px;color:var(--s);font-weight:700}
 </style>
 </head>
 <body>
@@ -101,6 +103,7 @@ details.kart summary{font-weight:800;font-size:13.5px;list-style:none;cursor:poi
 <div id="dus"></div>
 <section class="sayfa ac" id="s-ozet"></section>
 <section class="sayfa" id="s-firsat"></section>
+<section class="sayfa" id="s-portfoy"></section>
 <section class="sayfa" id="s-bildirim"></section>
 <section class="sayfa" id="s-haber"></section>
 <section class="sayfa" id="s-piyasa"></section>
@@ -111,6 +114,7 @@ details.kart summary{font-weight:800;font-size:13.5px;list-style:none;cursor:poi
 <nav>
   <button data-s="ozet" class="s"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Özet</button>
   <button data-s="firsat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>Fırsatlar</button>
+  <button data-s="portfoy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>Portföy</button>
   <button data-s="bildirim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>Bildirimler</button>
   <button data-s="haber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h13a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2z"/><path d="M8 9h7M8 13h7M8 17h4"/></svg>Haberler</button>
   <button data-s="piyasa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 20h18"/><path d="M6 17v-6M10 17V7M14 17v-4M18 17V5"/></svg>Piyasa</button>
@@ -377,6 +381,263 @@ async function varlik(kod) {
   }
 }
 
+// ---------------------------------------------------------------- Portföy sekmesi (2. adım): tümü telefonda çalışır, veriler yalnız bu telefonda
+// Varlıklarım · Sanal işlem (tam uygulamanın sanal.py kurallarıyla, aynı defter biçimi → yedek dosyası iki yönde uyumlu) · Takip · Risk hesap
+const aramaPuan = (v, q) => v.kod === q ? 0 : v.kod.startsWith(q + "/") || v.kod.startsWith(q + ".") ? 1 : v.kod.startsWith(q) ? 2 : 3;
+const ara = (q, n) => { q = q.trim().toLocaleUpperCase("tr"); return ((KARNE && KARNE.varliklar) || []).filter(v => (v.kod + " " + (v.ad || "")).toLocaleUpperCase("tr").includes(q))
+  .sort((a, b) => aramaPuan(a, q) - aramaPuan(b, q) || b.puan - a.puan).slice(0, n); };
+const LS = {get: (k, v) => { try { const x = localStorage.getItem(k); return x == null ? v : JSON.parse(x); } catch (e) { return v; } },
+            set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }};
+const SNL = {LOT: {bist: 1, abd: 1, kripto: 1e-6, emtia: 0.01}, AYAR: {sigorta_dd: 0.10, sigorta_ardisik: 3, maks_risk: 0.02, maks_toplam_risk: 0.06, min_kr: 2.0},
+  DUYGU: ["Sakin / planlı", "Korku", "Açgözlülük", "Sabırsızlık", "İntikam (kaybı geri alma)", "Sıkılma / FOMO"],
+  SEBEP: ["Hedef geldi", "Stop çalıştı", "Plan dışı erken çıkış", "Plan dışı geç çıkış", "Senaryo bozuldu (plana uygun)", "Diğer"]};
+const sayiTr = x => { if (x == null) return NaN; let s = String(x).trim().replace(/\s/g, ""); if (s.includes(",") && s.includes(".")) s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, ""); else if (s.includes(",")) s = s.replace(",", "."); return parseFloat(s); };
+const yeniId = () => Math.random().toString(16).slice(2, 12);
+const simdiIso = () => new Date().toISOString().slice(0, 19) + "+00:00";
+let PF_SEKME = LS.get("kk_pf_sekme", "varlik"), KUR = null;
+
+async function kurAl() {   // USD/TRY
+  if (KUR) return KUR;
+  try { const t = await fetch("https://data-api.binance.vision/api/v3/ticker/price?symbol=USDTTRY").then(r => r.json()); KUR = +t.price; } catch (e) {}
+  if (!KUR) { const d = await al("dunya/ozet.json"); const u = d && d.doviz.find(x => x.ad === "USD/TRY"); KUR = u ? u.son : 40; }
+  return KUR;
+}
+// kodu karne listesinde bul (yazım farklarını tolere et: BTC → BTC/USDT, BTC/TRY → BTC/USDT × kur)
+function varlikBul(kod) {
+  const L = (KARNE && KARNE.varliklar) || []; kod = String(kod).toUpperCase().trim();
+  let v = L.find(x => x.kod === kod) || L.find(x => x.kod === kod + ".US") || L.find(x => x.kod === kod + "/USDT");
+  let tl = false;
+  if (!v && kod.endsWith("/TRY")) { v = L.find(x => x.kod === kod.replace("/TRY", "/USDT")); tl = !!v; }
+  return v ? {...v, tlKripto: tl} : null;
+}
+function fiyatTL(v) {   // → {p (varlığın kendi para birimi), tl (TL karşılığı), para, d}
+  const c = canliAl(v), p = c ? c.p : v.fiyat, d = c ? c.d : v.degisim;
+  const usd = v.para === "$" || v.pz === "kripto" || v.pz === "abd";
+  if (v.tlKripto) return {p: p * KUR, tl: p * KUR, para: "₺", d};
+  return {p, tl: usd ? p * KUR : p, para: usd ? "$" : "₺", d};
+}
+
+// ---------------------------------------------------------------- sanal defter (sanal.py'nin JS karşılığı)
+const defter = () => LS.get("kk_sanal", {surum: 1, baslangic: 100000, para: "TL", olaylar: []});
+const defterKaydet = d => LS.set("kk_sanal", d);
+const ayar = d => ({...SNL.AYAR, ...(d.ayar || {})});
+function islemler(d) {
+  const ip = new Set(d.olaylar.filter(o => o.tip === "iptal").map(o => o.ref)), ac = {};
+  d.olaylar.forEach(o => { if (o.tip === "ac" && !ip.has(o.id)) ac[o.id] = {...o, kapanis: []}; });
+  d.olaylar.forEach(o => { if (o.tip === "kapat" && ac[o.ref] && !ip.has(o.id)) ac[o.ref].kapanis.push(o); });
+  return Object.values(ac).map(a => {
+    a.kalan = a.adet - a.kapanis.reduce((t, k) => t + k.adet, 0);
+    a.gerceklesen = a.kapanis.reduce((t, k) => t + k.adet * (k.fiyat - a.fiyat) * a.yon - k.adet * (k.fiyat * k.komisyon + a.fiyat * a.komisyon), 0);
+    const r1 = a.stop ? Math.abs(a.fiyat - a.stop) * a.adet : 0; a.R = r1 && !(a.kalan > 1e-12) ? a.gerceklesen / r1 : null; return a;
+  });
+}
+function degerle(d) {
+  const tl = (x, para) => x * (para === "USD" ? KUR : 1), I = islemler(d);
+  const acik = I.filter(a => a.kalan > 1e-12).map(p => {
+    const v = varlikBul(p.kod), f = v ? (canliAl(v) || {p: v.fiyat}).p : null;
+    const kz = f == null ? null : p.kalan * (f - p.fiyat) * p.yon - p.kalan * p.fiyat * p.komisyon;
+    let uyari = ""; if (f != null && p.stop && (f - p.stop) * p.yon <= 0) uyari = "stop seviyesinde / altında"; else if (f != null && p.hedef && (f - p.hedef) * p.yon >= 0) uyari = "hedefe ulaştı";
+    return {...p, son: f, kz, kz_oran: f == null ? null : (f - p.fiyat) * p.yon / p.fiyat, uyari, kz_tl: kz == null ? null : tl(kz, p.para), deger_tl: f == null ? null : tl(p.kalan * f, p.para)};
+  });
+  const kap = I.filter(a => a.kalan <= 1e-12), gerc = I.reduce((t, a) => t + tl(a.gerceklesen, a.para), 0), akz = acik.reduce((t, x) => t + (x.kz_tl || 0), 0);
+  const rl = kap.map(a => a.R).filter(r => r != null);
+  return {pozisyonlar: acik, kapananlar: kap, gerceklesen_tl: gerc, acik_kz_tl: akz, ozkaynak_tl: d.baslangic + gerc + akz, getiri: (gerc + akz) / d.baslangic,
+          kazanma: kap.length ? kap.filter(a => a.gerceklesen > 0).length / kap.length : null, ort_R: rl.length ? rl.reduce((a, b) => a + b, 0) / rl.length : null, islem_sayisi: kap.length};
+}
+function sigorta(d, oz) {
+  const A = ayar(d), kap = islemler(d).filter(a => a.kalan <= 1e-12).sort((a, b) => a.kapanis[a.kapanis.length - 1].t < b.kapanis[b.kapanis.length - 1].t ? -1 : 1);
+  const e = [d.baslangic]; kap.forEach(a => e.push(e[e.length - 1] + a.gerceklesen * (a.para === "USD" ? KUR : 1)));
+  const s = oz != null ? oz : e[e.length - 1], tepe = Math.max(...e, s), dd = tepe > 0 ? 1 - s / tepe : 0;
+  let ard = 0; for (let i = kap.length - 1; i >= 0 && kap[i].gerceklesen < 0; i--) ard++;
+  const neden = []; if (dd >= A.sigorta_dd) neden.push(`özkaynak tepeden %${tr(dd * 100, 1)} geride (sınır %${A.sigorta_dd * 100})`);
+  if (ard >= A.sigorta_ardisik) neden.push(`son ${ard} işlem üst üste zararla kapandı`);
+  return {aktif: neden.length > 0, dd, ard, neden};
+}
+function pozBoyut(portfoy, risk, giris, stop, yon, pz, kom = 0.002, kayma = 0.001) {
+  const mesafe = (giris - stop) * yon; if (!(portfoy > 0 && giris > 0 && stop > 0 && risk > 0)) throw new Error("Portföy, risk, giriş ve stop pozitif olmalı.");
+  if (mesafe <= 0) throw new Error("Stop, " + (yon === 1 ? "alış fiyatının altında" : "satış fiyatının üstünde") + " olmalı.");
+  const lot = SNL.LOT[pz] || 1, yuv = x => lot >= 1 ? Math.floor(x / lot) * lot : +(Math.floor(x / lot + 1e-9) * lot).toFixed(Math.round(-Math.log10(lot)));
+  const birim = mesafe + giris * (2 * kom + kayma); let adet = yuv(portfoy * risk / birim); const uyari = [];
+  if (adet * giris > portfoy) { adet = yuv(portfoy / giris); uyari.push("Stop çok yakın: pozisyon portföy büyüklüğüyle sınırlandı (gerçek risk hedeften düşük)."); }
+  if (adet <= 0) uyari.push("Risk tutarı bir birim almaya yetmiyor; risk oranını artır ya da stopu yaklaştır.");
+  if (mesafe / giris > ({bist: .12, abd: .12, kripto: .20, emtia: .10}[pz] || .12)) uyari.push(`Stop mesafesi %${tr(mesafe / giris * 100, 1)}: bu piyasa için geniş; pozisyon küçük kalır.`);
+  return {adet, pozisyon: adet * giris, pay: adet * giris / portfoy, risk_tutar: portfoy * risk, gercek_risk: adet * birim, stop_mesafe: mesafe / giris, uyari};
+}
+function kontrolListesi(d, D, kod, pz, yon, fiyat, stop, hedef, adet, para, rejim, neden) {
+  const A = ayar(d), M = [], tlk = para === "USD" ? KUR : 1, oz = Math.max(1e-9, D.ozkaynak_tl), ek = (ad, durum, ac) => M.push({ad, durum, ac});
+  let risk = null;
+  if (!stop) ek("Stop belirlendi", "hata", "Stopsuz işlem açılmaz: nerede yanıldığını önceden bilmelisin.");
+  else if ((fiyat - stop) * yon <= 0) ek("Stop belirlendi", "hata", "Stop yanlış tarafta.");
+  else { risk = Math.abs(fiyat - stop) * adet * tlk; const ro = risk / oz;
+    ek("Stop belirlendi", "ok", `Stop ${fy(stop)} · girişten %${tr(Math.abs(fiyat - stop) / fiyat * 100, 1)} uzakta.`);
+    ek("İşlem riski", ro <= A.maks_risk / 2 ? "ok" : ro <= A.maks_risk ? "uyari" : "hata", `Stop gelirse kayıp ≈ ${tr(risk, 0)} TL = özkaynağın %${tr(ro * 100, 2)}'i (sınır %${tr(A.maks_risk * 100, 1)}).`); }
+  if (hedef && stop && (hedef - fiyat) * yon > 0 && (fiyat - stop) * yon > 0) { const kr = (hedef - fiyat) * yon / ((fiyat - stop) * yon);
+    ek("Kazanç / risk oranı", kr >= A.min_kr ? "ok" : "uyari", `1:${tr(kr, 1)} (en az 1:${A.min_kr} önerilir).`); }
+  else ek("Kazanç / risk oranı", "uyari", "Hedef girilmedi: nerede kâr alacağını önceden belirle.");
+  const acikRisk = D.pozisyonlar.filter(p => p.stop).reduce((t, p) => t + Math.abs(p.fiyat - p.stop) * p.kalan * (p.para === "USD" ? KUR : 1), 0), top = (acikRisk + (risk || 0)) / oz;
+  ek("Toplam açık risk", top <= A.maks_toplam_risk ? "ok" : "uyari", `Tüm açık stoplar gelirse kayıp özkaynağın %${tr(top * 100, 1)}'i (sınır %${A.maks_toplam_risk * 100}).`);
+  if (D.pozisyonlar.some(p => p.kod === kod)) ek("Aynı varlıkta açık pozisyon", "uyari", `${kod} için zaten açık pozisyon var; riski ikiye katlamış olabilirsin.`);
+  if (rejim && (pz === "bist" || pz === "abd")) { const pay = (D.pozisyonlar.filter(p => p.piyasa === pz).reduce((t, p) => t + (p.deger_tl || 0), 0) + fiyat * adet * tlk) / oz;
+    ek(`Piyasa rejimi (${rejim.durum_ad})`, pay <= rejim.maruziyet / 100 + 1e-9 ? "ok" : "uyari", `Bu işlemle ${pz.toUpperCase()} hisse payı %${Math.round(pay * 100)}; rejime göre önerilen en çok %${rejim.maruziyet}.`); }
+  const s = sigorta(d, D.ozkaynak_tl); ek("Düşüş sigortası", s.aktif ? "hata" : "ok", s.aktif ? "Ara ver: " + s.neden.join("; ") : "Sigorta devrede değil.");
+  ek("Nedeni yazdım", (neden || "").trim().length >= 8 ? "ok" : "hata", "Bu işlemi neden açtığını bir cümleyle yaz (günlük için).");
+  const pp = {ok: 1, uyari: .5, hata: 0}; return {maddeler: M, puan: Math.round(100 * M.reduce((t, x) => t + pp[x.durum], 0) / M.length), engel: M.some(x => x.durum === "hata")};
+}
+
+// ---------------------------------------------------------------- arayüz
+async function portfoy() {
+  const el = document.getElementById("s-portfoy");
+  el.innerHTML = "<div class='bos'>Yükleniyor…</div>";
+  await karneListe(); await kurAl();
+  el.innerHTML = `<div class="cip" style="margin-top:4px">${[["varlik", "Varlıklarım"], ["sanal", "Sanal işlem"], ["takip", "Takip"], ["risk", "Risk hesap"]].map(([k, a]) => `<button data-p="${k}" class="${k === PF_SEKME ? "s" : ""}">${a}</button>`).join("")}</div><div id="pf-ic"></div>`;
+  el.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { PF_SEKME = b.dataset.p; LS.set("kk_pf_sekme", PF_SEKME); portfoy(); });
+  ({varlik: pfVarlik, sanal: pfSanal, takip: pfTakip, risk: pfRisk})[PF_SEKME]();
+}
+const ic = () => document.getElementById("pf-ic");
+const durumRenk = {ok: "var(--g)", uyari: "var(--a)", hata: "var(--r)"};
+
+function pfVarlik() {
+  const metin = LS.get("kk_pf_metin", "");
+  const sat = metin.split(/\n/).map(x => x.trim()).filter(Boolean).map(x => { const m = x.match(/^(\S+)\s+([\d.,]+)(?:\s*@\s*([\d.,]+))?/); return m ? {kod: m[1].toUpperCase(), adet: sayiTr(m[2]), mal: m[3] ? sayiTr(m[3]) : null} : null; }).filter(Boolean);
+  const R = sat.map(x => { const v = varlikBul(x.kod); if (!v) return {...x, yok: true}; const f = fiyatTL(v), tlk = f.tl / f.p;
+    return {...x, v, f, deger: x.adet * f.tl, kz: x.mal ? x.adet * (f.p - x.mal) * tlk : null, kzo: x.mal ? f.p / x.mal - 1 : null}; });
+  const top = R.reduce((t, x) => t + (x.deger || 0), 0), gun = R.reduce((t, x) => t + (x.deger && x.f.d != null ? x.deger * x.f.d / (1 + x.f.d) : 0), 0);
+  const kz = R.filter(x => x.kz != null).reduce((t, x) => t + x.kz, 0);
+  let h = "";
+  if (R.length) {
+    h += `<div class="kart"><div class="satir"><div class="a"><b style="font-size:22px">₺${tr(top, 0)}</b><span>≈ $${tr(top / KUR, 0)} · ${R.length} varlık${kz ? ` · maliyete göre <b class="${rk(kz)}">${kz >= 0 ? "+" : "-"}₺${tr(Math.abs(kz), 0)}</b>` : ""}</span></div>
+      <div class="f"><b class="${rk(gun)}">${gun >= 0 ? "+" : "-"}₺${tr(Math.abs(gun), 0)}</b><span class="not">bugün</span></div></div></div>`;
+    h += R.sort((a, b) => (b.deger || 0) - (a.deger || 0)).map(x => x.yok ? `<div class="kart"><b>${esc(x.kod)}</b> <span class="not">tanınmadı (örn. THYAO, NVDA, BTC/USDT, GRAMALTIN)</span></div>` :
+      `<a class="kart dok" href="#v/${encodeURIComponent(x.v.kod)}"><div class="satir"><div class="a"><b>${esc(x.kod)} <span class="etk ${etkSinif(x.v.etiket)}" style="margin-left:4px">${esc(x.v.etiket)}</span></b>
+        <span>${tr(x.adet, x.adet % 1 ? 4 : 0)} × ${x.f.para}${fy(x.f.p)}${x.mal ? ` · maliyet ${fy(x.mal)} (<b class="${rk(x.kzo)}">${yz(x.kzo)}</b>)` : ""}</span>
+        <div class="cub" style="margin-top:5px"><div style="width:${(x.deger / top * 100).toFixed(1)}%"></div></div></div>
+        <div class="f"><b>₺${tr(x.deger, 0)}</b><span class="${rk(x.f.d)}">${yz(x.f.d, 2)}</span><small style="display:block;color:var(--s2);font-size:10px">%${tr(x.deger / top * 100, 0)}</small></div></div>
+        ${/SAT/.test(x.v.etiket) ? `<div class="plan" style="color:var(--r)">⚠️ Teknik görünüm ${esc(x.v.etiket)}${x.kzo != null && x.kzo <= -0.08 ? " · maliyete göre %8'den fazla zararda" : ""}</div>` : x.kzo != null && x.kzo >= 0.15 ? `<div class="plan" style="color:var(--g)">Maliyete göre %15+ kârda: stopu yukarı çekmeyi düşün</div>` : ""}</a>`).join("");
+  }
+  h += `<h2>Varlıkların</h2><div class="kart"><textarea id="pf-m" class="ara" style="height:130px;font-family:inherit" placeholder="Her satıra bir varlık:\nTHYAO 1000 @ 280\nNVDA 5 @ 120\nBTC/USDT 0,05\nGRAMALTIN 50">${esc(metin)}</textarea>
+    <div style="display:flex;gap:8px"><button class="btn" id="pf-k" style="flex:1;border:none;margin:0">Kaydet ve hesapla</button>
+    ${metin ? `<a class="btn" style="flex:1;margin:0;background:var(--k);color:var(--y);border:1px solid var(--c)" target="_blank" href="${UYG}/?p=${encodeURIComponent(sat.map(x => `${x.kod} ${String(x.adet).replace(".", ",")}${x.mal ? " @ " + String(x.mal).replace(".", ",") : ""}`).join(";"))}">Risk analizi ›</a>` : ""}</div>
+    <div class="not" style="font-size:11px;margin-top:8px">Liste yalnız bu telefonda saklanır. Biçim: KOD ADET @ MALİYET (maliyet isteğe bağlı). Fiyatlar canlı; BIST ~15 dk gecikmeli.</div></div>`;
+  ic().innerHTML = h;
+  document.getElementById("pf-k").onclick = () => { LS.set("kk_pf_metin", document.getElementById("pf-m").value); pfVarlik(); };
+}
+
+function pfTakip() {
+  const L = LS.get("kk_takip", ["XU100", "THYAO", "BTC/USDT", "GRAMALTIN"]);
+  const R = L.map(varlikBul).filter(Boolean);
+  ic().innerHTML = `<h2>Takip listem · ${R.length}</h2><input class="ara" id="tk-a" placeholder="Eklemek için ara (ör. ASELS, AAPL, SOL)"><div id="tk-s"></div>
+    ${R.map(v => `<div style="position:relative">${karneSatir(v)}<button data-sil="${esc(v.kod)}" style="position:absolute;right:-4px;top:-6px;background:var(--k2);border:1px solid var(--c);color:var(--s);border-radius:50%;width:22px;height:22px;font-size:12px">×</button></div>`).join("") || "<div class='bos'>Liste boş.</div>"}`;
+  ic().querySelectorAll("[data-sil]").forEach(b => b.onclick = e => { e.preventDefault(); LS.set("kk_takip", L.filter(x => x !== b.dataset.sil)); pfTakip(); });
+  document.getElementById("tk-a").oninput = e => { const q = e.target.value.trim().toLocaleUpperCase("tr");
+    document.getElementById("tk-s").innerHTML = q.length < 2 ? "" : ara(q, 8)
+      .map(v => `<button class="kart" data-ekle="${esc(v.kod)}" style="width:100%;text-align:left;color:var(--y)">＋ <b>${esc(v.kod)}</b> <span class="not">${esc(v.ad || "")}</span></button>`).join("");
+    document.querySelectorAll("[data-ekle]").forEach(b => b.onclick = () => { if (!L.includes(b.dataset.ekle)) L.push(b.dataset.ekle); LS.set("kk_takip", L); pfTakip(); }); };
+}
+
+function pfRisk() {
+  const d = defter(), D = degerle(d), r = LS.get("kk_risk", {port: Math.round(D.ozkaynak_tl), risk: 1, kod: "", giris: "", stop: "", hedef: ""});
+  ic().innerHTML = `<h2>Pozisyon büyüklüğü hesabı</h2><div class="kart">
+    ${[["port", "Portföy (TL)"], ["risk", "İşlem başına risk (%)"], ["kod", "Varlık (isteğe bağlı)"], ["giris", "Giriş fiyatı"], ["stop", "Stop"], ["hedef", "Hedef (isteğe bağlı)"]].map(([k, a]) =>
+      `<label style="font-size:11.5px;color:var(--s);font-weight:700">${a}</label><input class="ara" data-r="${k}" value="${esc(r[k] ?? "")}" ${k === "kod" ? "" : 'inputmode="decimal"'}>`).join("")}
+    <div id="rk-s"></div><div class="not" style="font-size:11px">Komisyon (%0,2 alış + satış) ve %0,1 kayma dahil — tam uygulamadaki hesapla aynı.</div></div>`;
+  const hesap = () => {
+    ic().querySelectorAll("[data-r]").forEach(i => r[i.dataset.r] = i.value); LS.set("kk_risk", r);
+    const v = r.kod ? varlikBul(r.kod) : null; if (v && !r.giris) { const g = fiyatTL(v); ic().querySelector("[data-r=giris]").placeholder = "şimdiki: " + fy(g.p); }
+    const pz = v ? v.pz : "bist", giris = sayiTr(r.giris) || (v ? fiyatTL(v).p : NaN), stop = sayiTr(r.stop), hedef = sayiTr(r.hedef), yon = stop > giris ? -1 : 1;
+    const kur = v && fiyatTL(v).para === "$" ? KUR : 1;
+    try { const o = pozBoyut(sayiTr(r.port) / kur, sayiTr(r.risk) / 100, giris, stop, yon, pz);
+      const kr = hedef ? (hedef - giris) * yon / ((giris - stop) * yon) : null;
+      document.getElementById("rk-s").innerHTML = `<table class="tablo" style="margin:8px 0"><tr><td>Alınacak adet</td><td style="color:var(--a);font-size:16px">${tr(o.adet, o.adet % 1 ? 4 : 0)}</td></tr>
+        <tr><td>Pozisyon tutarı</td><td>₺${tr(o.pozisyon * kur, 0)} (%${tr(o.pay * 100, 1)})</td></tr><tr><td>Stop gelirse kayıp</td><td class="alt">₺${tr(o.gercek_risk * kur, 0)}</td></tr>
+        <tr><td>Stop mesafesi</td><td>%${tr(o.stop_mesafe * 100, 2)}</td></tr>${kr ? `<tr><td>Kazanç / risk</td><td class="${kr >= 2 ? "ust" : "not"}">1:${tr(kr, 2)}</td></tr><tr><td>Hedefte kazanç</td><td class="ust">₺${tr(o.adet * (hedef - giris) * yon * kur, 0)}</td></tr>` : ""}
+        ${[1, 2, 3].map(k => `<tr><td>${k}R hedefi</td><td>${fy(giris + yon * k * Math.abs(giris - stop))}</td></tr>`).join("")}</table>${o.uyari.map(u => `<div class="plan" style="color:var(--a)">⚠️ ${esc(u)}</div>`).join("")}`;
+    } catch (e) { document.getElementById("rk-s").innerHTML = `<div class="plan not">${esc(e.message)}</div>`; }
+  };
+  ic().querySelectorAll("[data-r]").forEach(i => i.oninput = hesap); hesap();
+}
+
+let SNL_FORM = null;
+async function pfSanal() {
+  const d = defter(), D = degerle(d), s = sigorta(d, D.ozkaynak_tl), A = ayar(d), G = {};
+  d.olaylar.forEach(o => { if (o.tip === "not" && o.ref) G[o.ref] = o; });
+  let h = `<div class="kart"><div class="satir"><div class="a"><b style="font-size:22px">₺${tr(D.ozkaynak_tl, 0)}</b><span>başlangıç ₺${tr(d.baslangic, 0)} · ${D.islem_sayisi} kapanan işlem</span></div>
+    <div class="f"><b class="${rk(D.getiri)}">${yz(D.getiri, 2)}</b><span class="not">getiri</span></div></div>
+    <table class="tablo" style="margin-top:6px"><tr><td>Açık kâr/zarar</td><td class="${rk(D.acik_kz_tl)}">₺${tr(D.acik_kz_tl, 0)}</td></tr><tr><td>Gerçekleşen</td><td class="${rk(D.gerceklesen_tl)}">₺${tr(D.gerceklesen_tl, 0)}</td></tr>
+    <tr><td>Kazanma oranı</td><td>${D.kazanma == null ? "–" : "%" + tr(D.kazanma * 100, 0)}</td></tr><tr><td>Ortalama R</td><td>${D.ort_R == null ? "–" : tr(D.ort_R, 2) + "R"}</td></tr></table></div>`;
+  if (s.aktif) h += `<div class="kart bild k"><div class="m"><b>🛑 Düşüş sigortası devrede:</b> ${esc(s.neden.join("; "))}. Yeni işlemden önce ara ver.</div></div>`;
+  h += `<button class="btn" id="sn-yeni" style="width:100%;border:none">＋ Yeni sanal işlem</button><div id="sn-form"></div>`;
+  h += `<h2>Açık pozisyonlar · ${D.pozisyonlar.length}</h2>` + (D.pozisyonlar.map(p => { const R = p.stop && p.son != null ? (p.son - p.fiyat) * p.yon / Math.abs(p.fiyat - p.stop) : null;
+    return `<div class="kart"><div class="satir"><div class="a"><b><span class="etk ${p.yon > 0 ? "al" : "sat"}">${p.yon > 0 ? "AL" : "SAT"}</span>${esc(p.kod)}</b><span>${tr(p.kalan, p.kalan % 1 ? 4 : 0)} × ${fy(p.fiyat)} · stop ${p.stop ? fy(p.stop) : "–"} · hedef ${p.hedef ? fy(p.hedef) : "–"}</span></div>
+      <div class="f"><b>${fy(p.son)}</b><span class="${rk(p.kz)}">${p.kz_tl == null ? "" : (p.kz_tl >= 0 ? "+" : "-") + "₺" + tr(Math.abs(p.kz_tl), 0)}${R == null ? "" : " · " + tr(R, 2) + "R"}</span></div></div>
+      ${p.uyari ? `<div class="plan" style="color:${p.uyari.includes("hedef") ? "var(--g)" : "var(--r)"}">⚠️ ${esc(p.uyari)}</div>` : ""}
+      <div style="display:flex;gap:6px;margin-top:8px"><select class="ara" data-sebep="${p.id}" style="flex:1;margin:0;padding:7px">${SNL.SEBEP.map(x => `<option>${x}</option>`).join("")}</select>
+      <button data-kapat="${p.id}" style="border:none;border-radius:10px;padding:0 12px;font-weight:800;background:var(--a);color:#0B0B0C">Kapat</button>
+      <button data-iptal="${p.id}" style="background:none;border:1px solid var(--c);color:var(--s);border-radius:10px;padding:0 10px">İptal</button></div></div>`; }).join("") || "<div class='bos'>Açık pozisyon yok.</div>");
+  const kap = D.kapananlar.slice().reverse();
+  h += `<h2>Kapananlar ve günlük · ${kap.length}</h2>` + (kap.slice(0, 30).map(a => { const g = G[a.id];
+    return `<div class="kart"><div class="satir"><div class="a"><b>${esc(a.kod)} <span class="not" style="display:inline;font-weight:600">${a.yon > 0 ? "AL" : "SAT"}</span></b><span>${fy(a.fiyat)} → ${fy(a.kapanis[a.kapanis.length - 1].fiyat)} · ${esc(a.kapanis[a.kapanis.length - 1].sebep || "")}</span></div>
+      <div class="f"><b class="${rk(a.gerceklesen)}">${a.gerceklesen >= 0 ? "+" : "-"}${a.para === "USD" ? "$" : "₺"}${tr(Math.abs(a.gerceklesen), 0)}</b><span class="not">${a.R == null ? "" : tr(a.R, 2) + "R"}</span></div></div>
+      ${g ? `<div class="plan">${g.plana_uydum === true ? "✓ plana uydum" : g.plana_uydum === false ? "✗ plana uymadım" : ""} · ${esc(g.duygu || "")}${g.ders ? " · " + esc(g.ders) : ""}</div>` :
+      `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><select class="ara" data-gp="${a.id}" style="flex:1;margin:0;padding:7px;min-width:120px"><option value="">Plana uydum mu?</option><option value="1">Evet</option><option value="0">Hayır</option></select>
+       <select class="ara" data-gd="${a.id}" style="flex:1;margin:0;padding:7px;min-width:120px">${SNL.DUYGU.map(x => `<option>${x}</option>`).join("")}</select>
+       <input class="ara" data-gx="${a.id}" placeholder="Ders (isteğe bağlı)" style="margin:0;padding:7px;flex-basis:100%"><button data-gk="${a.id}" style="border:none;border-radius:10px;padding:8px 12px;font-weight:800;background:var(--k2);color:var(--a);border:1px solid var(--c)">Günlüğe kaydet</button></div>`}</div>`; }).join("") || "<div class='bos'>Henüz kapanan işlem yok.</div>");
+  h += `<details class="kart"><summary>Disiplin ayarları ve yedek</summary>
+    ${[["baslangic", "Başlangıç bakiyesi (TL)", d.baslangic], ["maks_risk", "İşlem başına en çok risk (%)", A.maks_risk * 100], ["maks_toplam_risk", "Toplam açık risk sınırı (%)", A.maks_toplam_risk * 100],
+       ["min_kr", "En az kazanç/risk", A.min_kr], ["sigorta_dd", "Sigorta: tepeden düşüş (%)", A.sigorta_dd * 100], ["sigorta_ardisik", "Sigorta: üst üste zarar", A.sigorta_ardisik]].map(([k, a, v]) =>
+      `<label style="font-size:11.5px;color:var(--s);font-weight:700">${a}</label><input class="ara" data-ay="${k}" value="${String(+(+v).toFixed(4)).replace(".", ",")}" inputmode="decimal">`).join("")}
+    <button class="btn" id="sn-ayk" style="width:100%;border:none">Ayarları kaydet</button>
+    <div style="display:flex;gap:8px;margin-top:8px"><button id="sn-ind" class="ara" style="margin:0;flex:1">⬇︎ Yedeği indir</button><label class="ara" style="margin:0;flex:1;text-align:center">⬆︎ Yedek yükle<input type="file" id="sn-yuk" accept=".json,application/json" style="display:none"></label></div>
+    <div class="not" style="font-size:11px;margin-top:6px">Defter yalnız bu telefonda saklanır. Yedek dosyası tam uygulamadaki sanal işlem yedeğiyle aynı biçimdedir; iki yönde taşınabilir.</div></details>`;
+  ic().innerHTML = h;
+  document.getElementById("sn-yeni").onclick = () => snForm();
+  if (SNL_FORM) snForm(SNL_FORM);
+  ic().querySelectorAll("[data-kapat]").forEach(b => b.onclick = () => { const p = D.pozisyonlar.find(x => x.id === b.dataset.kapat); if (!p || p.son == null) return alert("Güncel fiyat yok.");
+    if (!confirm(`${p.kod} ${fy(p.son)} fiyatından kapatılsın mı?`)) return;
+    const dd = defter(); dd.olaylar.push({id: yeniId(), t: simdiIso(), tip: "kapat", ref: p.id, fiyat: p.son, adet: p.kalan, komisyon: p.komisyon, sebep: ic().querySelector(`[data-sebep="${p.id}"]`).value}); defterKaydet(dd); pfSanal(); });
+  ic().querySelectorAll("[data-iptal]").forEach(b => b.onclick = () => { if (!confirm("İşlem iptal edilsin mi (hiç açılmamış sayılır)?")) return; const dd = defter(); dd.olaylar.push({id: yeniId(), t: simdiIso(), tip: "iptal", ref: b.dataset.iptal, sebep: "kullanıcı iptali"}); defterKaydet(dd); pfSanal(); });
+  ic().querySelectorAll("[data-gk]").forEach(b => b.onclick = () => { const id = b.dataset.gk, pu = ic().querySelector(`[data-gp="${id}"]`).value;
+    const dd = defter(); dd.olaylar.push({id: yeniId(), t: simdiIso(), tip: "not", ref: id, plana_uydum: pu === "" ? null : pu === "1", duygu: ic().querySelector(`[data-gd="${id}"]`).value, ders: ic().querySelector(`[data-gx="${id}"]`).value.trim(), sebep: null}); defterKaydet(dd); pfSanal(); });
+  document.getElementById("sn-ayk").onclick = () => { const dd = defter(), g = k => sayiTr(ic().querySelector(`[data-ay=${k}]`).value);
+    dd.baslangic = g("baslangic") || dd.baslangic; dd.ayar = {maks_risk: g("maks_risk") / 100, maks_toplam_risk: g("maks_toplam_risk") / 100, min_kr: g("min_kr"), sigorta_dd: g("sigorta_dd") / 100, sigorta_ardisik: Math.round(g("sigorta_ardisik"))};
+    defterKaydet(dd); pfSanal(); };
+  document.getElementById("sn-ind").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(defter(), null, 1)], {type: "application/json"})); a.download = "sanal_defter.json"; a.click(); };
+  document.getElementById("sn-yuk").onchange = async e => { try { const x = JSON.parse(await e.target.files[0].text()); if (!x || !Array.isArray(x.olaylar)) throw 0;
+    if (confirm(`${x.olaylar.length} kayıtlı defter yüklensin mi? Telefondaki defterin yerini alır.`)) { defterKaydet({surum: 1, baslangic: 100000, para: "TL", ...x}); pfSanal(); } } catch (er) { alert("Geçerli bir sanal defter dosyası değil."); } };
+}
+async function snForm(f) {
+  f = f || {kod: "", yon: 1, giris: "", stop: "", hedef: "", adet: "", neden: ""}; SNL_FORM = f;
+  const el = document.getElementById("sn-form");
+  el.innerHTML = `<div class="kart"><b style="font-size:13.5px">Yeni sanal işlem</b>
+    <label class="etiket" style="display:block;margin-top:8px">Varlık</label><input class="ara" id="sf-kod" placeholder="ör. THYAO, BTC/USDT" value="${esc(f.kod)}" autocapitalize="characters">
+    <div class="cip"><button data-y="1" class="${f.yon == 1 ? "s" : ""}">AL</button><button data-y="-1" class="${f.yon == -1 ? "s" : ""}">SAT (yalnız kripto)</button></div>
+    ${[["giris", "Giriş fiyatı", "boş = şimdiki fiyat"], ["stop", "Stop", "zorunlu"], ["hedef", "Hedef", "kâr alacağın fiyat"], ["adet", "Adet", "boş = risk kuralına göre"]].map(([k, a, ph]) => `<label class="etiket">${a}</label><input class="ara" id="sf-${k}" placeholder="${ph}" value="${esc(f[k])}" inputmode="decimal">`).join("")}
+    <label class="etiket">Neden açıyorum?</label><input class="ara" id="sf-neden" placeholder="bir cümle (günlük için)" value="${esc(f.neden)}">
+    <div id="sf-kl"></div><div style="display:flex;gap:8px"><button class="btn" id="sf-ac" style="flex:1;border:none;margin:0">İşlemi aç</button><button id="sf-v" style="background:none;border:1px solid var(--c);color:var(--s);border-radius:12px;padding:0 14px">Vazgeç</button></div></div>`;
+  const oku = () => { ["kod", "giris", "stop", "hedef", "adet", "neden"].forEach(k => f[k] = document.getElementById("sf-" + k).value); return f; };
+  el.querySelectorAll("[data-y]").forEach(b => b.onclick = () => { oku(); f.yon = +b.dataset.y; snForm(f); });
+  document.getElementById("sf-v").onclick = () => { SNL_FORM = null; el.innerHTML = ""; };
+  const hesap = async () => {
+    oku(); const v = varlikBul(f.kod), kl = document.getElementById("sf-kl");
+    if (!v) { kl.innerHTML = f.kod ? "<div class='plan not'>Varlık bulunamadı.</div>" : ""; return null; }
+    const fp = fiyatTL(v), giris = sayiTr(f.giris) || fp.p, stop = sayiTr(f.stop), hedef = sayiTr(f.hedef), para = fp.para === "$" ? "USD" : "TL";
+    const d = defter(), D = degerle(d); let adet = sayiTr(f.adet);
+    if (!(adet > 0) && stop) { try { adet = pozBoyut(D.ozkaynak_tl / (para === "USD" ? KUR : 1), ayar(d).maks_risk, giris, stop, f.yon, v.pz).adet; } catch (e) { adet = 0; } }
+    const rj = v.pz === "bist" || v.pz === "abd" ? await al(`rejim/${v.pz}.json`) : null;
+    const K = kontrolListesi(d, D, v.kod, v.pz, f.yon, giris, stop, hedef, adet || 0, para, rj, f.neden);
+    kl.innerHTML = `<div class="plan" style="margin:6px 0">${esc(v.kod)} şimdi ${fp.para}${fy(fp.p)} · adet <b>${tr(adet || 0, (adet || 0) % 1 ? 4 : 0)}</b> · tutar ${fp.para}${tr((adet || 0) * giris, 0)}</div>
+      <div class="kart" style="background:var(--k)"><b style="font-size:12.5px">İşlem öncesi kontrol · ${K.puan}/100</b>${K.maddeler.map(m => `<div class="sin"><b style="color:${durumRenk[m.durum]}">${m.durum === "ok" ? "✓" : m.durum === "uyari" ? "!" : "✗"} ${esc(m.ad)}</b><p>${esc(m.ac)}</p></div>`).join("")}</div>`;
+    return {v, giris, stop, hedef, adet, para, K};
+  };
+  el.querySelectorAll("input").forEach(i => i.onchange = hesap); hesap();
+  document.getElementById("sf-ac").onclick = async () => { const x = await hesap(); if (!x) return alert("Varlık bulunamadı.");
+    if (f.yon === -1 && x.v.pz !== "kripto") return alert("Açığa satış (SAT) yalnızca kripto için desteklenir.");
+    if (!(x.adet > 0) || !(x.giris > 0)) return alert("Adet ve fiyat pozitif olmalı.");
+    if (x.K.engel && !confirm("Kontrol listesinde kırmızı madde var. Yine de açılsın mı?")) return;
+    const d = defter(); d.olaylar.push({id: yeniId(), t: simdiIso(), tip: "ac", kod: x.v.kod, piyasa: x.v.pz, yon: f.yon, adet: x.adet, fiyat: x.giris, komisyon: 0.002,
+      stop: x.stop || null, hedef: x.hedef || null, para: x.para, kaynak: "hizli-uygulama", aciklama: f.neden, kontrol: {puan: x.K.puan, uyari: x.K.maddeler.filter(m => m.durum !== "ok").map(m => m.ad)}});
+    defterKaydet(d); SNL_FORM = null; pfSanal(); };
+}
+
 // ---------------------------------------------------------------- Özet
 async function ozet() {
   const el = document.getElementById("s-ozet");
@@ -411,8 +672,7 @@ async function ozet() {
   SEM.forEach(x => kutuYaz(x, false)); canliBasla(); cuzdan();
   document.getElementById("oara").oninput = async e => {
     const q = e.target.value.trim().toLocaleUpperCase("tr"), L = (await karneListe()).varliklar;
-    document.getElementById("osonuc").innerHTML = q.length < 2 ? "" : (L.filter(v => (v.kod + " " + (v.ad || "")).toLocaleUpperCase("tr").includes(q))
-      .sort((a, b) => (b.kod.startsWith(q) - a.kod.startsWith(q))).slice(0, 12).map(karneSatir).join("") || "<div class='bos'>Bulunamadı.</div>");
+    document.getElementById("osonuc").innerHTML = q.length < 2 ? "" : (ara(q, 12).map(karneSatir).join("") || "<div class='bos'>Bulunamadı.</div>");
   };
   const taze = (bl || []).filter(x => { const m = String(x.zaman || "").match(/(\d\d)\.(\d\d)\.(\d{4}) (\d\d):(\d\d)/);
     return m && Date.now() - new Date(`${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}:00+03:00`) < 18 * 3600e3; });
@@ -496,7 +756,7 @@ async function karneBolum(el) {
   if (!L.length) return;
   const ciz = () => {
     const q = (document.getElementById("kara") || {}).value || "";
-    const sec = L.filter(v => q ? (v.kod + " " + (v.ad || "")).toLocaleUpperCase("tr").includes(q.toLocaleUpperCase("tr")) : v.pz === K_PZ);
+    const sec = q ? ara(q, 60) : L.filter(v => v.pz === K_PZ);
     const goster = q ? sec.slice(0, 60) : sec.slice().sort((a, b) => b.puan - a.puan).slice(0, 150);
     document.getElementById("kliste").innerHTML = (goster.map(karneSatir).join("") || "<div class='bos'>Bulunamadı.</div>")
       + (sec.length > goster.length ? `<div class="bos">${goster.length} / ${sec.length} gösteriliyor (puana göre). Diğerleri için yukarıdan ara.</div>` : "");
@@ -535,7 +795,7 @@ async function piyasa() {
 }
 
 // ---------------------------------------------------------------- gezinme, yenileme, kurulum
-const YUK = {ozet, firsat: firsatlar, bildirim: bildirimler, haber: haberler, piyasa};
+const YUK = {ozet, firsat: firsatlar, portfoy, bildirim: bildirimler, haber: haberler, piyasa};
 const yuklendi = {};
 function git(s) {
   if (s.startsWith("v/")) {   // varlık sayfası
@@ -573,7 +833,7 @@ if ("serviceWorker" in navigator) {   // yeni sürüm yayınlanınca telefon esk
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") navigator.serviceWorker.getRegistration().then(r => r && r.update()); });
 }
 karneListe();
-{ const h = decodeURIComponent((location.hash || "").slice(1)); git(["ozet", "firsat", "bildirim", "haber", "piyasa"].includes(h) || h.startsWith("v/") ? h : "ozet"); }
+{ const h = decodeURIComponent((location.hash || "").slice(1)); git(Object.keys(YUK).includes(h) || h.startsWith("v/") ? h : "ozet"); }
 </script>
 </body>
 </html>
