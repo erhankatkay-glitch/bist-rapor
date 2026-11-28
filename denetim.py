@@ -19,7 +19,8 @@ with sync_playwright() as pw:
         fr.wait_for_timeout(2000)
     fr.evaluate("localStorage.setItem('kk_gorulen', JSON.stringify(Array.from({length:80},(_, i)=>'x'+i)))")
     for kod in ("BTC/USDT|kripto|seviye|",):
-        fr.evaluate(f"window.kkIstek('{kod}')")
+        print("   istek:", fr.evaluate("(document.querySelector('.oc .oc-t2')||{}).dataset && document.querySelector('.oc .oc-t2').dataset.kk"))
+        fr.locator(".oc .oc-t2").first.click()
         ok = False
         for _ in range(80):
             fr.wait_for_timeout(3000)
