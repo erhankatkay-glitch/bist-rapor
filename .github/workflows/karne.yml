@@ -4,7 +4,8 @@ name: Varlık karneleri (hızlı uygulama)
 # gün ortası tazeleme yapar ve elle tüm piyasaları yeniden üretmek için çalıştırılabilir.
 on:
   schedule:
-    - cron: "10 9 * * *"   # 12:10 TSİ: gün ortası tazeleme (hafta sonu yalnız kripto anlamlı değişir)
+    - cron: "10 9 * * *"     # 12:10 TSİ: gün ortası tazeleme (hafta sonu yalnız kripto anlamlı değişir)
+    - cron: "10 15 * * 1-5"  # 18:10 TSİ: ABD seans ortası tazeleme
   workflow_dispatch: {}
 
 permissions:

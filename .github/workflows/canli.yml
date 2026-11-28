@@ -1,0 +1,44 @@
+name: Canlı fiyatlar (hızlı uygulama)
+
+# Seans açıkken 15 dakikada bir BIST / ABD / emtia son fiyatları → bulten/canli/<piyasa>.json (kapalı piyasalar atlanır).
+on:
+  schedule:
+    - cron: "*/15 * * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canli
+  cancel-in-progress: true
+
+jobs:
+  canli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    env:
+      GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+    steps:
+      - uses: actions/checkout@v4
+      - name: Açık piyasa var mı?
+        id: k
+        run: |
+          python3 - <<'P' >> "$GITHUB_OUTPUT"
+          import datetime as dt
+          n = dt.datetime.now(dt.timezone.utc); h = n.hour + n.minute / 60
+          print("calis=" + ("1" if 6.5 <= h <= 22.5 else "0"))
+          P
+      - uses: actions/setup-python@v5
+        if: steps.k.outputs.calis == '1' || github.event_name == 'workflow_dispatch'
+        with:
+          python-version: "3.12"
+          cache: pip
+      - if: steps.k.outputs.calis == '1' || github.event_name == 'workflow_dispatch'
+        run: pip install -r requirements.txt
+      - name: Canlı fiyatlar
+        if: steps.k.outputs.calis == '1' || github.event_name == 'workflow_dispatch'
+        run: python canli.py cikti ${{ github.event_name == 'workflow_dispatch' && 'bist abd emtia' || '' }}
+      - name: Yayınla
+        if: steps.k.outputs.calis == '1' || github.event_name == 'workflow_dispatch'
+        run: python yayinla.py cikti "Canlı fiyatlar $(date -u +%FT%H%M)"

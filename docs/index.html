@@ -279,9 +279,20 @@ async function karneListe() {   // dört piyasanın karne listeleri (karne/<pz>/
   if (!KARNE) {
     const l = await Promise.all(["bist", "abd", "kripto", "emtia"].map(async pz => ((await al(`karne/${pz}/liste.json`)) || {varliklar: []}).varliklar.map(v => ({...v, pz}))));
     KARNE = {varliklar: l.flat()};
+    // gün içi canlı fiyatlar: BIST/ABD/emtia → canli/<pz>.json (15 dk'da bir), kripto → Binance (anlık)
+    const c = await Promise.all(["bist", "abd", "emtia"].map(pz => al(`canli/${pz}.json`)));
+    c.forEach(x => x && Object.entries(x.fiyat || {}).forEach(([k, v]) => CANLI_F[k] = {p: v[0], d: v[1], saat: v[2], gun: v[3]}));
+    try {
+      const t = await fetch("https://data-api.binance.vision/api/v3/ticker/24hr?type=MINI").then(r => r.json());
+      const saat = new Date().toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"});
+      t.forEach(x => { if (x.symbol.endsWith("USDT")) CANLI_F[x.symbol.slice(0, -4) + "/USDT"] = {p: +x.lastPrice, d: +x.openPrice ? x.lastPrice / x.openPrice - 1 : null, saat, gun: "9999"}; });
+    } catch (e) {}
   }
   return KARNE;
 }
+const CANLI_F = {};
+// canlı fiyat karnedeki kapanıştan yeniyse onu kullan
+const canliAl = v => { const c = CANLI_F[v.kod]; return c && c.p != null && (!v.tarih || c.gun >= v.tarih) ? c : null; };
 const dosyaAdi = k => String(k).replace(/[\/\\:]/g, "-").replace(/@/g, "_");
 // içeride karnesi varsa uygulama içi sayfa, yoksa tam uygulama
 function varlikLink(kod, pz) {
@@ -318,6 +329,7 @@ function grafikSvg(g, tf) {
   return `<svg class="grafik" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${o}</svg>
     <div class="lej"><span><i style="background:#60A5FA"></i>20 günlük ort.</span><span><i style="background:#E8B84A"></i>50</span><span><i style="background:#C084FC"></i>200</span><span><i style="background:#22C55E"></i>destek</span><span><i style="background:#EF4444"></i>direnç</span></div>`;
 }
+const tarihTr = t => t ? `${t.slice(8, 10)}.${t.slice(5, 7)}` : "";
 const TF_AD = {G: "Günlük", H: "Haftalık", A: "Aylık", "4S": "4 saatlik", "1S": "1 saatlik"};
 async function varlik(kod) {
   const el = document.getElementById("s-varlik");
@@ -334,7 +346,7 @@ async function varlik(kod) {
     <div class="kart"><div class="vb"><div class="a"><b>${esc(String(k.kod).replace(".US", ""))}</b><span>${esc(k.ad)} · ${PZ_AD[k.pz] || ""}</span><br>
       <span class="rozet ${etkSinif(k.etiket)}">${esc(k.etiket)} · ${tr(k.puan, 0)}/100</span></div>
       <div class="f"><b id="v-fiyat">${para}${fy(g.fiyat)}</b><span id="v-deg" class="${rk(g.degisim)}">${yz(g.degisim, 2)}</span><br><span class="not" style="font-size:10.5px;font-weight:600">gün ${fy(k.gun.dusuk)} – ${fy(k.gun.yuksek)}</span></div></div>
-      <div class="metin" style="margin-top:8px;color:var(--s)">${esc(k.baslik)}</div></div>
+      <div class="metin" style="margin-top:8px;color:var(--s)">${esc(k.baslik)}</div><div id="v-not" style="font-size:10.5px;color:var(--s2);margin-top:6px"></div></div>
     ${grafikSvg(k.grafik, g)}
     <h2>Zaman dilimleri</h2><div class="tfk">${Object.entries(k.tf).map(([t, a]) => `<div><small>${TF_AD[t] || t}</small><b class="${rk(a.puan - 50)}">${esc(a.etiket)}</b><div class="cub"><div style="width:${a.puan}%"></div></div></div>`).join("")}</div>
     <h2>Teknik yorum</h2><div class="kart metin">${md(k.yorum)}</div>`;
@@ -355,6 +367,9 @@ async function varlik(kod) {
     <a class="btn" target="_blank" rel="noopener" href="${ac(k.kod, k.pz)}">Canlı analiz ve PDF rapor (tam uygulama) ›</a>
     <div class="uyari">Karne ${new Date(k.zaman).toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"})} itibarıyla hesaplandı (veri: ${esc(k.fiyat_zamani)}).</div>`;
   el.innerHTML = h;
+  { const c = canliAl({kod: k.kod, tarih: k.grafik.t[k.grafik.t.length - 1]});
+    if (c && k.pz !== "kripto") { document.getElementById("v-fiyat").textContent = para + fy(c.p); const d = document.getElementById("v-deg"); d.textContent = yz(c.d, 2); d.className = rk(c.d); }
+    document.getElementById("v-not").innerHTML = c ? `<span class="canli"><i></i>fiyat ${k.pz === "kripto" ? "anlık" : c.saat + (k.pz === "bist" ? " (~15 dk gecikmeli)" : "")}</span> · analiz ${tarihTr(k.grafik.t[k.grafik.t.length - 1])} kapanışıyla` : `analiz ${tarihTr(k.grafik.t[k.grafik.t.length - 1])} kapanışıyla`; }
   if (k.pz === "kripto") {   // kriptoda fiyat canlı
     try { const t = await fetch(`https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${String(k.kod).replace("/", "")}`).then(r => r.json());
       document.getElementById("v-fiyat").textContent = "$" + fy(+t.lastPrice); const d = document.getElementById("v-deg"); d.textContent = yz(+t.priceChangePercent / 100, 2); d.className = rk(+t.priceChangePercent); } catch (e) {}
@@ -470,9 +485,10 @@ async function haberler() {
 // ---------------------------------------------------------------- Piyasa
 let K_PZ = "bist";
 function karneSatir(v) {
+  const c = canliAl(v);
   return `<a class="kart dok" href="#v/${encodeURIComponent(v.kod)}" style="padding:9px 12px"><div class="satir"><div class="a"><b>${esc(String(v.kod).replace(".US", ""))}
     <span class="etk ${etkSinif(v.etiket) === "n" ? "n" : etkSinif(v.etiket)}" style="margin-left:6px">${esc(v.etiket)}</span></b><span>${esc(v.ad || "")}</span></div>
-    <div style="width:70px">${spark(v.seri, v.degisim || 0)}</div><div class="f" style="min-width:74px"><b>${fy(v.fiyat)}</b><span class="${rk(v.degisim)}">${yz(v.degisim, 2)}</span></div></div></a>`;
+    <div style="width:70px">${spark(v.seri, v.degisim || 0)}</div><div class="f" style="min-width:74px"><b>${fy(c ? c.p : v.fiyat)}</b><span class="${rk(c ? c.d : v.degisim)}">${yz(c ? c.d : v.degisim, 2)}</span>${c ? `<small style="display:block;color:var(--s2);font-size:9.5px">● ${c.saat}</small>` : ""}</div></div></a>`;
 }
 async function karneBolum(el) {
   const L = (await karneListe()).varliklar || [];
