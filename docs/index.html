@@ -757,7 +757,7 @@ function varlikTemelHtml(t, pz, para, tarih) {
       <div class="not" style="font-size:11px;margin-top:6px">3 yıllık aralıktaki yeri: %${tr(c.spek_yuzdelik_3y * 100, 0)}</div><div class="cub"><div style="width:${Math.round(c.spek_yuzdelik_3y * 100)}%"></div></div>
       <div class="metin" style="margin-top:6px;font-size:12px">${esc(c.yorum || "")}</div><div class="not" style="font-size:10px;margin-top:4px">Rapor tarihi ${esc(c.tarih.split("-").reverse().join("."))} (CFTC haftalık yayınlar, salı verisi cuma açıklanır)</div></div>`;
     if (ms.bu_ay || ms.gelecek_ay) h += `<div class="kart"><b style="font-size:13px">Mevsimsellik</b><table class="tablo">${[ms.bu_ay, ms.gelecek_ay].filter(Boolean).map(x =>
-      sat(esc(x.ay), `<span class="${rk(x.ort)}">${yz(x.ort, 1)}</span> ort. · yılların ${yuzde(x.pozitif)}'inde yükseliş (${x.n} yıl)`)).join("")}</table></div>`;
+      sat(esc(x.ay), `<span class="${rk(x.ort)}">${yz(x.ort, 1)}</span> · ${x.n} yılın ${yuzde(x.pozitif)}'i artı`)).join("")}</table></div>`;
     if (t.Oran) h += `<div class="kart"><b style="font-size:13px">${esc(t.Oran.ad)}: ${tr(t.Oran.deger, 1)}</b><div class="metin" style="font-size:12px;margin-top:4px">${esc(t.Oran.yorum)} (5 yıllık ort. ${tr(t.Oran.ort5y, 1)})</div></div>`;
   }
   const bl = Object.entries(t["Bölümler"] || {});

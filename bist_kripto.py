@@ -32,7 +32,9 @@ _HISSE = {"SPY", "QQQ", "IVV", "VOO", "VTI", "DIA", "IWM", "TQQQ", "SQQQ", "GLD"
 _GERCEK_KRIPTO = {"XAUT", "XVG", "XEM", "XNO", "XDC", "XCN", "XYO", "XLM", "XRP", "XTZ", "XEC", "XAI", "XVS", "XCH", "XPR", "XPRT", "XWG",
                   "XION", "XPL", "XNET", "XCAD", "XNY", "XTER", "XUSD", "XMR", "XDB", "XCV", "XEN", "XETA", "XRD", "XNC", "XPLA", "XBG", "XMW"}
 _ETF = {"EWZ", "EWJ", "EEM", "EFA", "FXI", "KWEB", "XLF", "XLE", "XLK", "SOXX", "SMH", "IBIT", "ETHA", "GDX", "USO", "UNG", "HYG", "LQD",
-        "SPCX", "STLL", "BRKB", "BRKA"}
+        "SPCX", "STLL", "BRKB", "BRKA",
+        # kaldıraçlı ETF'ler (tokenları: SOXLB, TQQQX vb.)
+        "SOXL", "SOXS", "TQQQ", "SQQQ", "UPRO", "SPXL", "SPXS", "TSLL", "TSLQ", "NVDL", "NVDU", "MSTU", "MSTX", "CONL", "LABU", "TNA", "FNGU", "QLD", "SSO"}
 _ABD = None
 
 
