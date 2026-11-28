@@ -43,6 +43,7 @@ def _abd_listesi():
         _ABD = set()
         try:
             import io
+            import os
             if os.path.exists("abd_listesi.csv"): df = pd.read_csv("abd_listesi.csv", dtype=str)
             else:
                 import requests
