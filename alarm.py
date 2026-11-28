@@ -517,6 +517,8 @@ GRUP_KART = [("💼", "Portföyünüz", "altin"), ("⚡", "Sert hareket ve fiyat
 def _logo_kod(sol):
     """Alarm satırındaki varlık → (kod, piyasa) ya da None. 'NVDA (Nvidia)' → ABD, 'SOL/USDT' → kripto, 'ASELS' → BIST."""
     import logolar as LG
+    ad = re.split(r":| bugün | fiyatı ", sol)[0].strip()
+    if LG.ozel_url(ad): return (ad, "ozel")          # endeks, emtia, döviz: Nasdaq, GRAMALTIN, USD/TRY …
     m = re.match(r"^([A-Z0-9.]{1,6}) \(", sol)
     if m: return (m.group(1) + ".US", "abd")
     m = re.match(r"^([A-Z0-9]{2,10}/(?:USDT|TRY))\b", sol)

@@ -89,9 +89,15 @@ details.kart summary{font-weight:800;font-size:13.5px;list-style:none;cursor:poi
 .btn{display:block;text-align:center;padding:12px;border-radius:13px;background:linear-gradient(180deg,var(--a2),#C99A2E);color:#0B0B0C;font-weight:900;font-size:14px;text-decoration:none;margin-top:6px}
 .satir .a span b{display:inline;font-size:inherit}
 .etiket{font-size:11.5px;color:var(--s);font-weight:700}
+.hero{height:110px;margin:calc(-8px - env(safe-area-inset-top)) -12px -46px;background:url(hero.jpg) center 45%/cover no-repeat;opacity:.95;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 25%,#000 55%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 25%,#000 55%,transparent 100%)}
+header{position:relative;z-index:1}
+.lg{border-radius:7px;object-fit:contain;background:#fff1;vertical-align:-4px;margin-right:7px;flex:none}
+.mini .lg{position:absolute;top:8px;right:8px;margin:0;border-radius:6px}
 </style>
 </head>
 <body>
+<div class="hero" aria-hidden="true"></div>
 <header>
   <img src="icon-192.png" alt="">
   <div class="ad"><b>KATKAY <span>YATIRIM</span></b><i>BIST · ABD · KRİPTO · EMTİA</i></div>
@@ -348,7 +354,7 @@ async function varlik(kod) {
   const e = k.ekip, gor = e ? (e.gorunum.startsWith("AL") ? "al" : e.gorunum.startsWith("SAT") ? "sat" : "n") : "";
   const sev = (l, renk) => (l || []).map(x => `<tr><td><span style="color:${renk}">●</span> ${x[1]} temas</td><td>${para}${fy(x[0])}</td></tr>`).join("");
   let h = `<button class="geri" onclick="history.length > 1 ? history.back() : git('ozet')">‹ Geri</button>
-    <div class="kart"><div class="vb"><div class="a"><b>${esc(String(k.kod).replace(".US", ""))}</b><span>${esc(k.ad)} · ${PZ_AD[k.pz] || ""}</span><br>
+    <div class="kart"><div class="vb"><div class="a"><b>${logo(k.kod, k.pz, k.ad, 30)}${esc(String(k.kod).replace(".US", ""))}</b><span>${esc(k.ad)} · ${PZ_AD[k.pz] || ""}</span><br>
       <span class="rozet ${etkSinif(k.etiket)}">${esc(k.etiket)} · ${tr(k.puan, 0)}/100</span></div>
       <div class="f"><b id="v-fiyat">${para}${fy(g.fiyat)}</b><span id="v-deg" class="${rk(g.degisim)}">${yz(g.degisim, 2)}</span><br><span class="not" style="font-size:10.5px;font-weight:600">gün ${fy(k.gun.dusuk)} – ${fy(k.gun.yuksek)}</span></div></div>
       <div class="metin" style="margin-top:8px;color:var(--s)">${esc(k.baslik)}</div><div id="v-not" style="font-size:10.5px;color:var(--s2);margin-top:6px"></div></div>
@@ -508,7 +514,7 @@ function pfVarlik() {
     h += `<div class="kart"><div class="satir"><div class="a"><b style="font-size:22px">₺${tr(top, 0)}</b><span>≈ $${tr(top / KUR, 0)} · ${R.length} varlık${kz ? ` · maliyete göre <b class="${rk(kz)}">${kz >= 0 ? "+" : "-"}₺${tr(Math.abs(kz), 0)}</b>` : ""}</span></div>
       <div class="f"><b class="${rk(gun)}">${gun >= 0 ? "+" : "-"}₺${tr(Math.abs(gun), 0)}</b><span class="not">bugün</span></div></div></div>`;
     h += R.sort((a, b) => (b.deger || 0) - (a.deger || 0)).map(x => x.yok ? `<div class="kart"><b>${esc(x.kod)}</b> <span class="not">tanınmadı (örn. THYAO, NVDA, BTC/USDT, GRAMALTIN)</span></div>` :
-      `<a class="kart dok" href="#v/${encodeURIComponent(x.v.kod)}"><div class="satir"><div class="a"><b>${esc(x.kod)} <span class="etk ${etkSinif(x.v.etiket)}" style="margin-left:4px">${esc(x.v.etiket)}</span></b>
+      `<a class="kart dok" href="#v/${encodeURIComponent(x.v.kod)}"><div class="satir"><div class="a"><b>${logo(x.v.kod, x.v.pz, x.v.ad)}${esc(x.kod)} <span class="etk ${etkSinif(x.v.etiket)}" style="margin-left:4px">${esc(x.v.etiket)}</span></b>
         <span>${tr(x.adet, x.adet % 1 ? 4 : 0)} × ${x.f.para}${fy(x.f.p)}${x.mal ? ` · maliyet ${fy(x.mal)} (<b class="${rk(x.kzo)}">${yz(x.kzo)}</b>)` : ""}</span>
         <div class="cub" style="margin-top:5px"><div style="width:${(x.deger / top * 100).toFixed(1)}%"></div></div></div>
         <div class="f"><b>₺${tr(x.deger, 0)}</b><span class="${rk(x.f.d)}">${yz(x.f.d, 2)}</span><small style="display:block;color:var(--s2);font-size:10px">%${tr(x.deger / top * 100, 0)}</small></div></div>
@@ -567,7 +573,7 @@ async function pfSanal() {
   if (s.aktif) h += `<div class="kart bild k"><div class="m"><b>🛑 Düşüş sigortası devrede:</b> ${esc(s.neden.join("; "))}. Yeni işlemden önce ara ver.</div></div>`;
   h += `<button class="btn" id="sn-yeni" style="width:100%;border:none">＋ Yeni sanal işlem</button><div id="sn-form"></div>`;
   h += `<h2>Açık pozisyonlar · ${D.pozisyonlar.length}</h2>` + (D.pozisyonlar.map(p => { const R = p.stop && p.son != null ? (p.son - p.fiyat) * p.yon / Math.abs(p.fiyat - p.stop) : null;
-    return `<div class="kart"><div class="satir"><div class="a"><b><span class="etk ${p.yon > 0 ? "al" : "sat"}">${p.yon > 0 ? "AL" : "SAT"}</span>${esc(p.kod)}</b><span>${tr(p.kalan, p.kalan % 1 ? 4 : 0)} × ${fy(p.fiyat)} · stop ${p.stop ? fy(p.stop) : "–"} · hedef ${p.hedef ? fy(p.hedef) : "–"}</span></div>
+    return `<div class="kart"><div class="satir"><div class="a"><b><span class="etk ${p.yon > 0 ? "al" : "sat"}">${p.yon > 0 ? "AL" : "SAT"}</span>${logo(p.kod, p.piyasa)}${esc(p.kod)}</b><span>${tr(p.kalan, p.kalan % 1 ? 4 : 0)} × ${fy(p.fiyat)} · stop ${p.stop ? fy(p.stop) : "–"} · hedef ${p.hedef ? fy(p.hedef) : "–"}</span></div>
       <div class="f"><b>${fy(p.son)}</b><span class="${rk(p.kz)}">${p.kz_tl == null ? "" : (p.kz_tl >= 0 ? "+" : "-") + "₺" + tr(Math.abs(p.kz_tl), 0)}${R == null ? "" : " · " + tr(R, 2) + "R"}</span></div></div>
       ${p.uyari ? `<div class="plan" style="color:${p.uyari.includes("hedef") ? "var(--g)" : "var(--r)"}">⚠️ ${esc(p.uyari)}</div>` : ""}
       <div style="display:flex;gap:6px;margin-top:8px"><select class="ara" data-sebep="${p.id}" style="flex:1;margin:0;padding:7px">${SNL.SEBEP.map(x => `<option>${x}</option>`).join("")}</select>
@@ -637,6 +643,24 @@ async function snForm(f) {
       stop: x.stop || null, hedef: x.hedef || null, para: x.para, kaynak: "hizli-uygulama", aciklama: f.neden, kontrol: {puan: x.K.puan, uyari: x.K.maddeler.filter(m => m.durum !== "ok").map(m => m.ad)}});
     defterKaydet(d); SNL_FORM = null; pfSanal(); };
 }
+
+// ---------------------------------------------------------------- logolar (tam uygulama ve Telegram ile aynı: logolar.py)
+let LG = null;
+fetch("pwa_veri.json").then(r => r.json()).then(d => { LG = d.logo; PV = PV || d; document.querySelectorAll("img.lg[data-k]").forEach(logoYukle); }).catch(() => {});
+function logoUrl(kod, pz, ad) {
+  if (!LG) return null; const k = String(kod || "").trim(), T = `?token=${LG.token}&size=64&format=png&fallback=404`;
+  const alan = LG.ozel[k] || LG.ozel[k.toUpperCase()] || (ad && LG.ozel[ad]); if (alan) return `https://img.logo.dev/${alan}${T}`;
+  const m = k.toUpperCase().replace(/\s/g, "").match(/^([A-Z]{3})\/?([A-Z]{3})(=X)?$/);
+  if (m && LG.para[m[1]] && LG.para[m[2]]) return `https://flagcdn.com/w80/${m[1] === "USD" && m[2] === "TRY" ? "tr" : m[1] !== "USD" ? LG.para[m[1]] : LG.para[m[2]]}.png`;
+  if (pz === "kripto" || k.includes("/")) { let b = k.toUpperCase().split("/")[0].replace(/USDT$/, ""); b = (LG.esle[b] || b).toLowerCase(); return `https://img.logo.dev/crypto/${b}${T}`; }
+  if (pz === "bist") return `https://img.logo.dev/ticker/${k.toUpperCase().replace(".IS", "")}.IS${T}`;
+  if (pz === "abd" || k.endsWith(".US")) return `https://img.logo.dev/ticker/${k.toUpperCase().replace(".US", "").replace(".", "-")}${T}`;
+  return null;
+}
+function logoYukle(im) { const u = logoUrl(im.dataset.k, im.dataset.p, im.dataset.a); if (u) im.src = u; else im.remove(); }
+// <img> etiketi: logo.dev / bayrak; yüklenemezse kendini kaldırır
+const logo = (kod, pz, ad, boy = 22) => { const u = logoUrl(kod, pz, ad);
+  return `<img class="lg" ${u ? `src="${u}"` : ""} data-k="${esc(kod)}" data-p="${esc(pz || "")}" data-a="${esc(ad || "")}" width="${boy}" height="${boy}" loading="lazy" alt="" onerror="this.remove()" style="width:${boy}px;height:${boy}px">`; };
 
 // ---------------------------------------------------------------- 3. adım: takvim, ekonomi, tarayıcı, karşılaştır, fırsat performansı, sabah özeti
 let PV = null;   // docs/pwa_veri.json: tam uygulamanın sözlükleri (takvim Türkçe adları, tarayıcı alanları ve hazır taramalar)
@@ -807,13 +831,13 @@ async function ozet() {
   // canlı kripto (Binance): ilk değer REST, sonra WebSocket ile saniye saniye
   h += "<h2>Kripto ve altın · <span class='canli'><i></i>canlı</span></h2><div class='izgara'>" + SEM.map(x => {
     const k = x.replace("USDT", ""), pz = k === "PAXG" ? "emtia" : "kripto", kod = k === "PAXG" ? "ALTIN" : k + "/USDT";
-    return `<a class="mini dok" id="c-${x}" href="${ac(kod, pz)}" target="_blank"><small>${k === "PAXG" ? "Ons altın" : k}</small><b>–</b><span class="not">–</span><svg class="sp" viewBox="0 0 100 22" preserveAspectRatio="none"></svg></a>`;
+    return `<a class="mini dok" id="c-${x}" href="${ac(kod, pz)}" target="_blank">${k === "PAXG" ? logo("ALTIN", "emtia", "Ons altın", 20) : logo(x, "kripto", "", 20)}<small>${k === "PAXG" ? "Ons altın" : k}</small><b>–</b><span class="not">–</span><svg class="sp" viewBox="0 0 100 22" preserveAspectRatio="none"></svg></a>`;
   }).join("") + "</div>";
   // piyasa rejimi
   const rj = await Promise.all(["bist", "abd"].map(p => al(`rejim/${p}.json`)));
   const renk = {yukselis: "#22C55E", baski: "#E8B84A", ralli: "#E8B84A", duzeltme: "#EF4444"};
   if (rj.some(Boolean)) h += "<h2>Piyasa rejimi</h2>" + rj.filter(Boolean).map(r =>
-    `<a class="kart rj dok" target="_blank" href="${UYG}" style="--rk:${renk[r.durum]};display:block;text-decoration:none;color:inherit"><div class="b"><b>${esc(r.endeks)} · ${esc(r.durum_ad)}</b><span>%${r.maruziyet}</span></div>
+    `<a class="kart rj dok" target="_blank" href="${UYG}" style="--rk:${renk[r.durum]};display:block;text-decoration:none;color:inherit"><div class="b"><b>${logo(r.endeks, "", r.endeks, 24)}${esc(r.endeks)} · ${esc(r.durum_ad)}</b><span>%${r.maruziyet}</span></div>
      <p>Önerilen hisse oranı · 50 günlüğün üstündeki hisseler ${r.genislik ? "%" + Math.round(r.genislik.ust50 * 100) : "–"}${r.tepe_uyarisi ? " · <b style='color:#EF4444'>tepe uyarısı</b>" : ""}</p></a>`).join("");
   // dünya
   const dn = await al("dunya/ozet.json");
@@ -821,9 +845,9 @@ async function ozet() {
     const sec = ["BIST 100", "S&P 500", "Nasdaq", "DAX", "Nikkei 225", "Hang Seng"];
     const b = dn.borsalar.filter(x => sec.includes(x.ad));
     const hs = [0, 6].includes(new Date().getDay());
-    h += `<h2>Borsalar · ${hs ? "hafta sonu kapalı, cuma kapanışı" : "son kapanış"}</h2><div class='izgara'>` + b.map(x => `<a class="mini dok" href="${UYG}" target="_blank"><small>${esc(x.ad)}${x.acik ? " <i class='nokta'></i>" : ""}</small><b>${fy(x.son)}</b><span class="${rk(x.d1)}">${yz(x.d1)}</span>${spark(x.seri, x.d1)}</a>`).join("") + "</div>";
+    h += `<h2>Borsalar · ${hs ? "hafta sonu kapalı, cuma kapanışı" : "son kapanış"}</h2><div class='izgara'>` + b.map(x => `<a class="mini dok" href="${UYG}" target="_blank">${logo(x.ad, "", x.ad, 20)}<small>${esc(x.ad)}${x.acik ? " <i class='nokta'></i>" : ""}</small><b>${fy(x.son)}</b><span class="${rk(x.d1)}">${yz(x.d1)}</span>${spark(x.seri, x.d1)}</a>`).join("") + "</div>";
     const dv = dn.doviz.filter(x => ["USD/TRY", "EUR/TRY", "EUR/USD"].includes(x.ad));
-    if (dv.length) h += "<div class='izgara' style='margin-top:7px'>" + dv.map(x => `<a class="mini dok" href="${UYG}" target="_blank"><small>${esc(x.ad)}</small><b>${tr(x.son, 4)}</b><span class="${rk(x.d1)}">${yz(x.d1, 2)}</span>${spark(x.seri, x.d1)}</a>`).join("") + "</div>";
+    if (dv.length) h += "<div class='izgara' style='margin-top:7px'>" + dv.map(x => `<a class="mini dok" href="${UYG}" target="_blank">${logo(x.ad, "", x.ad, 20)}<small>${esc(x.ad)}</small><b>${tr(x.son, 4)}</b><span class="${rk(x.d1)}">${yz(x.d1, 2)}</span>${spark(x.seri, x.d1)}</a>`).join("") + "</div>";
   }
   // son 3 bildirim
   const bl = await al("alarm/son.json");
@@ -859,7 +883,7 @@ async function firsatlar() {
       (sec.length ? sec.map(x => {
         const al_ = x.yon === 1, R = x.son_fiyat && x.risk ? (x.son_fiyat - x.giris) * x.yon / x.risk : null;
         return `<a class="kart" style="display:block;text-decoration:none;color:inherit" href="${ac(x.kod, x.piyasa)}" target="_blank">
-          <div class="satir"><div class="a"><b><span class="etk ${al_ ? "al" : "sat"}">${al_ ? "AL" : "SAT"}</span>${esc(x.kod.replace(".US", ""))}</b>
+          <div class="satir"><div class="a"><b><span class="etk ${al_ ? "al" : "sat"}">${al_ ? "AL" : "SAT"}</span>${logo(x.kod, x.piyasa, x.ad)}${esc(x.kod.replace(".US", ""))}</b>
           <span>${PZ_AD[x.piyasa]} · ${esc(x.tf)} · ${esc(x.kurulum)}</span></div>
           <div class="f"><b>${fy(x.son_fiyat)}</b><span class="${rk(R)}">${R == null ? "" : (R >= 0 ? "+" : "") + tr(R, 2) + "R"}</span></div></div>
           <div class="plan"><i>Giriş</i> ${fy(x.giris)} · <i>Stop</i> ${fy(x.stop)} · <i>H1</i> ${fy((x.hedef || [])[0])} · <i>puan</i> ${tr(x.puan, 0)}</div>
@@ -885,7 +909,7 @@ function bildirimVarlik(m) {
 function bildirimHtml(x) {
   const m = String(x.mesaj || "").replace(/⟦.+?⟧$/, "").trim();
   const sinif = /^🟢/.test(m) ? "y" : /^(🔴|💼)/.test(m) ? "k" : "", v = bildirimVarlik(m);
-  return `<a class="kart bild dok ${sinif}" target="_blank" rel="noopener" href="${v ? ac(v[0], v[1]) : UYG}"><div class="m">${esc(m)}</div>
+  return `<a class="kart bild dok ${sinif}" target="_blank" rel="noopener" href="${v ? ac(v[0], v[1]) : UYG}"><div class="m">${v ? logo(v[0], v[1], "", 20) : ""}${esc(m)}</div>
     <div class="z">${esc(x.zaman)}<span style="float:right;color:var(--a);font-weight:800">${v ? "Analiz ›" : "Aç ›"}</span></div></a>`;
 }
 let BILD = [];
@@ -913,7 +937,7 @@ async function haberler() {
 let K_PZ = "bist";
 function karneSatir(v) {
   const c = canliAl(v);
-  return `<a class="kart dok" href="#v/${encodeURIComponent(v.kod)}" style="padding:9px 12px"><div class="satir"><div class="a"><b>${esc(String(v.kod).replace(".US", ""))}
+  return `<a class="kart dok" href="#v/${encodeURIComponent(v.kod)}" style="padding:9px 12px"><div class="satir"><div class="a"><b>${logo(v.kod, v.pz, v.ad)}${esc(String(v.kod).replace(".US", ""))}
     <span class="etk ${etkSinif(v.etiket) === "n" ? "n" : etkSinif(v.etiket)}" style="margin-left:6px">${esc(v.etiket)}</span></b><span>${esc(v.ad || "")}</span></div>
     <div style="width:70px">${spark(v.seri, v.degisim || 0)}</div><div class="f" style="min-width:74px"><b>${fy(c ? c.p : v.fiyat)}</b><span class="${rk(c ? c.d : v.degisim)}">${yz(c ? c.d : v.degisim, 2)}</span>${c ? `<small style="display:block;color:var(--s2);font-size:9.5px">● ${c.saat}</small>` : ""}</div></div></a>`;
 }

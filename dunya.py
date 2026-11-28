@@ -189,10 +189,10 @@ def kart_ciz(o, yol):
     for bolge in ("Asya", "Avrupa", "Amerika"):
         b = [x for x in o["borsalar"] if x["bolge"] == bolge]
         if b: bol.append({"baslik": bolge + " · 1 hafta", "renk": K.C["altin"], "izgara": True, "satirlar": [
-            {"sol": x["ad"], "sag": _y(x["d5"]), "sag_renk": rk(x["d5"]), "alt": f"yılbaşından {_y(x['ytd'])}"}
+            {"sol": x["ad"], "sag": _y(x["d5"]), "sag_renk": rk(x["d5"]), "alt": f"yılbaşından {_y(x['ytd'])}", "logo": (x["ad"], None)}
             for x in b]})
     bol.append({"baslik": "Döviz · 1 hafta", "renk": K.C["altin"], "izgara": True, "satirlar": [
-        {"sol": x["ad"], "sag": _y(x["d5"]), "sag_renk": rk(x["d5"]), "alt": f"{x['son']:.4g}".replace(".", ",")} for x in o["doviz"][:9]]})
+        {"sol": x["ad"], "sag": _y(x["d5"]), "sag_renk": rk(x["d5"]), "alt": f"{x['son']:.4g}".replace(".", ","), "logo": (x["ad"], None)} for x in o["doviz"][:9]]})
     e = o.get("egri")
     if e:
         bol.append({"baslik": "ABD GETİRİ EĞRİSİ", "renk": K.C["kirmizi"] if (e["f10_2"] if e["f10_2"] is not None else e["f10_3a"] or 0) < 0 else K.C["altin"],
@@ -200,7 +200,7 @@ def kart_ciz(o, yol):
     if o.get("vade"):
         bol.append({"baslik": "Emtia vade yapısı", "renk": K.C["altin"], "izgara": True, "satirlar": [
             {"sol": v["ad"], "sag": v["yapi"].replace("backwardation", "backward."), "sag_renk": K.C["yesil"] if v["yapi"] == "backwardation" else K.C["soluk"],
-             "alt": f"yıllık eğim {_y(v['yillik'])}"} for v in o["vade"]]})
+             "alt": f"yıllık eğim {_y(v['yillik'])}", "logo": (v["ad"], None)} for v in o["vade"]]})
     K.bildirim_karti(f"DÜNYA PİYASALARI  ·  {dt.date.today():%d.%m.%Y}", "Haftalık dünya özeti", "Borsalar, döviz, faiz eğrisi, emtia vadeleri",
                      bol, yol, vurgu=K.C["altin"], not_="Kaynak: Yahoo Finance, ABD Hazinesi. Yatırım tavsiyesi değildir.")
     return yol

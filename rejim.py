@@ -190,7 +190,7 @@ def kart_ciz(r, yol):
     if r.get("tepe_uyarisi"):
         bol.insert(0, {"baslik": "TEPE UYARISI", "renk": K.C["kirmizi"], "satirlar": [{"sol": "Genişlik bozuluyor, dağıtım artıyor", "nokta": K.C["kirmizi"]}]})
     K.bildirim_karti(f"PİYASA REJİMİ  ·  {r['endeks'].upper()}", r["durum_ad"], f"Önerilen hisse oranı %{r['maruziyet']} · kapanış {r['kapanis']:,.0f}".replace(",", "."),
-                     bol, yol, vurgu=renk, not_="Kural tabanlı bir değerlendirmedir, yatırım tavsiyesi değildir.")
+                     bol, yol, vurgu=renk, not_="Kural tabanlı bir değerlendirmedir, yatırım tavsiyesi değildir.", baslik_logo=(r["endeks"], None))
     return yol
 
 

@@ -192,6 +192,8 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
         v = PV[ad]; x = 40 + (i % 3) * (bw + 14); y = H - 340 - (i // 3) * (bh + 14)
         K._kutu(ax, x, y, bw, bh, C["panel"])
         d = v.get("d1G") or 0; renk = C["yesil"] if d > 0 else C["kirmizi"] if d < 0 else C["soluk"]
+        K.logo_ciz(ax, ad if ad not in ("USD/TRY", "Bitcoin") else {"Bitcoin": "BTC/USDT"}.get(ad, ad), x + bw - 44, y + bh - 44, 28,
+                   "kripto" if ad == "Bitcoin" else None)
         K._t(ax, x + 18, y + 80, ad.upper(), 13, C["soluk"], "semibold")
         K._t(ax, x + 18, y + 40, K._fy(v["deger"]) if v["deger"] < 1e5 else f"{v['deger']:,.0f}".replace(",", "."), 26, weight="bold")
         K._t(ax, x + 18, y + 14, _y(d), 16, renk, "semibold")
@@ -228,7 +230,7 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
     y0 = y
     for f in firs[:3]:
         renk = C["yesil"] if f["yon"] == 1 else C["kirmizi"]
-        kx = 82 if f.get("pz") in ("kripto", "bist", "abd") and K.logo_ciz(ax, f["kod"], 48, y - 6, 26, f["pz"]) else 48
+        kx = 82 if K.logo_ciz(ax, f["kod"], 48, y - 6, 26, f.get("pz")) else 48
         K._t(ax, kx, y, _kod(f["kod"]), 20, weight="bold"); K._t(ax, 210, y, f"{'AL' if f['yon'] == 1 else 'SAT'} · {f['puan']:.0f}", 17, renk, "semibold")
         K._t(ax, 340, y, {"bist": "BIST", "kripto": "Kripto", "emtia": "Emtia", "abd": "ABD"}.get(f.get("pz"), "") + " · " +
              {"4S": "4 saatlik", "G": "günlük", "H": "haftalık", "A": "aylık"}.get(f["tf"], ""), 15, C["soluk"]); y -= 36
@@ -237,7 +239,7 @@ def kart(PV, tk, acik, firs, hab, madde, dosya):
     acik_s = sorted(acik, key=lambda k: min(k["yak_h"], k["yak_s"]))[:3]
     for k in acik_s:
         renk = C["yesil"] if k["ger"] >= 0 else C["kirmizi"]
-        kx = 614 if k.get("pz") in ("kripto", "bist", "abd") and K.logo_ciz(ax, k["kod"], 580, y - 6, 26, k["pz"]) else 580
+        kx = 614 if K.logo_ciz(ax, k["kod"], 580, y - 6, 26, k.get("pz")) else 580
         K._t(ax, kx, y, _kod(k["kod"]), 20, weight="bold"); K._t(ax, W - 48, y, _y(k["ger"]), 17, renk, "semibold", ha="right"); y -= 36
     if not acik: K._t(ax, 580, y, "Açık kurulum yok.", 16, C["soluk"])
     y = min(y, y0 - 36 * 3) - 20

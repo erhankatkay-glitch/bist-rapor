@@ -227,7 +227,7 @@ def kart_ciz(o, yol):
         for v in (p.get("buyuk_vadeler") or [])[:2]:
             sat.append({"sol": f"Vade {v['vade_ad']}", "sag": f"MP {tl(v['max_pain'])}", "sag_renk": K.C["altin"],
                         "alt": f"±{_y(v['beklenen_hareket'])} beklenen hareket · call duvarı {tl(v['call_duvari'])} · put duvarı {tl(v['put_duvari'])}"})
-        bol.append({"baslik": f"{c} · {tl(p['endeks'])} $", "renk": K.C["altin"], "satirlar": sat})
+        bol.append({"baslik": f"{c} · {tl(p['endeks'])} $", "renk": K.C["altin"], "satirlar": sat, "logo": (f"{c}/USDT", "kripto")})
     K.bildirim_karti(f"KRİPTO OPSİYON PİYASASI  ·  {dt.datetime.now():%d.%m.%Y}", "BTC ve ETH opsiyonları", "Deribit verisi: oynaklık, çarpıklık, vade seviyeleri",
                      bol, yol, vurgu=K.C["altin"], not_="Max pain ve OI duvarları mıknatıs/engel olabilir ama garanti değildir. Yatırım tavsiyesi değildir.")
     return yol
