@@ -371,7 +371,9 @@ def bulten_karti(meta, satir, dosya, piyasa_ad):
     lp = lp or {"bist": "bist", "abd": "abd", "kripto": "kripto"}.get(str(meta.get("piyasa", "")).replace("kripto_tl", "kripto"))
 
     def lg_(kod, x, y, boy=28):   # varlık logosu çizildiyse yazının kayacağı x
-        return x + boy + 8 if lp and logo_ciz(ax, kod, x, y - 6, boy, lp) else x
+        if not lp: return x
+        logo_ciz(ax, kod, x, y - 6, boy, lp)
+        return x + boy + 8   # logosu olmayan da aynı hizada başlasın
     bolum_baslik(ax, 48, y2, "En güçlü görünüm", x2=540, boy=15)
     bolum_baslik(ax, 580, y2, "Günün hareketlileri", x2=W - 40, boy=15)
     top = df.nlargest(5, "Teknik puan") if n else df
