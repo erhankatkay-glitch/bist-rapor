@@ -1,5 +1,5 @@
 // KATKAY PWA servis çalışanı: uygulama kabuğu önbellekten (çevrimdışı açılır), veri önce ağdan, olmazsa son kayıtlı kopyadan.
-const SURUM = "katkay-v1";
+const SURUM = "katkay-v2";
 const KABUK = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./favicon.png"];
 
 self.addEventListener("install", e => {
@@ -20,6 +20,11 @@ self.addEventListener("fetch", e => {
       if (r.ok) { const k = r.clone(); caches.open(SURUM).then(c => c.put(anahtar, k)); }
       return r;
     }).catch(() => caches.match(anahtar)));
+    return;
+  }
+  if (e.request.mode === "navigate") {   // sayfanın kendisi: ağ önce (yeni sürüm hemen gelsin), çevrimdışıysa önbellek
+    e.respondWith(fetch(e.request).then(r => { const k = r.clone(); caches.open(SURUM).then(c => c.put("./index.html", k)); return r; })
+      .catch(() => caches.match("./index.html")));
     return;
   }
   if (u.origin === location.origin) {   // kabuk: önbellek önce, arkada tazele

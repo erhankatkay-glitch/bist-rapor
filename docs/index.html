@@ -60,6 +60,18 @@ nav button{flex:1;background:none;border:none;color:var(--s);display:flex;flex-d
 nav button svg{width:22px;height:22px}nav button.s{color:#0B0B0C;background:radial-gradient(circle at 50% 30%,var(--a2),var(--a) 60%,#C99A2E)}
 .yenile{display:block;margin:12px auto 0;background:none;border:1px solid var(--c);color:var(--s);border-radius:12px;padding:8px 14px;font-size:12px}
 .uyari{font-size:10.5px;color:var(--s2);text-align:center;margin-top:16px;line-height:1.5}
+.dok{display:block;text-decoration:none;color:inherit;transition:transform .12s,border-color .2s}.dok:active{transform:scale(.96);border-color:var(--a)}
+.mini{position:relative;overflow:hidden}.mini .sp{display:block;width:100%;height:20px;margin-top:4px}
+.fy{animation:fy .9s}.fa{animation:fa .9s}
+@keyframes fy{0%{background:rgba(34,197,94,.35)}100%{background:var(--k)}}@keyframes fa{0%{background:rgba(239,68,68,.35)}100%{background:var(--k)}}
+.canli{display:inline-flex;align-items:center;gap:5px;color:var(--g)}.canli i,.nokta{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--g);animation:nb 1.4s infinite}
+@keyframes nb{0%{box-shadow:0 0 0 0 rgba(34,197,94,.7)}100%{box-shadow:0 0 0 8px rgba(34,197,94,0)}}
+#dus{display:none;background:linear-gradient(180deg,#1E1F23,#151619);border:1px solid rgba(232,184,74,.45);border-left:4px solid var(--a);border-radius:14px;padding:9px 12px;margin-bottom:10px}
+#dus.ac{display:block;animation:dus .55s cubic-bezier(.2,.9,.3,1.2)}#dus.y{border-left-color:var(--g)}#dus.k{border-left-color:var(--r)}
+#dus b{display:block;font-size:13px;font-weight:650;line-height:1.35}#dus small{color:var(--s2);font-size:10.5px}
+@keyframes dus{0%{transform:translateY(-120%);opacity:0}100%{transform:none;opacity:1}}
+.kart{transition:transform .12s}a.kart:active{transform:scale(.98)}
+.sayfa.ac{animation:gir .25s ease-out}@keyframes gir{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
@@ -71,6 +83,7 @@ nav button svg{width:22px;height:22px}nav button.s{color:#0B0B0C;background:radi
 <div class="bant" id="kur">📲 <b>Ana ekrana ekle:</b> Safari'de alttaki Paylaş düğmesine dokun › <b>Ana Ekrana Ekle</b>. Uygulama gibi tam ekran açılır.</div>
 <div class="bant" id="cevrim">⚠️ Çevrimdışısın — son kaydedilen veriler gösteriliyor.</div>
 
+<div id="dus"></div>
 <section class="sayfa ac" id="s-ozet"></section>
 <section class="sayfa" id="s-firsat"></section>
 <section class="sayfa" id="s-bildirim"></section>
@@ -108,41 +121,92 @@ async function al(yol) {
 }
 function cevrim(v) { document.getElementById("cevrim").classList.toggle("ac", !!v || !navigator.onLine); }
 
+// ---------------------------------------------------------------- canlı akış
+const SEM = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "XRPUSDT", "SOLUSDT", "PAXGUSDT"];
+const CANLI = {};   // sembol → {p, c, seri[]}
+function spark(seri, d) {
+  const v = (seri || []).map(Number).filter(x => isFinite(x)).slice(-40); if (v.length < 5) return "";
+  const mn = Math.min(...v), mx = Math.max(...v), r = mx - mn || 1;
+  const pt = v.map((x, i) => `${(i / (v.length - 1) * 100).toFixed(1)},${(20 - (x - mn) / r * 18).toFixed(1)}`).join(" ");
+  return `<svg class="sp" viewBox="0 0 100 22" preserveAspectRatio="none"><polyline points="${pt}" fill="none" stroke="${d >= 0 ? "#22C55E" : "#EF4444"}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function kutuYaz(sem, flas) {
+  const el = document.getElementById("c-" + sem), x = CANLI[sem]; if (!el || !x) return;
+  const b = el.querySelector("b"), eski = b.dataset.p ? +b.dataset.p : null;
+  b.textContent = fy(x.p); b.dataset.p = x.p;
+  const sp = el.querySelector("span"); sp.className = rk(x.c); sp.textContent = yz(x.c);
+  if (x.seri && x.seri.length > 4) el.querySelector(".sp").outerHTML = spark(x.seri, x.c);
+  if (flas && eski != null && x.p !== eski) { el.classList.remove("fy", "fa"); void el.offsetWidth; el.classList.add(x.p > eski ? "fy" : "fa"); }
+}
+let WS = null, YEDEK = null;
+async function canliBasla() {
+  try {   // ilk değerler + 24 saatlik mini grafik
+    const [t, ...k] = await Promise.all([
+      fetch("https://data-api.binance.vision/api/v3/ticker/24hr?symbols=" + encodeURIComponent(JSON.stringify(SEM))).then(r => r.json()),
+      ...SEM.map(x => fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${x}&interval=1h&limit=24`).then(r => r.json()).catch(() => []))]);
+    t.forEach(x => { CANLI[x.symbol] = {p: +x.lastPrice, c: +x.priceChangePercent / 100, seri: (k[SEM.indexOf(x.symbol)] || []).map(r => +r[4])}; });
+    SEM.forEach(x => kutuYaz(x, false));
+  } catch (e) {}
+  if (WS && WS.readyState <= 1) return;
+  try {
+    WS = new WebSocket("wss://data-stream.binance.vision/stream?streams=" + SEM.map(x => x.toLowerCase() + "@miniTicker").join("/"));
+    WS.onmessage = m => {
+      const d = JSON.parse(m.data).data; if (!d) return;
+      const x = CANLI[d.s] || (CANLI[d.s] = {seri: []}), p = +d.c, o = +d.o;
+      x.p = p; x.c = o ? p / o - 1 : 0;
+      if (x.seri.length) x.seri[x.seri.length - 1] = p;
+      kutuYaz(d.s, true);
+    };
+    WS.onclose = () => { WS = null; if (!YEDEK) YEDEK = setInterval(() => { if (document.visibilityState === "visible") canliBasla(); }, 15000); };
+  } catch (e) {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && (!WS || WS.readyState > 1)) canliBasla(); });
+
+// üstten düşen bildirim: son alarmlar sırayla birbirinin yerini alır
+let BANT_T = null;
+function bant(l) {
+  const el = document.getElementById("dus"); if (!el || !l.length) return;
+  let i = 0; clearInterval(BANT_T);
+  const goster = () => {
+    const x = l[i++ % l.length], m = String(x.mesaj || "").replace(/⟦.+?⟧$/, "").trim();
+    el.classList.remove("ac"); void el.offsetWidth;
+    el.innerHTML = `<b>${esc(m)}</b><small>${esc(x.zaman)}</small>`; el.className = "ac " + (/^🟢/.test(m) ? "y" : /^(🔴|💼)/.test(m) ? "k" : "");
+  };
+  goster(); BANT_T = setInterval(goster, 7000);
+  el.onclick = () => git("bildirim");
+}
+
 // ---------------------------------------------------------------- Özet
 async function ozet() {
   const el = document.getElementById("s-ozet");
   let h = "";
-  // canlı kripto (Binance, anlık)
-  try {
-    const sem = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "PAXGUSDT"];
-    const r = await fetch("https://data-api.binance.vision/api/v3/ticker/24hr?symbols=" + encodeURIComponent(JSON.stringify(sem)));
-    const d = await r.json();
-    const ad = {PAXGUSDT: "Ons altın"};
-    h += "<h2>Kripto ve altın · anlık</h2><div class='izgara'>" + d.map(x => {
-      const p = +x.lastPrice, c = +x.priceChangePercent / 100, k = x.symbol.replace("USDT", "");
-      const pz = k === "PAXG" ? "emtia" : "kripto", kod = k === "PAXG" ? "ALTIN" : k + "/USDT";
-      return `<a class="mini" style="text-decoration:none;color:inherit" href="${ac(kod, pz)}" target="_blank"><small>${ad[x.symbol] || k}</small><b>${fy(p)}</b><span class="${rk(c)}">${yz(c)}</span></a>`;
-    }).join("") + "</div>";
-  } catch (e) {}
+  // canlı kripto (Binance): ilk değer REST, sonra WebSocket ile saniye saniye
+  h += "<h2>Kripto ve altın · <span class='canli'><i></i>canlı</span></h2><div class='izgara'>" + SEM.map(x => {
+    const k = x.replace("USDT", ""), pz = k === "PAXG" ? "emtia" : "kripto", kod = k === "PAXG" ? "ALTIN" : k + "/USDT";
+    return `<a class="mini dok" id="c-${x}" href="${ac(kod, pz)}" target="_blank"><small>${k === "PAXG" ? "Ons altın" : k}</small><b>–</b><span class="not">–</span><svg class="sp" viewBox="0 0 100 22" preserveAspectRatio="none"></svg></a>`;
+  }).join("") + "</div>";
   // piyasa rejimi
   const rj = await Promise.all(["bist", "abd"].map(p => al(`rejim/${p}.json`)));
   const renk = {yukselis: "#22C55E", baski: "#E8B84A", ralli: "#E8B84A", duzeltme: "#EF4444"};
   if (rj.some(Boolean)) h += "<h2>Piyasa rejimi</h2>" + rj.filter(Boolean).map(r =>
-    `<div class="kart rj" style="--rk:${renk[r.durum]}"><div class="b"><b>${esc(r.endeks)} · ${esc(r.durum_ad)}</b><span>%${r.maruziyet}</span></div>
-     <p>Önerilen hisse oranı · 50 günlüğün üstündeki hisseler ${r.genislik ? "%" + Math.round(r.genislik.ust50 * 100) : "–"}${r.tepe_uyarisi ? " · <b style='color:#EF4444'>tepe uyarısı</b>" : ""}</p></div>`).join("");
+    `<a class="kart rj dok" target="_blank" href="${UYG}" style="--rk:${renk[r.durum]};display:block;text-decoration:none;color:inherit"><div class="b"><b>${esc(r.endeks)} · ${esc(r.durum_ad)}</b><span>%${r.maruziyet}</span></div>
+     <p>Önerilen hisse oranı · 50 günlüğün üstündeki hisseler ${r.genislik ? "%" + Math.round(r.genislik.ust50 * 100) : "–"}${r.tepe_uyarisi ? " · <b style='color:#EF4444'>tepe uyarısı</b>" : ""}</p></a>`).join("");
   // dünya
   const dn = await al("dunya/ozet.json");
   if (dn) {
     const sec = ["BIST 100", "S&P 500", "Nasdaq", "DAX", "Nikkei 225", "Hang Seng"];
     const b = dn.borsalar.filter(x => sec.includes(x.ad));
-    h += "<h2>Borsalar · son kapanış</h2><div class='izgara'>" + b.map(x => `<div class="mini"><small>${esc(x.ad)}</small><b>${fy(x.son)}</b><span class="${rk(x.d1)}">${yz(x.d1)}</span></div>`).join("") + "</div>";
+    const hs = [0, 6].includes(new Date().getDay());
+    h += `<h2>Borsalar · ${hs ? "hafta sonu kapalı, cuma kapanışı" : "son kapanış"}</h2><div class='izgara'>` + b.map(x => `<a class="mini dok" href="${UYG}" target="_blank"><small>${esc(x.ad)}${x.acik ? " <i class='nokta'></i>" : ""}</small><b>${fy(x.son)}</b><span class="${rk(x.d1)}">${yz(x.d1)}</span>${spark(x.seri, x.d1)}</a>`).join("") + "</div>";
     const dv = dn.doviz.filter(x => ["USD/TRY", "EUR/TRY", "EUR/USD"].includes(x.ad));
-    if (dv.length) h += "<div class='izgara' style='margin-top:7px'>" + dv.map(x => `<div class="mini"><small>${esc(x.ad)}</small><b>${tr(x.son, 4)}</b><span class="${rk(x.d1)}">${yz(x.d1, 2)}</span></div>`).join("") + "</div>";
+    if (dv.length) h += "<div class='izgara' style='margin-top:7px'>" + dv.map(x => `<a class="mini dok" href="${UYG}" target="_blank"><small>${esc(x.ad)}</small><b>${tr(x.son, 4)}</b><span class="${rk(x.d1)}">${yz(x.d1, 2)}</span>${spark(x.seri, x.d1)}</a>`).join("") + "</div>";
   }
   // son 3 bildirim
   const bl = await al("alarm/son.json");
   if (bl && bl.length) h += "<h2>Son bildirimler</h2>" + bl.slice(0, 3).map(bildirimHtml).join("");
   el.innerHTML = h || "<div class='bos'>Veri alınamadı.</div>";
+  SEM.forEach(x => kutuYaz(x, false)); canliBasla();
+  if (bl && bl.length) bant(bl.slice(0, 5));
 }
 
 // ---------------------------------------------------------------- Fırsatlar
