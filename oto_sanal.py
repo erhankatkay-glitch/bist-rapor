@@ -7,6 +7,7 @@
 - "fibo": FiboAyna sinyallerinin kendi defteri (bulten/fibo/kayit_<pz>.json).
 
 Hesap kuralları (kullanıcının isteği):
+- Yalnız puanı en az 65 olan sinyallere girilir (kullanıcı kararı).
 - BIST: 100.000 TL, işlem başına 20.000 TL, aynı anda en çok 5 işlem (puanı en yüksek sinyaller).
 - ABD ve emtia: 1.000 $, işlem başına 200 $, en çok 5.
 - Kripto spot: 1.000 USDT, işlem başına 200 USDT, en çok 5; spotta açığa satış olmadığı için yalnız AL.
@@ -31,6 +32,7 @@ HESAP = {
     "kripto_spot": {"piyasa": "kripto", "para": "USDT", "baslangic": 1_000.0, "tutar": 200.0, "maks": 5, "kom": 0.001, "vadeli": False},
     "kripto_vadeli": {"piyasa": "kripto", "para": "USDT", "baslangic": 1_000.0, "tutar": 200.0, "maks": 5, "kom": 0.0005, "vadeli": True},
 }
+MIN_PUAN = 65.0      # kullanıcı kararı: fırsat sayılması için en az 65 puan (puanı olmayan sinyale girilmez)
 KALDIRAC = (20, 10, 5)
 MMR = 0.005          # bakım marjini (tasfiye hesabı)
 STOP_MARJIN = 0.5    # stopta marjinin en fazla yarısı
@@ -111,7 +113,8 @@ def guncelle(onceki, kaynak, ad, H, I, simdi):
     S["acik"] = kalan
     # 2) yeni girişler: kaynakta açık, hesaba daha önce alınmamış, en yüksek puanlı; boş yer ve nakit kadar
     alinan = set(S["alinan"])
-    aday = [x for x in I.values() if x["acik"] and x["id"] not in alinan and x["acilis"] and str(x["acilis"])[:10] >= S["baslama"]]
+    aday = [x for x in I.values() if x["acik"] and x["id"] not in alinan and x["acilis"] and str(x["acilis"])[:10] >= S["baslama"]
+            and x["puan"] is not None and float(x["puan"]) >= MIN_PUAN]
     if not H["vadeli"] and H["piyasa"] == "kripto": aday = [x for x in aday if x["yon"] == 1]     # spotta açığa satış yok
     aday.sort(key=lambda x: -(x["puan"] or 0))
     for x in aday:
@@ -142,7 +145,7 @@ def guncelle(onceki, kaynak, ad, H, I, simdi):
     S["ozet"] = {"ozkaynak": round(ozk, 2), "getiri": round(ozk / H["baslangic"] - 1, 4), "acik": len(S["acik"]), "kapanan": len(kp),
                  "kazanma": round(sum(1 for x in kp if x["kar"] > 0) / len(kp), 3) if kp else None,
                  "toplam_kar": round(sum(x["kar"] for x in kp), 2), "en_buyuk_dusus": round(dd, 4)}
-    S["kurallar"] = {k: H[k] for k in ("baslangic", "tutar", "maks", "kom", "vadeli")}
+    S["kurallar"] = {k: H[k] for k in ("baslangic", "tutar", "maks", "kom", "vadeli")}; S["kurallar"]["min_puan"] = MIN_PUAN
     if H["vadeli"]: S["kurallar"]["kaldirac"] = "5x/10x/20x içinden: stopta marjin kaybı ≤ %50 ve tasfiye ≥ 1,5 × stop mesafesi olan en yüksek"
     S["zaman"] = simdi
     return S
