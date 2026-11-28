@@ -14,7 +14,7 @@ on:
         default: '150'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   arastirma:
@@ -35,19 +35,20 @@ jobs:
       - run: pip install -r requirements.txt cryptography numba
       - name: Araştırma
         run: python fibo_yukle.py fibo_arastirma fibo_cikti ${{ matrix.piyasa }} ${{ inputs.adet || '150' }}
-      - name: Sonuçları şifrele
-        if: always()
-        run: mkdir -p sifreli && python fibo_yukle.py sifrele fibo_cikti sifreli/fibo-${{ matrix.piyasa }}.enc
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: fibo-${{ matrix.piyasa }}
-          path: sifreli/
-          retention-days: 30
+      - name: Sonuçları şifrele ve fibo-sonuc dalına yaz
+        if: success()
+        env:
+          GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+          YAYIN_DAL: fibo-sonuc
+        run: |
+          mkdir -p sifreli && python fibo_yukle.py sifrele fibo_cikti sifreli/fibo-${{ matrix.piyasa }}.enc
+          python yayinla.py sifreli "FiboAyna ${{ matrix.piyasa }} $(date -u +%FT%H%M)"
 
   analiz:
     needs: arastirma
     if: always()
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -59,23 +60,22 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt cryptography
-      - uses: actions/download-artifact@v4
-        with:
-          path: gelen
+      - name: Şifreli sonuçları al
+        run: git clone -q --depth 1 --branch fibo-sonuc "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" gelen
       - name: Çöz ve analiz et (rapor yalnız şifreli çıktıda)
         run: |
           python - <<'PY'
           import glob, io, os, zipfile
           from cryptography.fernet import Fernet
           f = Fernet(os.environ["FIBO_ANAHTAR"].strip().encode())
-          for p in glob.glob("gelen/**/*.enc", recursive=True):
+          for p in [x for x in glob.glob("gelen/fibo-*.enc") if not x.endswith("fibo-analiz.enc")]:
               zipfile.ZipFile(io.BytesIO(f.decrypt(open(p, "rb").read()))).extractall("veri/" + os.path.basename(p)[:-4])
           PY
           python fibo_yukle.py fibo_analiz veri > veri/rapor.txt 2>&1 || true
           tail -3 veri/rapor.txt | cut -c1-40
           mkdir -p sifreli && python fibo_yukle.py sifrele veri sifreli/fibo-analiz.enc
-      - uses: actions/upload-artifact@v4
-        with:
-          name: fibo-analiz
-          path: sifreli/
-          retention-days: 30
+      - name: Analizi yaz
+        env:
+          GH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+          YAYIN_DAL: fibo-sonuc
+        run: python yayinla.py sifreli "FiboAyna analiz $(date -u +%FT%H%M)"
