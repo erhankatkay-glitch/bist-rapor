@@ -17,7 +17,7 @@ with sync_playwright() as p:
         h=pg.locator("h2",has_text="Temel görünüm")
         if h.count():
             h.first.scroll_into_view_if_needed(); pg.wait_for_timeout(800); pg.screenshot(path=f"denetim_graf/v_{kod.replace('/','_')}.png")
-            pg.mouse.wheel(0,700); pg.wait_for_timeout(500); pg.screenshot(path=f"denetim_graf/v_{kod.replace('/','_')}_2.png")
+            pg.evaluate("window.scrollBy(0,650)"); pg.wait_for_timeout(500); pg.screenshot(path=f"denetim_graf/v_{kod.replace('/','_')}_2.png")
     pg.goto(U+"#piyasa/temel/kripto"); pg.reload(); pg.wait_for_timeout(8000)
     pg.screenshot(path="denetim_graf/p_kripto.png"); print("== kripto liste", pg.inner_text("#py-ic")[:700].replace("\n"," | "))
     print("logo sayısı", pg.eval_on_selector_all("#py-ic img.lg","e=>e.filter(x=>x.complete&&x.naturalWidth>0).length"))
