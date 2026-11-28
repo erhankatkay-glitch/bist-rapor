@@ -73,6 +73,20 @@ nav button svg{width:22px;height:22px}nav button.s{color:#0B0B0C;background:radi
 @keyframes dus{0%{transform:translateY(-120%);opacity:0}100%{transform:none;opacity:1}}
 .kart{transition:transform .12s}a.kart:active{transform:scale(.98)}
 .sayfa.ac{animation:gir .25s ease-out}@keyframes gir{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.geri{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--c);color:var(--y);border-radius:12px;padding:7px 12px;font-size:13px;font-weight:700;margin:4px 0 10px}
+.vb{display:flex;align-items:flex-start;gap:10px}.vb .a{flex:1;min-width:0}.vb .a b{font-size:22px;font-weight:900;display:block}.vb .a span{color:var(--s);font-size:12px}
+.vb .f{text-align:right}.vb .f b{font-size:22px;font-variant-numeric:tabular-nums;display:block}.vb .f span{font-weight:800;font-size:13px}
+.rozet{display:inline-block;border-radius:10px;padding:4px 10px;font-weight:900;font-size:12.5px;margin-top:8px}
+.rozet.al{background:rgba(34,197,94,.16);color:var(--g)}.rozet.sat{background:rgba(239,68,68,.16);color:var(--r)}.rozet.n{background:rgba(232,184,74,.15);color:var(--a)}
+.tfk{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.tfk>div{background:var(--k);border:1px solid var(--c);border-radius:12px;padding:8px;text-align:center}
+.tfk small{display:block;color:var(--s);font-size:10.5px;font-weight:700}.tfk b{display:block;font-size:13px;margin:3px 0}
+.grafik{width:100%;height:230px;display:block;background:var(--k);border:1px solid var(--c);border-radius:14px}
+.lej{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--s);margin:5px 2px 0}.lej i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.metin{font-size:13px;line-height:1.55;color:var(--y)}.metin p{margin:0 0 8px}
+.tablo{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}.tablo td{padding:6px 2px;border-bottom:1px solid #222327}.tablo td:last-child{text-align:right;font-weight:700}
+details.kart summary{font-weight:800;font-size:13.5px;list-style:none;cursor:pointer}details.kart summary::after{content:" ›";color:var(--a)}details[open].kart summary::after{content:" ⌄"}
+.sin{padding:7px 0;border-bottom:1px solid #222327;font-size:12.5px}.sin b{font-size:13px}.sin p{margin:2px 0 0;color:var(--s);line-height:1.4}
+.btn{display:block;text-align:center;padding:12px;border-radius:13px;background:linear-gradient(180deg,var(--a2),#C99A2E);color:#0B0B0C;font-weight:900;font-size:14px;text-decoration:none;margin-top:6px}
 </style>
 </head>
 <body>
@@ -90,6 +104,7 @@ nav button svg{width:22px;height:22px}nav button.s{color:#0B0B0C;background:radi
 <section class="sayfa" id="s-bildirim"></section>
 <section class="sayfa" id="s-haber"></section>
 <section class="sayfa" id="s-piyasa"></section>
+<section class="sayfa" id="s-varlik"></section>
 <button class="yenile" id="yenile">↻ Yenile</button>
 <div class="uyari">Veriler Yahoo Finance, Binance, OKX, Deribit, ABD Hazinesi ve TCMB kaynaklıdır; BIST ~15 dk gecikmelidir.<br>Gösterge bazlı otomatik analizdir, yatırım tavsiyesi değildir.</div>
 
@@ -257,6 +272,86 @@ function bnPanel() {
   };
 }
 
+// ---------------------------------------------------------------- Varlık sayfası (önceden hesaplanmış karne: bulten/karne/)
+let KARNE = null;   // liste.json
+async function karneListe() { if (!KARNE) KARNE = (await al("karne/liste.json")) || {varliklar: []}; return KARNE; }
+const dosyaAdi = k => String(k).replace(/[\/\\:]/g, "-").replace(/@/g, "_");
+// içeride karnesi varsa uygulama içi sayfa, yoksa tam uygulama
+function varlikLink(kod, pz) {
+  const v = KARNE && KARNE.varliklar.find(x => x.kod === kod);
+  return v ? `#v/${encodeURIComponent(kod)}` : ac(kod, pz);
+}
+// tam-uygulama bağlantısına dokunulunca: varlığın karnesi varsa uygulama içi sayfa açılır (Streamlit'e gitmeden)
+document.addEventListener("click", ev => {
+  const a = ev.target.closest && ev.target.closest("a[href*='?kk=']"); if (!a || !KARNE) return;
+  const q = decodeURIComponent(a.href.split("?kk=")[1] || "").split("|"), v = KARNE.varliklar.find(x => x.kod === q[0]);
+  if (v) { ev.preventDefault(); location.hash = "#v/" + encodeURIComponent(v.kod); }
+}, true);
+addEventListener("hashchange", () => { const h = decodeURIComponent((location.hash || "#ozet").slice(1)); if (h.startsWith("v/") || YUK[h]) git(h); });
+const etkSinif = e => /AL/.test(e) ? "al" : /SAT/.test(e) ? "sat" : "n";
+const md = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+function grafikSvg(g, tf) {
+  const n = g.c.length, W = 360, H = 230, ust = 10, alt = 18;
+  const deg = [...g.l, ...g.h, ...(tf.destek || []).map(x => x[0]), ...(tf.direnc || []).map(x => x[0])].filter(x => x != null);
+  const fiyatlar = [...g.l, ...g.h].filter(x => x != null), mn0 = Math.min(...fiyatlar), mx0 = Math.max(...fiyatlar), pay = (mx0 - mn0) * 0.12;
+  const mn = Math.max(Math.min(...deg), mn0 - pay), mx = Math.min(Math.max(...deg), mx0 + pay), r = mx - mn || 1;
+  const X = i => 4 + i * (W - 50) / (n - 1), Y = v => ust + (1 - (v - mn) / r) * (H - ust - alt), w = Math.max(1, (W - 50) / n * 0.6);
+  let o = "";
+  const cizgi = (d, renk, kalin) => { const p = d.map((v, i) => v == null ? null : `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).filter(Boolean).join(" "); return p ? `<polyline points="${p}" fill="none" stroke="${renk}" stroke-width="${kalin}" opacity=".9"/>` : ""; };
+  [...(tf.destek || []).slice(0, 2).map(x => [x[0], "#22C55E"]), ...(tf.direnc || []).slice(0, 2).map(x => [x[0], "#EF4444"])].forEach(([v, c]) => {
+    if (v >= mn && v <= mx) o += `<line x1="4" x2="${W - 46}" y1="${Y(v)}" y2="${Y(v)}" stroke="${c}" stroke-dasharray="4 4" stroke-width="1" opacity=".75"/><text x="${W - 44}" y="${Y(v) + 3.5}" font-size="9" fill="${c}">${fy(v)}</text>`;
+  });
+  for (let i = 0; i < n; i++) { if (g.c[i] == null) continue;
+    const up = g.c[i] >= g.o[i], c = up ? "#22C55E" : "#EF4444";
+    o += `<line x1="${X(i)}" x2="${X(i)}" y1="${Y(g.h[i])}" y2="${Y(g.l[i])}" stroke="${c}" stroke-width=".8"/>`;
+    o += `<rect x="${X(i) - w / 2}" y="${Y(Math.max(g.o[i], g.c[i]))}" width="${w}" height="${Math.max(.8, Math.abs(Y(g.o[i]) - Y(g.c[i])))}" fill="${c}"/>`; }
+  o += cizgi(g.sma20, "#60A5FA", 1.1) + cizgi(g.sma50, "#E8B84A", 1.2) + cizgi(g.sma200, "#C084FC", 1.3);
+  const son = g.c[n - 1]; o += `<line x1="4" x2="${W - 46}" y1="${Y(son)}" y2="${Y(son)}" stroke="#F4F4F5" stroke-width=".6" opacity=".5"/><rect x="${W - 46}" y="${Y(son) - 7}" width="44" height="14" rx="3" fill="#F4F4F5"/><text x="${W - 44}" y="${Y(son) + 3.5}" font-size="9" font-weight="700" fill="#0B0B0C">${fy(son)}</text>`;
+  [0, Math.floor(n / 2), n - 1].forEach(i => o += `<text x="${Math.min(X(i), W - 90)}" y="${H - 5}" font-size="9" fill="#71717A">${g.t[i].slice(8, 10)}.${g.t[i].slice(5, 7)}.${g.t[i].slice(2, 4)}</text>`);
+  return `<svg class="grafik" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${o}</svg>
+    <div class="lej"><span><i style="background:#60A5FA"></i>20 günlük ort.</span><span><i style="background:#E8B84A"></i>50</span><span><i style="background:#C084FC"></i>200</span><span><i style="background:#22C55E"></i>destek</span><span><i style="background:#EF4444"></i>direnç</span></div>`;
+}
+const TF_AD = {G: "Günlük", H: "Haftalık", A: "Aylık", "4S": "4 saatlik", "1S": "1 saatlik"};
+async function varlik(kod) {
+  const el = document.getElementById("s-varlik");
+  el.innerHTML = `<button class="geri" onclick="history.length > 1 ? history.back() : git('ozet')">‹ Geri</button><div class="bos">${esc(kod)} yükleniyor…</div>`;
+  const k = await al(`karne/${dosyaAdi(kod)}.json`);
+  if (!k) { el.innerHTML = `<button class="geri" onclick="history.back()">‹ Geri</button><div class="kart"><div class="metin">${esc(kod)} için hazır karne yok.</div>
+      <a class="btn" target="_blank" href="${ac(kod, "bist")}">Tam uygulamada analiz et ›</a></div>`; return; }
+  const g = k.tf.G || Object.values(k.tf)[0], para = {"₺": "₺", "$": "$"}[k.para] || "";
+  const e = k.ekip, gor = e ? (e.gorunum.startsWith("AL") ? "al" : e.gorunum.startsWith("SAT") ? "sat" : "n") : "";
+  const sev = (l, renk) => (l || []).map(x => `<tr><td><span style="color:${renk}">●</span> ${x[1]} temas</td><td>${para}${fy(x[0])}</td></tr>`).join("");
+  let h = `<button class="geri" onclick="history.length > 1 ? history.back() : git('ozet')">‹ Geri</button>
+    <div class="kart"><div class="vb"><div class="a"><b>${esc(String(k.kod).replace(".US", ""))}</b><span>${esc(k.ad)} · ${PZ_AD[k.pz] || ""}</span><br>
+      <span class="rozet ${etkSinif(k.etiket)}">${esc(k.etiket)} · ${tr(k.puan, 0)}/100</span></div>
+      <div class="f"><b id="v-fiyat">${para}${fy(g.fiyat)}</b><span id="v-deg" class="${rk(g.degisim)}">${yz(g.degisim, 2)}</span><br><span class="not" style="font-size:10.5px;font-weight:600">gün ${fy(k.gun.dusuk)} – ${fy(k.gun.yuksek)}</span></div></div>
+      <div class="metin" style="margin-top:8px;color:var(--s)">${esc(k.baslik)}</div></div>
+    ${grafikSvg(k.grafik, g)}
+    <h2>Zaman dilimleri</h2><div class="tfk">${Object.entries(k.tf).map(([t, a]) => `<div><small>${TF_AD[t] || t}</small><b class="${rk(a.puan - 50)}">${esc(a.etiket)}</b><div class="cub"><div style="width:${a.puan}%"></div></div></div>`).join("")}</div>
+    <h2>Teknik yorum</h2><div class="kart metin">${md(k.yorum)}</div>`;
+  if (k.senaryo && k.senaryo.length) h += `<h2>Senaryolar</h2>` + k.senaryo.map(x => `<div class="kart"><b style="font-size:13.5px">${esc(x[0])}</b><div class="metin" style="margin-top:4px">Koşul: ${esc(x[1])} · hedef ${esc(x[2])}<br><span class="not">${esc(x[3])}</span></div></div>`).join("");
+  h += `<h2>Seviyeler (günlük)</h2><div class="kart"><table class="tablo">${sev((g.direnc || []).slice().reverse(), "#EF4444")}<tr><td><b>Son fiyat</b></td><td style="color:var(--a)">${para}${fy(g.fiyat)}</td></tr>${sev(g.destek, "#22C55E")}</table></div>
+    <div class="kart"><b style="font-size:13px">Pivot (klasik)</b><table class="tablo">${["R2", "R1", "P", "S1", "S2"].map(x => `<tr><td>${x}</td><td>${fy(g.pivot[x])}</td></tr>`).join("")}</table></div>`;
+  if (g.fib) h += `<div class="kart"><b style="font-size:13px">Fibonacci (${g.fib.yukari ? "yükseliş" : "düşüş"} dalgası)</b><table class="tablo">${Object.entries(g.fib.seviye).map(([o, v]) => `<tr><td>%${tr(o * 100, 1)}</td><td>${fy(v)}</td></tr>`).join("")}</table></div>`;
+  if (e) {
+    h += `<h2>Araştırma ekibi (6 rol)</h2><div class="kart"><div class="satir"><div class="a"><b class="${gor === "al" ? "ust" : gor === "sat" ? "alt" : ""}" style="${gor === "n" ? "color:var(--a)" : ""}">${esc(e.gorunum)}</b><span>güven: ${esc(e.guven)} · ufuk: ${esc(e.ufuk || "")}</span></div></div>
+      <div class="metin" style="margin-top:8px">${esc(e.ozet)}</div></div>`;
+    if (e.yz && e.yz.metin) h += `<div class="kart"><b style="font-size:13px">Ekip özeti</b> <span class="not" style="font-size:10.5px">yapay zekâ · ${esc(e.yz.model)}</span><div class="metin" style="margin-top:6px">${md(e.yz.metin)}</div></div>`;
+    h += `<div class="kart"><table class="tablo">${(e.senaryolar || []).map(x => `<tr><td><b>${esc(x.ad)}</b><br><span class="not" style="font-weight:500">${esc(x.kosul)}</span></td><td>${fy(x.fiyat)}<br><span class="${rk(x.degisim)}">${yz(x.degisim)}</span></td></tr>`).join("")}</table></div>
+      <details class="kart"><summary>Tez bozucular</summary>${(e.tez_bozucular || []).map(x => `<div class="sin">• ${esc(x)}</div>`).join("")}</details>
+      ${(e.roller || []).map(r => `<details class="kart"><summary>${esc(r.ad)}</summary><div class="not" style="font-size:11.5px;margin:6px 0">İlke: ${esc(r.ilke)}</div>${r.bulgular.map(b => `<div class="sin">• ${esc(b)}</div>`).join("")}</details>`).join("")}`;
+  }
+  h += `<h2>Sinyaller (günlük)</h2><div class="kart">${(g.sinyal || []).map(x => `<div class="sin"><b class="${rk(x.yon)}">${x.yon > 0 ? "▲" : x.yon < 0 ? "▼" : "•"} ${esc(x.ad)}</b><p>${esc(x.aciklama)}</p></div>`).join("") || "<div class='bos'>Taze sinyal yok.</div>"}</div>
+    <details class="kart"><summary>Gösterge durumları (${(g.durum || []).length})</summary><table class="tablo">${(g.durum || []).map(d => `<tr><td>${esc(d.ad)}<br><span class="not" style="font-size:11px">${esc(d.aciklama)}</span></td><td class="${rk(d.yon)}">${esc(d.deger)}</td></tr>`).join("")}</table></details>
+    <a class="btn" target="_blank" rel="noopener" href="${ac(k.kod, k.pz)}">Canlı analiz ve PDF rapor (tam uygulama) ›</a>
+    <div class="uyari">Karne ${new Date(k.zaman).toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"})} itibarıyla hesaplandı (veri: ${esc(k.fiyat_zamani)}).</div>`;
+  el.innerHTML = h;
+  if (k.pz === "kripto") {   // kriptoda fiyat canlı
+    try { const t = await fetch(`https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${String(k.kod).replace("/", "")}`).then(r => r.json());
+      document.getElementById("v-fiyat").textContent = "$" + fy(+t.lastPrice); const d = document.getElementById("v-deg"); d.textContent = yz(+t.priceChangePercent / 100, 2); d.className = rk(+t.priceChangePercent); } catch (e) {}
+  }
+}
+
 // ---------------------------------------------------------------- Özet
 async function ozet() {
   const el = document.getElementById("s-ozet");
@@ -356,6 +451,26 @@ async function haberler() {
 }
 
 // ---------------------------------------------------------------- Piyasa
+let K_PZ = "bist";
+function karneSatir(v) {
+  return `<a class="kart dok" href="#v/${encodeURIComponent(v.kod)}" style="padding:9px 12px"><div class="satir"><div class="a"><b>${esc(String(v.kod).replace(".US", ""))}
+    <span class="etk ${etkSinif(v.etiket) === "n" ? "n" : etkSinif(v.etiket)}" style="margin-left:6px">${esc(v.etiket)}</span></b><span>${esc(v.ad || "")}</span></div>
+    <div style="width:70px">${spark(v.seri, v.degisim || 0)}</div><div class="f" style="min-width:74px"><b>${fy(v.fiyat)}</b><span class="${rk(v.degisim)}">${yz(v.degisim, 2)}</span></div></div></a>`;
+}
+async function karneBolum(el) {
+  const L = (await karneListe()).varliklar || [];
+  if (!L.length) return;
+  const ciz = () => {
+    const q = (document.getElementById("kara") || {}).value || "";
+    const sec = L.filter(v => q ? (v.kod + " " + (v.ad || "")).toLocaleUpperCase("tr").includes(q.toLocaleUpperCase("tr")) : v.pz === K_PZ);
+    document.getElementById("kliste").innerHTML = sec.map(karneSatir).join("") || "<div class='bos'>Bulunamadı.</div>";
+    el.querySelectorAll("[data-k]").forEach(b => b.classList.toggle("s", !q && b.dataset.k === K_PZ));
+  };
+  el.insertAdjacentHTML("afterbegin", `<h2>Varlık karneleri · ${L.length}</h2><input class="ara" id="kara" placeholder="Varlık ara (ör. THYAO, BTC, altın)">
+    <div class="cip">${[["bist", "BIST"], ["abd", "ABD"], ["kripto", "Kripto"], ["emtia", "Emtia"]].map(([k, a]) => `<button data-k="${k}">${a}</button>`).join("")}</div><div id="kliste"></div>`);
+  el.querySelectorAll("[data-k]").forEach(b => b.onclick = () => { K_PZ = b.dataset.k; document.getElementById("kara").value = ""; ciz(); });
+  document.getElementById("kara").oninput = ciz; ciz();
+}
 async function piyasa() {
   const el = document.getElementById("s-piyasa");
   let h = "";
@@ -379,17 +494,22 @@ async function piyasa() {
   }
   if (dn && dn.vade) h += "<h2>Emtia vade yapısı</h2>" + dn.vade.map(v => `<div class="kart"><div class="satir"><div class="a"><b>${esc(v.ad)}</b><span>${esc(v.yorum)}</span></div>
       <div class="f"><b class="${v.yapi === "backwardation" ? "ust" : "not"}">${esc(v.yapi)}</b><span class="not">${yz(v.yillik)}/yıl</span></div></div></div>`).join("");
-  el.innerHTML = h || "<div class='bos'>Veri alınamadı.</div>";
+  el.innerHTML = h || "";
+  await karneBolum(el);
 }
 
 // ---------------------------------------------------------------- gezinme, yenileme, kurulum
 const YUK = {ozet, firsat: firsatlar, bildirim: bildirimler, haber: haberler, piyasa};
 const yuklendi = {};
 function git(s) {
+  if (s.startsWith("v/")) {   // varlık sayfası
+    document.querySelectorAll(".sayfa").forEach(x => x.classList.toggle("ac", x.id === "s-varlik"));
+    window.scrollTo(0, 0); varlik(decodeURIComponent(s.slice(2))); return;
+  }
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("s", b.dataset.s === s));
   document.querySelectorAll(".sayfa").forEach(x => x.classList.toggle("ac", x.id === "s-" + s));
   if (!yuklendi[s]) { yuklendi[s] = true; YUK[s](); }
-  window.scrollTo(0, 0); history.replaceState(null, "", "#" + s);
+  window.scrollTo(0, 0); if (location.hash !== "#" + s) history.replaceState(null, "", "#" + s);
 }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => git(b.dataset.s));
 document.getElementById("yenile").onclick = () => { const s = (location.hash || "#ozet").slice(1); yuklendi[s] = false; git(s); saat(); };
@@ -405,7 +525,8 @@ if ("serviceWorker" in navigator) {   // yeni sürüm yayınlanınca telefon esk
   navigator.serviceWorker.addEventListener("controllerchange", () => { if (ilkKontrol && !sessionStorage.getItem("kk_yenilendi")) { sessionStorage.setItem("kk_yenilendi", "1"); location.reload(); } });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") navigator.serviceWorker.getRegistration().then(r => r && r.update()); });
 }
-git(["ozet", "firsat", "bildirim", "haber", "piyasa"].includes((location.hash || "").slice(1)) ? location.hash.slice(1) : "ozet");
+karneListe();
+{ const h = decodeURIComponent((location.hash || "").slice(1)); git(["ozet", "firsat", "bildirim", "haber", "piyasa"].includes(h) || h.startsWith("v/") ? h : "ozet"); }
 </script>
 </body>
 </html>

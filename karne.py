@@ -19,7 +19,7 @@ import pandas as pd
 
 REPO = "erhankatkay-glitch/bist-rapor"
 BIST = ["XU100", "XU030", "AKBNK", "ALARK", "ASELS", "ASTOR", "BIMAS", "EKGYO", "ENKAI", "EREGL", "FROTO", "GARAN", "GUBRF", "ISCTR", "KCHOL",
-        "KONTR", "KOZAL", "KRDMD", "MGROS", "PETKM", "PGSUS", "SAHOL", "SASA", "SISE", "TAVHL", "TCELL", "THYAO", "TOASO", "TUPRS", "YKBNK"]
+        "KONTR", "KRDMD", "MGROS", "PETKM", "PGSUS", "SAHOL", "SASA", "SISE", "TAVHL", "TCELL", "THYAO", "TOASO", "TUPRS", "YKBNK"]
 KRIPTO = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "DOGE/USDT", "ADA/USDT", "AVAX/USDT"]
 EMTIA = ["GRAMALTIN", "ALTIN", "GUMUS", "PLATIN", "BAKIR", "BRENT", "WTI", "DOGALGAZ"]
 ABD = ["SP500", "NASDAQ", "AAPL.US", "MSFT.US", "NVDA.US", "TSLA.US", "AMZN.US", "GOOGL.US", "META.US", "AVGO.US"]
@@ -64,8 +64,11 @@ def varliklar():
         for x in bulten(f"firsat/{pz}/acik.json") or []:
             if x.get("durum") == "açık": v.append(x["kod"])
     for x in (bulten("alarm/son.json") or [])[:60]:
-        m = re.match(r"^\W*\s*([A-Z0-9]{2,10}(?:/USDT)?)\s*[:·(]", x.get("mesaj", ""))
-        if m and (m.group(1) in EMTIA or "/" in m.group(1) or re.fullmatch(r"[A-Z]{4,6}", m.group(1))): v.append(m.group(1))
+        m = re.match(r"^\W*\s*([A-Z0-9]{2,10}(?:/USDT)?)(\s*\()?\s*[:·]?", x.get("mesaj", ""))
+        if not m: continue
+        if m.group(2): v.append(m.group(1) + ".US")      # "NVDA (Nvidia)" → ABD hissesi
+        elif m.group(1) == "BIST": continue
+        elif m.group(1) in EMTIA or "/" in m.group(1) or re.fullmatch(r"[A-Z]{4,6}", m.group(1)): v.append(m.group(1))
     try:
         for s in open("portfoy.txt", encoding="utf-8"):
             if s.strip() and not s.startswith("#"): v.append(s.split()[0].upper())
@@ -139,7 +142,10 @@ def main(klasor):
 
     def is_(kod):
         try:
-            k = karne(kod, ek)
+            try: k = karne(kod, ek)
+            except Exception as x:
+                if "locked" not in str(x): raise
+                time.sleep(3); k = karne(kod, ek)   # yfinance önbellek veritabanı kilidi (eşzamanlı iş) → bir kez daha
             if yz_var: time.sleep(4)   # ücretsiz dil modeli dakika sınırı
             return kod, k, None
         except Exception as x:
