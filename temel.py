@@ -24,6 +24,29 @@ def _temiz(v):
     return v
 
 
+def _sabirli(fn, deneme=6):
+    """Yahoo hız sınırı (Too Many Requests / 401 crumb) gelince bekleyip yeniden dener; tek tarama korunur (emsaller doğru kalır)."""
+    import random
+    import threading
+    import time
+    kilit = threading.Lock()
+    durum = {"bekle": 0.0}
+
+    def sar(k, **kw):
+        for i in range(deneme):
+            dur = durum["bekle"] - time.time()
+            if dur > 0: time.sleep(dur)
+            try:
+                return fn(k, **kw)
+            except Exception as x:
+                m = str(x)
+                if i == deneme - 1 or not any(t in m for t in ("Too Many", "Rate limit", "Crumb", "401", "429")):
+                    raise
+                with kilit:   # tüm iş parçacıkları birlikte bekler (artan süre)
+                    durum["bekle"] = max(durum["bekle"], time.time() + 20 * (i + 1) + random.uniform(0, 5))
+    return sar
+
+
 def main(klasor, pz):
     import bist_rapor as br
     import teknik_bulten as TB
@@ -34,14 +57,10 @@ def main(klasor, pz):
     else:
         br.baglam("THYAO")
     print(pz, len(kodlar), "hisse taranıyor…")
-    satirlar, hatalar = br.tara(kodlar, isci=6)
-    if hatalar:   # hız sınırına takılanlar için yavaş ikinci tur
+    satirlar, hatalar = br.tara(kodlar, veri_fn=_sabirli(br.veri_cek), isci=3 if pz == "bist" else 6)
+    if hatalar:
         import collections
         print("hata nedenleri:", collections.Counter(str(v)[:70] for v in hatalar.values()).most_common(6))
-        s2, hatalar = br.tara(list(hatalar), isci=2)
-        satirlar += s2
-        br.firsat_ekle(satirlar)   # fırsat skoru (yüzdelik sıra) birleşik listede yeniden
-        if hatalar: print("ikinci tur sonrası:", collections.Counter(str(v)[:70] for v in hatalar.values()).most_common(4))
     out = {}
     for r in satirlar:
         kod = str(r.get("Kod"))
