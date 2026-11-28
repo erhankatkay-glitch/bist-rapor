@@ -22,6 +22,8 @@ PIYASA = {  # ad: (yahoo kodu, birim)
     "Dow Jones": ("^DJI", "puan"),
     "WTI petrol": ("CL=F", "$"),
     "Doğal gaz": ("NG=F", "$"),
+    "Platin": ("PL=F", "$"),
+    "Bakır": ("HG=F", "$"),
     # Aşama 12: dünya borsaları ve majör parite (ana sayfa "ABD ve dünya")
     "DAX": ("^GDAXI", "puan"),
     "FTSE 100": ("^FTSE", "puan"),
@@ -206,6 +208,19 @@ def piyasa_paneli():
                 o_.update(deger=b["fiyat"], seri=s_, zaman=b["zaman"].isoformat(), kaynak="Binance PAXG (spot)", tur="kripto",
                           d1G=b["d24"], d1A=_degisim(s_, 30), d1Y=_degisim(s_, 365),
                           YBB=None)
+    except Exception:
+        pass
+    # Diğer emtialar: OKX / Bitget 7/24 sürekli vadeli kontrat fiyatı (anlık); Yahoo vadeli ~10 dk gecikmeli ve hafta sonu durur
+    try:
+        import canli_emtia as CE
+        for ad, kod in (("Gümüş", "GUMUS"), ("WTI petrol", "WTI"), ("Doğal gaz", "DOGALGAZ"), ("Platin", "PLATIN"), ("Bakır", "BAKIR")):
+            if ad not in out: continue
+            o_ = out[ad]; b = CE.fiyat(kod, referans=float(o_["seri"].iloc[-1]))
+            if not b: continue
+            s_ = o_["seri"].copy(); gun = pd.Timestamp(b["zaman"].astimezone(dt.timezone.utc).date())
+            s_.loc[gun] = b["fiyat"]; s_ = s_.sort_index()
+            o_.update(deger=b["fiyat"], seri=s_, zaman=b["zaman"].isoformat(), kaynak=b["kaynak"], tur="kripto",
+                      d1G=b["d24"] if b["d24"] is not None else o_["d1G"], d1A=_degisim(s_, 30), d1Y=_degisim(s_, 365))
     except Exception:
         pass
     # Türetilmiş: gram altın (TL) ve BIST 100 dolar bazlı

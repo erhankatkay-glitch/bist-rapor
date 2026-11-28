@@ -1,22 +1,37 @@
-"""Emtia anlık veri kaynakları erişim testi (GitHub ABD sunucusu)."""
-import requests, json, time
-def dene(ad, url, f):
-    try:
-        t = time.time(); r = requests.get(url, timeout=20)
-        print(f"{ad:28s} HTTP {r.status_code} {round(time.time()-t,2)}s ·", f(r.json()) if r.ok else r.text[:120])
-    except Exception as ex: print(f"{ad:28s} HATA {str(ex)[:120]}")
-dene("Binance fapi exchangeInfo", "https://fapi.binance.com/fapi/v1/exchangeInfo",
-     lambda j: [s["symbol"] for s in j["symbols"] if s.get("underlyingType") not in ("COIN",) or s["symbol"][:3] in ("XAU", "XAG", "XPT", "XPD")][:60])
-dene("Binance fapi XAG fiyat", "https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=XAGUSDT", lambda j: (j["lastPrice"], j["priceChangePercent"], j["closeTime"]))
-dene("Binance fapi XAU fiyat", "https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=XAUUSDT", lambda j: (j["lastPrice"], j["priceChangePercent"], j["closeTime"]))
-dene("Binance spot PAXG", "https://data-api.binance.vision/api/v3/ticker/price?symbol=PAXGUSDT", lambda j: j)
-dene("OKX enstrüman XAU/XAG/oil", "https://www.okx.com/api/v5/public/instruments?instType=SWAP",
-     lambda j: [x["instId"] for x in j["data"] if any(k in x["instId"] for k in ("XAU", "XAG", "OIL", "WTI", "BRENT", "CL-", "XPT", "NG-", "COPPER"))])
-dene("Bybit tickers linear", "https://api.bybit.com/v5/market/tickers?category=linear",
-     lambda j: [(x["symbol"], x["lastPrice"]) for x in j["result"]["list"] if any(k in x["symbol"] for k in ("XAU", "XAG", "OIL", "WTI", "BRENT", "XPT", "NATGAS", "COPPER"))])
-dene("Bitget mix (TradFi)", "https://api.bitget.com/api/v2/mix/market/tickers?productType=USDT-FUTURES",
-     lambda j: [(x["symbol"], x["lastPr"]) for x in j["data"] if any(k in x["symbol"] for k in ("XAU", "XAG", "OIL", "WTI", "BRENT", "XPT", "NATGAS", "COPPER"))])
-dene("Hyperliquid meta", "https://api.hyperliquid.xyz/info", lambda j: j) if False else None
-try:
-    r = requests.post("https://api.hyperliquid.xyz/info", json={"type": "perpDexs"}, timeout=20); print("Hyperliquid perpDexs", r.status_code, str(r.json())[:300])
-except Exception as ex: print("Hyperliquid HATA", ex)
+"""Anlık emtia: kaynak karşılaştırma + panel + alarm + canlı uygulama."""
+import os
+os.makedirs("denetim_graf", exist_ok=True)
+import canli_emtia as CE, alarm as A, bist_makro as MK
+for kod in ("GUMUS", "PLATIN", "BAKIR", "WTI", "DOGALGAZ"):
+    ref, _ = None, None
+    try: ref = float(__import__("yfinance").Ticker(A._yahoo(kod)).fast_info["lastPrice"])
+    except Exception as ex: print(kod, "yahoo", ex)
+    r = CE.fiyat(kod, referans=ref)
+    print(f"{kod:9s} Yahoo {ref} | anlık {r and round(r['fiyat'], 4)} {r and r['kaynak']} d24 {r and round(r['d24'] or 0, 4)} zaman {r and r['zaman']:%H:%M:%S}" if r else f"{kod} anlık yok (yahoo {ref})")
+    print("   alarm.anlik:", A.anlik(kod))
+PV = MK.piyasa_paneli()
+for ad in ("Ons altın", "Gümüş", "Platin", "Bakır", "WTI petrol", "Doğal gaz", "Brent petrol"):
+    v = PV.get(ad, {}); print(f"PANEL {ad:12s} {v.get('deger')} · {v.get('kaynak')} · d1G {v.get('d1G') and round(v['d1G'], 4)}")
+from playwright.sync_api import sync_playwright
+with sync_playwright() as pw:
+    br = pw.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
+    pg = br.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, device_scale_factor=2).new_page()
+    pg.goto("https://cuz9rz7rlsx7bfwolrb8xq.streamlit.app", timeout=180000)
+    fr = None
+    for _ in range(90):
+        pg.wait_for_timeout(3000)
+        for f_ in pg.frames:
+            try:
+                if f_.evaluate("!!document.querySelector('[data-testid=stTab]')"): fr = f_; break
+            except Exception: pass
+        if fr: break
+    for _ in range(40):
+        if fr.evaluate("typeof window.kkGitAlt === 'function'"): break
+        fr.wait_for_timeout(2000)
+    fr.evaluate("localStorage.setItem('kk_gorulen', JSON.stringify(Array.from({length:80},(_, i)=>'x'+i)))")
+    fr.wait_for_timeout(5000)
+    fr.locator("[data-testid=stRadio] label:has-text('Emtia')").first.click(); fr.wait_for_timeout(8000)
+    print("CANLI kartlar:", fr.evaluate("[...document.querySelectorAll('.serit-mk .mk')].map(x=>x.innerText.replace(/\\n/g,' ')+' ['+((x.querySelector('.mk-n')||{}).title||'')+']').slice(0,8)"))
+    print("CANLI hata:", fr.evaluate("document.querySelectorAll('[data-testid=stException]').length"))
+    pg.screenshot(path="denetim_graf/emtia.png")
+    br.close()

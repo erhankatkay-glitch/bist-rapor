@@ -958,7 +958,7 @@ def tarama_tablosu(piyasa, zaman):
 
 
 KATEGORI = {"Tümü": None, "Kripto": "kripto", "ABD ve dünya": "dunya", "Emtia": "emtia", "Enerji": "enerji"}
-PV_KAT = {"DAX": "dunya", "FTSE 100": "dunya", "Nikkei 225": "dunya", "Hang Seng": "dunya", "EUR/USD": "dunya", "VIX": "dunya", "Dow Jones": "dunya", "S&P 500": "dunya", "Nasdaq": "dunya", "BIST 100": "dunya", "BIST 100 ($)": "dunya",
+PV_KAT = {"Platin": "emtia", "Bakır": "emtia", "DAX": "dunya", "FTSE 100": "dunya", "Nikkei 225": "dunya", "Hang Seng": "dunya", "EUR/USD": "dunya", "VIX": "dunya", "Dow Jones": "dunya", "S&P 500": "dunya", "Nasdaq": "dunya", "BIST 100": "dunya", "BIST 100 ($)": "dunya",
           "Dolar endeksi": "dunya", "ABD 10Y faiz": "dunya", "USD/TRY": "dunya", "EUR/TRY": "dunya",
           "Bitcoin": "kripto", "Ethereum": "kripto", "Gram altın": "emtia", "Ons altın": "emtia", "Gümüş": "emtia",
           "Brent petrol": "enerji", "WTI petrol": "enerji", "Doğal gaz": "enerji"}
@@ -1017,6 +1017,18 @@ def ana_satirlar(kat, liste):
         r = tablo[pz].loc[k]
         sat.append({"kod": k, "pz": pz, "fiyat": float(r["Fiyat"]), "deg": float(r["Değişim"]) if pd.notna(r["Değişim"]) else None,
                     "ad": str(r.get("Ad") or "")[:28], "alt": str(r.get("Genel") or "")})
+    # emtia satırları: tarama günlük kapanıştır; piyasa panelinde anlık (PAXG / OKX / Bitget 7/24) fiyat varsa onu göster
+    try:
+        PV_ = piyasa_verisi(ZAMAN)
+        ES = {"ALTIN": "Ons altın", "GRAMALTIN": "Gram altın", "GUMUS": "Gümüş", "PLATIN": "Platin", "BAKIR": "Bakır", "WTI": "WTI petrol",
+              "DOGALGAZ": "Doğal gaz", "BRENT": "Brent petrol"}
+        for x in sat:
+            v_ = PV_.get(ES.get(x["kod"], "")) if x["pz"] == "emtia" else None
+            if v_ and v_.get("deger"):
+                x["fiyat"] = float(v_["deger"])
+                if v_.get("d1G") is not None: x["deg"] = float(v_["d1G"])
+    except Exception:
+        pass
     return sat
 
 
@@ -2177,7 +2189,7 @@ with tab_p:
         PV = piyasa_verisi(ZAMAN)
     except Exception as e:
         PV = {}; st.caption(f"Piyasa verisi alınamadı: {e}")
-    sira = ["VIX", "Dow Jones", "S&P 500", "Nasdaq", "DAX", "FTSE 100", "Nikkei 225", "Hang Seng", "EUR/USD", "BIST 100", "Bitcoin", "Ethereum", "USD/TRY", "Gram altın", "Ons altın", "Gümüş",
+    sira = ["VIX", "Dow Jones", "S&P 500", "Nasdaq", "DAX", "FTSE 100", "Nikkei 225", "Hang Seng", "EUR/USD", "BIST 100", "Bitcoin", "Ethereum", "USD/TRY", "Gram altın", "Ons altın", "Gümüş", "Platin", "Bakır",
             "Brent petrol", "WTI petrol", "Doğal gaz", "EUR/TRY", "Dolar endeksi", "ABD 10Y faiz", "BIST 100 ($)"]
     _kart_yer = st.empty()
     kat_ad = st.radio("Kategori", list(KATEGORI), horizontal=True, key="ana_kat", label_visibility="collapsed")
