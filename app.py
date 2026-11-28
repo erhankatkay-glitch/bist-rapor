@@ -362,9 +362,26 @@ def ekip_raporu(s, temel=None):
         if op is None and s.get("tur") == "kripto":
             baz = str(s.get("kod", "")).split("/")[0]
             op = ((json_oku("opsiyon/ozet.json", ZAMAN) or {}).get("paralar") or {}).get(baz)
-        return EK.rapor(s, temel, ist, rj, op)
+        e = EK.rapor(s, temel, ist, rj, op)
+        if e:
+            import llm_katman as LLM
+            yz = ekip_yorum(LLM.rapor_metni(e))
+            if yz: e["yz"] = yz
+        return e
     except Exception as ex:
         print("ekip:", ex); return None
+
+
+def _sir(ad):
+    try: return st.secrets.get(ad) or os.environ.get(ad)
+    except Exception: return os.environ.get(ad)
+
+
+@st.cache_data(ttl=6 * 3600, show_spinner=False, max_entries=300)
+def ekip_yorum(girdi):
+    """Yorum katmanı (Gemini, yedek Groq): anahtar yoksa None; aynı rapor 6 saat önbellekte (ücretsiz kota korunur)."""
+    import llm_katman as LLM
+    return LLM.yorum_metinden(girdi, _sir("GEMINI_API_KEY"), _sir("GROQ_API_KEY"))
 
 
 def ekip_goster(e, on):
@@ -376,6 +393,10 @@ def ekip_goster(e, on):
     with st.expander(":material/groups: Araştırma ekibi (6 rol) — senaryolar, tez bozucular, güven", expanded=False):
         st.markdown(f'<div class="ko" style="border-color:{gr}"><div class="ko-u"><b style="color:{renk}">{_h.escape(e["gorunum"])}</b>'
                     f'<span style="color:{gr}">güven: {e["guven"]}</span></div><div class="ko-y2">{_h.escape(e["ozet"])}</div></div>', unsafe_allow_html=True)
+        if e.get("yz"):
+            st.markdown(f'<div class="ko"><div class="ko-u"><b>Ekip özeti</b><span style="font-size:.66rem;color:#A1A1AA">yapay zekâ · {_h.escape(e["yz"]["model"])}</span></div>'
+                        f'<div class="ko-y2">{_h.escape(e["yz"]["metin"])}</div><div class="ko-s">Metni dil modeli yazdı; içindeki her rakam aşağıdaki kural tabanlı '
+                        'rapordan alınır ve otomatik kontrol edilir.</div></div>', unsafe_allow_html=True)
         st.markdown("".join(
             f'<div class="dn"><div class="dn-a"><b>{x["ad"]}</b><span>{_h.escape(x["kosul"])}</span></div><div class="dn-f"><b>{TK.sayi(x["fiyat"])}</b>'
             f'<span style="color:{"#22C55E" if x["degisim"] > 0 else "#EF4444" if x["degisim"] < 0 else "#A1A1AA"}">{br.yz(x["degisim"])}</span></div></div>'
