@@ -35,6 +35,12 @@ def main(klasor, pz):
         br.baglam("THYAO")
     print(pz, len(kodlar), "hisse taranıyor…")
     satirlar, hatalar = br.tara(kodlar, isci=6)
+    if hatalar:   # hız sınırına takılanlar için yavaş ikinci tur
+        import collections
+        print("hata nedenleri:", collections.Counter(str(v)[:70] for v in hatalar.values()).most_common(6))
+        s2, hatalar = br.tara(list(hatalar), isci=2)
+        satirlar += s2
+        if hatalar: print("ikinci tur sonrası:", collections.Counter(str(v)[:70] for v in hatalar.values()).most_common(4))
     out = {}
     for r in satirlar:
         kod = str(r.get("Kod"))
