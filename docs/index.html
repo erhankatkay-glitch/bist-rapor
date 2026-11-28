@@ -361,6 +361,7 @@ async function varlik(kod) {
     ${grafikSvg(k.grafik, g)}
     <h2>Zaman dilimleri</h2><div class="tfk">${Object.entries(k.tf).map(([t, a]) => `<div><small>${TF_AD[t] || t}</small><b class="${rk(a.puan - 50)}">${esc(a.etiket)}</b><div class="cub"><div style="width:${a.puan}%"></div></div></div>`).join("")}</div>
     <h2>Teknik yorum</h2><div class="kart metin">${md(k.yorum)}</div>`;
+  if (k.pz === "bist" || k.pz === "abd") { const T = await temelAl(k.pz); h += temelHtml(T && T.satirlar && T.satirlar[k.kod], para); }
   if (k.senaryo && k.senaryo.length) h += `<h2>Senaryolar</h2>` + k.senaryo.map(x => `<div class="kart"><b style="font-size:13.5px">${esc(x[0])}</b><div class="metin" style="margin-top:4px">Koşul: ${esc(x[1])} · hedef ${esc(x[2])}<br><span class="not">${esc(x[3])}</span></div></div>`).join("");
   h += `<h2>Seviyeler (günlük)</h2><div class="kart"><table class="tablo">${sev((g.direnc || []).slice().reverse(), "#EF4444")}<tr><td><b>Son fiyat</b></td><td style="color:var(--a)">${para}${fy(g.fiyat)}</td></tr>${sev(g.destek, "#22C55E")}</table></div>
     <div class="kart"><b style="font-size:13px">Pivot (klasik)</b><table class="tablo">${["R2", "R1", "P", "S1", "S2"].map(x => `<tr><td>${x}</td><td>${fy(g.pivot[x])}</td></tr>`).join("")}</table></div>`;
@@ -662,6 +663,67 @@ function logoYukle(im) { const u = logoUrl(im.dataset.k, im.dataset.p, im.datase
 const logo = (kod, pz, ad, boy = 22) => { const u = logoUrl(kod, pz, ad);
   return `<img class="lg" ${u ? `src="${u}"` : ""} data-k="${esc(kod)}" data-p="${esc(pz || "")}" data-a="${esc(ad || "")}" width="${boy}" height="${boy}" loading="lazy" alt="" onerror="this.remove()" style="width:${boy}px;height:${boy}px">`; };
 
+// ---------------------------------------------------------------- temel analiz (gece hesaplanan: bulten/temel/<pz>.json)
+const TEMEL = {};
+async function temelAl(pz) { if (!(pz in TEMEL)) TEMEL[pz] = (await al(`temel/${pz}.json`)) || null; return TEMEL[pz]; }
+const gorusSinif = g => /ALTINDA|UCUZ|İSKONTO/.test(g || "") ? "al" : /ÜZERİNDE|PAHALI/.test(g || "") ? "sat" : "n";
+const yzD = (x, nd = 1) => x == null ? "–" : yz(x, nd);
+const tlK = x => x == null ? "–" : Math.abs(x) >= 1e12 ? tr(x / 1e12, 2) + " tn" : Math.abs(x) >= 1e9 ? tr(x / 1e9, 1) + " mr" : Math.abs(x) >= 1e6 ? tr(x / 1e6, 0) + " mn" : tr(x, 0);
+function temelHtml(t, para) {
+  if (!t) return "";
+  const m = (a, d, alt, cls = "") => `<div class="mini"><small>${a}</small><b class="${cls}">${d}</b>${alt ? `<span class="not" style="font-size:10.5px;font-weight:600">${alt}</span>` : ""}</div>`;
+  const sk = t["Sağlık skoru"];
+  return `<h2>Temel analiz</h2><div class="kart"><div class="satir"><div class="a"><b><span class="rozet ${gorusSinif(t["Görüş"])}" style="margin:0">${esc(t["Görüş"] || "–")}</span></b>
+      <span style="margin-top:6px">${esc(t["Sektör"] || "")} · güven ${esc(t["Güven"] || "–")} · kaynak ${esc(t["Kaynak"] || "")}</span></div>
+      ${t["Fırsat skoru"] != null ? `<div class="f"><b style="font-size:20px;color:var(--a)">${tr(t["Fırsat skoru"], 0)}</b><span class="not">fırsat skoru</span></div>` : ""}</div>
+      ${t["Gerekçe"] ? `<div class="metin" style="margin-top:6px;color:var(--s)">${esc(t["Gerekçe"])}</div>` : ""}</div>
+    <div class="izgara">${m("Adil değer", para + fy(t["Adil değer"]), "potansiyel " + yzD(t["Potansiyel"], 0), rk(t["Potansiyel"]))}
+      ${m("Sağlık skoru", sk == null ? "–" : tr(sk, 2) + "/5", "", sk >= 3.5 ? "ust" : sk != null && sk < 2.5 ? "alt" : "")}
+      ${m("Piyasa değeri", tlK(t["Piyasa değeri"]), para === "$" ? "dolar" : "TL")}
+      ${m("F/K", t["F/K"] == null ? "–" : tr(t["F/K"], 1))}${m("PD/DD", t["PD/DD"] == null ? "–" : tr(t["PD/DD"], 2))}${m("ROE", t.ROE == null ? "–" : "%" + tr(t.ROE * 100, 1), "", rk(t.ROE))}
+      ${m("Temettü", t["Temettü verimi"] == null ? "–" : "%" + tr(t["Temettü verimi"] * 100, 1))}${m("FD/Satış", t["FD/Satış"] == null ? "–" : tr(t["FD/Satış"], 2))}${m("PEG (reel)", t["PEG (reel)"] == null ? "–" : tr(t["PEG (reel)"], 2))}</div>
+    <div class="kart" style="margin-top:8px"><table class="tablo">
+      <tr><td>Büyüme modeline göre adil değer</td><td>${para}${fy(t["Büyüme adil değeri"])} <span class="${rk(t["Büyüme potansiyeli"])}">${yzD(t["Büyüme potansiyeli"], 0)}</span></td></tr>
+      <tr><td>Reel ciro büyümesi (yıllık / çeyrek)</td><td><span class="${rk(t["Reel büyüme"])}">${yzD(t["Reel büyüme"])}</span> / <span class="${rk(t["Çeyrek büyüme (reel)"])}">${yzD(t["Çeyrek büyüme (reel)"])}</span></td></tr>
+      <tr><td>1 yıllık getiri${para === "₺" ? " (TL / $)" : ""}</td><td><span class="${rk(t["1Y getiri"])}">${yzD(t["1Y getiri"])}</span>${para === "₺" ? ` / <span class="${rk(t["1Y $"])}">${yzD(t["1Y $"])}</span>` : ""}</td></tr>
+      <tr><td>6 ay endekse göre</td><td class="${rk(t["6A göreli"])}">${yzD(t["6A göreli"])}</td></tr>
+      <tr><td>Para akışı</td><td>${esc(t["Para akışı"] || "–")}${t["Akış puanı"] != null ? ` <span class="not">(${tr(t["Akış puanı"], 1)})</span>` : ""}</td></tr>
+      ${t["Yabancı %"] != null ? `<tr><td>Yabancı payı (1 ay değişim)</td><td>%${tr(t["Yabancı %"], 1)} <span class="${rk(t["Yabancı Δ1A"])}">${t["Yabancı Δ1A"] == null ? "" : (t["Yabancı Δ1A"] >= 0 ? "+" : "") + tr(t["Yabancı Δ1A"], 2)}</span></td></tr>` : ""}
+      <tr><td>Teknik özet</td><td>${esc(t.Teknik || "–")}</td></tr></table>
+      ${t["Büyüme modeli"] ? `<div class="not" style="font-size:11px;margin-top:6px">Büyüme modeli: ${esc(t["Büyüme modeli"])} · model güveni ${esc(t["Model güveni"] || "–")}</div>` : ""}
+      <div class="not" style="font-size:10.5px;margin-top:6px">Temel veriler her gece güncellenir (${esc(t.tarih || "")}). Ayrıntılı rapor: alttaki PDF ya da tam uygulama.</div></div>`;
+}
+let BEBEK = null;
+async function temelBolum(el) {   // Piyasa › Temel: değer sıralaması (BIST / ABD) ve bebek şirketler (resmi / genç / küçük)
+  const mod = LS.get("kk_temel_mod", "bist");
+  const ust = `<div class="cip">${[["bist", "BIST değer"], ["abd", "ABD değer"], ["resmi", "Bebekler"], ["genc", "Genç şirketler"], ["kucuk", "Küçük şirketler"]].map(([k, a]) => `<button data-tz="${k}" class="${k === mod ? "s" : ""}">${a}</button>`).join("")}</div>`;
+  const bagla = () => el.querySelectorAll("[data-tz]").forEach(b => b.onclick = () => { LS.set("kk_temel_mod", b.dataset.tz); temelBolum(el); });
+  await karneListe();
+  if (mod === "bist" || mod === "abd") {
+    const T = await temelAl(mod);
+    const R = Object.entries((T || {}).satirlar || {}).map(([kod, t]) => ({kod, t})).filter(x => x.t["Fırsat skoru"] != null).sort((a, b) => b.t["Fırsat skoru"] - a.t["Fırsat skoru"]);
+    el.innerHTML = `<h2>Temel analiz · ${R.length} hisse</h2>${ust}<div class="not" style="font-size:11px;margin:-2px 2px 8px">Fırsat skoru: güçlü temeller, değerleme iskontosu, göreli güç ve para girişinin bileşimi (0–100). Her gece güncellenir.</div>` +
+      (R.slice(0, 120).map(({kod, t}) => `<a class="kart dok" href="#v/${encodeURIComponent(kod)}"><div class="satir"><div class="a"><b>${logo(kod, mod, t["Şirket"])}${esc(kod.replace(".US", ""))} <span class="etk ${gorusSinif(t["Görüş"])}" style="margin-left:4px">${esc(t["Görüş"] || "")}</span></b>
+        <span>${esc(t["Şirket"] || "")} · sağlık ${t["Sağlık skoru"] == null ? "–" : tr(t["Sağlık skoru"], 1)}/5 · F/K ${t["F/K"] == null ? "–" : tr(t["F/K"], 1)}</span><span>${esc(t["Gerekçe"] || "")}</span></div>
+        <div class="f"><b style="color:var(--a)">${tr(t["Fırsat skoru"], 0)}</b><span class="${rk(t.Potansiyel)}">${yzD(t.Potansiyel, 0)}</span></div></div></a>`).join("") || "<div class='bos'>Temel veri henüz yok.</div>");
+    return bagla();
+  }
+  if (!BEBEK) BEBEK = (await al("temel/bebek.json")) || {modlar: {}};
+  const M = BEBEK.modlar[mod] || {liste: [], derin: []};
+  const acik = {resmi: "Borsa İstanbul'un resmi tanımı: halka arzdan sonraki 2 yıl boyunca BIST Halka Arz Endeksi'nde (XHARZ) yer alan şirketler.",
+                genc: "Tüm BIST'te son 5 yılda halka arz olan şirketler (resmi bebekler dahil).", kucuk: "Tüm BIST'te piyasa değeri 5 milyar TL'nin altındaki şirketler; yaşına bakılmaz."}[mod];
+  const ek = Object.fromEntries(M.liste.map(x => [x.Kod, x]));
+  el.innerHTML = `<h2>${{resmi: "Bebek şirketler", genc: "Genç şirketler", kucuk: "Küçük şirketler"}[mod]} · ${M.liste.length}</h2>${ust}
+    <div class="not" style="font-size:11px;margin:-2px 2px 8px">${acik}${mod === "resmi" && !M.resmi ? " Resmi liste bu sefer alınamadı; ilk işlem tarihi 2 yıldan yeni olanlar seçildi." : ""} Bebek skoru: reel büyüme %30, sağlık %25, büyüme potansiyeli %20, son çeyrek ivmesi %15, para girişi %10 (liste içindeki sıra).</div>` +
+    (M.derin.slice(0, 100).map(x => { const l = ek[x.Kod] || x;
+      return `<a class="kart dok" href="#v/${encodeURIComponent(x.Kod)}"><div class="satir"><div class="a"><b>${logo(x.Kod, "bist", x["Şirket"])}${esc(x.Kod)}</b>
+        <span>${esc(x["Şirket"] || "")}${l["İlk işlem"] ? ` · ilk işlem ${esc(String(l["İlk işlem"]).slice(0, 10).split("-").reverse().join("."))}` : ""}${l["Piyasa değeri (mr TL)"] != null ? ` · ${tr(l["Piyasa değeri (mr TL)"], 1)} mr TL` : ""}</span>
+        <span>${esc(x.Neden || "")}${x["Risk notu"] ? ` · <b style="color:var(--a);display:inline;font-size:inherit">⚠ ${esc(x["Risk notu"])}</b>` : ""}</span></div>
+        <div class="f"><b style="color:var(--a)">${x["Bebek skoru"] == null ? "–" : tr(x["Bebek skoru"], 0)}</b><span class="${rk(x["Büyüme potansiyeli"])}">${yzD(x["Büyüme potansiyeli"], 0)}</span><small style="display:block;color:var(--s2);font-size:10px">${l["İlk işlemden getiri"] != null ? "ilk işlemden " + yz(l["İlk işlemden getiri"], 0) : ""}</small></div></div></a>`; }).join("")
+     || "<div class='bos'>Liste henüz hazır değil (her gece güncellenir).</div>");
+  bagla();
+}
+
 // ---------------------------------------------------------------- 3. adım: takvim, ekonomi, tarayıcı, karşılaştır, fırsat performansı, sabah özeti
 let PV = null;   // docs/pwa_veri.json: tam uygulamanın sözlükleri (takvim Türkçe adları, tarayıcı alanları ve hazır taramalar)
 async function pwaVeri() { if (!PV) { try { PV = await fetch("pwa_veri.json").then(r => r.json()); } catch (e) { PV = {veri: [], ulke: {}, alanlar: {}, hazir: {}}; } } return PV; }
@@ -960,10 +1022,10 @@ async function karneBolum(el) {
 let PY_SEKME = LS.get("kk_py_sekme", "genel");
 async function piyasa() {
   const ust = document.getElementById("s-piyasa");
-  ust.innerHTML = `<div class="cip" style="margin-top:4px">${[["genel", "Genel"], ["takvim", "Takvim"], ["ekonomi", "Ekonomi"], ["tarayici", "Tarayıcı"], ["karsilastir", "Karşılaştır"]].map(([k, a]) => `<button data-py="${k}" class="${k === PY_SEKME ? "s" : ""}">${a}</button>`).join("")}</div><div id="py-ic"></div>`;
+  ust.innerHTML = `<div class="cip" style="margin-top:4px">${[["genel", "Genel"], ["temel", "Temel"], ["takvim", "Takvim"], ["ekonomi", "Ekonomi"], ["tarayici", "Tarayıcı"], ["karsilastir", "Karşılaştır"]].map(([k, a]) => `<button data-py="${k}" class="${k === PY_SEKME ? "s" : ""}">${a}</button>`).join("")}</div><div id="py-ic"></div>`;
   ust.querySelectorAll("[data-py]").forEach(b => b.onclick = () => { PY_SEKME = b.dataset.py; LS.set("kk_py_sekme", PY_SEKME); piyasa(); });
   const el = document.getElementById("py-ic");
-  if (PY_SEKME !== "genel") { await karneListe(); return ({takvim: takvimBolum, ekonomi: ekonomiBolum, tarayici: tarayiciBolum, karsilastir: karsilastirBolum})[PY_SEKME](el); }
+  if (PY_SEKME !== "genel") { await karneListe(); return ({temel: temelBolum, takvim: takvimBolum, ekonomi: ekonomiBolum, tarayici: tarayiciBolum, karsilastir: karsilastirBolum})[PY_SEKME](el); }
   let h = "";
   const [ko, dn, op] = await Promise.all([al("korelasyon/ozet.json"), al("dunya/ozet.json"), al("opsiyon/ozet.json")]);
   if (op && op.paralar) {
@@ -1006,7 +1068,7 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => git(b.dat
 async function yenile(b) {   // tüm veriyi önbelleği atlayarak yeniden çek, açık sayfayı yeniden çiz
   const etiketler = [document.getElementById("yenile"), document.getElementById("yenile2")];
   etiketler.forEach(x => x && (x.disabled = true)); document.getElementById("yenile").textContent = "↻ Yenileniyor…";
-  ZORLA = Date.now(); KARNE = null; Object.keys(yuklendi).forEach(k => yuklendi[k] = false);
+  ZORLA = Date.now(); KARNE = null; BEBEK = null; Object.keys(TEMEL).forEach(k => delete TEMEL[k]); Object.keys(yuklendi).forEach(k => yuklendi[k] = false);
   const s = decodeURIComponent((location.hash || "#ozet").slice(1));
   try { git(YUK[s] || s.startsWith("v/") ? s : "ozet"); await karneListe(); } catch (e) {}
   setTimeout(() => { ZORLA = 0; }, 8000);

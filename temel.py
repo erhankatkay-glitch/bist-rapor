@@ -45,6 +45,37 @@ def main(klasor, pz):
         json.dump({"zaman": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"), "pz": pz, "satirlar": out,
                    "hata": len(hatalar)}, f, ensure_ascii=False, separators=(",", ":"))
     print(f"Temel ({pz}): {len(out)} hisse, {len(hatalar)} hata")
+    if pz == "bist":
+        try: bebek(klasor, satirlar)
+        except Exception as x: print("Bebek listesi üretilemedi:", x, file=sys.stderr)
+
+
+def bebek(klasor, satirlar):
+    """Tam uygulamanın Bebek sekmesi (resmi XHARZ bebekleri, genç ve küçük şirketler) + derin analiz (bebek skoru), hazır hesaplanmış.
+    Derin analiz için yukarıdaki temel taramanın satırları kullanılır (aynı hesap)."""
+    import copy
+    import bist_borsa as BB
+    import bist_evren as EV
+    df, harz, not_ = EV.bist_listesi()
+    ilk = EV.ilk_islemler(list(df["Kod"]))
+    try: resmi_ilk = BB.ilk_islem()
+    except Exception: resmi_ilk = {}
+    by = {str(r.get("Kod")): r for r in satirlar}
+    out = {"zaman": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"), "evren": len(df), "not": not_, "modlar": {}}
+    for mod in ("resmi", "genc", "kucuk"):
+        liste, resmi = EV.bebekler(df, ilk if mod != "kucuk" else {}, set(harz), resmi_ilk=resmi_ilk, mod=mod)
+        derin = [copy.deepcopy(by[x["Kod"]]) for x in liste[:150] if x["Kod"] in by]
+        derin = EV.bebek_skoru(derin)
+        ek = {x["Kod"]: x for x in liste}
+        for x in derin:
+            x.update({k: v for k, v in ek.get(x["Kod"], {}).items() if k not in x})
+            x["Risk notu"] = EV.risk_notlari(x)
+        temiz = lambda d: {k: _temiz(v) for k, v in d.items() if not str(k).startswith("_")}
+        out["modlar"][mod] = {"resmi": bool(resmi), "liste": [temiz(x) for x in liste],
+                              "derin": sorted([temiz(x) for x in derin], key=lambda x: -(x.get("Bebek skoru") or -1))}
+        print(f"Bebek ({mod}): {len(liste)} şirket, {len(derin)} derin")
+    with open(os.path.join(klasor, "temel", "bebek.json"), "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, separators=(",", ":"), default=str)
 
 
 if __name__ == "__main__":
