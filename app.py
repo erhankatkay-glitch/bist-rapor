@@ -1659,6 +1659,14 @@ if not st.session_state.get("sanal_yuklendi"):
 
 
 # Ana sayfadaki satır düğmeleri (Analiz / Seviye) bu gizli kutuya "KOD|TÜR|BÖLÜM|zaman" yazar (uygulama_stil.CANLI_JS → kkIstek)
+# Aşama 15: PWA'dan gelen derin bağlantı (?kk=KOD|Tür|bölüm|) → aynı gizli istek yolu; parametre bir kez okunup silinir
+_kk_qp = st.query_params.get("kk", "")
+if _kk_qp and not st.session_state.get("_kk_qp_ok"):
+    st.session_state["_kk_qp_ok"] = True
+    _q = (_kk_qp.split("|") + ["", "", ""])[:3]
+    st.session_state["kk_istek"] = f"{_q[0].strip().upper()[:20]}|{_q[1]}|{_q[2]}|{dt.datetime.now().timestamp():.0f}"
+    if _q[2] != "rapor": st.session_state["_kk_git"] = True
+    st.query_params.pop("kk", None)
 with st.container(key="kk_gizli"):
     st.text_input("istek", key="kk_istek", label_visibility="collapsed")
 _ist = st.session_state.get("kk_istek") or ""
