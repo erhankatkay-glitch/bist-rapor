@@ -1,0 +1,65 @@
+[
+{
+"id": 207,
+"anahtar": "firsat:kripto:4S",
+"gonderim": "2026-11-27T04:30:47.885350+00:00",
+"sil": "2026-11-29T03:00:47.885350+00:00",
+"bag": [
+"kripto-BCH/USDT-4S-AL-202611270000",
+"kripto-CAKE/USDT-4S-SAT-202611241200",
+"kripto-ATOM/USDT-4S-SAT-202611250800",
+"kripto-GRAM/USDT-4S-SAT-202611261200",
+"kripto-XLM/USDT-4S-SAT-202611261200",
+"kripto-TRUMP/USDT-4S-SAT-202611262000"
+]
+},
+{
+"id": 208,
+"anahtar": "firsat:kripto:4S",
+"gonderim": "2026-11-27T04:30:49.237244+00:00",
+"sil": "2026-11-29T03:00:49.237244+00:00",
+"bag": [
+"kripto-BCH/USDT-4S-AL-202611270000",
+"kripto-CAKE/USDT-4S-SAT-202611241200",
+"kripto-ATOM/USDT-4S-SAT-202611250800",
+"kripto-GRAM/USDT-4S-SAT-202611261200",
+"kripto-XLM/USDT-4S-SAT-202611261200",
+"kripto-TRUMP/USDT-4S-SAT-202611262000"
+]
+},
+{
+"id": 270,
+"anahtar": "bulten:kripto",
+"gonderim": "2026-11-28T00:22:31.550873+00:00",
+"sil": "2026-11-29T06:22:31.550873+00:00",
+"bag": []
+},
+{
+"id": 271,
+"anahtar": "bulten:kripto",
+"gonderim": "2026-11-28T00:22:32.531355+00:00",
+"sil": "2026-11-29T06:22:32.531355+00:00",
+"bag": []
+},
+{
+"id": 272,
+"anahtar": "bulten:kripto_tl",
+"gonderim": "2026-11-28T00:28:05.373741+00:00",
+"sil": "2026-11-29T06:28:05.373741+00:00",
+"bag": []
+},
+{
+"id": 273,
+"anahtar": "bulten:kripto_tl",
+"gonderim": "2026-11-28T00:28:06.266456+00:00",
+"sil": "2026-11-29T06:28:06.266456+00:00",
+"bag": []
+},
+{
+"id": 282,
+"anahtar": "takip:kripto",
+"gonderim": "2026-11-28T08:26:42.950125+00:00",
+"sil": "2026-11-29T08:26:42.950125+00:00",
+"bag": []
+}
+]

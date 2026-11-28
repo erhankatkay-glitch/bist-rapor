@@ -1,0 +1,42 @@
+{
+ "seri": [
+  {
+   "tarih": "2026-10-16",
+   "hisse_net": -88.75,
+   "hisse_stok": 33981.07,
+   "dibs_net": -41.34
+  },
+  {
+   "tarih": "2026-10-23",
+   "hisse_net": -99.98,
+   "hisse_stok": 31569.27,
+   "dibs_net": -183.76
+  },
+  {
+   "tarih": "2026-10-30",
+   "hisse_net": -66.27,
+   "hisse_stok": 31323.07,
+   "dibs_net": -750.39
+  },
+  {
+   "tarih": "2026-11-06",
+   "hisse_net": 367.18,
+   "hisse_stok": 32266.24,
+   "dibs_net": 36.93
+  },
+  {
+   "tarih": "2026-11-13",
+   "hisse_net": 246.75,
+   "hisse_stok": 33898.78,
+   "dibs_net": 97.58
+  },
+  {
+   "tarih": "2026-11-20",
+   "hisse_net": -48.37,
+   "hisse_stok": 31735.27,
+   "dibs_net": -463.07
+  }
+ ],
+ "guncelleme": "2026-11-27T20:47:50.135950+00:00",
+ "kaynak": "TCMB Haftalık Menkul Kıymet İstatistikleri"
+}

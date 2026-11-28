@@ -1,0 +1,226 @@
+{
+ "donem": "haftalik",
+ "tarih": "2026-11-28",
+ "varliklar": [
+  {
+   "grup": "Türkiye",
+   "kod": "XU100",
+   "ad": "BIST 100",
+   "fiyat": 10977.0,
+   "degisim": -0.013861795782602382,
+   "puan": 23.6,
+   "etiket": "GÜÇLÜ SAT",
+   "ust_etiket": "NÖTR",
+   "rsi": 35.4,
+   "yapi": "DÜŞEN (AT + AD)",
+   "yukari": [
+    11166.026803,
+    11573.0
+   ],
+   "asagi": [
+    10714.847259,
+    10084.820683
+   ],
+   "senaryo": "Görünüm zayıf (güçlü sat). 10.715 altında haftalık kapanış düşüşü 10.085 doğru sürdürebilir. Toparlanma için 11.166 üzerinde kapanış gerekir. Aylık görünüm nötr.",
+   "tarih": "2026-11-27"
+  },
+  {
+   "grup": "Türkiye",
+   "kod": "XU030",
+   "ad": "BIST 30",
+   "fiyat": 13763.7998046875,
+   "degisim": -0.01384956832705131,
+   "puan": 22.6,
+   "etiket": "GÜÇLÜ SAT",
+   "ust_etiket": "NÖTR",
+   "rsi": 40.0,
+   "yapi": "DÜŞEN (AT + AD)",
+   "yukari": [
+    14153.799805,
+    15027.525146
+   ],
+   "asagi": [
+    13281.900391,
+    12823.400391
+   ],
+   "senaryo": "Görünüm zayıf (güçlü sat). 13.282 altında haftalık kapanış düşüşü 12.823 doğru sürdürebilir. Toparlanma için 14.154 üzerinde kapanış gerekir. Aylık görünüm nötr.",
+   "tarih": "2026-11-27"
+  },
+  {
+   "grup": "Türkiye",
+   "kod": "USDTRY",
+   "ad": "Dolar/TL",
+   "fiyat": 50.77376937866211,
+   "degisim": 0.00418179002009178,
+   "puan": 74.7,
+   "etiket": "AL",
+   "ust_etiket": "GÜÇLÜ AL",
+   "rsi": 99.3,
+   "yapi": "DÜŞEN (AT + AD)",
+   "yukari": [],
+   "asagi": [
+    46.976501,
+    41.415501
+   ],
+   "senaryo": "Görünüm olumlu (al). Fiyat zirve bölgesinde; üzerinde bilinen bir direnç yok. 46,98 altına inmesi görünümü zayıflatır. Aylık görünüm güçlü al.",
+   "tarih": "2026-11-27"
+  },
+  {
+   "grup": "ABD",
+   "kod": "SP500",
+   "ad": "S&P 500",
+   "fiyat": 7297.490234375,
+   "degisim": 0.05601711191375025,
+   "puan": 35.5,
+   "etiket": "SAT",
+   "ust_etiket": "NÖTR",
+   "rsi": 46.3,
+   "yapi": "DÜŞEN (AT + AD)",
+   "yukari": [
+    7588.169922,
+    7837.565063
+   ],
+   "asagi": [
+    6997.879883,
+    6867.140039
+   ],
+   "senaryo": "Görünüm zayıf (sat). 6.998 altında haftalık kapanış düşüşü 6.867 doğru sürdürebilir. Toparlanma için 7.588 üzerinde kapanış gerekir. Aylık görünüm nötr.",
+   "tarih": "2026-11-27"
+  },
+  {
+   "grup": "ABD",
+   "kod": "NASDAQ",
+   "ad": "Nasdaq",
+   "fiyat": 24129.5,
+   "degisim": 0.06684001886655921,
+   "puan": 26.9,
+   "etiket": "SAT",
+   "ust_etiket": "NÖTR",
+   "rsi": 43.4,
+   "yapi": "DÜŞEN (AT + AD)",
+   "yukari": [
+    24980.380859,
+    25649.849609
+   ],
+   "asagi": [
+    22513.009766,
+    21898.289062
+   ],
+   "senaryo": "Görünüm zayıf (sat). 22.513 altında haftalık kapanış düşüşü 21.898 doğru sürdürebilir. Toparlanma için 24.980 üzerinde kapanış gerekir. Aylık görünüm nötr.",
+   "tarih": "2026-11-27"
+  },
+  {
+   "grup": "ABD",
+   "kod": "VIX",
+   "ad": "VIX korku endeksi",
+   "fiyat": 23.809999465942383,
+   "degisim": -0.3365840102853338,
+   "puan": 87.0,
+   "etiket": "GÜÇLÜ AL",
+   "ust_etiket": "GÜÇLÜ AL",
+   "rsi": 54.3,
+   "yapi": "YÜKSELEN (YT + YD)",
+   "yukari": [
+    29.065385,
+    37.387692,
+    40.51000213623047
+   ],
+   "asagi": [
+    21.422121,
+    14.167692
+   ],
+   "senaryo": "Yükseliş eğiliminde (güçlü al); piyasalarda tedirginlik artıyor. 29,07 üzerinde haftalık kapanış yükselişi 37,39 seviyesine taşır. 21,42 altına inmesi görünümü zayıflatır. Aylık görünüm güçlü al.",
+   "tarih": "2026-11-27"
+  },
+  {
+   "grup": "Emtia ve kripto",
+   "kod": "ALTIN",
+   "ad": "Ons altın",
+   "fiyat": 3650.39,
+   "degisim": 0.03533031767728456,
+   "puan": 14.0,
+   "etiket": "GÜÇLÜ SAT",
+   "ust_etiket": "GÜÇLÜ SAT",
+   "rsi": 34.9,
+   "yapi": "DÜŞEN (AT + AD)",
+   "yukari": [
+    3963.080778,
+    4112.154797
+   ],
+   "asagi": [
+    3463.23668,
+    3221.296542
+   ],
+   "senaryo": "Görünüm zayıf (güçlü sat). 3.463 altında haftalık kapanış düşüşü 3.221 doğru sürdürebilir. Toparlanma için 3.963 üzerinde kapanış gerekir. Aylık görünüm güçlü sat.",
+   "tarih": "2026-11-27"
+  },
+  {
+   "grup": "Emtia ve kripto",
+   "kod": "GUMUS",
+   "ad": "Ons gümüş",
+   "fiyat": 43.16699981689453,
+   "degisim": 0.05195564706738698,
+   "puan": 19.0,
+   "etiket": "GÜÇLÜ SAT",
+   "ust_etiket": "GÜÇLÜ SAT",
+   "rsi": 32.1,
+   "yapi": "DÜŞEN (AT + AD)",
+   "yukari": [
+    46.985001,
+    54.185
+   ],
+   "asagi": [
+    39.837999,
+    36.345001,
+    9.332718510828443
+   ],
+   "senaryo": "Görünüm zayıf (güçlü sat). 39,84 altında haftalık kapanış düşüşü 36,35 doğru sürdürebilir. Toparlanma için 46,99 üzerinde kapanış gerekir. Aylık görünüm güçlü sat.",
+   "tarih": "2026-11-27"
+  },
+  {
+   "grup": "Emtia ve kripto",
+   "kod": "BRENT",
+   "ad": "Brent petrol",
+   "fiyat": 95.44000244140625,
+   "degisim": 0.031003594642363463,
+   "puan": 53.2,
+   "etiket": "NÖTR",
+   "ust_etiket": "GÜÇLÜ AL",
+   "rsi": 49.0,
+   "yapi": "YÜKSELEN (YT + YD)",
+   "yukari": [
+    102.010002,
+    116.087143
+   ],
+   "asagi": [
+    85.99111,
+    78.032353
+   ],
+   "senaryo": "Yön kararsız (nötr). 85,99 – 102,01 bandının kırıldığı yön belirleyici olur. Aylık görünüm güçlü al.",
+   "tarih": "2026-11-27"
+  },
+  {
+   "grup": "Emtia ve kripto",
+   "kod": "BTC",
+   "ad": "Bitcoin",
+   "fiyat": 59923.1,
+   "degisim": -0.022000265051636103,
+   "puan": 21.9,
+   "etiket": "GÜÇLÜ SAT",
+   "ust_etiket": "SAT",
+   "rsi": 34.4,
+   "yapi": "KARARSIZ / YATAY",
+   "yukari": [
+    64927.0,
+    71855.258333,
+    119661.34
+   ],
+   "asagi": [
+    54123.34375,
+    47719.697143
+   ],
+   "senaryo": "Görünüm zayıf (güçlü sat). 54.123 altında haftalık kapanış düşüşü 47.720 doğru sürdürebilir. Toparlanma için 64.927 üzerinde kapanış gerekir. Aylık görünüm sat.",
+   "tarih": "2026-11-29"
+  }
+ ]
+}

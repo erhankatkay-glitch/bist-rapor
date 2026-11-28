@@ -1,0 +1,1377 @@
+{
+"4S": {
+"zaman": "2026-11-27T18:37:59.350686+00:00",
+"mum": "2026-11-27T09:30:00",
+"taranan": 1919,
+"firsatlar": [
+{
+"kod": "AER.US",
+"ad": "AerCap Holdings N.V. Ordinary Shares",
+"para": "$",
+"piyasa": "abd",
+"tf": "4S",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili dip – teyit + Trend içi geri çekilme",
+"aciklama": "Fiyat aynı desteği iki kez kıramadı.",
+"plan": {
+"giris": 171.1999969482422,
+"bolge": [
+170.33614152133114,
+171.48794875721254
+],
+"stop": 162.96114152133114,
+"risk": 8.238855426911044,
+"atr": 2.8795180897035113,
+"hedef": [
+{
+"fiyat": 182.93204941173278,
+"etiket": "direnç (3 temas)",
+"r": 1.4239905733956097
+},
+{
+"fiyat": 195.854400390625,
+"etiket": "Fib uzantı %127,2",
+"r": 2.992454918173793
+},
+{
+"fiyat": 211.9260993347168,
+"etiket": "Fib uzantı %161,8",
+"r": 4.943174782925384
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 78.4,
+"gecmis": {
+"n": 17,
+"p1": 0.5294117647058824,
+"p2": 0.23529411764705882,
+"ort_R": 0.5199786891073215,
+"kazanc": 0.5882352941176471
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.515625,
+"beklenen_R": 0.5106136785882646,
+"teyit": [
+[
+"Günlük GÜÇLÜ AL (79)",
+true
+],
+[
+"4 saatlik puanı 68",
+true
+],
+[
+"Hacim 1,4x",
+false
+],
+[
+"RSI 56",
+true
+],
+[
+"ADX 29",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+false
+],
+[
+"H1'e yer var",
+false
+],
+[
+"Toplu sinyal değil",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 78.54166666666666,
+"rsi": 56.09537237568907,
+"adx": 28.544502761294417,
+"hacim_k": 1.415738399699516,
+"mum": "2026-11-27T09:30:00",
+"ekstra": {}
+},
+{
+"kod": "JAN.US",
+"ad": "Janus Living, Inc. Class A-1 Common Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "4S",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Yükselen kama – yukarı kırılım",
+"aciklama": "Daralan yükseliş; genellikle aşağı kırılır.",
+"plan": {
+"giris": 34.2400016784668,
+"bolge": [
+34.028685870305374,
+34.31044028118727
+],
+"stop": 32.126843596852595,
+"risk": 2.113158081614202,
+"atr": 0.704386027204734,
+"hedef": [
+{
+"fiyat": 36.407038696289064,
+"etiket": "Fib uzantı %127,2",
+"r": 1.0254968791387855
+},
+{
+"fiyat": 39.11275859069824,
+"etiket": "Fib uzantı %161,8",
+"r": 2.3059121580290087
+},
+{
+"fiyat": 41.636054964116504,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 77.2,
+"gecmis": {
+"n": 11,
+"p1": 0.6363636363636364,
+"p2": 0.09090909090909091,
+"ort_R": 0.3506043366017228,
+"kazanc": 0.7272727272727273
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.5576923076923077,
+"beklenen_R": 0.4367941424084212,
+"teyit": [
+[
+"Günlük GÜÇLÜ AL (91)",
+true
+],
+[
+"4 saatlik puanı 74",
+true
+],
+[
+"Hacim 0,9x",
+false
+],
+[
+"RSI 71",
+true
+],
+[
+"ADX 23",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+true
+],
+[
+"H1'e yer var",
+true
+],
+[
+"Toplu sinyal değil",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 90.83333333333334,
+"rsi": 70.64108873269763,
+"adx": 22.739315582947995,
+"hacim_k": 0.900115770618969,
+"mum": "2026-11-27T09:30:00",
+"ekstra": {}
+},
+{
+"kod": "LTH.US",
+"ad": "Life Time Group Holdings, Inc. Common Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "4S",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Yükselen üçgen – yukarı kırılım + Trend içi geri çekilme",
+"aciklama": "Yatay direnç + yükselen dipler; genellikle yukarı kırılır.",
+"plan": {
+"giris": 48.38999938964844,
+"bolge": [
+48.080136323711,
+48.49328707829425
+],
+"stop": 45.284836793681706,
+"risk": 3.105162595966732,
+"atr": 1.0328768864581235,
+"hedef": [
+{
+"fiyat": 52.01932220458984,
+"etiket": "Fib uzantı %127,2",
+"r": 1.1688028252225822
+},
+{
+"fiyat": 56.23533267974854,
+"etiket": "Fib uzantı %161,8",
+"r": 2.5265450834330974
+},
+{
+"fiyat": 59.34049527571527,
+"etiket": "3,5R hedefi",
+"r": 3.5265450834330974
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 76.5,
+"gecmis": {
+"n": 12,
+"p1": 0.5833333333333334,
+"p2": 0.25,
+"ort_R": 0.6677298661304761,
+"kazanc": 0.8333333333333334
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.5370370370370371,
+"beklenen_R": 0.5745466071691004,
+"teyit": [
+[
+"Günlük AL (64)",
+true
+],
+[
+"4 saatlik puanı 77",
+true
+],
+[
+"Hacim 2,4x",
+true
+],
+[
+"RSI 63",
+true
+],
+[
+"ADX 20",
+false
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+false
+],
+[
+"H1'e yer var",
+false
+],
+[
+"Toplu sinyal değil",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 64.24242424242425,
+"rsi": 62.5420369047465,
+"adx": 19.863468626380293,
+"hacim_k": 2.383870504987572,
+"mum": "2026-11-27T09:30:00",
+"ekstra": {}
+},
+{
+"kod": "SPG.US",
+"ad": "Simon Property Group, Inc. Common Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "4S",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Yükselen üçgen – yukarı kırılım + SuperTrend al dönüşü",
+"aciklama": "Yatay direnç + yükselen dipler; genellikle yukarı kırılır.",
+"plan": {
+"giris": 235.27000427246094,
+"bolge": [
+234.39722205091596,
+235.5609316796426
+],
+"stop": 226.54218205701102,
+"risk": 8.727822215449919,
+"atr": 2.9092740718166383,
+"hedef": [
+{
+"fiyat": 246.1662249719488,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.2484466835494719
+},
+{
+"fiyat": 262.3051903076172,
+"etiket": "Fib uzantı %161,8",
+"r": 3.097586702361877
+},
+{
+"fiyat": 271.0330125230671,
+"etiket": "4,1R hedefi",
+"r": 4.097586702361877
+}
+],
+"engel": {
+"fiyat": 238.20907259281833,
+"etiket": "direnç (1 temas)",
+"r": 0.33674704271068656
+},
+"uzak": false,
+"seviye": null
+},
+"puan": 76.0,
+"gecmis": {
+"n": 15,
+"p1": 0.6,
+"p2": 0.26666666666666666,
+"ort_R": 0.624175404256691,
+"kazanc": 0.6666666666666666
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.55,
+"beklenen_R": 0.5620877021283455,
+"teyit": [
+[
+"Günlük GÜÇLÜ AL (84)",
+true
+],
+[
+"4 saatlik puanı 68",
+true
+],
+[
+"Hacim 3,0x",
+true
+],
+[
+"RSI 65",
+true
+],
+[
+"ADX 27",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+false
+],
+[
+"H1'e yer var",
+false
+],
+[
+"Toplu sinyal değil",
+true
+]
+],
+"risk": [
+"238,21 seviyesinde direnç (1 temas) H1'den önce engel (0,3R)"
+],
+"balina": [],
+"ust_puan": 84.27083333333334,
+"rsi": 65.27937608003575,
+"adx": 26.80128886852107,
+"hacim_k": 2.972114916954108,
+"mum": "2026-11-27T09:30:00",
+"ekstra": {}
+},
+{
+"kod": "CLX.US",
+"ad": "Clorox Company (The) Common Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "4S",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili dip – teyit",
+"aciklama": "Fiyat aynı desteği iki kez kıramadı.",
+"plan": {
+"giris": 111.26000213623047,
+"bolge": [
+110.5619492149439,
+111.492686443326
+],
+"stop": 104.2794729233647,
+"risk": 6.980529212865775,
+"atr": 2.3268430709552574,
+"hedef": [
+{
+"fiyat": 120.39000701904297,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.3079244573584818
+},
+{
+"fiyat": 132.67580027770995,
+"etiket": "Fib uzantı %161,8",
+"r": 3.0679333168620144
+},
+{
+"fiyat": 139.65632949057573,
+"etiket": "4,1R hedefi",
+"r": 4.067933316862014
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 75.3,
+"gecmis": {
+"n": 12,
+"p1": 0.6666666666666666,
+"p2": 0.25,
+"ort_R": 0.8554514639312307,
+"kazanc": 0.75
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.5740740740740741,
+"beklenen_R": 0.6579784284138803,
+"teyit": [
+[
+"Günlük GÜÇLÜ AL (76)",
+true
+],
+[
+"4 saatlik puanı 65",
+true
+],
+[
+"Hacim 0,8x",
+false
+],
+[
+"RSI 67",
+true
+],
+[
+"ADX 24",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+true
+],
+[
+"H1'e yer var",
+true
+],
+[
+"Toplu sinyal değil",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 75.9077380952381,
+"rsi": 66.56833729918256,
+"adx": 23.575455811447597,
+"hacim_k": 0.7559164559848702,
+"mum": "2026-11-27T09:30:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "MSI.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Hacimli kırılım",
+"puan": 81.4
+},
+{
+"kod": "PTC.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Yükselen üçgen – yukarı kırılım",
+"puan": 79.8
+},
+{
+"kod": "AER.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Trend içi geri çekilme",
+"puan": 78.4
+},
+{
+"kod": "JAN.US",
+"yon": 1,
+"kurulum": "Yükselen kama – yukarı kırılım",
+"puan": 77.2
+},
+{
+"kod": "LTH.US",
+"yon": 1,
+"kurulum": "Yükselen üçgen – yukarı kırılım + Trend içi geri çekilme",
+"puan": 76.5
+},
+{
+"kod": "SPG.US",
+"yon": 1,
+"kurulum": "Yükselen üçgen – yukarı kırılım + SuperTrend al dönüşü",
+"puan": 76.0
+},
+{
+"kod": "CLX.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 75.3
+},
+{
+"kod": "PVH.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 74.7
+},
+{
+"kod": "CVCO.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 73.6
+},
+{
+"kod": "VNT.US",
+"yon": 1,
+"kurulum": "Yükselen kama – yukarı kırılım",
+"puan": 73.4
+},
+{
+"kod": "AVPT.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Yükselen üçgen – yukarı kırılım",
+"puan": 73.4
+},
+{
+"kod": "TBBB.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 72.1
+},
+{
+"kod": "ERIE.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 71.2
+},
+{
+"kod": "VTRS.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme",
+"puan": 70.6
+},
+{
+"kod": "MKTX.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 70.2
+},
+{
+"kod": "BLK.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Alçalan kama – yukarı kırılım",
+"puan": 69.9
+},
+{
+"kod": "NATL.US",
+"yon": 1,
+"kurulum": "Yükselen kama – yukarı kırılım",
+"puan": 69.7
+},
+{
+"kod": "SKY.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 69.3
+},
+{
+"kod": "BRK.A.US",
+"yon": 1,
+"kurulum": "Yükselen üçgen – yukarı kırılım",
+"puan": 68.1
+},
+{
+"kod": "ALL.US",
+"yon": 1,
+"kurulum": "Simetrik üçgen – yukarı kırılım",
+"puan": 67.4
+}
+],
+"grafik": {
+"AER.US": "grafik/4S_AER.US.png",
+"JAN.US": "grafik/4S_JAN.US.png",
+"LTH.US": "grafik/4S_LTH.US.png",
+"SPG.US": "grafik/4S_SPG.US.png",
+"CLX.US": "grafik/4S_CLX.US.png"
+}
+},
+"G": {
+"zaman": "2026-11-27T21:47:05.002216+00:00",
+"mum": null,
+"taranan": 1909,
+"firsatlar": [],
+"adaylar": [],
+"grafik": {}
+},
+"H": {
+"zaman": "2026-11-27T21:48:21.611016+00:00",
+"mum": "2026-11-27T00:00:00",
+"taranan": 1890,
+"firsatlar": [
+{
+"kod": "ROIV.US",
+"ad": "Roivant Sciences Ltd.",
+"para": "$",
+"piyasa": "abd",
+"tf": "H",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Düşen trend çizgisi kırıldı – kırılım",
+"aciklama": "Alçalan tepeleri birleştiren çizginin üzerine çıkıldı.",
+"plan": {
+"giris": 43.25,
+"bolge": [
+42.329464243808935,
+43.55684525206369
+],
+"stop": 36.45946531192417,
+"risk": 6.79053468807583,
+"atr": 3.068452520636871,
+"hedef": [
+{
+"fiyat": 52.677598571777345,
+"etiket": "Fib uzantı %127,2",
+"r": 1.3883440708037609
+},
+{
+"fiyat": 64.6318983078003,
+"etiket": "Fib uzantı %161,8",
+"r": 3.1487797780264466
+},
+{
+"fiyat": 71.42243299587612,
+"etiket": "4,1R hedefi",
+"r": 4.148779778026446
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 74.3,
+"gecmis": {
+"n": 15,
+"p1": 0.4,
+"p2": 0.13333333333333333,
+"ort_R": 0.6119772093050443,
+"kazanc": 0.6666666666666666
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.45,
+"beklenen_R": 0.5559886046525222,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (82)",
+true
+],
+[
+"Haftalık puanı 82",
+true
+],
+[
+"Hacim 0,9x",
+false
+],
+[
+"RSI 69",
+true
+],
+[
+"ADX 38",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"S&P 500 yönü uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+true
+],
+[
+"H1'e yer var",
+true
+],
+[
+"Toplu sinyal değil",
+true
+],
+[
+"RS 94",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 82.26190476190476,
+"rsi": 69.10594955902684,
+"adx": 38.2247694748253,
+"hacim_k": 0.8661316103332901,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "CRAI.US",
+"ad": "CRA International,Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "H",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Yükselen kama – yukarı kırılım",
+"aciklama": "Daralan yükseliş; genellikle aşağı kırılır.",
+"plan": {
+"giris": 229.67999267578125,
+"bolge": [
+224.9443330604408,
+231.25854588089473
+],
+"stop": 189.04652886257267,
+"risk": 40.63346381320858,
+"atr": 15.785532051134814,
+"hedef": [
+{
+"fiyat": 271.82499073194185,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.0371992466578908
+},
+{
+"fiyat": 331.2636522088027,
+"etiket": "2,5R hedefi",
+"r": 2.5
+},
+{
+"fiyat": 371.8971160220113,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 74.2,
+"gecmis": {
+"n": 29,
+"p1": 0.4482758620689655,
+"p2": 0.13793103448275862,
+"ort_R": 0.31771424001371074,
+"kazanc": 0.5862068965517241
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.4659090909090909,
+"beklenen_R": 0.37985711273630934,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (92)",
+true
+],
+[
+"Haftalık puanı 84",
+true
+],
+[
+"Hacim 0,6x",
+false
+],
+[
+"RSI 74",
+true
+],
+[
+"ADX 25",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"S&P 500 yönü uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+true
+],
+[
+"H1'e yer var",
+true
+],
+[
+"Toplu sinyal değil",
+true
+],
+[
+"RS 91",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 92.27678571428572,
+"rsi": 74.1142941541354,
+"adx": 25.126409929351908,
+"hacim_k": 0.6189003594096505,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "BIP.US",
+"ad": "Brookfield Infrastructure Partners Inc. Class A Subordinate Voting Shares",
+"para": "$",
+"piyasa": "abd",
+"tf": "H",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili dip – teyit",
+"aciklama": "Fiyat aynı desteği iki kez kıramadı.",
+"plan": {
+"giris": 45.880001068115234,
+"bolge": [
+45.19629555536237,
+46.107902905699525
+],
+"stop": 39.04294594058658,
+"risk": 6.837055127528657,
+"atr": 2.279018375842885,
+"hedef": [
+{
+"fiyat": 52.72812660495427,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.0016191780092285
+},
+{
+"fiyat": 61.97568210375484,
+"etiket": "Fib uzantı %161,8",
+"r": 2.3541833048606122
+},
+{
+"fiyat": 69.80969401446553,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 71.6,
+"gecmis": {
+"n": 19,
+"p1": 0.3684210526315789,
+"p2": 0.05263157894736842,
+"ort_R": 0.36148802281969117,
+"kazanc": 0.7894736842105263
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.4264705882352941,
+"beklenen_R": 0.42259624804629803,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (89)",
+true
+],
+[
+"Haftalık puanı 78",
+true
+],
+[
+"Hacim 5,5x",
+true
+],
+[
+"RSI 75",
+false
+],
+[
+"ADX 17",
+false
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"S&P 500 yönü uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+false
+],
+[
+"H1'e yer var",
+true
+],
+[
+"Toplu sinyal değil",
+true
+],
+[
+"RS 83",
+true
+]
+],
+"risk": [
+"RSI 75: kısa vadede aşırı alım bölgesinde",
+"Fiyat EMA20'den 3,1 ATR uzaklaşmış; geri çekilme riski"
+],
+"balina": [
+[
+"Balina alımı",
+1,
+"20.11.2026: hacim 20 dönem medyanının 4,2 katı; büyük alıcı girişi."
+]
+],
+"ust_puan": 89.0625,
+"rsi": 75.14237659102264,
+"adx": 17.396207335428578,
+"hacim_k": 5.523122488937177,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "CVCO.US",
+"ad": "Cavco Industries, Inc.",
+"para": "$",
+"piyasa": "abd",
+"tf": "H",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "Yükselen kama – yukarı kırılım",
+"aciklama": "Daralan yükseliş; genellikle aşağı kırılır.",
+"plan": {
+"giris": 710.0800170898438,
+"bolge": [
+694.3621870169885,
+715.3192937807955
+],
+"stop": 597.992191899801,
+"risk": 112.08782519004274,
+"atr": 52.392766909517306,
+"hedef": [
+{
+"fiyat": 848.9233304551594,
+"etiket": "formasyonun ölçtüğü hedef",
+"r": 1.2387011089733388
+},
+{
+"fiyat": 990.2995800649505,
+"etiket": "2,5R hedefi",
+"r": 2.5
+},
+{
+"fiyat": 1102.3874052549934,
+"etiket": "3,5R hedefi",
+"r": 3.5
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 71.4,
+"gecmis": {
+"n": 28,
+"p1": 0.42857142857142855,
+"p2": 0.03571428571428571,
+"ort_R": 0.45947249734744666,
+"kazanc": 0.7142857142857143
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.45348837209302323,
+"beklenen_R": 0.47360999827275596,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (97)",
+true
+],
+[
+"Haftalık puanı 90",
+true
+],
+[
+"Hacim 0,6x",
+false
+],
+[
+"RSI 68",
+true
+],
+[
+"ADX 17",
+false
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"S&P 500 yönü uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+true
+],
+[
+"H1'e yer var",
+true
+],
+[
+"Toplu sinyal değil",
+true
+],
+[
+"RS 85",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 96.5625,
+"rsi": 67.98737259962456,
+"adx": 17.11106946004023,
+"hacim_k": 0.6474530572941742,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+},
+{
+"kod": "BATRK.US",
+"ad": "Atlanta Braves Holdings, Inc. - Series C Common Stock",
+"para": "$",
+"piyasa": "abd",
+"tf": "H",
+"yon": 1,
+"kurulum": "FORM",
+"kurulum_ad": "İkili dip – teyit + Trend içi geri çekilme",
+"aciklama": "Fiyat aynı desteği iki kez kıramadı.",
+"plan": {
+"giris": 54.9900016784668,
+"bolge": [
+54.14460161616347,
+55.27180169923457
+],
+"stop": 47.674600395460345,
+"risk": 7.315401283006452,
+"atr": 2.818000207677753,
+"hedef": [
+{
+"fiyat": 67.23751809692384,
+"etiket": "Fib uzantı %161,8",
+"r": 1.6742097862639203
+},
+{
+"fiyat": 74.55291937993029,
+"etiket": "2,7R hedefi",
+"r": 2.67420978626392
+},
+{
+"fiyat": 81.86832066293674,
+"etiket": "3,7R hedefi",
+"r": 3.67420978626392
+}
+],
+"engel": null,
+"uzak": false,
+"seviye": null
+},
+"puan": 71.4,
+"gecmis": {
+"n": 18,
+"p1": 0.16666666666666666,
+"p2": 0.05555555555555555,
+"ort_R": 0.40114251647659827,
+"kazanc": 0.7222222222222222
+},
+"piyasa_gecmis": {
+"n": 0
+},
+"p1_harman": 0.3181818181818182,
+"beklenen_R": 0.4460777362599627,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (92)",
+true
+],
+[
+"Haftalık puanı 74",
+true
+],
+[
+"Hacim 0,5x",
+false
+],
+[
+"RSI 63",
+true
+],
+[
+"ADX 21",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"S&P 500 yönü uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+true
+],
+[
+"H1'e yer var",
+true
+],
+[
+"Toplu sinyal değil",
+true
+],
+[
+"RS 79",
+true
+]
+],
+"risk": [],
+"balina": [],
+"ust_puan": 91.97916666666667,
+"rsi": 63.399365215153395,
+"adx": 20.91218530154264,
+"hacim_k": 0.5242616948882742,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "ROIV.US",
+"yon": 1,
+"kurulum": "Düşen trend çizgisi kırıldı – kırılım",
+"puan": 74.3
+},
+{
+"kod": "CRAI.US",
+"yon": 1,
+"kurulum": "Yükselen kama – yukarı kırılım",
+"puan": 74.2
+},
+{
+"kod": "BIP.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 71.6
+},
+{
+"kod": "CVCO.US",
+"yon": 1,
+"kurulum": "Yükselen kama – yukarı kırılım",
+"puan": 71.4
+},
+{
+"kod": "BATRK.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Trend içi geri çekilme",
+"puan": 71.4
+},
+{
+"kod": "TNL.US",
+"yon": 1,
+"kurulum": "Yatay bant – yukarı kırılım + Kırıcı blok geri testi",
+"puan": 71.3
+},
+{
+"kod": "NJR.US",
+"yon": 1,
+"kurulum": "Düşen kanal – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 69.9
+},
+{
+"kod": "USFD.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 69.1
+},
+{
+"kod": "DBX.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 67.6
+},
+{
+"kod": "AWI.US",
+"yon": 1,
+"kurulum": "Ters omuz-baş-omuz (TOBO) – teyit + Simetrik üçgen – yukarı kırılım + Trend içi geri çekilme",
+"puan": 67.4
+},
+{
+"kod": "EHC.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 66.6
+},
+{
+"kod": "BJRI.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 66.5
+},
+{
+"kod": "VSAT.US",
+"yon": 1,
+"kurulum": "Harmonik dönüş (AB=CD)",
+"puan": 66.4
+},
+{
+"kod": "CPA.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Yükselen üçgen – yukarı kırılım",
+"puan": 66.3
+},
+{
+"kod": "URI.US",
+"yon": 1,
+"kurulum": "Harmonik dönüş (AB=CD)",
+"puan": 65.4
+},
+{
+"kod": "NATL.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Yükselen kama – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım",
+"puan": 65.4
+},
+{
+"kod": "ARMK.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Düşen kanal – yukarı kırılım + Düşen trend çizgisi kırıldı – kırılım + Trend içi geri çekilme",
+"puan": 65.3
+},
+{
+"kod": "COKE.US",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 64.2
+},
+{
+"kod": "GHC.US",
+"yon": 1,
+"kurulum": "Yükselen üçgen – yukarı kırılım",
+"puan": 64.2
+},
+{
+"kod": "EXTR.US",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 63.1
+}
+],
+"grafik": {
+"ROIV.US": "grafik/H_ROIV.US.png",
+"CRAI.US": "grafik/H_CRAI.US.png",
+"BIP.US": "grafik/H_BIP.US.png",
+"CVCO.US": "grafik/H_CVCO.US.png",
+"BATRK.US": "grafik/H_BATRK.US.png"
+}
+}
+}

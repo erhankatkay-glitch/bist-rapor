@@ -1,0 +1,146 @@
+{
+ "guncellendi": "2026-11-28T06:19:22+00:00",
+ "hatalar": {},
+ "tufe": {
+  "seri": [
+   {
+    "donem": "2026-10",
+    "yillik": 29.77,
+    "aylik": 2.58
+   },
+   {
+    "donem": "2026-09",
+    "yillik": 29.73,
+    "aylik": 1.84
+   },
+   {
+    "donem": "2026-08",
+    "yillik": 31.51,
+    "aylik": 1.84
+   },
+   {
+    "donem": "2026-07",
+    "yillik": 31.75,
+    "aylik": 1.78
+   },
+   {
+    "donem": "2026-06",
+    "yillik": 32.11,
+    "aylik": 0.99
+   },
+   {
+    "donem": "2026-05",
+    "yillik": 32.61,
+    "aylik": 1.71
+   },
+   {
+    "donem": "2026-04",
+    "yillik": 32.37,
+    "aylik": 4.18
+   },
+   {
+    "donem": "2026-03",
+    "yillik": 30.87,
+    "aylik": 1.94
+   },
+   {
+    "donem": "2026-02",
+    "yillik": 31.53,
+    "aylik": 2.96
+   },
+   {
+    "donem": "2026-01",
+    "yillik": 30.65,
+    "aylik": 4.84
+   },
+   {
+    "donem": "2025-12",
+    "yillik": 30.89,
+    "aylik": 0.89
+   },
+   {
+    "donem": "2025-11",
+    "yillik": 31.07,
+    "aylik": 0.87
+   },
+   {
+    "donem": "2025-10",
+    "yillik": 32.87,
+    "aylik": 2.55
+   },
+   {
+    "donem": "2025-09",
+    "yillik": 33.29,
+    "aylik": 3.23
+   },
+   {
+    "donem": "2025-08",
+    "yillik": 32.95,
+    "aylik": 2.04
+   },
+   {
+    "donem": "2025-07",
+    "yillik": 33.52,
+    "aylik": 2.06
+   },
+   {
+    "donem": "2025-06",
+    "yillik": 35.05,
+    "aylik": 1.37
+   },
+   {
+    "donem": "2025-05",
+    "yillik": 35.41,
+    "aylik": 1.53
+   },
+   {
+    "donem": "2025-04",
+    "yillik": 37.86,
+    "aylik": 3.0
+   },
+   {
+    "donem": "2025-03",
+    "yillik": 38.1,
+    "aylik": 2.46
+   },
+   {
+    "donem": "2025-02",
+    "yillik": 39.05,
+    "aylik": 2.27
+   },
+   {
+    "donem": "2025-01",
+    "yillik": 42.12,
+    "aylik": 5.03
+   },
+   {
+    "donem": "2024-12",
+    "yillik": 44.38,
+    "aylik": 1.03
+   },
+   {
+    "donem": "2024-11",
+    "yillik": 47.09,
+    "aylik": 2.24
+   },
+   {
+    "donem": "2024-10",
+    "yillik": 48.58,
+    "aylik": 2.88
+   }
+  ],
+  "kaynak": "TCMB",
+  "url": "https://www.tcmb.gov.tr/wps/wcm/connect/tr/tcmb+tr/main+menu/istatistikler/enflasyon+verileri",
+  "cekildi": "2026-11-28T06:19:22+00:00"
+ },
+ "faiz": {
+  "tarih": "2026-10-23",
+  "oran": 36.0,
+  "onceki_tarih": "2026-01-23",
+  "onceki": 37.0,
+  "kaynak": "TCMB",
+  "url": "https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/Main+Menu/Temel+Faaliyetler/Para+Politikasi/Merkez+Bankasi+Faiz+Oranlari/1+Hafta+Repo",
+  "cekildi": "2026-11-28T06:19:22+00:00"
+ },
+ "reel_faiz": 4.8
+}

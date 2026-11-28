@@ -1,0 +1,25 @@
+{
+"4S": {
+"zaman": "2026-11-28T12:07:28.748512+00:00",
+"mum": "2026-11-28T08:00:00",
+"taranan": 91,
+"firsatlar": [],
+"adaylar": [
+{
+"kod": "ZRO/USDT",
+"yon": -1,
+"kurulum": "Düşüş trendinde tepki satışı",
+"puan": 42.3
+}
+],
+"grafik": {}
+},
+"G": {
+"zaman": "2026-11-28T00:10:50.057401+00:00",
+"mum": null,
+"taranan": 106,
+"firsatlar": [],
+"adaylar": [],
+"grafik": {}
+}
+}

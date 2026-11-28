@@ -1,0 +1,120 @@
+{
+ "piyasa": "bist",
+ "baslik": "Kapanış Teknik Bülteni – BIST",
+ "uretim": "27.11.2026 18:45",
+ "kapanis": "2026-11-27",
+ "adet": 628,
+ "hata": 1,
+ "grafikler": [
+  {
+   "kod": "XU100",
+   "ad": "BIST 100",
+   "etiket": "SAT",
+   "puan": 35.1,
+   "dosya": "grafik/XU100.png",
+   "yorum": "BIST 100 teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) nötr görünümde. Öne çıkan: Yutan boğa; Sabah yıldızı. En yakın destek 10.856,91, en yakın direnç 11.179,39."
+  },
+  {
+   "kod": "THYAO",
+   "ad": "Türk Hava Yolları",
+   "etiket": "AL",
+   "puan": 59.3,
+   "dosya": "grafik/THYAO.png",
+   "yorum": "Türk Hava Yolları teknik olarak kısa vadede (günlük) nötr, orta vadede (haftalık) al, uzun vadede (aylık) nötr görünümde. Öne çıkan: Yükselen kama – AŞAĞI KIRILIM; Boğa bayrağı – oluşumda. En yakın destek 309,89, en yakın direnç 317,00."
+  },
+  {
+   "kod": "ASELS",
+   "ad": "Aselsan",
+   "etiket": "NÖTR",
+   "puan": 44.4,
+   "dosya": "grafik/ASELS.png",
+   "yorum": "Aselsan teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) sat, uzun vadede (aylık) al görünümde. Öne çıkan: Sabah yıldızı; İkili tepe – oluşumda. En yakın destek 323,45, en yakın direnç 345,85."
+  },
+  {
+   "kod": "KCHOL",
+   "ad": "Koç Holding",
+   "etiket": "SAT",
+   "puan": 41.0,
+   "dosya": "grafik/KCHOL.png",
+   "yorum": "Koç Holding teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) sat, uzun vadede (aylık) al görünümde. Öne çıkan: Düşen kanal – içinde; Boğa haramisi. En yakın destek 181,35, en yakın direnç 195,36."
+  },
+  {
+   "kod": "AKBNK",
+   "ad": "Akbank",
+   "etiket": "SAT",
+   "puan": 26.8,
+   "dosya": "grafik/AKBNK.png",
+   "yorum": "Akbank teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) sat görünümde. Öne çıkan: Çekiç; 1 yıllık dip kırıldı (52 hafta) – KIRILIM. En yakın destek 58,67, en yakın direnç 61,28."
+  },
+  {
+   "kod": "BAHKM",
+   "ad": "Bahadır Kimya",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 81.4,
+   "dosya": "grafik/BAHKM.png",
+   "yorum": "Bahadır Kimya teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al görünümde. Öne çıkan: Yükselen üçgen – YUKARI KIRILIM; Yutan ayı. En yakın destek 200,80."
+  },
+  {
+   "kod": "AKFIS",
+   "ad": "Akfen İnşaat",
+   "etiket": "AL",
+   "puan": 75.0,
+   "dosya": "grafik/AKFIS.png",
+   "yorum": "Akfen İnşaat teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al görünümde. Öne çıkan: Ters omuz-baş-omuz (TOBO) – TEYİT (boyun çizgisi kırıldı); Simetrik üçgen – YUKARI KIRILIM. En yakın destek 15,39, en yakın direnç 16,86."
+  },
+  {
+   "kod": "AKSA",
+   "ad": "Aksa Akrilik",
+   "etiket": "AL",
+   "puan": 73.9,
+   "dosya": "grafik/AKSA.png",
+   "yorum": "Aksa Akrilik teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) nötr, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: Yükselen kanal – içinde; Yapı kırılımı yukarı (BOS). En yakın destek 11,24, en yakın direnç 11,72."
+  },
+  {
+   "kod": "GARAN",
+   "ad": "Garanti BBVA",
+   "etiket": "AL",
+   "puan": 70.9,
+   "dosya": "grafik/GARAN.png",
+   "yorum": "Garanti BBVA teknik olarak kısa vadede (günlük) nötr, orta vadede (haftalık) güçlü al, uzun vadede (aylık) al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Altın kesişim (SMA50 > SMA200). En yakın destek 132,74, en yakın direnç 141,19."
+  },
+  {
+   "kod": "CITAS",
+   "ad": "Çitlekçi Gıda",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 88.8,
+   "dosya": "grafik/CITAS.png",
+   "yorum": "Çitlekçi Gıda teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: EMA20 EMA50'yi yukarı kesti; SuperTrend al sinyaline döndü. En yakın destek 97,70, en yakın direnç 114,80."
+  },
+  {
+   "kod": "DOCO",
+   "ad": "DO & CO Aktiengesellschaft",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 78.8,
+   "dosya": "grafik/DOCO.png",
+   "yorum": "DO & CO Aktiengesellschaft teknik olarak kısa vadede (günlük) al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: Boğa bayrağı – oluşumda; Boğa haramisi. En yakın destek 12.039,82, en yakın direnç 12.692,50."
+  },
+  {
+   "kod": "DURDO",
+   "ad": "Duran Doğan Basım",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 77.9,
+   "dosya": "grafik/DURDO.png",
+   "yorum": "Duran Doğan Basım teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) al görünümde. Öne çıkan: Yutan boğa; İkili dip – oluşumda. En yakın destek 5,66, en yakın direnç 6,23."
+  }
+ ],
+ "raporlar": [
+  "rapor/THYAO_Teknik.pdf",
+  "rapor/ASELS_Teknik.pdf",
+  "rapor/KCHOL_Teknik.pdf",
+  "rapor/AKBNK_Teknik.pdf"
+ ],
+ "endeks": {
+  "ad": "BIST 100",
+  "etiket": "SAT",
+  "puan": 35.1,
+  "fiyat": 10970.8095703125,
+  "degisim": 0.021195927545788473,
+  "para": ""
+ }
+}

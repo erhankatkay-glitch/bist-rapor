@@ -1,0 +1,249 @@
+{
+"4S": {
+"zaman": "2026-11-27T20:19:57.752115+00:00",
+"mum": "2026-11-27T16:00:00",
+"taranan": 16,
+"firsatlar": [],
+"adaylar": [
+{
+"kod": "MISIR",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 45.6
+}
+],
+"grafik": {}
+},
+"G": {
+"zaman": "2026-11-27T22:20:46.016201+00:00",
+"mum": "2026-11-27T00:00:00",
+"taranan": 16,
+"firsatlar": [],
+"adaylar": [
+{
+"kod": "SOYA",
+"yon": 1,
+"kurulum": "İkili dip – teyit + Hacimli kırılım",
+"puan": 75.2
+},
+{
+"kod": "MISIR",
+"yon": 1,
+"kurulum": "İkili dip – teyit + SuperTrend al dönüşü",
+"puan": 53.4
+},
+{
+"kod": "PAMUK",
+"yon": 1,
+"kurulum": "İkili dip – teyit",
+"puan": 49.3
+},
+{
+"kod": "PALADYUM",
+"yon": 1,
+"kurulum": "Pozitif uyumsuzluklu dönüş",
+"puan": 27.5
+},
+{
+"kod": "KAHVE",
+"yon": 1,
+"kurulum": "Likidite avı dönüşü",
+"puan": 21.2
+},
+{
+"kod": "BUGDAY",
+"yon": 1,
+"kurulum": "Pozitif uyumsuzluklu dönüş",
+"puan": 17.4
+}
+],
+"grafik": {}
+},
+"H": {
+"zaman": "2026-11-27T22:20:46.465959+00:00",
+"mum": "2026-11-27T00:00:00",
+"taranan": 16,
+"firsatlar": [
+{
+"kod": "PAMUK",
+"ad": "Pamuk",
+"para": "$",
+"piyasa": "emtia",
+"tf": "H",
+"yon": 1,
+"kurulum": "GERI",
+"kurulum_ad": "Trend içi geri çekilme",
+"aciklama": "Yükselen trendde EMA20 bölgesine gelen geri çekilme alıcıyla karşılandı; önceki mumun tepesi aşıldı.",
+"plan": {
+"giris": 84.69000244140625,
+"bolge": [
+83.50619430055471,
+85.08460515502343
+],
+"stop": 73.66619033326955,
+"risk": 11.023812108136696,
+"atr": 3.946027136171778,
+"hedef": [
+{
+"fiyat": 96.23539835449806,
+"etiket": "direnç (2 temas)",
+"r": 1.0473142865497618
+},
+{
+"fiyat": 106.85539728638282,
+"etiket": "önceki tepe (01.03.2024)",
+"r": 2.0106832942677113
+},
+{
+"fiyat": 124.60539728638282,
+"etiket": "önceki tepe (19.08.2022)",
+"r": 3.6208341047027597
+}
+],
+"engel": {
+"fiyat": 89.3653978967344,
+"etiket": "direnç (10 temas)",
+"r": 0.42411784684512405
+},
+"uzak": false,
+"seviye": null
+},
+"puan": 60.6,
+"gecmis": {
+"n": 7,
+"p1": 0.5714285714285714,
+"p2": 0.42857142857142855,
+"ort_R": 0.5812085924886279,
+"kazanc": 0.7142857142857143
+},
+"piyasa_gecmis": {
+"n": 215,
+"p1": 0.4186046511627907,
+"p2": 0.23255813953488372,
+"ort_R": 0.07808671907952956,
+"kazanc": 0.5069767441860465
+},
+"p1_harman": 0.46723044397463004,
+"beklenen_R": 0.238170951527879,
+"teyit": [
+[
+"Aylık GÜÇLÜ AL (85)",
+true
+],
+[
+"Haftalık puanı 68",
+true
+],
+[
+"Hacim 150,8x",
+true
+],
+[
+"RSI 58",
+true
+],
+[
+"ADX 22",
+true
+],
+[
+"EMA50/SMA200 trend uyumlu",
+true
+],
+[
+"Yapı: yükselen dip",
+true
+],
+[
+"Mum teyidi",
+true
+],
+[
+"H1'e yer var",
+false
+],
+[
+"Toplu sinyal değil",
+false
+],
+[
+"RS 81",
+true
+]
+],
+"risk": [
+"89,37 seviyesinde direnç (10 temas) H1'den önce engel (0,4R)"
+],
+"balina": [
+[
+"Balina satışı",
+-1,
+"30.10.2026: hacim 20 dönem medyanının 1088,3 katı; büyük satıcı çıkışı."
+],
+[
+"Balina alımı",
+1,
+"06.11.2026: hacim 20 dönem medyanının 1289,1 katı; büyük alıcı girişi."
+],
+[
+"Balina satışı",
+-1,
+"20.11.2026: hacim 20 dönem medyanının 563,3 katı; büyük satıcı çıkışı."
+],
+[
+"Balina alımı",
+1,
+"27.11.2026: hacim 20 dönem medyanının 150,8 katı; büyük alıcı girişi."
+]
+],
+"ust_puan": 84.5625,
+"rsi": 58.376792501548096,
+"adx": 22.38331353383754,
+"hacim_k": 150.75838926174498,
+"mum": "2026-11-27T00:00:00",
+"ekstra": {}
+}
+],
+"adaylar": [
+{
+"kod": "PAMUK",
+"yon": 1,
+"kurulum": "Trend içi geri çekilme",
+"puan": 60.6
+},
+{
+"kod": "PLATIN",
+"yon": 1,
+"kurulum": "Likidite avı dönüşü",
+"puan": 35.8
+},
+{
+"kod": "GRAMALTIN",
+"yon": 1,
+"kurulum": "Likidite avı dönüşü",
+"puan": 33.3
+},
+{
+"kod": "BAKIR",
+"yon": 1,
+"kurulum": "Likidite avı dönüşü",
+"puan": 28.9
+},
+{
+"kod": "GUMUS",
+"yon": 1,
+"kurulum": "Likidite avı dönüşü",
+"puan": 26.8
+},
+{
+"kod": "MISIR",
+"yon": 1,
+"kurulum": "Ters omuz-baş-omuz (TOBO) – teyit",
+"puan": 23.0
+}
+],
+"grafik": {
+"PAMUK": "grafik/H_PAMUK.png"
+}
+}
+}

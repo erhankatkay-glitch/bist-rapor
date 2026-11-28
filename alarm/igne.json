@@ -1,0 +1,31 @@
+[
+ {
+  "kod": "BTC",
+  "yon": -1,
+  "baslik": "BTC'de kısa süreli aşağı iğne bekleniyor",
+  "metin": "Şu an 59.244 · olası iğne bölgeleri 59.000 / 58.792 · Algoritmik değerlendirmedir, yatırım tavsiyesi değildir.",
+  "neden": "son 3 saatte %1.0 düşüş, en yakın seviye 0.9 ATR uzakta",
+  "seviyeler": [
+   59000.0,
+   58792.37
+  ],
+  "fiyat": 59244.44,
+  "zaman": "2026-11-28T10:44:59+00:00",
+  "bitis": "2026-11-28T14:44:59+00:00"
+ },
+ {
+  "kod": "ETH",
+  "yon": -1,
+  "baslik": "ETH'de kısa süreli aşağı iğne bekleniyor",
+  "metin": "Şu an 1.649 · olası iğne bölgeleri 1.640 / 1.634 / 1.609 · Algoritmik değerlendirmedir, yatırım tavsiyesi değildir.",
+  "neden": "son 3 saatte %0.5 düşüş, en yakın seviye 1.0 ATR uzakta",
+  "seviyeler": [
+   1640.0,
+   1634.03,
+   1608.86
+  ],
+  "fiyat": 1649.25,
+  "zaman": "2026-11-28T10:45:00+00:00",
+  "bitis": "2026-11-28T14:45:00+00:00"
+ }
+]

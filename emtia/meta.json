@@ -1,0 +1,88 @@
+{
+ "piyasa": "emtia",
+ "baslik": "Kapanış Teknik Bülteni – Emtia",
+ "uretim": "28.11.2026 01:20",
+ "kapanis": "2026-11-27",
+ "adet": 16,
+ "hata": 0,
+ "grafikler": [
+  {
+   "kod": "ALTIN",
+   "ad": "Altın (ons)",
+   "etiket": "GÜÇLÜ SAT",
+   "puan": 21.0,
+   "dosya": "grafik/ALTIN.png",
+   "yorum": "Altın (ons) teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) güçlü sat görünümde. Öne çıkan: Sabah yıldızı; Düşen trend çizgisi kırıldı – KIRILIM. En yakın destek 3.501,13, en yakın direnç 3.725,52."
+  },
+  {
+   "kod": "GRAMALTIN",
+   "ad": "Gram Altın (TL)",
+   "etiket": "SAT",
+   "puan": 37.3,
+   "dosya": "grafik/GRAMALTIN.png",
+   "yorum": "Gram Altın (TL) teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) sat, uzun vadede (aylık) nötr görünümde. Öne çıkan: Sabah yıldızı; İkili dip – oluşumda. En yakın destek 5.874,63, en yakın direnç 6.175,62."
+  },
+  {
+   "kod": "GUMUS",
+   "ad": "Gümüş (ons)",
+   "etiket": "GÜÇLÜ SAT",
+   "puan": 23.5,
+   "dosya": "grafik/GUMUS.png",
+   "yorum": "Gümüş (ons) teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) güçlü sat görünümde. Öne çıkan: Gizli negatif uyumsuzluk (RSI); Gizli negatif uyumsuzluk (MACD). En yakın destek 42,58, en yakın direnç 45,61."
+  },
+  {
+   "kod": "BRENT",
+   "ad": "Brent Petrol",
+   "etiket": "NÖTR",
+   "puan": 49.0,
+   "dosya": "grafik/BRENT.png",
+   "yorum": "Brent Petrol teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) nötr, uzun vadede (aylık) al görünümde. Öne çıkan: İkili dip – oluşumda; Düşen kanal – içinde. En yakın destek 88,70, en yakın direnç 95,90."
+  },
+  {
+   "kod": "SOYA",
+   "ad": "Soya Fasulyesi",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 80.8,
+   "dosya": "grafik/SOYA.png",
+   "yorum": "Soya Fasulyesi teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Ters omuz-baş-omuz (TOBO) – TEYİT (boyun çizgisi kırıldı). En yakın destek 1.249,12, en yakın direnç 1.274,05."
+  },
+  {
+   "kod": "PAMUK",
+   "ad": "Pamuk",
+   "etiket": "AL",
+   "puan": 73.2,
+   "dosya": "grafik/PAMUK.png",
+   "yorum": "Pamuk teknik olarak kısa vadede (günlük) al, orta vadede (haftalık) al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Karakter değişimi yukarı (CHoCH). En yakın destek 83,97, en yakın direnç 85,42."
+  },
+  {
+   "kod": "DOGALGAZ",
+   "ad": "Doğal Gaz",
+   "etiket": "AL",
+   "puan": 73.1,
+   "dosya": "grafik/DOGALGAZ.png",
+   "yorum": "Doğal Gaz teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al, uzun vadede (aylık) al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); İkili tepe – oluşumda. En yakın destek 3,25, en yakın direnç 3,58."
+  },
+  {
+   "kod": "SEKER",
+   "ad": "Şeker",
+   "etiket": "AL",
+   "puan": 71.6,
+   "dosya": "grafik/SEKER.png",
+   "yorum": "Şeker teknik olarak kısa vadede (günlük) al, orta vadede (haftalık) al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: Düşen kanal – YUKARI KIRILIM; AB=CD (boğa). En yakın destek 18,28, en yakın direnç 19,69."
+  }
+ ],
+ "raporlar": [
+  "rapor/ALTIN_Teknik.pdf",
+  "rapor/GRAMALTIN_Teknik.pdf",
+  "rapor/GUMUS_Teknik.pdf",
+  "rapor/BRENT_Teknik.pdf"
+ ],
+ "endeks": {
+  "ad": "Altın (ons)",
+  "etiket": "GÜÇLÜ SAT",
+  "puan": 21.0,
+  "fiyat": 3650.39,
+  "degisim": 0.03753038897543326,
+  "para": "$"
+ }
+}

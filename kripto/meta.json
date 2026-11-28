@@ -1,0 +1,103 @@
+{
+ "piyasa": "kripto",
+ "baslik": "Kapanış Teknik Bülteni – Kripto (USDT)",
+ "uretim": "28.11.2026 03:22",
+ "kapanis": "2026-11-27",
+ "adet": 699,
+ "hata": 0,
+ "grafikler": [
+  {
+   "kod": "BTC/USDT",
+   "ad": "Bitcoin (BTC/USDT, Binance)",
+   "etiket": "SAT",
+   "puan": 27.4,
+   "dosya": "grafik/BTC-USDT.png",
+   "yorum": "Bitcoin (BTC/USDT, Binance) teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) sat görünümde. Öne çıkan: Çekiç; Yutan ayı. En yakın destek 57.550,29, en yakın direnç 62.526,69."
+  },
+  {
+   "kod": "ETH/USDT",
+   "ad": "Ethereum (ETH/USDT, Binance)",
+   "etiket": "SAT",
+   "puan": 26.8,
+   "dosya": "grafik/ETH-USDT.png",
+   "yorum": "Ethereum (ETH/USDT, Binance) teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) sat, uzun vadede (aylık) sat görünümde. Öne çıkan: Yüzde stop aşağı kesişim; Çekiç. En yakın destek 1.526,34, en yakın direnç 1.822,73."
+  },
+  {
+   "kod": "SOL/USDT",
+   "ad": "Solana (SOL/USDT, Binance)",
+   "etiket": "SAT",
+   "puan": 37.1,
+   "dosya": "grafik/SOL-USDT.png",
+   "yorum": "Solana (SOL/USDT, Binance) teknik olarak kısa vadede (günlük) nötr, orta vadede (haftalık) sat, uzun vadede (aylık) güçlü sat görünümde. Öne çıkan: Alçalan kama – YUKARI KIRILIM; Çekiç. En yakın destek 67,61, en yakın direnç 75,83."
+  },
+  {
+   "kod": "VVV/USDT@OKX",
+   "ad": "VVV (VVV/USDT, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 85.6,
+   "dosya": "grafik/VVV-USDT_OKX.png",
+   "yorum": "VVV (VVV/USDT, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Ters omuz-baş-omuz (TOBO) – TEYİT (boyun çizgisi kırıldı); Fibonacci bant trend girişi. En yakın destek 24,95, en yakın direnç 28,34."
+  },
+  {
+   "kod": "XTSLL/USDT@OKX",
+   "ad": "XTSLL (XTSLL/USDT, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 80.4,
+   "dosya": "grafik/XTSLL-USDT_OKX.png",
+   "yorum": "XTSLL (XTSLL/USDT, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Simetrik üçgen – YUKARI KIRILIM; Düşen trend çizgisi kırıldı – KIRILIM. En yakın destek 10,29, en yakın direnç 11,08."
+  },
+  {
+   "kod": "XMCD/USDT@OKX",
+   "ad": "XMCD (XMCD/USDT, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 80.0,
+   "dosya": "grafik/XMCD-USDT_OKX.png",
+   "yorum": "XMCD (XMCD/USDT, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Ters omuz-baş-omuz (TOBO) – TEYİT (boyun çizgisi kırıldı). En yakın destek 279,40, en yakın direnç 286,57."
+  },
+  {
+   "kod": "XSONY/USDT@OKX",
+   "ad": "XSONY (XSONY/USDT, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 79.9,
+   "dosya": "grafik/XSONY-USDT_OKX.png",
+   "yorum": "XSONY (XSONY/USDT, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Gizli pozitif uyumsuzluk (RSI). En yakın destek 27,43, en yakın direnç 28,37."
+  },
+  {
+   "kod": "XBRKB/USDT@OKX",
+   "ad": "XBRKB (XBRKB/USDT, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 83.8,
+   "dosya": "grafik/XBRKB-USDT_OKX.png",
+   "yorum": "XBRKB (XBRKB/USDT, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Hull bandı geri çekilme alımı; İkili tepe – oluşumda. En yakın destek 562,14, en yakın direnç 590,02."
+  },
+  {
+   "kod": "PROS/USDT@OKX",
+   "ad": "PROS (PROS/USDT, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 83.7,
+   "dosya": "grafik/PROS-USDT_OKX.png",
+   "yorum": "PROS (PROS/USDT, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Ters omuz-baş-omuz (TOBO) – oluşumda; İtki tutunması. En yakın destek 0,6252, en yakın direnç 0,6920."
+  },
+  {
+   "kod": "SENT/USDT",
+   "ad": "SENT (SENT/USDT, Binance)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 83.6,
+   "dosya": "grafik/SENT-USDT.png",
+   "yorum": "SENT (SENT/USDT, Binance) teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al görünümde. Öne çıkan: Ters omuz-baş-omuz (TOBO) – oluşumda; İtki tutunması. En yakın destek 0,02204, en yakın direnç 0,02477."
+  }
+ ],
+ "raporlar": [
+  "rapor/BTC-USDT_Teknik.pdf",
+  "rapor/ETH-USDT_Teknik.pdf",
+  "rapor/SOL-USDT_Teknik.pdf"
+ ],
+ "endeks": {
+  "ad": "Bitcoin (BTC/USDT, Binance)",
+  "etiket": "SAT",
+  "puan": 27.4,
+  "fiyat": 59923.1,
+  "degisim": -0.010797465316147115,
+  "para": "$"
+ }
+}

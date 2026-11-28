@@ -1,0 +1,19 @@
+{
+"liste": [
+{
+"zaman": "2026-11-25T16:30:00+03:00",
+"baslik": "Core PCE Price Index m/m",
+"ulke": "USD",
+"beklenti": "0.3%",
+"onceki": "0.3%"
+},
+{
+"zaman": "2026-11-25T16:30:00+03:00",
+"baslik": "Prelim GDP q/q",
+"ulke": "USD",
+"beklenti": "3.5%",
+"onceki": "3.4%"
+}
+],
+"gonderildi": "2026-11-28"
+}

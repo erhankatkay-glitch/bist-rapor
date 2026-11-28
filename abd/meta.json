@@ -1,0 +1,104 @@
+{
+ "piyasa": "abd",
+ "baslik": "Kapanış Teknik Bülteni – ABD Borsaları",
+ "uretim": "28.11.2026 00:40",
+ "kapanis": "2026-11-27",
+ "adet": 1909,
+ "hata": 1,
+ "grafikler": [
+  {
+   "kod": "SP500",
+   "ad": "S&P 500",
+   "etiket": "NÖTR",
+   "puan": 46.4,
+   "dosya": "grafik/SP500.png",
+   "yorum": "S&P 500 teknik olarak kısa vadede (günlük) nötr, orta vadede (haftalık) sat, uzun vadede (aylık) nötr görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Düşen kanal – YUKARI KIRILIM. En yakın destek 6.977,86, en yakın direnç 7.590,43."
+  },
+  {
+   "kod": "NVDA.US",
+   "ad": "NVIDIA Corporation",
+   "etiket": "GÜÇLÜ SAT",
+   "puan": 24.0,
+   "dosya": "grafik/NVDA.US.png",
+   "yorum": "NVIDIA Corporation teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) güçlü sat, uzun vadede (aylık) sat görünümde. Öne çıkan: Ölüm kesişimi (SMA50 < SMA200); Çekiç. En yakın destek 134,82, en yakın direnç 168,30."
+  },
+  {
+   "kod": "AAPL.US",
+   "ad": "Apple Inc.",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 85.0,
+   "dosya": "grafik/AAPL.US.png",
+   "yorum": "Apple Inc. teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: Sabah yıldızı; İkili tepe – oluşumda. En yakın destek 352,58, en yakın direnç 360,83."
+  },
+  {
+   "kod": "MSFT.US",
+   "ad": "Microsoft Corporation",
+   "etiket": "SAT",
+   "puan": 40.5,
+   "dosya": "grafik/MSFT.US.png",
+   "yorum": "Microsoft Corporation teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) sat, uzun vadede (aylık) al görünümde. Öne çıkan: Düşen trend çizgisi kırıldı – KIRILIM; EMA20 EMA50'yi aşağı kesti. En yakın destek 485,15, en yakın direnç 497,66."
+  },
+  {
+   "kod": "TSLA.US",
+   "ad": "Tesla, Inc.",
+   "etiket": "AL",
+   "puan": 69.8,
+   "dosya": "grafik/TSLA.US.png",
+   "yorum": "Tesla, Inc. teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al, uzun vadede (aylık) al görünümde. Öne çıkan: Simetrik üçgen – YUKARI KIRILIM; İkili tepe – oluşumda. En yakın destek 387,32, en yakın direnç 415,15."
+  },
+  {
+   "kod": "MBGL.US",
+   "ad": "Mobility Global Inc. Common Stock",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 97.7,
+   "dosya": "grafik/MBGL.US.png",
+   "yorum": "Mobility Global Inc. Common Stock teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Yükselen kama – YUKARI KIRILIM; Çekiç. En yakın destek 22,14, en yakın direnç 24,86."
+  },
+  {
+   "kod": "LFTO.US",
+   "ad": "Liftoff Mobile, Inc.",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 93.1,
+   "dosya": "grafik/LFTO.US.png",
+   "yorum": "Liftoff Mobile, Inc. teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Sabah yıldızı; Yapı kırılımı yukarı (BOS). En yakın destek 24,50, en yakın direnç 27,94."
+  },
+  {
+   "kod": "DRI.US",
+   "ad": "Darden Restaurants, Inc. Common Stock",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 90.5,
+   "dosya": "grafik/DRI.US.png",
+   "yorum": "Darden Restaurants, Inc. Common Stock teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Yükselen kanal – içinde. En yakın destek 240,28."
+  },
+  {
+   "kod": "GILD.US",
+   "ad": "Gilead Sciences, Inc.",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 90.1,
+   "dosya": "grafik/GILD.US.png",
+   "yorum": "Gilead Sciences, Inc. teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Alçalan üçgen – YUKARI KIRILIM. En yakın destek 171,80, en yakın direnç 179,68."
+  },
+  {
+   "kod": "MMM.US",
+   "ad": "3M Company Common Stock",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 93.8,
+   "dosya": "grafik/MMM.US.png",
+   "yorum": "3M Company Common Stock teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) güçlü al, uzun vadede (aylık) güçlü al görünümde. Öne çıkan: Gizli pozitif uyumsuzluk (MACD); Dışarıda çubuk (outside bar). En yakın destek 183,22, en yakın direnç 196,08."
+  }
+ ],
+ "raporlar": [
+  "rapor/NVDA.US_Teknik.pdf",
+  "rapor/AAPL.US_Teknik.pdf",
+  "rapor/MSFT.US_Teknik.pdf",
+  "rapor/TSLA.US_Teknik.pdf"
+ ],
+ "endeks": {
+  "ad": "S&P 500",
+  "etiket": "NÖTR",
+  "puan": 46.4,
+  "fiyat": 7297.490234375,
+  "degisim": 0.015970202713969872,
+  "para": ""
+ }
+}

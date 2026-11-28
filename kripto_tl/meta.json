@@ -1,0 +1,102 @@
+{
+ "piyasa": "kripto_tl",
+ "baslik": "Kapanış Teknik Bülteni – Kripto TL Pariteleri",
+ "uretim": "28.11.2026 03:28",
+ "kapanis": "2026-11-27",
+ "adet": 332,
+ "hata": 0,
+ "grafikler": [
+  {
+   "kod": "BTC/TRY",
+   "ad": "Bitcoin (BTC/TRY, Binance)",
+   "etiket": "SAT",
+   "puan": 40.5,
+   "dosya": "grafik/BTC-TRY.png",
+   "yorum": "Bitcoin (BTC/TRY, Binance) teknik olarak kısa vadede (günlük) sat, orta vadede (haftalık) nötr, uzun vadede (aylık) sat görünümde. Öne çıkan: Çekiç; Düşen kanal – içinde. En yakın destek 2.905.804, en yakın direnç 3.143.033."
+  },
+  {
+   "kod": "ETH/TRY",
+   "ad": "Ethereum (ETH/TRY, Binance)",
+   "etiket": "GÜÇLÜ SAT",
+   "puan": 21.5,
+   "dosya": "grafik/ETH-TRY.png",
+   "yorum": "Ethereum (ETH/TRY, Binance) teknik olarak kısa vadede (günlük) güçlü sat, orta vadede (haftalık) sat, uzun vadede (aylık) güçlü sat görünümde. Öne çıkan: Yüzde stop aşağı kesişim; Düşen kanal – içinde. En yakın destek 81.139,50, en yakın direnç 86.186,71."
+  },
+  {
+   "kod": "PORTAL/TRY",
+   "ad": "PORTAL (PORTAL/TRY, Binance)",
+   "etiket": "AL",
+   "puan": 70.8,
+   "dosya": "grafik/PORTAL-TRY.png",
+   "yorum": "PORTAL (PORTAL/TRY, Binance) teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al, uzun vadede (aylık) nötr görünümde. Öne çıkan: Alçalan üçgen – YUKARI KIRILIM; İtki tutunması. En yakın destek 1,23, en yakın direnç 2,23."
+  },
+  {
+   "kod": "USUAL/TRY",
+   "ad": "USUAL (USUAL/TRY, Binance)",
+   "etiket": "AL",
+   "puan": 68.7,
+   "dosya": "grafik/USUAL-TRY.png",
+   "yorum": "USUAL (USUAL/TRY, Binance) teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) nötr görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Fibonacci bant trend girişi. En yakın destek 0,5659, en yakın direnç 0,6495."
+  },
+  {
+   "kod": "GPS/TRY",
+   "ad": "GPS (GPS/TRY, Binance)",
+   "etiket": "AL",
+   "puan": 62.9,
+   "dosya": "grafik/GPS-TRY.png",
+   "yorum": "GPS (GPS/TRY, Binance) teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) nötr görünümde. Öne çıkan: İkili dip – TEYİT (boyun çizgisi kırıldı); Yatay bant – YUKARI KIRILIM. En yakın destek 0,4495, en yakın direnç 0,5053."
+  },
+  {
+   "kod": "SLX/TRY@OKX",
+   "ad": "SLX (SLX/TRY, OKX)",
+   "etiket": "AL",
+   "puan": 59.7,
+   "dosya": "grafik/SLX-TRY_OKX.png",
+   "yorum": "SLX (SLX/TRY, OKX) teknik olarak kısa vadede (günlük) al görünümde. Öne çıkan: Alçalan kama – YUKARI KIRILIM; Pozitif uyumsuzluk (RSI). En yakın destek 1,41, en yakın direnç 1,87."
+  },
+  {
+   "kod": "NES/TRY@OKX",
+   "ad": "NES (NES/TRY, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 84.7,
+   "dosya": "grafik/NES-TRY_OKX.png",
+   "yorum": "NES (NES/TRY, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: İtki tutunması; Fibonacci bant trend girişi. En yakın destek 10,72, en yakın direnç 14,89."
+  },
+  {
+   "kod": "PROS/TRY@OKX",
+   "ad": "PROS (PROS/TRY, OKX)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 82.3,
+   "dosya": "grafik/PROS-TRY_OKX.png",
+   "yorum": "PROS (PROS/TRY, OKX) teknik olarak kısa vadede (günlük) güçlü al görünümde. Öne çıkan: Ters omuz-baş-omuz (TOBO) – oluşumda; İtki tutunması. En yakın destek 31,99, en yakın direnç 34,00."
+  },
+  {
+   "kod": "SENT/TRY",
+   "ad": "SENT (SENT/TRY, Binance)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 82.2,
+   "dosya": "grafik/SENT-TRY.png",
+   "yorum": "SENT (SENT/TRY, Binance) teknik olarak kısa vadede (günlük) güçlü al, orta vadede (haftalık) al görünümde. Öne çıkan: İtki tutunması; Yutan boğa. En yakın destek 1,03, en yakın direnç 1,30."
+  },
+  {
+   "kod": "NIGHT/TRY",
+   "ad": "NIGHT (NIGHT/TRY, Binance)",
+   "etiket": "GÜÇLÜ AL",
+   "puan": 81.4,
+   "dosya": "grafik/NIGHT-TRY.png",
+   "yorum": "NIGHT (NIGHT/TRY, Binance) teknik olarak kısa vadede (günlük) al, orta vadede (haftalık) güçlü al görünümde. Öne çıkan: Hull bandı geri çekilme alımı; AB=CD (boğa). En yakın destek 2,35, en yakın direnç 2,96."
+  }
+ ],
+ "raporlar": [
+  "rapor/BTC-TRY_Teknik.pdf",
+  "rapor/ETH-TRY_Teknik.pdf"
+ ],
+ "endeks": {
+  "ad": "Bitcoin (BTC/TRY, Binance)",
+  "etiket": "SAT",
+  "puan": 40.5,
+  "fiyat": 3041399.0,
+  "degisim": -0.006874881018582135,
+  "para": "₺"
+ }
+}

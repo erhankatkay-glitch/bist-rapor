@@ -1,0 +1,255 @@
+[
+{
+"zaman": "2026-11-25T12:24:25.150272+00:00",
+"id": "kripto-KITE/USDT-4S-AL-202611242000",
+"metin": "⛔ <b>KITE/USDT</b> AL (4 saatlik) stop oldu: 0,1369 · sonuç −1,00R (−%6,3)",
+"kart": {
+"tur": "stop",
+"sol": "KITE/USDT · AL · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 0,1369 · sonuç −%6,3"
+}
+},
+{
+"zaman": "2026-11-25T16:31:21.779514+00:00",
+"id": "kripto-XSPCX/USDT@OKX-4S-SAT-202611241200",
+"metin": "✅ <b>XSPCX/USDT@OKX</b> SAT (4 saatlik) H1 görüldü: 118,24 (+%5,4) → pozisyonun yarısını kapat, stopu girişe (124,93) çek",
+"kart": {
+"tur": "hedef",
+"sol": "XSPCX/USDT@OKX · SAT · 4 saatlik",
+"sag": "H1 görüldü",
+"alt": "H1 seviyesi 118,24 (+%5,4) · pozisyonun yarısını kapat, stopu girişe (124,93) çek"
+}
+},
+{
+"zaman": "2026-11-25T20:15:45.804294+00:00",
+"id": "kripto-XSPCX/USDT@OKX-4S-SAT-202611241200",
+"metin": "↩️ <b>XSPCX/USDT@OKX</b> SAT (4 saatlik) H1 sonrası girişte kapandı · sonuç +0,67R (+%2,7)",
+"kart": {
+"tur": "basabas",
+"sol": "XSPCX/USDT@OKX · SAT · 4 saatlik",
+"sag": "+0,67R",
+"alt": "İlk hedef sonrası girişte kapandı · çıkış 124,93 · sonuç +%2,7"
+}
+},
+{
+"zaman": "2026-11-25T20:15:46.801693+00:00",
+"id": "kripto-LTC/USDT-4S-SAT-202611241200",
+"metin": "⛔ <b>LTC/USDT</b> SAT (4 saatlik) stop oldu: 42,37 · sonuç −1,00R (−%5,6)",
+"kart": {
+"tur": "stop",
+"sol": "LTC/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 42,37 · sonuç −%5,6"
+}
+},
+{
+"zaman": "2026-11-25T20:16:02.435298+00:00",
+"id": "kripto-PUMP/USDT-4S-SAT-202611250400",
+"metin": "⛔ <b>PUMP/USDT</b> SAT (4 saatlik) stop oldu: 0,002496 · sonuç −1,00R (−%4,4)",
+"kart": {
+"tur": "stop",
+"sol": "PUMP/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 0,002496 · sonuç −%4,4"
+}
+},
+{
+"zaman": "2026-11-25T20:16:04.366130+00:00",
+"id": "kripto-FET/USDT-4S-SAT-202611250800",
+"metin": "⛔ <b>FET/USDT</b> SAT (4 saatlik) stop oldu: 0,1086 · sonuç −1,00R (−%4,3)",
+"kart": {
+"tur": "stop",
+"sol": "FET/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 0,1086 · sonuç −%4,3"
+}
+},
+{
+"zaman": "2026-11-25T20:16:05.645665+00:00",
+"id": "kripto-BEB/USDT-4S-SAT-202611251200",
+"metin": "⛔ <b>BEB/USDT</b> SAT (4 saatlik) stop oldu: 149,49 · sonuç −1,00R (−%7,6)",
+"kart": {
+"tur": "stop",
+"sol": "BEB/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 149,49 · sonuç −%7,6"
+}
+},
+{
+"zaman": "2026-11-25T20:16:06.592339+00:00",
+"id": "kripto-SPCXB/USDT-4S-SAT-202611251200",
+"metin": "⛔ <b>SPCXB/USDT</b> SAT (4 saatlik) stop oldu: 126,02 · sonuç −1,00R (−%7,7)",
+"kart": {
+"tur": "stop",
+"sol": "SPCXB/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 126,02 · sonuç −%7,7"
+}
+},
+{
+"zaman": "2026-11-25T20:16:09.924616+00:00",
+"id": "kripto-DATA/USDT@OKX-4S-SAT-202611251200",
+"metin": "⛔ <b>DATA/USDT@OKX</b> SAT (4 saatlik) stop oldu: 0,08123 · sonuç −1,00R (−%6,4)",
+"kart": {
+"tur": "stop",
+"sol": "DATA/USDT@OKX · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 0,08123 · sonuç −%6,4"
+}
+},
+{
+"zaman": "2026-11-25T20:16:10.937642+00:00",
+"id": "kripto-NEAR/USDT-4S-SAT-202611251200",
+"metin": "⛔ <b>NEAR/USDT</b> SAT (4 saatlik) stop oldu: 2,87 · sonuç −1,00R (−%4,8)",
+"kart": {
+"tur": "stop",
+"sol": "NEAR/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 2,87 · sonuç −%4,8"
+}
+},
+{
+"zaman": "2026-11-25T20:16:14.273376+00:00",
+"id": "kripto-PONS/USDT@OKX-4S-SAT-202611251200",
+"metin": "⛔ <b>PONS/USDT@OKX</b> SAT (4 saatlik) stop oldu: 0,08593 · sonuç −1,00R (−%6,2)",
+"kart": {
+"tur": "stop",
+"sol": "PONS/USDT@OKX · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 0,08593 · sonuç −%6,2"
+}
+},
+{
+"zaman": "2026-11-26T04:28:15.418864+00:00",
+"id": "kripto-LINK/USDT-4S-SAT-202611241200",
+"metin": "⛔ <b>LINK/USDT</b> SAT (4 saatlik) stop oldu: 9,23 · sonuç −1,00R (−%5,4)",
+"kart": {
+"tur": "stop",
+"sol": "LINK/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 9,23 · sonuç −%5,4"
+}
+},
+{
+"zaman": "2026-11-26T04:28:25.695893+00:00",
+"id": "kripto-BNB/USDT-4S-SAT-202611250000",
+"metin": "⛔ <b>BNB/USDT</b> SAT (4 saatlik) stop oldu: 557,73 · sonuç −1,00R (−%2,6)",
+"kart": {
+"tur": "stop",
+"sol": "BNB/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 557,73 · sonuç −%2,6"
+}
+},
+{
+"zaman": "2026-11-26T04:28:26.647552+00:00",
+"id": "kripto-SKY/USDT-4S-SAT-202611250400",
+"metin": "⛔ <b>SKY/USDT</b> SAT (4 saatlik) stop oldu: 0,04323 · sonuç −1,00R (−%6,3)",
+"kart": {
+"tur": "stop",
+"sol": "SKY/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 0,04323 · sonuç −%6,3"
+}
+},
+{
+"zaman": "2026-11-26T20:22:09.928005+00:00",
+"id": "kripto-POL/USDT-4S-SAT-202611260400",
+"metin": "⛔ <b>POL/USDT</b> SAT (4 saatlik) stop oldu: 0,07784 · sonuç −1,00R (−%2,5)",
+"kart": {
+"tur": "stop",
+"sol": "POL/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 0,07784 · sonuç −%2,5"
+}
+},
+{
+"zaman": "2026-11-27T04:30:11.746590+00:00",
+"id": "kripto-ADA/USDT-4S-SAT-202611241200",
+"metin": "⛔ <b>ADA/USDT</b> SAT (4 saatlik) stop oldu: 0,1522 · sonuç −1,00R (−%6,5)",
+"kart": {
+"tur": "stop",
+"sol": "ADA/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 0,1522 · sonuç −%6,5"
+}
+},
+{
+"zaman": "2026-11-27T04:30:13.417857+00:00",
+"id": "kripto-QQQB/USDT-4S-SAT-202611250000",
+"metin": "⛔ <b>QQQB/USDT</b> SAT (4 saatlik) stop oldu: 646,41 · sonuç −1,00R (−%2,2)",
+"kart": {
+"tur": "stop",
+"sol": "QQQB/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 646,41 · sonuç −%2,2"
+}
+},
+{
+"zaman": "2026-11-27T04:30:20.760032+00:00",
+"id": "kripto-XQQQ/USDT@OKX-4S-SAT-202611250000",
+"metin": "⛔ <b>XQQQ/USDT@OKX</b> SAT (4 saatlik) stop oldu: 646,76 · sonuç −1,00R (−%2,2)",
+"kart": {
+"tur": "stop",
+"sol": "XQQQ/USDT@OKX · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 646,76 · sonuç −%2,2"
+}
+},
+{
+"zaman": "2026-11-27T04:30:22.028648+00:00",
+"id": "kripto-AERO/USDT-4S-SAT-202611260400",
+"metin": "⛔ <b>AERO/USDT</b> SAT (4 saatlik) stop oldu: 0,4132 · sonuç −1,00R (−%3,7)",
+"kart": {
+"tur": "stop",
+"sol": "AERO/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 0,4132 · sonuç −%3,7"
+}
+},
+{
+"zaman": "2026-11-27T12:19:32.571638+00:00",
+"id": "kripto-GRAM/USDT-4S-SAT-202611261200",
+"metin": "⛔ <b>GRAM/USDT</b> SAT (4 saatlik) stop oldu: 0,9903 · sonuç −1,00R (−%4,0)",
+"kart": {
+"tur": "stop",
+"sol": "GRAM/USDT · SAT · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 0,9903 · sonuç −%4,0"
+}
+},
+{
+"zaman": "2026-11-27T16:26:17.608462+00:00",
+"id": "kripto-BCH/USDT-4S-AL-202611270000",
+"metin": "⛔ <b>BCH/USDT</b> AL (4 saatlik) stop oldu: 207,85 · sonuç −1,00R (−%4,0)",
+"kart": {
+"tur": "stop",
+"sol": "BCH/USDT · AL · 4 saatlik",
+"sag": "−1,00R",
+"alt": "Stop oldu · çıkış 207,85 · sonuç −%4,0"
+}
+},
+{
+"zaman": "2026-11-28T08:26:12.723062+00:00",
+"id": "kripto-TRUMP/USDT-4S-SAT-202611262000",
+"metin": "✅ <b>TRUMP/USDT</b> SAT (4 saatlik) H1 görüldü: 0,8169 (+%5,6) → pozisyonun yarısını kapat, stopu girişe (0,8650) çek",
+"kart": {
+"tur": "hedef",
+"sol": "TRUMP/USDT · SAT · 4 saatlik",
+"sag": "H1 görüldü",
+"alt": "H1 seviyesi 0,8169 (+%5,6) · pozisyonun yarısını kapat, stopu girişe (0,8650) çek"
+}
+},
+{
+"zaman": "2026-11-28T08:26:12.723105+00:00",
+"id": "kripto-TRUMP/USDT-4S-SAT-202611262000",
+"metin": "✅ <b>TRUMP/USDT</b> SAT (4 saatlik) H2 görüldü: 0,7929 (+%8,3) → %30'unu kapat",
+"kart": {
+"tur": "hedef",
+"sol": "TRUMP/USDT · SAT · 4 saatlik",
+"sag": "H2 görüldü",
+"alt": "H2 seviyesi 0,7929 (+%8,3) · pozisyonun %30'unu kapat"
+}
+}
+]

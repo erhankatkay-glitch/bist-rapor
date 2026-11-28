@@ -1,0 +1,45 @@
+{
+"4S": {
+"zaman": "2026-11-27T15:42:55.211543+00:00",
+"mum": null,
+"taranan": 305,
+"firsatlar": [],
+"adaylar": [],
+"grafik": {}
+},
+"G": {
+"zaman": "2026-11-27T15:45:19.194657+00:00",
+"mum": null,
+"taranan": 342,
+"firsatlar": [],
+"adaylar": [],
+"grafik": {}
+},
+"H": {
+"zaman": "2026-11-27T15:45:23.025439+00:00",
+"mum": "2026-11-27T00:00:00",
+"taranan": 321,
+"firsatlar": [],
+"adaylar": [
+{
+"kod": "AKSA",
+"yon": 1,
+"kurulum": "Düşen kanal – yukarı kırılım",
+"puan": 42.9
+},
+{
+"kod": "TRGYO",
+"yon": 1,
+"kurulum": "Likidite avı dönüşü",
+"puan": 41.1
+},
+{
+"kod": "AKSEN",
+"yon": 1,
+"kurulum": "Alçalan kama – yukarı kırılım",
+"puan": 26.9
+}
+],
+"grafik": {}
+}
+}

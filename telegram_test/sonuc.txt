@@ -1,0 +1,3 @@
+Gönderildi: [286]
+Örnek kart: [287]
+token uzunluk 46 iki nokta True bosluk False | chat 10 rakam True bosluk False
