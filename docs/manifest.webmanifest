@@ -1,3 +1,30 @@
-{"name":"KATKAY YATIRIM A.Ş.","short_name":"KATKAY","start_url":"./?ac=1","display":"standalone",
- "background_color":"#0B0B0C","theme_color":"#0B0B0C",
- "icons":[{"src":"apple-touch-icon.png","sizes":"180x180","type":"image/png"},{"src":"icon-512.png","sizes":"512x512","type":"image/png"}]}
+{
+ "name": "KATKAY YATIRIM A.Ş.",
+ "short_name": "KATKAY",
+ "description": "BIST, ABD, kripto ve emtia için fırsatlar, alarmlar, piyasa rejimi ve haberler.",
+ "lang": "tr",
+ "start_url": "./?kaynak=pwa",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#0B0B0C",
+ "theme_color": "#0B0B0C",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
