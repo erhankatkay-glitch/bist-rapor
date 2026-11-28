@@ -16,10 +16,19 @@ TALIMAT = (
     "7) Son cümle tam olarak: 'Bu değerlendirme otomatik üretilmiştir, yatırım tavsiyesi değildir.'")
 
 
+SON_HATA = {"metin": None}
+
+
 def _istek(url, veri=None, baslik=None, zaman_asimi=25):
+    import urllib.error
     r = urllib.request.Request(url, data=json.dumps(veri).encode() if veri is not None else None,
                                headers={"Content-Type": "application/json", **(baslik or {})})
-    return json.loads(urllib.request.urlopen(r, timeout=zaman_asimi).read())
+    try:
+        return json.loads(urllib.request.urlopen(r, timeout=zaman_asimi).read())
+    except urllib.error.HTTPError as ex:   # sağlayıcının hata mesajı (anahtar içermez)
+        try: m = json.loads(ex.read()).get("error", {}); m = m.get("message") if isinstance(m, dict) else str(m)
+        except Exception: m = ""
+        raise RuntimeError(f"HTTP {ex.code}: {str(m)[:180]}") from None
 
 
 def _g(yol, anahtar, veri=None):
@@ -86,20 +95,23 @@ def dogrula(cikti, girdi):
 
 
 def yorum(e, gemini_anahtar=None, groq_anahtar=None):
-    """→ {"metin", "model"} ya da None. Anahtar yoksa ya da doğrulama geçmezse None (kural tabanlı metin kalır)."""
+    """→ {"metin", "model"}, başarısızsa {"hata"}, anahtar yoksa None. Anahtar yoksa ya da doğrulama geçmezse None (kural tabanlı metin kalır)."""
     return yorum_metinden(rapor_metni(e), gemini_anahtar, groq_anahtar) if e else None
 
 
 def yorum_metinden(girdi, gemini_anahtar=None, groq_anahtar=None):
     gemini_anahtar = gemini_anahtar or os.environ.get("GEMINI_API_KEY"); groq_anahtar = groq_anahtar or os.environ.get("GROQ_API_KEY")
     if not (gemini_anahtar or groq_anahtar): return None
+    SON_HATA["metin"] = None
     for ad, fn, k in (("gemini", gemini, gemini_anahtar), ("groq", groq, groq_anahtar)):
         if not k: continue
         try:
             metin, model = fn(girdi, k)
             ok, fazla = dogrula(metin, girdi)
             if ok and len(metin) > 80: return {"metin": metin, "model": model}
-            print(f"yorum katmanı ({ad}): doğrulanamayan sayı {fazla[:5]}; kural tabanlı metin kullanılıyor")
+            SON_HATA["metin"] = f"{ad}: metin uydurma rakam kontrolünden geçmedi ({', '.join(fazla[:4])})"
+            print("yorum katmanı:", SON_HATA["metin"])
         except Exception as ex:
-            print(f"yorum katmanı ({ad}):", str(ex)[:160])
-    return None
+            SON_HATA["metin"] = f"{ad}: {str(ex)[:200]}"
+            print("yorum katmanı:", SON_HATA["metin"])
+    return {"hata": SON_HATA["metin"]}

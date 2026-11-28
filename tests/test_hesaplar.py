@@ -512,3 +512,4 @@ def test_llm_katman_uydurma_rakam_korumasi():
     assert not ok and "75000" in fazla
     for k in ("GEMINI_API_KEY", "GROQ_API_KEY"): os.environ.pop(k, None)
     assert LLM.yorum_metinden(girdi) is None
+    assert "hata" in LLM.yorum_metinden(girdi, gemini_anahtar="gecersiz")

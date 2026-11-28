@@ -366,7 +366,9 @@ def ekip_raporu(s, temel=None):
         if e:
             import llm_katman as LLM
             yz = ekip_yorum(LLM.rapor_metni(e))
-            if yz: e["yz"] = yz
+            if yz and yz.get("metin"): e["yz"] = yz
+            elif yz and yz.get("hata"): e["yz_hata"] = yz["hata"]
+            elif _sir("GEMINI_API_KEY") is None and _sir("GROQ_API_KEY") is None: e["yz_hata"] = "anahtar tanımlı değil (Secrets'ta GEMINI_API_KEY bulunamadı)"
         return e
     except Exception as ex:
         print("ekip:", ex); return None
@@ -378,10 +380,21 @@ def _sir(ad):
 
 
 @st.cache_data(ttl=6 * 3600, show_spinner=False, max_entries=300)
-def ekip_yorum(girdi):
-    """Yorum katmanı (Gemini, yedek Groq): anahtar yoksa None; aynı rapor 6 saat önbellekte (ücretsiz kota korunur)."""
+def _ekip_yorum_onb(girdi, anahtar_var):
     import llm_katman as LLM
-    return LLM.yorum_metinden(girdi, _sir("GEMINI_API_KEY"), _sir("GROQ_API_KEY"))
+    r = LLM.yorum_metinden(girdi, _sir("GEMINI_API_KEY"), _sir("GROQ_API_KEY"))
+    if r and r.get("hata"): raise _YorumHata(r["hata"])   # hatalar önbelleğe alınmaz (bir sonraki denemede yeniden sorulur)
+    return r
+
+
+class _YorumHata(Exception):
+    pass
+
+
+def ekip_yorum(girdi):
+    try: return _ekip_yorum_onb(girdi, bool(_sir("GEMINI_API_KEY") or _sir("GROQ_API_KEY")))
+    except _YorumHata as ex: return {"hata": str(ex)}
+
 
 
 def ekip_goster(e, on):
@@ -409,6 +422,7 @@ def ekip_goster(e, on):
                 st.caption(f"İlke: {rl['ilke']}")
                 for b in rl["bulgular"]: st.markdown(f"- {b}")
         st.caption(e["uyari"] + " Rol ilkeleri agency-agents (MIT) şablonlarından uyarlanmıştır.")
+        if e.get("yz_hata"): st.caption(f"Yapay zekâ özeti yok — {e['yz_hata']}. Kural tabanlı metin gösteriliyor.")
 
 
 def teknik_analiz(kod, zaman, surum, kisa=False):
