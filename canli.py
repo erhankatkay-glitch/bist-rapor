@@ -61,7 +61,24 @@ def fiyatlar(pz):
                 out[kod] = [KA._f(p), KA._f(p / ref - 1) if ref else None, yerel.strftime("%H:%M"), str(gun_yerel)]
             except Exception:
                 continue
+    if pz == "bist" and not _acik("bist"):   # kapanış seansı (18:00–18:10) 15 dk veride yok → resmi kapanış
+        from concurrent.futures import ThreadPoolExecutor
+
+        def resmi(kod):
+            try: return kod, float(yf.Ticker(kod_sem[kod]).fast_info["lastPrice"])
+            except Exception: return kod, None
+        with ThreadPoolExecutor(8) as ex:
+            for kod, fl in ex.map(resmi, list(out)):
+                p, d = out[kod][0], out[kod][1]
+                if fl and p and abs(fl / p - 1) < 0.05:
+                    ref = p / (1 + d) if d is not None else None
+                    out[kod][0] = KA._f(fl); out[kod][1] = KA._f(fl / ref - 1) if ref else d; out[kod][2] = "kapanış"
     return out
+
+
+def _acik(tur):
+    import veri_kalite as VK
+    return VK.piyasa_acik(tur)
 
 
 def KA_tz(pz):

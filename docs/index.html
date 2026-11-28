@@ -277,11 +277,11 @@ function bnPanel() {
 let KARNE = null;   // liste.json
 async function karneListe() {   // dört piyasanın karne listeleri (karne/<pz>/liste.json) tek listede
   if (!KARNE) {
-    const l = await Promise.all(["bist", "abd", "kripto", "emtia"].map(async pz => ((await al(`karne/${pz}/liste.json`)) || {varliklar: []}).varliklar.map(v => ({...v, pz}))));
+    const l = await Promise.all(["bist", "abd", "kripto", "emtia"].map(async pz => { const x = (await al(`karne/${pz}/liste.json`)) || {varliklar: []}; LZ[pz] = x.zaman || ""; return x.varliklar.map(v => ({...v, pz})); }));
     KARNE = {varliklar: l.flat()};
     // gün içi canlı fiyatlar: BIST/ABD/emtia → canli/<pz>.json (15 dk'da bir), kripto → Binance (anlık)
     const c = await Promise.all(["bist", "abd", "emtia"].map(pz => al(`canli/${pz}.json`)));
-    c.forEach(x => x && Object.entries(x.fiyat || {}).forEach(([k, v]) => CANLI_F[k] = {p: v[0], d: v[1], saat: v[2], gun: v[3]}));
+    c.forEach(x => x && Object.entries(x.fiyat || {}).forEach(([k, v]) => CANLI_F[k] = {p: v[0], d: v[1], saat: v[2], gun: v[3], z: x.zaman || ""}));
     try {
       const t = await fetch("https://data-api.binance.vision/api/v3/ticker/24hr?type=MINI").then(r => r.json());
       const saat = new Date().toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"});
@@ -290,9 +290,10 @@ async function karneListe() {   // dört piyasanın karne listeleri (karne/<pz>/
   }
   return KARNE;
 }
-const CANLI_F = {};
-// canlı fiyat karnedeki kapanıştan yeniyse onu kullan
-const canliAl = v => { const c = CANLI_F[v.kod]; return c && c.p != null && (!v.tarih || c.gun >= v.tarih) ? c : null; };
+const CANLI_F = {}, LZ = {};
+// canlı fiyat yalnız karneden yeniyse: daha yeni bir gün ya da aynı gün ama karneden sonra alınmış (kapanıştan sonra karnedeki resmi kapanış esas)
+const canliAl = v => { const c = CANLI_F[v.kod]; if (!c || c.p == null) return null;
+  return !v.tarih || c.gun > v.tarih || (c.gun === v.tarih && c.z && c.z > (LZ[v.pz] || "")) ? c : null; };
 const dosyaAdi = k => String(k).replace(/[\/\\:]/g, "-").replace(/@/g, "_");
 // içeride karnesi varsa uygulama içi sayfa, yoksa tam uygulama
 function varlikLink(kod, pz) {
@@ -367,9 +368,9 @@ async function varlik(kod) {
     <a class="btn" target="_blank" rel="noopener" href="${ac(k.kod, k.pz)}">Canlı analiz ve PDF rapor (tam uygulama) ›</a>
     <div class="uyari">Karne ${new Date(k.zaman).toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"})} itibarıyla hesaplandı (veri: ${esc(k.fiyat_zamani)}).</div>`;
   el.innerHTML = h;
-  { const c = canliAl({kod: k.kod, tarih: k.grafik.t[k.grafik.t.length - 1]});
+  { const c = canliAl({kod: k.kod, pz: k.pz, tarih: k.grafik.t[k.grafik.t.length - 1]});
     if (c && k.pz !== "kripto") { document.getElementById("v-fiyat").textContent = para + fy(c.p); const d = document.getElementById("v-deg"); d.textContent = yz(c.d, 2); d.className = rk(c.d); }
-    document.getElementById("v-not").innerHTML = c ? `<span class="canli"><i></i>fiyat ${k.pz === "kripto" ? "anlık" : c.saat + (k.pz === "bist" ? " (~15 dk gecikmeli)" : "")}</span> · analiz ${tarihTr(k.grafik.t[k.grafik.t.length - 1])} kapanışıyla` : `analiz ${tarihTr(k.grafik.t[k.grafik.t.length - 1])} kapanışıyla`; }
+    document.getElementById("v-not").innerHTML = c ? `<span class="canli"><i></i>${k.pz === "kripto" ? "fiyat anlık" : c.saat === "kapanış" ? "kapanış fiyatı" : "fiyat " + c.saat + (k.pz === "bist" ? " (~15 dk gecikmeli)" : "")}</span> · analiz ${tarihTr(k.grafik.t[k.grafik.t.length - 1])} kapanışıyla` : `analiz ${tarihTr(k.grafik.t[k.grafik.t.length - 1])} kapanışıyla`; }
   if (k.pz === "kripto") {   // kriptoda fiyat canlı
     try { const t = await fetch(`https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${String(k.kod).replace("/", "")}`).then(r => r.json());
       document.getElementById("v-fiyat").textContent = "$" + fy(+t.lastPrice); const d = document.getElementById("v-deg"); d.textContent = yz(+t.priceChangePercent / 100, 2); d.className = rk(+t.priceChangePercent); } catch (e) {}
