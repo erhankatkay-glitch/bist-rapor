@@ -456,3 +456,13 @@ def test_opsiyon_bs_maxpain_carpiklik():
     o = OP.vade_ozeti(L, dt_.datetime(2026, 11, 28, tzinfo=dt_.timezone.utc))
     assert o["put_duvari"] == 80 and o["call_duvari"] == 110 and abs(o["atm_iv"] - 0.5) < 0.03 and o["aralik"][0] < 100 < o["aralik"][1]
     assert OP.vade_coz("29JAN27") == vade
+
+
+def test_alarm_seans_gunu_gece_yarisi_tekrar_yok():
+    """Gece yarısından sonra önceki seansa ait hareket 'bugün' diye yeniden bildirilmez; bayat veri teknik alarm üretmez."""
+    import alarm as A, datetime as dt_
+    gun = dt_.datetime(2026, 11, 27, 10, 32, tzinfo=dt_.timezone.utc)      # Cuma 13:32 TSİ
+    gece = dt_.datetime(2026, 11, 27, 21, 36, tzinfo=dt_.timezone.utc)     # Cumartesi 00:36 TSİ
+    assert A.seans_gunu("ASELS", gun) == A.seans_gunu("ASELS", gece) == dt_.date(2026, 11, 27)
+    assert A.seans_gunu("Nasdaq", gece) == dt_.date(2026, 11, 27)
+    assert A.son_tamam_seans("ASELS", gece) == dt_.date(2026, 11, 27)

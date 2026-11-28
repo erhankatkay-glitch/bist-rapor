@@ -226,6 +226,37 @@ def teknik_alarm(k, g):
     return out
 
 
+def seans_gunu(kod, simdi=None):
+    """Verinin ait olduğu seans günü (piyasanın yerel tarihi): seans açıksa bugün, kapalıysa son kapanan seans.
+    Gece yarısından sonra aynı (önceki seansa ait) hareketin "bugün" diye yeniden bildirilmesini önler."""
+    import veri_kalite as VK
+    simdi = simdi or dt.datetime.now(dt.timezone.utc)
+    if _kripto(kod): return simdi.astimezone(TSI).date()
+    tur = VK.tur_bul(_yahoo(kod)); tz = VK._seans(tur)[0]
+    return (simdi.astimezone(tz).date() if VK.piyasa_acik(tur, simdi) else VK.son_kapanis(tur, simdi).astimezone(tz).date())
+
+
+def bayat(kod, g):
+    """Günlük veri son tamamlanan seanstan eskiyse (ör. Yahoo gece BIST'in son barını geç veriyor) teknik/formasyon alarmı üretme:
+    eski barla hesaplanan formasyon 'yeni' sanılıp günler sonra bildirilmesin."""
+    try:
+        b = g["tarih"].date() if hasattr(g["tarih"], "date") else g["tarih"]
+        if b < son_tamam_seans(kod):
+            print(f"  {kod}: veri bayat ({b} < {son_tamam_seans(kod)}), teknik alarm atlandı", file=sys.stderr); return True
+    except Exception:
+        pass
+    return False
+
+
+def son_tamam_seans(kod, simdi=None):
+    """Son TAMAMLANAN seansın yerel tarihi (bayat veri kontrolü için)."""
+    import veri_kalite as VK
+    simdi = simdi or dt.datetime.now(dt.timezone.utc)
+    if _kripto(kod): return (simdi - dt.timedelta(days=1)).date()
+    tur = VK.tur_bul(_yahoo(kod)); tz = VK._seans(tur)[0]
+    return VK.son_kapanis(tur, simdi).astimezone(tz).date()
+
+
 def _yahoo(kod):
     try:
         import bist_teknik as T
@@ -319,8 +350,10 @@ def tara(K, durum):
                         bildir.append(f"🔔 {_ad(k['kod'])} fiyatı {_s(k['deger'])} seviyesinin {'üzerine çıktı' if k['op'] == '>' else 'altına indi'}: {_s(p)}")
                     yeni[anahtar] = bool(kosul)
                 else:
-                    gun_anahtar = f"{anahtar}|{bugun}"
-                    if abs(d) >= k["deger"] and not durum.get(gun_anahtar):
+                    try: sg = seans_gunu(k["kod"]).isoformat()
+                    except Exception: sg = bugun
+                    gun_anahtar = f"{anahtar}|{sg}"
+                    if abs(d) >= k["deger"] and not durum.get(gun_anahtar) and not durum.get(f"{anahtar}|{bugun}"):
                         bildir.append(f"⚡ {_ad(k['kod'])} bugün {_p(d)} hareket etti (fiyat {_s(p)})")
                         yeni[gun_anahtar] = True
             elif k["tip"] in ("rsi", "puan"):
@@ -332,6 +365,7 @@ def tara(K, durum):
                 yeni[anahtar] = bool(kosul)
             elif k["tip"] == "formasyon":
                 s = teknik(k["kod"]); g = s["tf"]["G"]
+                if bayat(k["kod"], g): continue
                 for ad, yon, ac, guc in g["sinyal"]:
                     if yon == 0 or not any(w in ad for w in ("TEYİT", "KIRILIM", "BOS", "CHoCH", "Altın kesişim", "Ölüm kesişimi",
                                                             "Harmonik:", "emir bloğu testi", "Kırıcı blok")): continue
@@ -342,6 +376,7 @@ def tara(K, durum):
                         yeni[a2] = True
             elif k["tip"] in ("ema", "hacim", "fib", "destek", "direnc", "kirilim", "fvg", "bos", "choch", "harmonik", "sinyal"):
                 s = teknik(k["kod"]); g = s["tf"]["G"]
+                if bayat(k["kod"], g): continue
                 for ikon, olay, gun_tek in teknik_alarm(k, g):
                     a2 = f"{k['metin']}|{olay[:40]}|{g['tarih']:%Y-%m-%d}" if gun_tek else f"{k['metin']}|{olay[:40]}"
                     if not durum.get(a2) and not yeni.get(a2):
