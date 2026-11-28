@@ -325,6 +325,61 @@ function altRota(h) {   // #piyasa/temel/kripto gibi derin bağlantılar (Telegr
 addEventListener("hashchange", () => { const h = altRota(decodeURIComponent((location.hash || "#ozet").slice(1))); if (h.startsWith("v/") || YUK[h]) git(h); });
 const etkSinif = e => /AL/.test(e) ? "al" : /SAT/.test(e) ? "sat" : "n";
 const md = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+// ---------------------------------------------------------------- TradingView Lightweight Charts™ (Apache-2.0, © TradingView) — mum grafik
+let LWC = null;
+function lwcYukle() {
+  if (window.LightweightCharts) return Promise.resolve();
+  if (!LWC) LWC = new Promise((ok, no) => { const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js";
+    s.onload = ok; s.onerror = () => { LWC = null; no(); }; document.head.appendChild(s); });
+  return LWC;
+}
+const FIB_RENK = {"2": "#E91E63", "1.618": "#FF9800", "1": "#787B86", "0.786": "#2962FF", "0.618": "#089981", "0.5": "#4CAF50", "0.382": "#81C784", "0": "#787B86",
+  "-0.382": "#F57C00", "-0.5": "#FF5252", "-0.618": "#F23645", "-0.786": "#F23645", "-1": "#787B86", "-1.618": "#E91E63", "-2": "#673AB7"};
+async function tvGrafik(kutu, g, tf, k, fv) {
+  try { await lwcYukle(); } catch (e) { return false; }
+  const L = window.LightweightCharts; kutu.innerHTML = "";
+  const kat = LS.get("kk_grafik_kat", {sma: true, fibo: true, bulut: true});
+  const ch = L.createChart(kutu, {height: 340, layout: {background: {type: "solid", color: "#0B0B0C"}, textColor: "#A1A1AA", fontSize: 11, attributionLogo: true},
+    grid: {vertLines: {color: "#17181B"}, horzLines: {color: "#17181B"}}, crosshair: {mode: 0},
+    rightPriceScale: {borderColor: "#2A2B30", scaleMargins: {top: 0.08, bottom: 0.08}}, timeScale: {borderColor: "#2A2B30", rightOffset: 6, barSpacing: 7},
+    localization: {locale: "tr-TR", priceFormatter: p => fy(p)}, handleScale: {axisPressedMouseMove: true}, kineticScroll: {touch: true}});
+  const mum = ch.addCandlestickSeries({upColor: "#22C55E", downColor: "#EF4444", borderUpColor: "#22C55E", borderDownColor: "#EF4444", wickUpColor: "#22C55E", wickDownColor: "#EF4444",
+    priceLineColor: "#F4F4F5", priceLineStyle: 2});
+  mum.setData(g.t.map((t, i) => ({time: t, open: g.o[i], high: g.h[i], low: g.l[i], close: g.c[i]})).filter(x => x.close != null));
+  const cizgi = (t, d, renk, kalin = 1, stil = 0, ad = "") => { const s = ch.addLineSeries({color: renk, lineWidth: kalin, lineStyle: stil, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, title: ad});
+    s.setData(t.map((x, i) => ({time: x, value: d[i]})).filter(x => x.value != null)); return s; };
+  if (kat.sma) { cizgi(g.t, g.sma20, "#60A5FA", 1, 0); cizgi(g.t, g.sma50, "#E8B84A", 1, 0); cizgi(g.t, g.sma200, "#C084FC", 2, 0); }
+  const cz = (fiyat, renk, ad, stil = 2, kalin = 1, eks = true) => fiyat != null && mum.createPriceLine({price: fiyat, color: renk, lineWidth: kalin, lineStyle: stil, axisLabelVisible: eks, title: ad});
+  if (fv && kat.fibo) {
+    const ana = ["2", "1.618", "1", "0.786", "0.618", "0.5", "0.382", "0", "-0.382", "-0.5", "-0.618", "-0.786", "-1"];
+    const fmin = Math.min(...g.l.filter(x => x != null)), fmax = Math.max(...g.h.filter(x => x != null)), pay = (fmax - fmin) * 0.35;
+    ana.forEach(r => { const p = (fv.sv || {})[r]; if (p != null && p > fmin - pay && p < fmax + pay) cz(p, FIB_RENK[r] || "#787B86", r, ["0", "1", "0.618", "0.786", "0.5"].includes(r) ? 0 : 2, ["0", "1"].includes(r) ? 2 : 1, false); });
+    const bad = fv.tip === "gz" ? "GZ" : fv.tip === "bant" ? "Alım" : "PDA-1";
+    if (fv.p1) { cz(fv.p1[0], "#FF9800", bad + " üst", 0, 2); cz(fv.p1[1], "#FF9800", bad + " alt", 0, 2); }
+    if (fv.p2) { cz(fv.p2[0], "#9C27B0", "PDA-2 üst", 0, 2); cz(fv.p2[1], "#9C27B0", "PDA-2 alt", 0, 2); }
+    if (fv.stop != null) cz(fv.stop, "#FF6D00", "STOP", 0, 2);
+    if (fv.boga != null) cz(fv.boga, "#9C27B0", "Boğa", 0, 2);
+    (fv.sin || []).slice(0, 1).forEach(s => { if (s.hedef) cz(s.hedef, "#22C55E", "Hedef", 1, 1); });
+  } else {
+    (tf.destek || []).slice(0, 2).forEach(x => cz(x[0], "#22C55E", "destek")); (tf.direnc || []).slice(0, 2).forEach(x => cz(x[0], "#EF4444", "direnç"));
+  }
+  if (fv && kat.bulut) {
+    const S = await al(`fibo/s_${k.pz}/${fiboKod(k.pz, k.kod).replace("/", "-").replace(/\./g, "_")}.json`);
+    if (S && S.t) { const ilk = g.t[0], i0 = Math.max(0, S.t.findIndex(t => t >= ilk)), t = S.t.slice(i0);
+      cizgi(t, S.v5.slice(i0), "#F4F4F5", 2, 1, ""); cizgi(t, S.v8.slice(i0), "#4CAF50", 2, 2, ""); cizgi(t, S.v14.slice(i0), "#2E7D32", 2, 0, ""); }
+  }
+  // sinyal işareti
+  if (fv && (fv.sin || []).length) mum.setMarkers((fv.sin || []).map(s => ({time: s.tarih, position: "belowBar", color: "#E8B84A", shape: "arrowUp", text: "FiboAyna"})).sort((a, b) => a.time < b.time ? -1 : 1));
+  const n = g.t.length; ch.timeScale().setVisibleLogicalRange({from: Math.max(0, n - 110), to: n + 5});
+  new ResizeObserver(() => ch.applyOptions({width: kutu.clientWidth})).observe(kutu);
+  return true;
+}
+function tvAraclar(fv) {   // grafik katmanları (telefonda saklanır)
+  const kat = LS.get("kk_grafik_kat", {sma: true, fibo: true, bulut: true});
+  const d = [["sma", "SMA 20/50/200"], ...(fv ? [["fibo", "FiboAyna seviyeleri"], ["bulut", "VIDYA 5-8-14"]] : [])];
+  return `<div class="cip" style="margin:6px 0 4px">${d.map(([k, a]) => `<button data-gk="${k}" class="${kat[k] ? "s" : ""}">${a}</button>`).join("")}</div>`;
+}
 function grafikSvg(g, tf) {
   const n = g.c.length, W = 360, H = 230, ust = 10, alt = 18;
   const deg = [...g.l, ...g.h, ...(tf.destek || []).map(x => x[0]), ...(tf.direnc || []).map(x => x[0])].filter(x => x != null);
@@ -365,10 +420,11 @@ async function varlik(kod) {
       <span class="rozet ${etkSinif(k.etiket)}">${esc(k.etiket)} · ${tr(k.puan, 0)}/100</span></div>
       <div class="f"><b id="v-fiyat">${para}${fy(g.fiyat)}</b><span id="v-deg" class="${rk(g.degisim)}">${yz(g.degisim, 2)}</span><br><span class="not" style="font-size:10.5px;font-weight:600">gün ${fy(k.gun.dusuk)} – ${fy(k.gun.yuksek)}</span></div></div>
       <div class="metin" style="margin-top:8px;color:var(--s)">${esc(k.baslik)}</div><div id="v-not" style="font-size:10.5px;color:var(--s2);margin-top:6px"></div></div>
-    ${grafikSvg(k.grafik, g)}
+    <div id="tv-arac"></div><div id="tv-kutu" style="width:100%;min-height:340px;border-radius:14px;overflow:hidden;background:#0B0B0C">${grafikSvg(k.grafik, g)}</div>
     <h2>Zaman dilimleri</h2><div class="tfk">${Object.entries(k.tf).map(([t, a]) => `<div><small>${TF_AD[t] || t}</small><b class="${rk(a.puan - 50)}">${esc(a.etiket)}</b><div class="cub"><div style="width:${a.puan}%"></div></div></div>`).join("")}</div>
     <h2>Teknik yorum</h2><div class="kart metin">${md(k.yorum)}</div>`;
-  { const FD = await fiboAl(k.pz); if (FD && FD.varliklar) h += fiboHtml(FD.varliklar[fiboKod(k.pz, k.kod)], FD.secim || {}, para); }
+  const FD = await fiboAl(k.pz), FV = FD && FD.varliklar ? FD.varliklar[fiboKod(k.pz, k.kod)] : null;
+  if (FV) h += fiboHtml(FV, FD.secim || {}, para);
   if (k.pz === "kripto" || k.pz === "emtia") { const T = await temelAl(k.pz); h += varlikTemelHtml(T && T.satirlar && T.satirlar[k.kod], k.pz, para, T && new Date(T.zaman).toLocaleDateString("tr-TR")); }
   if (k.pz === "bist" || k.pz === "abd") { const T = await temelAl(k.pz); h += temelHtml(T && T.satirlar && T.satirlar[k.kod] && Object.assign({tarih: new Date(T.zaman).toLocaleDateString("tr-TR")}, T.satirlar[k.kod]), para); }
   if (k.senaryo && k.senaryo.length) h += `<h2>Senaryolar</h2>` + k.senaryo.map(x => `<div class="kart"><b style="font-size:13.5px">${esc(x[0])}</b><div class="metin" style="margin-top:4px">Koşul: ${esc(x[1])} · hedef ${esc(x[2])}<br><span class="not">${esc(x[3])}</span></div></div>`).join("");
@@ -389,6 +445,10 @@ async function varlik(kod) {
     <a class="btn" target="_blank" rel="noopener" href="${ac(k.kod, k.pz)}" style="background:var(--k);color:var(--y);border:1px solid var(--c)">Canlı analiz (tam uygulama) ›</a>
     <div class="uyari">Karne ${new Date(k.zaman).toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"})} itibarıyla hesaplandı (veri: ${esc(k.fiyat_zamani)}).</div>`;
   el.innerHTML = h;
+  { const kutu = document.getElementById("tv-kutu"), arac = document.getElementById("tv-arac");
+    const ciz = () => tvGrafik(kutu, k.grafik, g, k, FV).then(ok => { if (ok) { arac.innerHTML = tvAraclar(FV);
+      arac.querySelectorAll("[data-gk]").forEach(b => b.onclick = () => { const kt = LS.get("kk_grafik_kat", {sma: true, fibo: true, bulut: true}); kt[b.dataset.gk] = !kt[b.dataset.gk]; LS.set("kk_grafik_kat", kt); ciz(); }); } });
+    if (kutu && k.grafik && k.grafik.t) ciz(); }
   { const c = canliAl({kod: k.kod, pz: k.pz, tarih: k.grafik.t[k.grafik.t.length - 1]});
     if (c && k.pz !== "kripto") { document.getElementById("v-fiyat").textContent = para + fy(c.p); const d = document.getElementById("v-deg"); d.textContent = yz(c.d, 2); d.className = rk(c.d); }
     document.getElementById("v-not").innerHTML = c ? `<span class="canli"><i></i>${k.pz === "kripto" ? "fiyat anlık" : c.saat === "kapanış" ? "kapanış fiyatı" : "fiyat " + c.saat + (k.pz === "bist" ? " (~15 dk gecikmeli)" : "")}</span> · analiz ${tarihTr(k.grafik.t[k.grafik.t.length - 1])} kapanışıyla` : `analiz ${tarihTr(k.grafik.t[k.grafik.t.length - 1])} kapanışıyla`; }

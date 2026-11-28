@@ -1,5 +1,5 @@
 // KATKAY PWA servis çalışanı: uygulama kabuğu önbellekten (çevrimdışı açılır), veri önce ağdan, olmazsa son kayıtlı kopyadan.
-const SURUM = "katkay-v23";
+const SURUM = "katkay-v24";
 const KABUK = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./favicon.png", "./pwa_veri.json", "./hero.jpg"];
 
 self.addEventListener("install", e => {
@@ -20,6 +20,10 @@ self.addEventListener("fetch", e => {
       if (r.ok) { const k = r.clone(); caches.open(SURUM).then(c => c.put(anahtar, k)); }
       return r;
     }).catch(() => caches.match(anahtar)));
+    return;
+  }
+  if (u.hostname === "cdn.jsdelivr.net") {   // grafik kütüphanesi (sürümü sabit): önbellek önce
+    e.respondWith(caches.match(e.request).then(c => c || fetch(e.request).then(r => { if (r.ok) { const k = r.clone(); caches.open(SURUM).then(x => x.put(e.request, k)); } return r; })));
     return;
   }
   if (e.request.mode === "navigate") {   // sayfanın kendisi: ağ önce (yeni sürüm hemen gelsin), çevrimdışıysa önbellek
