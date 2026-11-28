@@ -354,3 +354,7 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   BIST değer sıralamasında F/K < 1 (hatalı veri: ISATR vb.) elenir.
 - Telegram: temel_bildirim.py, sabah.py içinden aynı Bot ile sabah kartından sonra "Temel özet" kartı (BIST değerinin altındaki 5, yeni halka
   arzlar, kripto ilk 100'de temel puanı en yüksek 3, emtia COT/backwardation aşırılıkları); düğme #piyasa/temel (tg.UYG_BOLUM "temel").
+- Temel karne (28.11.2026): temel_karne.py (sabah_ozet.yml, sabah.py'den önce) → bulten/temel/{gecmis (100 gün liste+fiyat arşivi), karne
+  (1H/1A/3A: liste vs eşit ağırlıklı evren, fark, geçme oranı), degisim (dünden bugüne: listeye giren, COT aşırılığı, kripto puan ±20)}.json.
+  temel_bildirim kartının başında "Dünden bugüne değişenler". PWA: Piyasa › Temel › Karne; Özet'te #pf-temel (pfTemelUyari: portföy/sanal/
+  takip varlıklarının görüş-puan değişimi, LS kk_temel_gordum; ilk açılışta yalnız kaydeder, ±15 puan veya görüş değişimi uyarır).
