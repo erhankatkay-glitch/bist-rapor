@@ -542,3 +542,10 @@ def test_genislik_basibos_satir():
     kap["H0"] = pd.concat([kap["H0"], pd.Series([140.0], index=[t[150] + pd.Timedelta(days=1)])]).sort_index()   # tatilde tek satır
     G = RJ.genislik(kap)
     assert G["ust200"].iloc[-1] > 0.9 and G["n"].iloc[-1] == 20
+
+
+def test_pwa_veri_guncel():
+    """docs/pwa_veri.json, ses/tarayici sözlükleriyle aynı olmalı (değiştiyse: python pwa_veri.py)."""
+    import json
+    import pwa_veri
+    assert json.load(open("docs/pwa_veri.json", encoding="utf-8")) == json.loads(json.dumps(pwa_veri.veri(), ensure_ascii=False))

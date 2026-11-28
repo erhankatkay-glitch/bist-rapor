@@ -1,6 +1,6 @@
 // KATKAY PWA servis çalışanı: uygulama kabuğu önbellekten (çevrimdışı açılır), veri önce ağdan, olmazsa son kayıtlı kopyadan.
-const SURUM = "katkay-v12";
-const KABUK = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./favicon.png"];
+const SURUM = "katkay-v14";
+const KABUK = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./favicon.png", "./pwa_veri.json"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(SURUM).then(c => c.addAll(KABUK)).then(() => self.skipWaiting()));

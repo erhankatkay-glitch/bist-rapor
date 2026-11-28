@@ -329,3 +329,7 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
 - Hızlı uygulama 2. adım (28.11.2026): Portföy sekmesi — Varlıklarım (kk_pf_metin), Sanal işlem (kk_sanal: sanal.py ile aynı olay biçimi,
   pozisyon_boyutu/kontrol_listesi/dusus_sigortasi JS karşılıkları; yedek dosyası tam uygulamayla iki yönlü uyumlu), Takip (kk_takip), Risk hesap.
   Hepsi localStorage'da, yalnız telefonda.
+- Hızlı uygulama 3. adım (28.11.2026): Piyasa sekmesi alt bölümleri — Genel, Takvim (haber/takvim*.json, Türkçe adlar), Ekonomi (makro/tr_makro,
+  yabanci/akis, donem/haftalik), Tarayıcı (tarama/<pz>.csv; tarayici.ALANLAR/HAZIR → docs/pwa_veri.json, pwa_veri.py ile üretilir, test denetler),
+  Karşılaştır (karnelerden, tarihe göre hizalı). Fırsatlar: Açık / Son taramalar / Performans (gecmis + istatistik). Özet: sabah özeti + ses.
+  Tam uygulamada kalan (sunucu gerektiren): Hisse temel analizi, Bebek taraması, PDF raporlar, alarm tanımlama.

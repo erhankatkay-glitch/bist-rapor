@@ -638,12 +638,172 @@ async function snForm(f) {
     defterKaydet(d); SNL_FORM = null; pfSanal(); };
 }
 
+// ---------------------------------------------------------------- 3. adım: takvim, ekonomi, tarayıcı, karşılaştır, fırsat performansı, sabah özeti
+let PV = null;   // docs/pwa_veri.json: tam uygulamanın sözlükleri (takvim Türkçe adları, tarayıcı alanları ve hazır taramalar)
+async function pwaVeri() { if (!PV) { try { PV = await fetch("pwa_veri.json").then(r => r.json()); } catch (e) { PV = {veri: [], ulke: {}, alanlar: {}, hazir: {}}; } } return PV; }
+function veriAdi(b, ulke) {   // ses.veri_adi karşılığı
+  let s = b || ""; for (const [a, c] of PV.veri) { const re = new RegExp(a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "ig"); if (re.test(s)) s = s.replace(re, c); }
+  s = s.replace(/\b[mqy]\/[mqy]\b/g, "").trim(); const u = PV.ulke[ulke || ""] || ""; return (u && !s.includes(u) ? `${u} ${s}` : s).trim();
+}
+const BAYRAK = {USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", JPY: "🇯🇵", CNY: "🇨🇳", TRY: "🇹🇷", CAD: "🇨🇦", AUD: "🇦🇺", NZD: "🇳🇿", CHF: "🇨🇭"};
+
+async function takvimBolum(el) {
+  await pwaVeri();
+  const [tk, ar] = await Promise.all([al("haber/takvim.json"), al("haber/takvim_arsiv.json")]);
+  const L = ((tk || {}).liste || []).slice().sort((a, b) => a.zaman < b.zaman ? -1 : 1), arsiv = ar || [], simdi = Date.now();
+  const gun = {}; L.forEach(e => { const t = new Date(e.zaman); (gun[t.toLocaleDateString("tr-TR", {weekday: "long", day: "2-digit", month: "2-digit"})] ||= []).push(e); });
+  const kalan = L.filter(e => new Date(e.zaman) > simdi).length;
+  el.innerHTML = `<h2>Ekonomik takvim · yüksek etkili veriler</h2>` + (kalan ? "" : `<div class="kart metin" style="color:var(--s)">Bu hafta açıklanacak yüksek etkili veri kalmadı; yeni haftanın takvimi pazartesi sabahı gelir.${L.length ? " Bu haftanın açıklanmış verileri aşağıda." : ""}</div>`) +
+    Object.entries(gun).map(([g, l]) => `<h2 style="margin-top:12px">${esc(g)}</h2>` + l.map(e => { const t = new Date(e.zaman), gecti = t < simdi, dk = Math.round((t - simdi) / 60000);
+      const x = arsiv.filter(a => a.baslik === e.baslik && a.ulke === e.ulke && a.tepki), tep = [];
+      ["Altın", "S&P 500 vadeli", "Bitcoin", "Dolar/TL"].forEach(v => { const d = x.map(a => a.tepki[v] && a.tepki[v]["1s"]).filter(z => z != null); if (d.length) tep.push(`<span class="v">${v} ±%${tr(d.reduce((s, z) => s + Math.abs(z), 0) / d.length * 100, 1)}</span>`); });
+      return `<div class="kart" style="${gecti ? "opacity:.6" : ""}"><div class="satir"><div style="min-width:52px;text-align:center"><b style="font-size:16px">${t.toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"})}</b><small style="display:block;color:var(--s);font-size:10.5px">${BAYRAK[e.ulke] || ""} ${esc(PV.ulke[e.ulke] || e.ulke)}</small></div>
+        <div class="a"><b style="font-size:13.5px">${esc(veriAdi(e.baslik, e.ulke))}</b><span>${esc(e.baslik)}</span></div></div>
+        <div class="plan"><i>Beklenti</i> ${esc(e.beklenti || "–")} · <i>Önceki</i> ${esc(e.onceki || "–")}${e.gercek ? ` · <i>Açıklanan</i> <b>${esc(e.gercek)}</b>` : ""} · ${gecti ? "<span class='not'>açıklandı</span>" : dk < 1440 ? `<span style="color:var(--a)">${Math.floor(dk / 60)} sa ${dk % 60} dk sonra</span>` : "<span style='color:var(--a)'>yaklaşıyor</span>"}</div>
+        ${tep.length ? `<div style="margin-top:4px">${tep.join("")}</div><div class="not" style="font-size:10.5px">Geçmişte açıklamadan sonraki 1 saatteki ortalama hareket (${x.length} açıklama)</div>` : ""}</div>`; }).join("")).join("") +
+    (L.length ? "" : "<div class='bos'>Takvim verisi yok.</div>");
+}
+
+async function ekonomiBolum(el) {
+  const [m, y, h] = await Promise.all([al("makro/tr_makro.json"), al("yabanci/akis.json"), al("donem/haftalik.json")]);
+  let s = "";
+  if (m) { const t = (m.tufe && m.tufe.seri) || [], son = t[0] || {}, f = m.faiz || {};
+    const ayAd = d => { try { return new Date(d + "-01").toLocaleDateString("tr-TR", {month: "long", year: "numeric"}); } catch (e) { return d; } };
+    s += `<h2>Türkiye makro</h2><div class="izgara"><div class="mini"><small>Yıllık TÜFE</small><b>%${tr(son.yillik, 2)}</b><span class="not">${esc(ayAd(son.donem))}</span></div>
+      <div class="mini"><small>Politika faizi</small><b>%${tr(f.oran, 2)}</b><span class="not">${f.onceki != null ? `önceki %${tr(f.onceki, 2)}` : ""}</span></div>
+      <div class="mini"><small>Reel faiz</small><b class="${rk(m.reel_faiz)}">${m.reel_faiz >= 0 ? "+" : ""}%${tr(m.reel_faiz, 1)}</b><span class="not">faiz − TÜFE</span></div></div>
+      <div class="kart" style="margin-top:8px"><b style="font-size:13px">Yıllık enflasyon (TÜFE)</b>${spark(t.slice().reverse().map(x => x.yillik), -1)}
+      <table class="tablo">${t.slice(0, 6).map(x => `<tr><td>${esc(ayAd(x.donem))}</td><td>%${tr(x.yillik, 2)} <span class="not" style="font-weight:500">aylık %${tr(x.aylik, 2)}</span></td></tr>`).join("")}</table>
+      <div class="not" style="font-size:10.5px;margin-top:6px">Kaynak: TCMB. TÜFE bir önceki ayın verisidir; her ayın 3'ünde açıklanır.</div></div>`; }
+  if (y && y.seri) { const S = y.seri, son = S[S.length - 1], t4 = S.slice(-4).reduce((a, b) => a + b.hisse_net, 0);
+    s += `<h2>Yabancı yatırımcı akışı (haftalık)</h2><div class="kart"><div class="satir"><div class="a"><b>${son.hisse_net >= 0 ? "Net alım" : "Net satış"} ${tr(Math.abs(son.hisse_net), 1)} mn $</b><span>${new Date(son.tarih).toLocaleDateString("tr-TR", {day: "numeric", month: "long"})} haftası · BIST hisse</span></div>
+      <div class="f"><b class="${rk(t4)}">${t4 >= 0 ? "+" : "-"}${tr(Math.abs(t4), 1)}</b><span class="not">son 4 hafta</span></div></div>
+      <table class="tablo">${S.slice().reverse().map(x => `<tr><td>${new Date(x.tarih).toLocaleDateString("tr-TR", {day: "2-digit", month: "2-digit"})}</td><td class="${rk(x.hisse_net)}">${x.hisse_net >= 0 ? "+" : ""}${tr(x.hisse_net, 1)} <span class="not" style="font-weight:500">DİBS ${x.dibs_net >= 0 ? "+" : ""}${tr(x.dibs_net, 1)}</span></td></tr>`).join("")}</table>
+      <div class="not" style="font-size:10.5px;margin-top:6px">Kaynak: ${esc(y.kaynak)} (bir hafta gecikmeli).</div></div>`; }
+  if (h && h.varliklar) s += `<h2>Haftalık görünüm · ${new Date(h.tarih).toLocaleDateString("tr-TR")}</h2>` + h.varliklar.map(v => `<a class="kart dok" href="#v/${encodeURIComponent(v.kod)}"><div class="satir"><div class="a"><b>${esc(v.ad)} <span class="etk ${etkSinif(v.etiket)}" style="margin-left:4px">${esc(v.etiket)}</span></b><span>${esc(v.grup)} · haftalık ${esc(v.ust_etiket || "")} · RSI ${tr(v.rsi, 0)} · ${esc(v.yapi || "")}</span></div>
+      <div class="f"><b>${fy(v.fiyat)}</b><span class="${rk(v.degisim)}">${yz(v.degisim, 2)}</span><small style="display:block;color:var(--s2);font-size:10px">hafta</small></div></div></a>`).join("");
+  el.innerHTML = s || "<div class='bos'>Veri yok.</div>";
+}
+
+// ---- tarayıcı (tarayici.py ile aynı alanlar, koşullar ve hazır taramalar; veri: kapanış taraması tarama/<pz>.csv)
+function csvOku(t) {
+  const sat = []; let a = [], f = "", q = false;
+  for (let i = 0; i < t.length; i++) { const c = t[i];
+    if (q) { if (c === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true; else if (c === ",") { a.push(f); f = ""; } else if (c === "\n") { a.push(f); sat.push(a); a = []; f = ""; } else if (c !== "\r") f += c; }
+  if (f || a.length) { a.push(f); sat.push(a); }
+  const b = sat.shift() || []; return sat.filter(r => r.length > 1).map(r => Object.fromEntries(b.map((k, i) => [k, r[i]])));
+}
+const TR_PZ = {bist: "bist", abd: "abd", kripto: "kripto", emtia: "emtia"};
+let TR_DURUM = LS.get("kk_tarayici", {pz: "bist", kosul: [], sira: "Teknik puan"}), TR_VERI = {};
+function trUygula(rows, kosul) {
+  return rows.filter(r => kosul.every(k => { const A = PV.alanlar[k.alan]; if (!A || !(k.alan in r)) return true; const [, tur, carp] = A, x = r[k.alan];
+    if (tur === "sayi") { const v = parseFloat(x) * (carp || 1); if (isNaN(v)) return false; return (k.min == null || v >= k.min) && (k.max == null || v <= k.max); }
+    if (tur === "secim") { const dg = k.deger; return !dg || dg.length === 0 || (Array.isArray(dg) ? dg : [dg]).includes(String(x)); }
+    if (tur === "evet") return ["true", "1", "evet"].includes(String(x).toLowerCase());
+    if (tur === "var") return String(x || "").length > 0; return true; }));
+}
+async function tarayiciBolum(el) {
+  await pwaVeri(); const D = TR_DURUM;
+  if (!TR_VERI[D.pz]) { el.innerHTML = "<div class='bos'>Tarama verisi yükleniyor…</div>";
+    try { const r = await fetch(VERI + `tarama/${D.pz}.csv?t=` + (ZORLA || Math.floor(Date.now() / 300000))); TR_VERI[D.pz] = csvOku(await r.text()); } catch (e) { TR_VERI[D.pz] = []; } }
+  const rows = TR_VERI[D.pz], sonuc = trUygula(rows, D.kosul);
+  const siraAlan = D.sira, sirali = sonuc.slice().sort((a, b) => (parseFloat(b[siraAlan]) || -1e9) - (parseFloat(a[siraAlan]) || -1e9)).slice(0, 80);
+  const secenek = a => [...new Set(rows.map(r => r[a]).filter(Boolean))].slice(0, 30);
+  const alanSec = Object.entries(PV.alanlar).map(([k, v]) => `<option value="${esc(k)}">${esc(v[0])}</option>`).join("");
+  el.innerHTML = `<h2>Tarayıcı · ${rows.length} varlık</h2>
+    <div class="cip">${Object.entries(TR_PZ).map(([k]) => `<button data-tp="${k}" class="${k === D.pz ? "s" : ""}">${PZ_AD[k]}</button>`).join("")}</div>
+    <div class="cip">${Object.keys(PV.hazir).map(h => `<button data-th="${esc(h)}">${esc(h)}</button>`).join("")}</div>
+    <div class="kart">${D.kosul.map((k, i) => { const A = PV.alanlar[k.alan] || [k.alan, "sayi"];
+      return `<div class="sin" style="display:flex;gap:6px;align-items:center"><b style="flex:1;font-size:12.5px">${esc(A[0])}</b>${A[1] === "sayi" ? `<input class="ara" data-kmin="${i}" placeholder="en az" value="${k.min ?? ""}" inputmode="decimal" style="width:70px;margin:0;padding:6px"><input class="ara" data-kmax="${i}" placeholder="en çok" value="${k.max ?? ""}" inputmode="decimal" style="width:70px;margin:0;padding:6px">` :
+        A[1] === "secim" ? `<select class="ara" data-ksec="${i}" style="width:150px;margin:0;padding:6px">${secenek(k.alan).map(o => `<option ${[].concat(k.deger || []).includes(o) ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>` : `<span class="not">evet</span>`}
+        <button data-ksil="${i}" style="background:none;border:none;color:var(--r);font-size:16px">×</button></div>`; }).join("") || "<div class='not' style='font-size:12px'>Koşul yok: hazır bir tarama seç ya da koşul ekle.</div>"}
+      <div style="display:flex;gap:6px;margin-top:8px"><select class="ara" id="t-al" style="flex:1;margin:0;padding:7px">${alanSec}</select><button id="t-ek" style="border:none;border-radius:10px;padding:0 12px;font-weight:800;background:var(--a);color:#0B0B0C">＋ Koşul</button></div>
+      <div style="display:flex;gap:6px;margin-top:6px;align-items:center"><span class="not" style="font-size:12px">Sırala:</span><select class="ara" id="t-sira" style="flex:1;margin:0;padding:7px">${Object.entries(PV.alanlar).filter(([, v]) => v[1] === "sayi").map(([k, v]) => `<option value="${esc(k)}" ${k === siraAlan ? "selected" : ""}>${esc(v[0])}</option>`).join("")}</select>
+      <button id="t-tem" style="background:none;border:1px solid var(--c);color:var(--s);border-radius:10px;padding:7px 10px">Temizle</button></div></div>
+    <h2>${sonuc.length} sonuç${sonuc.length > 80 ? " · ilk 80" : ""}</h2>` + sirali.map(r => { const v = (KARNE && KARNE.varliklar.find(x => x.kod === r.Kod)) || {kod: r.Kod, ad: r.Ad, etiket: r.Genel, puan: +r["Teknik puan"], fiyat: +r.Fiyat, degisim: +r["Değişim"], pz: D.pz};
+      return karneSatir(v).replace("</a>", `<div class="plan"><i>${esc((PV.alanlar[siraAlan] || [siraAlan])[0])}</i> ${tr(parseFloat(r[siraAlan]) * ((PV.alanlar[siraAlan] || [])[2] || 1), 1)} · RSI ${tr(+r.RSI, 0)} · RVOL ${tr(+r.RVOL, 1)}${r.Sinyal ? ` · ${esc(r["Sinyal yönü"])} ${esc(r.Sinyal)}` : ""}</div></a>`); }).join("");
+  const kaydet = () => { LS.set("kk_tarayici", D); tarayiciBolum(el); };
+  el.querySelectorAll("[data-tp]").forEach(b => b.onclick = () => { D.pz = b.dataset.tp; kaydet(); });
+  el.querySelectorAll("[data-th]").forEach(b => b.onclick = () => { D.kosul = JSON.parse(JSON.stringify(PV.hazir[b.dataset.th])); kaydet(); });
+  document.getElementById("t-ek").onclick = () => { const a = document.getElementById("t-al").value, t = PV.alanlar[a][1]; D.kosul.push(t === "sayi" ? {alan: a} : t === "secim" ? {alan: a, deger: []} : {alan: a, deger: true}); kaydet(); };
+  document.getElementById("t-sira").onchange = e => { D.sira = e.target.value; kaydet(); };
+  document.getElementById("t-tem").onclick = () => { D.kosul = []; kaydet(); };
+  el.querySelectorAll("[data-ksil]").forEach(b => b.onclick = () => { D.kosul.splice(+b.dataset.ksil, 1); kaydet(); });
+  el.querySelectorAll("[data-kmin],[data-kmax]").forEach(i => i.onchange = () => { const k = D.kosul[+(i.dataset.kmin ?? i.dataset.kmax)], v = sayiTr(i.value); k[i.dataset.kmin != null ? "min" : "max"] = isNaN(v) ? null : v; kaydet(); });
+  el.querySelectorAll("[data-ksec]").forEach(s => s.onchange = () => { D.kosul[+s.dataset.ksec].deger = [s.value]; kaydet(); });
+}
+
+// ---- karşılaştır: 2–4 varlık, aynı grafikte % getiri + karne tablosu
+let KS = LS.get("kk_karsilastir", ["XU100", "SP500", "BTC/USDT", "GRAMALTIN"]);
+async function karsilastirBolum(el) {
+  await karneListe();
+  const K = (await Promise.all(KS.map(async k => { const v = varlikBul(k); return v ? {...(await al(`karne/${v.pz}/${dosyaAdi(v.kod)}.json`)), pzl: v} : null; }))).filter(x => x && x.grafik);
+  const renk = ["#E8B84A", "#60A5FA", "#22C55E", "#C084FC"], W = 360, H = 200;
+  let svg = "";
+  if (K.length) {   // tarihe göre hizala: kripto hafta sonu da işlem gördüğü için gün sayısı değil tarih ortak alınır
+    const bas = K.map(k => k.grafik.t[0]).sort().pop(), T = [...new Set(K.flatMap(k => k.grafik.t.filter(t => t >= bas)))].sort(), n = T.length, ix = Object.fromEntries(T.map((t, i) => [t, i]));
+    const ser = K.map(k => { const p = k.grafik.t.map((t, i) => [t, k.grafik.c[i]]).filter(([t, c]) => t >= bas && c != null), b0 = p[0][1]; return p.map(([t, c]) => [ix[t], c / b0 - 1]); });
+    const tum = ser.flat().map(x => x[1]), mn = Math.min(...tum, 0), mx = Math.max(...tum, 0), r = mx - mn || 1, X = i => 4 + i * (W - 50) / (n - 1), Y = v => 8 + (1 - (v - mn) / r) * (H - 26);
+    svg = `<svg class="grafik" style="height:200px" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="4" x2="${W - 46}" y1="${Y(0)}" y2="${Y(0)}" stroke="#3F3F46" stroke-dasharray="3 3"/>` +
+      ser.map((s, j) => `<polyline points="${s.map(([i, v]) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${renk[j]}" stroke-width="1.6"/><text x="${W - 44}" y="${Y(s[s.length - 1][1]) + 3}" font-size="9" fill="${renk[j]}">${yz(s[s.length - 1][1], 0)}</text>`).join("") +
+      `<text x="4" y="${H - 4}" font-size="9" fill="#71717A">${tarihTr(T[0])}.${T[0].slice(2, 4)} → ${tarihTr(T[n - 1])}.${T[n - 1].slice(2, 4)}</text></svg>`; }
+  const satirlar = [["Görünüm", k => k.etiket], ["Teknik puan", k => tr(k.puan, 0)], ["Günlük değişim", k => yz(k.tf.G.degisim, 2)], ["RSI", k => tr(k.tf.G.rsi, 0)],
+    ["Haftalık", k => (k.tf.H || {}).etiket || "–"], ["Yapı", k => k.tf.G.yapi || "–"], ["Ekip görünümü", k => (k.ekip || {}).gorunum || "–"], ["ATR (oynaklık)", k => k.tf.G.atr && k.tf.G.fiyat ? "%" + tr(k.tf.G.atr / k.tf.G.fiyat * 100, 1) : "–"]];
+  el.innerHTML = `<h2>Karşılaştır</h2><div class="cip">${KS.map((k, i) => `<button style="border-color:${renk[i]}" data-ksil="${i}">${esc(k)} ×</button>`).join("")}</div>
+    ${KS.length < 4 ? `<input class="ara" id="ks-a" placeholder="Varlık ekle (en çok 4): ör. THYAO, NVDA, ETH"><div id="ks-s"></div>` : ""}
+    ${svg}<div class="lej">${K.map((k, i) => `<span><i style="background:${renk[i]}"></i>${esc(k.kod)}</span>`).join("")}</div>
+    <div class="kart" style="overflow-x:auto;margin-top:8px"><table class="tablo"><tr><td></td>${K.map((k, i) => `<td style="color:${renk[i]};text-align:right">${esc(String(k.kod).replace(".US", ""))}</td>`).join("")}</tr>
+    ${satirlar.map(([a, f]) => `<tr><td>${a}</td>${K.map(k => `<td style="text-align:right">${esc(String(f(k)))}</td>`).join("")}</tr>`).join("")}</table></div>`;
+  el.querySelectorAll("[data-ksil]").forEach(b => b.onclick = () => { KS.splice(+b.dataset.ksil, 1); LS.set("kk_karsilastir", KS); karsilastirBolum(el); });
+  const a = document.getElementById("ks-a");
+  if (a) a.oninput = () => { const q = a.value; document.getElementById("ks-s").innerHTML = q.trim().length < 2 ? "" : ara(q, 6).map(v => `<button class="kart" data-ks="${esc(v.kod)}" style="width:100%;text-align:left;color:var(--y)">＋ <b>${esc(v.kod)}</b> <span class="not">${esc(v.ad || "")}</span></button>`).join("");
+    el.querySelectorAll("[data-ks]").forEach(b => b.onclick = () => { if (!KS.includes(b.dataset.ks)) KS.push(b.dataset.ks); LS.set("kk_karsilastir", KS); karsilastirBolum(el); }); };
+}
+
+// ---- fırsat performansı (gerçek kapanan fırsatlar + kurulum istatistikleri)
+async function firsatPerformans(el) {
+  const pzl = ["bist", "abd", "kripto", "emtia"];
+  const [G, I] = await Promise.all([Promise.all(pzl.map(async p => ((await al(`firsat/${p}/gecmis.json`)) || []).map(x => ({...x, piyasa: p})))), Promise.all(pzl.map(p => al(`firsat/${p}/istatistik.json`)))]);
+  const kap = G.flat().filter(x => x.durum === "kapandı").sort((a, b) => (b.kapanis || "") < (a.kapanis || "") ? -1 : 1), Rl = kap.map(x => x.R).filter(r => r != null);
+  const kaz = Rl.filter(r => r > 0).length;
+  let h = `<h2>Gerçekleşen sonuçlar</h2><div class="izgara"><div class="mini"><small>Kapanan fırsat</small><b>${kap.length}</b></div><div class="mini"><small>Kazanan</small><b>${Rl.length ? "%" + tr(kaz / Rl.length * 100, 0) : "–"}</b></div>
+    <div class="mini"><small>Ortalama</small><b class="${rk(Rl.length ? Rl.reduce((a, b) => a + b, 0) : 0)}">${Rl.length ? tr(Rl.reduce((a, b) => a + b, 0) / Rl.length, 2) + "R" : "–"}</b></div></div>`;
+  h += kap.slice(0, 40).map(x => `<a class="kart dok" href="${ac(x.kod, x.piyasa)}" target="_blank"><div class="satir"><div class="a"><b><span class="etk ${x.yon > 0 ? "al" : "sat"}">${x.yon > 0 ? "AL" : "SAT"}</span>${esc(String(x.kod).replace(".US", ""))}</b>
+    <span>${PZ_AD[x.piyasa]} · ${esc(x.kurulum)} · ${esc(x.tf)} · ${esc(x.sebep || "")} · ${esc(String(x.kapanis || "").slice(0, 10))}</span></div><div class="f"><b class="${rk(x.R)}">${x.R >= 0 ? "+" : ""}${tr(x.R, 2)}R</b><span class="not">${fy(x.giris)} → ${fy(x.cikis)}</span></div></div></a>`).join("") || "<div class='bos'>Henüz kapanan fırsat yok. Sonuçlar fırsatlar hedefe ya da stopa ulaştıkça birikir.</div>";
+  h += `<h2>Kurulum istatistikleri (geçmiş test)</h2><div class="not" style="font-size:11px;margin:-2px 2px 8px">Her kurulumun geçmiş verideki sonucu: işlem sayısı, 1. ve 2. hedefe ulaşma oranı, ortalama R. Fırsat puanı bu istatistiklerle hesaplanır.</div>`;
+  pzl.forEach((p, i) => { const S = I[i]; if (!S) return; const sat = [];
+    Object.entries(S).forEach(([tf, o]) => Object.entries(o).forEach(([k, v]) => { const [ad, yon] = k.split("|"); if (v && v.n >= 30) sat.push({tf, ad, yon: +yon, ...v}); }));
+    sat.sort((a, b) => b.ort_R - a.ort_R);
+    h += `<details class="kart"><summary>${PZ_AD[p]} · ${sat.length} kurulum</summary><table class="tablo">${sat.slice(0, 25).map(s => `<tr><td><b>${esc(s.ad)}</b> <span class="not" style="font-weight:500">${s.yon > 0 ? "AL" : "SAT"} · ${esc(TF_AD[s.tf] || s.tf)} · ${s.n} işlem</span><br><span class="not" style="font-weight:500;font-size:11px">H1 %${tr(s.p1 * 100, 0)} · H2 %${tr(s.p2 * 100, 0)}</span></td><td class="${rk(s.ort_R)}">${s.ort_R >= 0 ? "+" : ""}${tr(s.ort_R, 2)}R</td></tr>`).join("")}</table></details>`; });
+  el.innerHTML = h;
+}
+async function sonTarama(el) {
+  const pzl = ["bist", "abd", "kripto", "emtia"], S = await Promise.all(pzl.map(p => al(`firsat/${p}/son.json`)));
+  let h = `<h2>Son taramalar</h2>`;
+  pzl.forEach((p, i) => { const s = S[i]; if (!s) return;
+    Object.entries(s).forEach(([tf, o]) => { if (!o) return; const f = o.firsatlar || [], a = o.adaylar || [];
+      h += `<div class="kart"><div class="satir"><div class="a"><b>${PZ_AD[p]} · ${esc(TF_AD[tf] || tf)}</b><span>${o.zaman ? new Date(o.zaman).toLocaleString("tr-TR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"}) : ""} · ${o.taranan || 0} varlık tarandı</span></div><div class="f"><b>${f.length}</b><span class="not">fırsat</span></div></div>
+        ${f.concat(a).slice(0, 8).map(x => `<div class="sin"><b class="${rk(x.yon)}">${x.yon > 0 ? "▲" : "▼"} ${esc(String(x.kod).replace(".US", ""))}</b> <span class="not">${esc(x.kurulum || "")} · puan ${tr(x.puan, 0)}${f.includes(x) ? "" : " · aday"}</span></div>`).join("")}</div>`; }); });
+  el.innerHTML = h;
+}
+
+// ---- sabah özeti (Özet sekmesinin üstünde; sesli dinleme)
+async function sabahKart() {
+  const s = await al("sabah/ozet.json"); if (!s || !s.madde) return "";
+  const z = new Date(s.zaman); if (Date.now() - z > 30 * 3600e3) return "";
+  return `<details class="kart"><summary>☀️ Sabah özeti · ${z.toLocaleDateString("tr-TR", {day: "2-digit", month: "long"})}</summary>
+    <audio controls preload="none" src="${VERI}sabah/ozet.mp3?t=${z.getTime()}" style="width:100%;margin:8px 0;height:36px"></audio>
+    ${s.madde.map(m => `<div class="sin">• ${esc(m)}</div>`).join("")}</details>`;
+}
+
 // ---------------------------------------------------------------- Özet
 async function ozet() {
   const el = document.getElementById("s-ozet");
   let h = "";
   h += `<input class="ara" id="oara" placeholder="🔍 Herhangi bir varlığı ara: THYAO, NVDA, BTC, altın…" style="margin-top:2px"><div id="osonuc"></div>`;
   h += "<div id='cuzdan'></div>";
+  h += await sabahKart();
   // canlı kripto (Binance): ilk değer REST, sonra WebSocket ile saniye saniye
   h += "<h2>Kripto ve altın · <span class='canli'><i></i>canlı</span></h2><div class='izgara'>" + SEM.map(x => {
     const k = x.replace("USDT", ""), pz = k === "PAXG" ? "emtia" : "kripto", kod = k === "PAXG" ? "ALTIN" : k + "/USDT";
@@ -681,8 +841,14 @@ async function ozet() {
 
 // ---------------------------------------------------------------- Fırsatlar
 let FIRSAT = [], F_PZ = "Tümü";
+let FR_SEKME = "acik";
 async function firsatlar() {
-  const el = document.getElementById("s-firsat");
+  const ust = document.getElementById("s-firsat");
+  ust.innerHTML = `<div class="cip" style="margin-top:4px">${[["acik", "Açık kurulumlar"], ["son", "Son taramalar"], ["perf", "Performans"]].map(([k, a]) => `<button data-fr="${k}" class="${k === FR_SEKME ? "s" : ""}">${a}</button>`).join("")}</div><div id="fr-ic"></div>`;
+  ust.querySelectorAll("[data-fr]").forEach(b => b.onclick = () => { FR_SEKME = b.dataset.fr; firsatlar(); });
+  const el = document.getElementById("fr-ic");
+  if (FR_SEKME === "son") return sonTarama(el);
+  if (FR_SEKME === "perf") return firsatPerformans(el);
   const l = await Promise.all(["bist", "abd", "kripto", "emtia"].map(async p => ((await al(`firsat/${p}/acik.json`)) || []).map(x => ({...x, piyasa: p}))));
   FIRSAT = l.flat().filter(x => x.durum === "açık").sort((a, b) => b.puan - a.puan);
   ciz();
@@ -767,8 +933,13 @@ async function karneBolum(el) {
   el.querySelectorAll("[data-k]").forEach(b => b.onclick = () => { K_PZ = b.dataset.k; document.getElementById("kara").value = ""; ciz(); });
   document.getElementById("kara").oninput = ciz; ciz();
 }
+let PY_SEKME = LS.get("kk_py_sekme", "genel");
 async function piyasa() {
-  const el = document.getElementById("s-piyasa");
+  const ust = document.getElementById("s-piyasa");
+  ust.innerHTML = `<div class="cip" style="margin-top:4px">${[["genel", "Genel"], ["takvim", "Takvim"], ["ekonomi", "Ekonomi"], ["tarayici", "Tarayıcı"], ["karsilastir", "Karşılaştır"]].map(([k, a]) => `<button data-py="${k}" class="${k === PY_SEKME ? "s" : ""}">${a}</button>`).join("")}</div><div id="py-ic"></div>`;
+  ust.querySelectorAll("[data-py]").forEach(b => b.onclick = () => { PY_SEKME = b.dataset.py; LS.set("kk_py_sekme", PY_SEKME); piyasa(); });
+  const el = document.getElementById("py-ic");
+  if (PY_SEKME !== "genel") { await karneListe(); return ({takvim: takvimBolum, ekonomi: ekonomiBolum, tarayici: tarayiciBolum, karsilastir: karsilastirBolum})[PY_SEKME](el); }
   let h = "";
   const [ko, dn, op] = await Promise.all([al("korelasyon/ozet.json"), al("dunya/ozet.json"), al("opsiyon/ozet.json")]);
   if (op && op.paralar) {
