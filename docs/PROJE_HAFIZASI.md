@@ -341,7 +341,7 @@ Araştırma aracı: `arastirma_firsat.py`. Mevcut kurulumların tüm geçmiş ol
   (BTC rejim filtresi SAT'a izin veriyordu). 4'ü tokenleştirilmiş hisseydi (XSPCX, SPCXB, QQQB, XQQQ). Önlemler: bist_kripto.hisse_tokeni_mu
   geniş ABD listesiyle (142 token daha elendi, _GERCEK_KRIPTO istisnaları), kapanis.yogunluk_siniri (YON_YENI / YON_ACIK). Kurulum
   istatistikleri (geçmiş test) değiştirilmedi: GERI|-1|4S n=2793, H1 %51, ort +0,09R — canlı örnek henüz istatistiksel olarak anlamlı değil.
-- Temel / Bebek / PDF (28.11.2026): temel.py (temel.yml, 06:40 TSİ) → bulten/temel/{bist,abd,bebek}.json (br.tara; ABD en likit 300;
+- Temel / Bebek / PDF (28.11.2026): temel.py (temel.yml, 06:40 TSİ) → bulten/temel/{bist,abd,bebek}.json (br.tara; ABD en likit 300; Yahoo hız sınırı için _sabirli sarmalayıcı: bekle-yeniden dene, BIST isci=3 → 629/629;
   bebek: EV.bebekler + bebek_skoru, derin analiz temel satırlarından). pdf_uret.py (pdf.yml, 05:20 TSİ) → teknik ve araştırma PDF'leri
   GitHub sürüm "raporlar" eklerine (--clobber), dizin bulten/pdf/{teknik,arastirma}.json. Hızlı uygulama: varlık sayfasında temel bölüm ve
   PDF düğmeleri, Piyasa › Temel (değer sıralaması, bebekler, genç, küçük).
